@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: gr_gtk.c,v 1.6 1999/08/20 05:43:38 twitham Exp $
+ * @(#)$Id: gr_gtk.c,v 1.7 1999/08/21 05:56:27 twitham Exp $
  *
  * Copyright (C) 1996 - 1998 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -177,24 +177,6 @@ SetColor(int c)
   gdk_gc_set_foreground(gc, &gdkcolor[c]);
 }
 
-/* prompt for a string */
-char *
-GetString(char *msg, char *def)
-{
-/* #ifdef HAVEVGAMISC */
-/*   char *s; */
-
-/*   s = vga_prompt(0, v_points / 2, */
-/* 		 80 * 8, 8 + FONT.font_height, msg, */
-/* 		 &FONT, &FONT, TEXT_FG, KEY_FG, TEXT_BG, PROMPT_SCROLLABLE); */
-/*   if (s[0] == '\e' || s[0] == '\0') */
-/*     return(NULL); */
-/*   return(s); */
-/* #else */
-  return(def);
-/* #endif */
-}
-
 void
 yes_sel(GtkWidget *w, GtkWidget *win)
 {
@@ -239,7 +221,7 @@ savefile_ok_sel(GtkWidget *w, GtkFileSelection *fs)
 			      GTK_OBJECT(window));
     gtk_widget_show(yes);
     gtk_widget_show(no);
-    sprintf(error, "\n\n%s exists,\n\nOVERWRITE?\n\n", my_filename);
+    sprintf(error, "\n  Overwrite existing file %s?  \n", my_filename);
     label = gtk_label_new(error);
     gtk_box_pack_start(GTK_BOX(GTK_DIALOG(window)->vbox), label, TRUE, TRUE, 0);
     gtk_widget_show(label);
@@ -271,6 +253,51 @@ LoadSaveFile(int save)
 /*     gtk_file_selection_set_filename(GTK_FILE_SELECTION(filew), */
 /* 				    (gchar *)path); */
   gtk_widget_show(filew);
+}
+
+void
+run_sel(GtkWidget *w, GtkEntry *command)
+{
+  startcommand(gtk_entry_get_text(GTK_ENTRY(command)));
+}
+
+void
+ExternCommand()
+{
+  GtkWidget *window, *label, *command, *run, *cancel;
+
+  window = gtk_dialog_new();
+  run = gtk_button_new_with_label("  Run  ");
+  gtk_box_pack_start(GTK_BOX(GTK_DIALOG(window)->action_area), run,
+		     TRUE, TRUE, 0);
+  cancel = gtk_button_new_with_label("  Cancel  ");
+  gtk_box_pack_start(GTK_BOX(GTK_DIALOG(window)->action_area), cancel,
+		     TRUE, TRUE, 0);
+  label = gtk_label_new("\n  External command and args:  \n");
+  gtk_box_pack_start(GTK_BOX(GTK_DIALOG(window)->vbox), label,
+		     TRUE, TRUE, 0);
+  command = gtk_entry_new_with_max_length(256);
+  gtk_entry_set_text(GTK_ENTRY(command), ch[scope.select].command);
+  gtk_box_pack_start(GTK_BOX(GTK_DIALOG(window)->vbox), command,
+		     TRUE, TRUE, 0);
+  gtk_signal_connect_object(GTK_OBJECT(window), "delete_event",
+			    GTK_SIGNAL_FUNC(gtk_widget_destroy),
+			    GTK_OBJECT(window));
+  gtk_signal_connect(GTK_OBJECT(run), "clicked",
+		     GTK_SIGNAL_FUNC(run_sel),
+		     GTK_ENTRY(command));
+  gtk_signal_connect_object_after(GTK_OBJECT(run), "clicked",
+				  GTK_SIGNAL_FUNC(gtk_widget_destroy),
+				  GTK_OBJECT(window));
+  gtk_signal_connect_object(GTK_OBJECT(cancel), "clicked",
+			    GTK_SIGNAL_FUNC(gtk_widget_destroy),
+			    GTK_OBJECT(window));
+  gtk_widget_show(run);
+  gtk_widget_show(cancel);
+  gtk_widget_show(label);
+  gtk_widget_show(command);
+  gtk_widget_show(window);
+  /*    gtk_grab_add(window); */
 }
 
 void SyncDisplay() {
