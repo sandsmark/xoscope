@@ -5,7 +5,7 @@
  *
  * [x]scope --- Use Linux's /dev/dsp (a sound card) as an oscilloscope
  *
- * @(#)$Id: oscope.c,v 1.29 1996/01/28 08:11:02 twitham Exp $
+ * @(#)$Id: oscope.c,v 1.30 1996/01/28 23:41:18 twitham Exp $
  *
  * Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
@@ -87,8 +87,8 @@ char *def[] = {
 int quit_key_pressed = 0;	/* set by handle_key() */
 int running = 1;		/* running or stopped */
 int snd;			/* file descriptor for sound device */
-unsigned char buffer[MAXWID * 2]; /* buffer for sound data */
-unsigned char junk[SAMPLESKIP];	/* junk buffer */
+char buffer[MAXWID * 2]; /* buffer for sound data */
+char junk[SAMPLESKIP];	/* junk buffer */
 int v_points;			/* points in vertical axis */
 int h_points;			/* points in horizontal axis */
 int offset;			/* vertical offset */
@@ -145,10 +145,10 @@ parse_args(int argc, char **argv)
   while ((c = getopt(argc, argv, flags)) != EOF) {
     switch (c) {
     case '1':			/* single channel (mono) */
-      channels = 1;
-      break;
     case '2':			/* dual channels (stereo) */
-      channels = 2;
+    case '3':
+    case '4':
+      channels = c - '0';
       break;
     case 'r':			/* sample rate */
       sampling = strtol(optarg, NULL, 0);
@@ -217,7 +217,7 @@ void
 init_scope()
 {
   int i;
-
+  int channelcolor[] = CHANNELCOLOR;
   scope.scale = DEF_S;
   scope.pos = 128;
   scope.rate = DEF_R;
@@ -232,7 +232,7 @@ init_scope()
     ch[i].scale = 1;
     ch[i].pos = 128;
     ch[i].mode = 0;
-    ch[i].color = color[i + 2];
+    ch[i].color = color[channelcolor[i]];
   }
 }
 
@@ -252,7 +252,7 @@ init_sound_card(int firsttime)
     exit(1);
   }
 
-  parm = channels;		/* set mono/stereo */
+  parm = (channels > 1) + 1;	/* set mono/stereo */
   check_status(ioctl(snd, SOUND_PCM_WRITE_CHANNELS, &parm), __LINE__);
 
   parm = 8;			/* set 8-bit samples */
@@ -276,7 +276,11 @@ handle_key(unsigned char c)
     break;
   case '1':
   case '2':			/* single or dual channel mode */
-    channels = channels == 1 ? 2 : 1;
+  case '3':			/* single or dual channel mode */
+  case '4':			/* single or dual channel mode */
+    channels++;
+    if (channels > 4)
+      channels = 1;
     init_sound_card(0);
     clear();
     break;
@@ -422,6 +426,30 @@ handle_key(unsigned char c)
     show_info(c);		/* show keypress and result on stdout */
 }
 
+char
+add(char a, char b)
+{
+  static int t;
+  t = (int)a + (int)b;
+  if (t > 127)
+    return(127);
+  if (t < -128)
+    return(-128);
+  return(t);
+}
+
+char
+sub(char a, char b)
+{
+  static int t;
+  t = (int)a - (int)b;
+  if (t > 127)
+    return(127);
+  if (t < -128)
+    return(-128);
+  return(t);
+}
+
 /* get data from sound card */
 inline void
 get_data()
@@ -437,14 +465,14 @@ get_data()
       datum[0] = 255;		/* positive trigger, look for rising edge */
       do {
 	prev = datum[0];	/* remember prev. channel 1, read channel(s) */
-	read(snd, datum , channels);
+	read(snd, datum , (channels > 1) + 1);
       } while (((c++ < h_points)) &&
 	       ((datum[0] < trigger) || (prev > trigger)));
     } else {
       datum[0] = 0;		/* negative trigger, look for falling edge */
       do {
 	prev = datum[0];	/* remember prev. channel 1, read channel(s) */
-	read(snd, datum, channels);
+	read(snd, datum, (channels > 1) + 1);
       } while (((c++ < h_points)) &&
 	       ((datum[0] > trigger) || (prev < trigger)));
     }
@@ -453,12 +481,14 @@ get_data()
     return;			/* give up and keep previous samples */
 
   /* now get the real data */
-  read(snd, buffer, h_points * channels);
+  read(snd, buffer, h_points * ((channels > 1) + 1));
   buff = buffer;
   for(c=0; c < h_points; c++) {
-    ch[0].data[c] = *buff;
-    buff += (channels - 1);
-    ch[1].data[c] = *buff++;
+    ch[0].data[c] = (int)(*buff) - 128;
+    buff += (channels > 1);
+    ch[1].data[c] = (int)(*buff++) - 128;
+    ch[2].data[c] = add(ch[0].data[c], ch[1].data[c]);
+    ch[3].data[c] = sub(ch[0].data[c], ch[1].data[c]);
   }
 }
 

@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 1.6 1996/01/28 09:20:09 twitham Exp $
+ * @(#)$Id: display.c,v 1.7 1996/01/28 23:41:24 twitham Exp $
  *
  * Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
@@ -60,7 +60,7 @@ char *colors[] = {		/* X colors similar to 16 console colors */
   "cyan",
   "red",
   "magenta",
-  "brown",
+  "orange",
   "gray75",
   "gray25",
   "blue4",
@@ -192,35 +192,35 @@ draw_graticule()
   static int i, j;
 
   VGA_SETCOLOR(color[colour]);
-  VGA_DRAWLINE(100, offset-32, h_points-100, offset-32);
-  VGA_DRAWLINE(100, offset+288, h_points-100, offset+288);
-  VGA_DRAWLINE(100, offset-32, 100, offset+288);
-  VGA_DRAWLINE(h_points-100, offset-32, h_points-100, offset+288);
+  VGA_DRAWLINE(100, offset-160, h_points-100, offset-160);
+  VGA_DRAWLINE(100, offset+160, h_points-100, offset+160);
+  VGA_DRAWLINE(100, offset-160, 100, offset+160);
+  VGA_DRAWLINE(h_points-100, offset-160, h_points-100, offset+160);
 
   if (graticule) {
 
     /* cross-hairs */
     for (i = 320 ; i < h_points - 100 ; i += 220) {
-      VGA_DRAWLINE(i, offset-32, i, offset+288);
+      VGA_DRAWLINE(i, offset-160, i, offset+160);
     }
-    VGA_DRAWLINE(100, offset+128, h_points-100, offset+128);
+    VGA_DRAWLINE(100, offset, h_points-100, offset);
 
     /* vertical dotted lines */
     for (i = 144 ; i < h_points-100 ; i += 44) {
-      for (j = (offset - 32) * 10 ; j < (offset + 288) * 10 ; j += 64) {
+      for (j = (offset - 160) * 10 ; j < (offset + 160) * 10 ; j += 64) {
 	VGA_DRAWPIXEL(i, j / 10);
       }
     }
 
     /* horizontal dotted lines */
-    for (i = offset - 32 ; i < (offset + 288) ; i += 32) {
+    for (i = offset - 160 ; i < (offset + 160) ; i += 32) {
       for (j = 1088 ; j < (h_points-100) * 10 ; j += 88) {
 	VGA_DRAWPIXEL(j / 10, i);
       }
     }
     /* a tick mark where the trigger level is */
     if (trigger > -1)
-      VGA_DRAWLINE(100, offset+trigger, 105, offset+trigger);
+      VGA_DRAWLINE(100, offset+trigger-128, 105, offset+trigger-128);
 
   }
 }
@@ -237,11 +237,11 @@ draw_data()
 	if (point_mode == 0) {
 	  VGA_SETCOLOR(color[0]);	/* erase previous dot */
 	  VGA_DRAWPIXEL(i * scope.scale + 100,
-			ch[j].old[i] + offset);
+			offset + ch[j].old[i]);
 	}
 	VGA_SETCOLOR(ch[j].color); /* draw dot */
 	VGA_DRAWPIXEL(i * scope.scale + 100,
-		      ch[j].data[i] + offset);
+		      offset + ch[j].data[i]);
 	ch[j].old[i] = ch[j].data[i];
       }
     }
@@ -251,15 +251,15 @@ draw_data()
 	if (point_mode == 2) {
 	  VGA_SETCOLOR(color[0]);	/* erase previous line */
 	  VGA_DRAWLINE(i * scope.scale + 100,
-		       ch[j].old[i] + offset,
+		       offset + ch[j].old[i],
 		       i * scope.scale + scope.scale + 100,
-		       ch[j].old[i + 1] + offset);
+		       offset + ch[j].old[i + 1]);
 	}
 	VGA_SETCOLOR(ch[j].color); /* draw line */
 	VGA_DRAWLINE(i * scope.scale + 100,
-		     ch[j].data[i] + offset,
+		     offset + ch[j].data[i],
 		     i * scope.scale + scope.scale + 100,
-		     ch[j].data[i + 1] + offset);
+		     offset + ch[j].data[i + 1]);
 	ch[j].old[i] = ch[j].data[i];
       }
       ch[j].old[i] = ch[j].data[i];
@@ -301,7 +301,7 @@ redisplay(Widget w, int new_width, int new_height, void *data) {
     ? new_width - (new_width - 200) % 44
     : 640;
   v_points = new_height > 480 ? new_height : 480;
-  offset = v_points / 2 - 127;
+  offset = v_points / 2;
   clear();
   draw_text();
 }
@@ -354,7 +354,7 @@ init_screen(int firsttime)
   v_points = vga_getydim();
   h_points = vga_getxdim();
 #endif
-  offset = v_points / 2 - 127;
+  offset = v_points / 2;
   clear();
   draw_graticule();
 }

@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.h,v 1.6 1996/01/28 08:12:24 twitham Exp $
+ * @(#)$Id: oscope.h,v 1.7 1996/01/28 23:41:31 twitham Exp $
  *
  * Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
@@ -17,7 +17,7 @@
 #endif
 
 /* program defaults for the command-line options */
-#define DEF_12 1		/* -1/-2: 1=single channel, 2=dual channels */
+#define DEF_12 4		/* -1/-2: 1=single channel, 2=dual channels */
 #define DEF_R 44000		/* -r: 5000 - 44100 works for SoundBlaster */
 #define DEF_S 1			/* -s: 1, 2, 4, 8, 16 */
 #define DEF_T 128		/* -t: 0 - 255 or -1 = disabled, 128 = center */
@@ -26,8 +26,8 @@
 #define DEF_D 4			/* -d: 1, 2, 4 */
 #define DEF_F ""		/* empty-string is the default8x16 */
 #define DEF_FX "8x16"		/* for X scope, an equivalent 8x16 */
-#define DEF_PL 0		/* -p/-l: 0=line,                 1=point */
-#define DEF_G 0			/* -g:    0=graticule off, 1=graticule on */
+#define DEF_PL 2		/* -p/-l: 0=line,                 1=point */
+#define DEF_G 1			/* -g:    0=graticule off, 1=graticule on */
 #define DEF_B 0			/* -b:    0=graticule in front, 1=in back */
 #define DEF_V 0			/* -v:    0=verbose log off, 1=verbose on */
 
@@ -40,6 +40,15 @@
 
 /* max number of channels */
 #define CHANNELS 4
+
+/* initial colors of the channels */
+#define CHANNELCOLOR	{2,3,5,14}
+
+/* text foreground color */
+#define TEXT_FG		color[2]
+
+/* text background color */
+#define TEXT_BG		color[0]
 
 /* global program variables */
 extern int channels;
@@ -58,8 +67,8 @@ extern char *def[];
 extern int quit_key_pressed;
 extern int running;
 extern int snd;
-extern unsigned char buffer[MAXWID * 2];
-extern unsigned char junk[SAMPLESKIP];
+extern char buffer[MAXWID * 2];
+extern char junk[SAMPLESKIP];
 extern int v_points;
 extern int h_points;
 extern int offset;
@@ -80,8 +89,8 @@ typedef struct Scope {		/* The oscilloscope */
 extern Scope scope;
 
 typedef struct Signal {		/* Signals (channels) */
-  unsigned char data[MAXWID];
-  unsigned char old[MAXWID];
+  char data[MAXWID];
+  char old[MAXWID];
   int scale;
   int pos;
   int mode;
