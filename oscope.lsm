@@ -1,13 +1,24 @@
 Begin3
-Title: Scope - software oscilloscope
-Version: 0.1
-Description: Scope is a simple software emulation of an oscilloscope. It graphically displays voltage as a function of time. The input is via a sound card using the kernel sound device /dev/dsp. The svgalib library is used to implement a real-time display.
-
-	This is the first release and should be consider ALPHA. It was designed more for amusement than as a useful tool. Distribution includes source, makefile, and man page.
-Keywords: sound, graphics, oscilloscope
+Title: [x]oscope - Digital Oscilloscope for /dev/dsp
+Version: 0.3
+Entered-date: 24FEB96
+Description: [x]oscope is a digital 44kHz oscilloscope for /dev/dsp.
+	Includes oscope for SVGA console display and xoscope, an X11 client.
+	Features include real-time 8-bit sampling of 2 channels at 44kHz,
+	5 us/div to 5 ms/div time scale, signal scaling and positioning,
+	5 automatic measurements, math functions including sum, diff, avg,
+	26 memory buffers, 8 simultaneous displays (2 hardware, 6 sofware).
+Keywords: sound, graphics, oscilloscope, circuits
 Author: Jeff_Tranter@Mitel.COM (Jeff Tranter)
-Maintained-by: Jeff_Tranter@Mitel.COM
-Primary-site: sunsite.unc.edu /pub/linux/apps/graphics
-	11884 scope-01.tar.gz
-Copying-policy: GNU General Public License
+	twitham@pcocd2.intel.com (Tim Witham)
+Maintained-by: twitham@pcocd2.intel.com (Tim Witham)
+Primary-site: sunsite.unc.edu /pub/linux/apps/circuits
+	24551 oscope-0.3.tar.gz
+	1167 oscope.lsm
+Platforms: Needs a kernel supported sound card that can do 8800Hz - 44kHz,
+	"libvga" from the "svgalib" package to build console-based oscope,
+	"libvgamisc" from Mitch D'Souza's "g3vga" package to add console text,
+	"libsx" from the "libsx" package to build the xoscope X11 client,
+	and a mixing program to select input source and level (cam, xmix, ...)
+Copying-policy: GPL
 End
