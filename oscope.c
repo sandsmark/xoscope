@@ -5,7 +5,7 @@
  *
  * [x]scope --- Use Linux's /dev/dsp (a sound card) as an oscilloscope
  *
- * @(#)$Id: oscope.c,v 1.27 1996/01/26 07:52:38 twitham Exp $
+ * @(#)$Id: oscope.c,v 1.28 1996/01/28 03:28:55 twitham Exp $
  *
  * Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
@@ -59,6 +59,8 @@
 #include "display.h"		/* display functions */
 
 /* global program defaults, defined in scope.h (see also) */
+Scope scope;
+Signal ch[CHANNELS];
 int channels = DEF_12;
 int sampling = DEF_R;
 int scale = DEF_S;
@@ -82,11 +84,10 @@ char *def[] = {
   "graticule",			/* used by -b in usage message */
   "signal",
 };
-int quit_key_pressed;		/* set by handle_key() */
+int quit_key_pressed = 0;	/* set by handle_key() */
 int running = 1;		/* running or stopped */
 int snd;			/* file descriptor for sound device */
 unsigned char buffer[MAXWID * 2]; /* buffer for sound data */
-unsigned char old[MAXWID * 2];	/* previous buffer for sound data */
 unsigned char junk[SAMPLESKIP];	/* junk buffer */
 int v_points;			/* points in vertical axis */
 int h_points;			/* points in horizontal axis */
@@ -210,11 +211,28 @@ check_status(int status, int line)
   }
 }
 
-/* initialize screen data to half scale */
+/* initialize the scope and its' signals */
 void
-init_data()
+init_scope()
 {
-  memset(buffer, MAXWID * 2, 128);
+  int i;
+
+  scope.scale = DEF_S;
+  scope.pos = 128;
+  scope.rate = DEF_R;
+  scope.trigpos = DEF_T;
+  scope.graticule = DEF_G;
+  scope.run = 1;
+  scope.gcolor = YELLOW;
+  scope.tcolor = GREEN;
+  for (i = 0 ; i < CHANNELS ; i++) {
+    memset(ch[i].data, 128, MAXWID);
+    memset(ch[i].old, 128, MAXWID);
+    ch[i].scale = 1;
+    ch[i].pos = 128;
+    ch[i].mode = 0;
+    ch[i].color = i + GREEN;
+  }
 }
 
 /* [re]initialize /dev/dsp */
@@ -401,7 +419,7 @@ handle_key(unsigned char c)
 inline void
 get_data()
 {
-  static unsigned char datum[2], prev;
+  static unsigned char datum[2], prev, *buff;
   int c = 0;
 
 				/* flush the sound card's buffer */
@@ -428,7 +446,14 @@ get_data()
     return;			/* give up and keep previous samples */
 
   /* now get the real data */
-  read(snd, buffer + channels - 1, (h_points * channels / scale));
+  /*   read(snd, buffer, (h_points * channels / scope.scale)); */
+  read(snd, buffer, h_points * channels);
+  buff = buffer;
+  for(c=0; c < h_points; c++) {
+    ch[0].data[c] = *buff;
+    buff += (channels - 1);
+    ch[1].data[c] = *buff++;
+  }
 }
 
 /* main program */
@@ -443,9 +468,9 @@ main(int argc, char **argv)
 
   argc = opendisplay(argc, argv);
   parse_args(argc, argv);	/* what do you want? */
-  init_data();
   init_sound_card(1);		/* get ready */
   init_screen(1);
+  init_scope();
   show_info(' ');
   mainloop();			/* from display.h */
   cleanup();			/* close sound, back to text mode */

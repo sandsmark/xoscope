@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 1.3 1996/01/26 07:52:45 twitham Exp $
+ * @(#)$Id: display.c,v 1.4 1996/01/28 03:28:46 twitham Exp $
  *
  * Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
@@ -155,42 +155,40 @@ draw_graticule()
 static inline void
 draw_data()
 {
-  static int i, j, k;
+  static int i, j;
 
   if (point_mode < 2) {
     for (j = 0 ; j < channels ; j++) {
       for (i = 0 ; i <= 440 / scale ; i++) {
-	k = i * channels + j; /* calc this offset once for efficiency */
 	if (point_mode == 0) {
 	  VGA_SETCOLOR(BLACK);	/* erase previous dot */
 	  VGA_DRAWPIXEL(i * scale + 100,
-			old[k] + offset);
+			ch[j].old[i] + offset);
 	}
-	VGA_SETCOLOR(colour + j); /* draw dot */
+	VGA_SETCOLOR(ch[j].color); /* draw dot */
 	VGA_DRAWPIXEL(i * scale + 100,
-		      buffer[k] + offset);
-	old[k] = buffer[k];
+		      ch[j].data[i] + offset);
+	ch[j].old[i] = ch[j].data[i];
       }
     }
   } else {			/* line mode, a little slower */
     for (j = 0 ; j < channels ; j++) {
       for (i = 0 ; i <= 440 / scale - 1 ; i++) {
-	k = i * channels + j; /* calc this offset once for efficiency */
 	if (point_mode == 2) {
 	  VGA_SETCOLOR(BLACK);	/* erase previous line */
 	  VGA_DRAWLINE(i * scale + 100,
-		       old[k] + offset,
+		       ch[j].old[i] + offset,
 		       i * scale + scale + 100,
-		       old[k + channels] + offset);
+		       ch[j].old[i + 1] + offset);
 	}
-	VGA_SETCOLOR(colour + j); /* draw line */
+	VGA_SETCOLOR(ch[j].color); /* draw line */
 	VGA_DRAWLINE(i * scale + 100,
-		     buffer[k] + offset,
+		     ch[j].data[i] + offset,
 		     i * scale + scale + 100,
-		     buffer[k + channels] + offset);
-	old[k] = buffer[k];
+		     ch[j].data[i + 1] + offset);
+	ch[j].old[i] = ch[j].data[i];
       }
-      old[--i * channels + j] = buffer[--i * channels + j];
+      ch[j].old[i] = ch[j].data[i];
     }
   }
 #ifdef XSCOPE
@@ -213,11 +211,11 @@ animate(void *data)
     }
   }
 #ifdef XSCOPE
-  AddTimeOut(5, animate, NULL);
   if (quit_key_pressed) {
     cleanup();
     exit(0);
   }
+  AddTimeOut(10, animate, NULL);
 #endif
 }
 
