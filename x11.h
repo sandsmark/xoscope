@@ -1,7 +1,6 @@
 /*
- * @(#)$Id: x11.h,v 1.1 1996/03/02 07:00:27 twitham Exp $
+ * @(#)$Id: x11.h,v 1.2 1996/03/10 01:49:11 twitham Rel1_1 $
  *
- * Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
  * (see the files README and COPYING for more details)
@@ -20,7 +19,6 @@
 #define ALIGN_CENTER	3
 
 extern XFont font;
-extern int color[];
 
 int
 VGA_WRITE(char *s, short x, short y, XFont f, short fg, short bg, char p);

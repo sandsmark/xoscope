@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: gr_sx.c,v 1.3 1996/03/02 06:51:07 twitham Exp $
+ * @(#)$Id: gr_sx.c,v 1.4 1996/03/10 01:48:59 twitham Exp $
  *
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -16,6 +16,7 @@
 #include "x11.h"
 #include "display.h"
 #include "func.h"
+#include "file.h"
 
 Widget draw_widget;		/* scope drawing area */
 Widget file[4];			/* file menu */
@@ -27,7 +28,7 @@ Widget mwidg[54];
 Widget cwidg[CHANNELS];		/* channel button widgets */
 Widget ywidg[15];		/* vertical widgets */
 Widget **math;			/* math menu */
-int **intarray;		/* indexes of math functions */
+int **intarray;			/* indexes of math functions */
 int XX[] = {640,800,1024,1280};
 int XY[] = {480,600, 768,1024};
 XFont font;
@@ -102,24 +103,19 @@ loadfile(Widget w1, void *data)
 {
   char *fname;
 
-  fname = GetString("Enter name of file to load:", "Foobar.c");
-  if (fname)
-     printf("You entered: %s\n", fname);
-  else
-    printf("You clicked cancel.\n");
+  fname = GetFile(NULL);
+  if (fname != NULL)
+      readfile(fname);
 }
 
 void
 savefile(Widget w, void *data)
 {
-  int ans;
+  char *fname;
 
-  ans = GetYesNo("\nAre you a weenie?\n\n");
-
-  if (ans == TRUE)
-     printf("You're a weenie.\n");
-  else
-    printf("You are not a weenie.\n");
+  fname = GetFile(NULL);
+  if (fname != NULL)
+      writefile(fname);
 }
 
 void
