@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: config.h,v 1.3 1996/03/10 01:50:18 twitham Exp $
+ * @(#)$Id: config.h,v 1.4 1996/04/21 02:36:18 twitham Rel1_0 $
  *
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -11,7 +11,7 @@
  *
  */
 
-/* program defaults for the command-line options */
+/* program defaults for the command-line options (original values) */
 #define DEF_A	1		/* 1-8 (1) */
 #define DEF_R	44000		/* 8800,22000,44000 (44000) */
 #define DEF_S	1		/* 1,2,5,10,20,50,100,200 (1) */
@@ -47,11 +47,17 @@
 /* text background color (color[0]) */
 #define TEXT_BG		color[0]
 
-/* minimum number of milliseconds between refresh on X11 version (10) */
-#define MSECREFRESH	10
+/* minimum number of milliseconds between refresh on X11 version (20) */
+#define MSECREFRESH	20
 
 /* bourne shell command for X11 Help ("man xoscope 2>&1") */
 #define HELPCOMMAND	"man xoscope 2>&1"
 
-/* default file name */
-#define FILENAME	"oscope.osp"
+/* default file name ("oscope.dat") */
+#define FILENAME	"oscope.dat"
+
+/* default external command pipe to run ("oscope.perl '$x + $y'") */
+#define COMMAND		"oscope.perl '$x + $y'"
+
+/* FFT length, shorter than minimum screen width and multiple of 2 (512) */
+#define FFTLEN	512
