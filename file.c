@@ -1,7 +1,7 @@
 /*
- * @(#)$Id: file.c,v 1.14 1997/08/29 04:52:09 twitham Exp $
+ * @(#)$Id: file.c,v 1.15 1999/08/27 04:09:18 twitham Rel $
  *
- * Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
+ * Copyright (C) 1996 - 1999 Tim Witham <twitham@quiknet.com>
  *
  * (see the files README and COPYING for more details)
  *
@@ -11,7 +11,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/stat.h>
 #include <string.h>
 #include "oscope.h"		/* program defaults */
 #include "display.h"		/* display routines */
@@ -167,12 +166,7 @@ writefile(char *filename)
   FILE *file;
   int i, j, k = 0, chan[26], roloc[256];
   Channel *p;
-  struct stat buff;
 
-  if (!stat(filename, &buff)) {
-    sprintf(error, "%s exists, overwrite?", filename);
-    if (!(GetYesNo(error))) return;
-  }
   if ((file = fopen(filename, "w")) == NULL) {
     sprintf(error, "%s: can't write %s", progname, filename);
     message(error, KEY_FG);

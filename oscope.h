@@ -1,7 +1,7 @@
 /*
- * @(#)$Id: oscope.h,v 1.30 1997/05/31 17:25:11 twitham Rel $
+ * @(#)$Id: oscope.h,v 1.31 1999/08/27 04:08:14 twitham Rel $
  *
- * Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
+ * Copyright (C) 1996 - 1999 Tim Witham <twitham@quiknet.com>
  *
  * (see the files README and COPYING for more details)
  *
@@ -80,3 +80,6 @@ void	handle_key(unsigned char);
 void	cleanup();
 void	init_scope();
 void	init_channels();
+void	loadfile();
+void	savefile();
+void	startcommand();

@@ -1,7 +1,7 @@
 /*
- * @(#)$Id: display.h,v 1.9 1997/05/04 20:24:15 twitham Rel $
+ * @(#)$Id: display.h,v 1.10 1999/08/27 04:08:45 twitham Rel $
  *
- * Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
+ * Copyright (C) 1996 - 1999 Tim Witham <twitham@quiknet.com>
  *
  * (see the files README and COPYING for more details)
  *
@@ -12,23 +12,37 @@
 #define ALIGN_RIGHT	1
 #define ALIGN_LEFT	2
 #define ALIGN_CENTER	3
+#ifndef TRUE
 #define TRUE	1
+#endif
+#ifndef FALSE
 #define FALSE	0
+#endif
 
 extern char fontname[];
 extern char fonts[];
 extern int color[];
 
-int	OpenDisplay();
-void	init_screen();
+void	init_screen();		/* exported from display.c */
 void	init_widgets();
 void	mainloop();
 void	draw_text();
 void	clear();
 void	message();
 void	cleanup_display();
-void	animate();
+int	animate();
 int	col();
-char *	GetString();
+
+void	DrawPixel();		/* these are defined in */
+void	DrawLine();		/* a display-specific file */
+void	SetColor();		/* like gr_vga.c or gr_sx.c */
+void	SyncDisplay();
+void	AddTimeOut();
+void	LoadSaveFile();
+void	ExternCommand();
 char *	GetFile();
+char *	GetString();
 int	GetYesNo();
+int	OpenDisplay();
+void	ClearDrawArea();
+void	MainLoop();
