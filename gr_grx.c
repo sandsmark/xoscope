@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: gr_grx.c,v 1.1 1997/02/23 05:24:40 twitham Rel1_3 $
+ * @(#)$Id: gr_grx.c,v 1.2 1997/06/07 21:31:34 twitham Rel $
  *
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -183,7 +183,8 @@ mainloop()
 {
   draw_text(1);
   while (!quit_key_pressed) {
-    handle_key(getch());
+    if (kbhit())
+      handle_key(getch());
     animate(NULL);
   }
 }
