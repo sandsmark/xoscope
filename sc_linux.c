@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: sc_linux.c,v 1.5 1997/05/04 20:12:56 twitham Rel1_3 $
+ * @(#)$Id: sc_linux.c,v 1.6 1997/05/04 21:31:56 twitham Rel1_3 $
  *
  * Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -83,7 +83,6 @@ open_sound_card(int dma)
     cleanup();
     exit(1);
   }
-  reset_sound_card(44000, 2, 8);
   parm = dma;			/* set DMA buffer size */
   check_status(ioctl(snd, SOUND_PCM_SUBDIVIDE, &parm), __LINE__);
 }
