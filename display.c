@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 1.40 1997/05/02 05:16:36 twitham Exp $
+ * @(#)$Id: display.c,v 1.41 1997/05/03 05:39:26 twitham Exp $
  *
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -345,8 +345,7 @@ draw_data()
     if ((i = samples[0]) != (j = samples[1])) /* avoid divide by zero: */
       delay = 100 + (j - scope.trig + 128) * 44000 * scope.scale
 	/ ((j - i) * mem[k].rate); /* y=mx+b  so  x=(y-b)/m */
-    if ((delay < 100) || (delay > (100 + 44000
-				   / mem[k].rate * scope.scale)))
+    if (delay < 100 || delay > h_points - 200)
       delay = old;
   } else			/* no trigger, leave delay as it was */
     delay = old;
