@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: func.c,v 1.12 1996/08/06 04:56:42 twitham Exp $
+ * @(#)$Id: func.c,v 1.13 1996/10/04 04:52:33 twitham Rel1_2 $
  *
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -304,7 +304,7 @@ cleanup_math()
   int i;
 
   for (i = 0 ; i < 26 ; i++) {
-    free(mem[i]);
+    if (mem[i]) free(mem[i]);
   }
   EndFFT();
 }

@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: gr_sx.c,v 1.5 1996/04/21 02:32:06 twitham Rel1_1 $
+ * @(#)$Id: gr_sx.c,v 1.6 1996/10/04 04:53:05 twitham Exp $
  *
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -218,12 +218,12 @@ cleanup_x11()
 
   for (i = 0 ; i < (funccount > 19 ? funccount - 4 : 16) ; i++) {
     if (i < funccount - 4)
-      free(math[i]);
-    free(intarray[i]);
+      if (math && math[i]) free(math[i]);
+    if (intarray && intarray[i]) free(intarray[i]);
   }
-  free(math);
-  free(intarray);
-  FreeFont(font);
+  if (math) free(math);
+  if (intarray) free(intarray);
+  if (font) FreeFont(font);
 }
 
 /* set current state colors, labels, and check marks on widgets */
