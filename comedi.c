@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: comedi.c,v 1.2 2003/06/19 07:20:59 baccala Exp $
+ * @(#)$Id: comedi.c,v 1.3 2003/06/25 06:38:14 baccala Exp $
  *
  * Author: Brent Baccala <baccala@freesoft.org>
  *
@@ -151,17 +151,22 @@ static int start_comedi_running(void)
   struct capture *capture;
   comedi_range *comedi_rng;
 
-  if (!comedi_dev || active_channels == 0) return 0;
+  if (!comedi_dev) return 0;
 
   /* There might have been an error condition that was cleared (like
    * switching from an unsupported subdevice to a supported one), so
    * clear comedi_error here and set it if there's a problem later.
+   * If we're not capturing anything, make sure we set subdevice_type
+   * before we return, because nchans() depends on this variable to
+   * figure out how to interpret comedi_get_n_channels()
    */
 
   comedi_error = 0;
 
   subdevice_flags = comedi_get_subdevice_flags(comedi_dev, comedi_subdevice);
   subdevice_type = comedi_get_subdevice_type(comedi_dev, comedi_subdevice);
+
+  if (active_channels == 0) return 0;
 
   if (comedi_bufsize > 0) {
     /* comedi 0.7.66 has a bug in its buffer size handling.  Not only
@@ -487,14 +492,25 @@ reset_comedi(void)
 
 static int nchans(void)
 {
-  /* XXX unclear if subdevice_type has been set correctly when we get here */
+  int chans;
+  int i;
 
   if (! comedi_opened) open_comedi();
+
+  /* open_comedi() calls start_comedi_running() just before it
+   * returns, so that's how we know subdevice_type has been set
+   * correctly when we get here.  However, I really don't know if
+   * open_comedi() SHOULD call start_comedi_running() at all, so we
+   * may need to revisit this.
+   */
 
   if (comedi_dev == NULL) {
     return 0;
   } else if (subdevice_type == COMEDI_SUBD_AI) {
-    return comedi_get_n_channels(comedi_dev, comedi_subdevice);
+    /* analog subdevice - mark all channels analog and return num of chans */
+    chans = comedi_get_n_channels(comedi_dev, comedi_subdevice);
+    for (i = 0; i < chans; i ++) comedi_chans[i].bits = 0;
+    return chans;
   } else {
     /* digital subdevice - n_channels returns number of bits */
     comedi_chans[0].bits = comedi_get_n_channels(comedi_dev, comedi_subdevice);

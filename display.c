@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 1.70 2003/06/20 19:51:32 baccala Exp $
+ * @(#)$Id: display.c,v 1.71 2003/06/25 06:38:15 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -679,10 +679,11 @@ draw_data()
       /* XXX make sure that if we're displaying a digital signal,
        * we go into digital display mode.  Should be elsewhere.
        */
-
+#if 0
       if (p->bits == 0 && p->signal->bits != 0) {
 	p->bits = p->signal->bits;
       }
+#endif
 
       if (!p->bits)		/* analog display mode: draw one line */
 	start = end = -1;
