@@ -1,7 +1,7 @@
 /*
- * @(#)$Id: config.h,v 1.11 1999/08/27 04:17:25 twitham Rel $
+ * @(#)$Id: config.h,v 1.12 2000/03/05 23:03:51 twitham Rel $
  *
- * Copyright (C) 1996 - 1999 Tim Witham <twitham@quiknet.com>
+ * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
  * (see the files README and COPYING for more details)
  *
@@ -34,8 +34,8 @@
 /* maximum screen width, also max number of samples in memory at once (1600) */
 #define MAXWID		1600
 
-/* As-of version 1.5, this is used only by DOS.  If you see strange
-   "glitches" at the left edge of the screen, increase this (32) */
+/* The first few samples after a reset seem invalid.  If you see
+   strange "glitches" at the left edge of the screen, increase this (32) */
 #define SAMPLESKIP	32
 
 /* maximum samples to discard at each pass if we have too many (16384) */
@@ -56,7 +56,7 @@
 /* text background color (color[0]) */
 #define TEXT_BG		color[0]
 
-/* minimum number of milliseconds between refresh on X11 version (30) */
+/* minimum number of milliseconds between refresh on libsx version (30) */
 #define MSECREFRESH	30
 /* a lower number here can increase refresh rate but at the expense of
    interactive response time as the X server becomes too busy */

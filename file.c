@@ -1,7 +1,7 @@
 /*
- * @(#)$Id: file.c,v 1.15 1999/08/27 04:09:18 twitham Rel $
+ * @(#)$Id: file.c,v 1.16 2000/03/05 23:03:45 twitham Rel $
  *
- * Copyright (C) 1996 - 1999 Tim Witham <twitham@quiknet.com>
+ * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
  * (see the files README and COPYING for more details)
  *
@@ -148,8 +148,8 @@ handle_opt(int opt, char *optarg)
 	  s->mem = *q;
 	} else {
 	  s->func = FUNCEXT;
-	  strcpy(ch[opt - '1'].command, q);
-	  if ((p = strchr(ch[opt - '1'].command, '\n')) != NULL)
+	  strcpy(s->command, q);
+	  if ((p = strchr(s->command, '\n')) != NULL)
 	    *p = '\0';
 	  s->mem = EXTSTART;
 	}

@@ -1,6 +1,6 @@
-# @(#)$Id: Makefile,v 1.23 2000/02/26 08:19:16 twitham Exp $
+# @(#)$Id: Makefile,v 1.24 2000/03/05 23:03:58 twitham Rel $
 
-# Copyright (C) 1996 - 1999 Tim Witham <twitham@quiknet.com>
+# Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
 
 # (see the files README and COPYING for more details)
 
@@ -11,22 +11,22 @@ SCOPES	= oscope xoscope
 MISC	= -lvgamisc
 
 # !! uncomment this line if you don't want console-based oscope
-SCOPES	= xoscope
+# SCOPES	= xoscope
 
 # !! uncomment this line if you don't have GTK or libsx or don't want xoscope
 # SCOPES	= oscope
 
 # !! uncomment these lines if you don't have libvgamisc from the g3vga package
-# DFLAGS	= -DNOVGAMISC
-# MISC	=
+DFLAGS	= -DNOVGAMISC
+MISC	=
 
-# we'll assume you're using /dev/dsp, but...
-ESDCFLAGS=
-ESDLDFLAGS=
-
-# !! uncomment these lines if you want to use ESD instead of /dev/dsp
+# !! we'll assume you want both EsounD and /dev/dsp support, but...
 ESDCFLAGS	= -DESD=44100
 ESDLDFLAGS	= -lesd
+
+# !! uncomment these lines if you don't have EsounD, to support /dev/dsp only
+# ESDCFLAGS	=
+# ESDLDFLAGS	=
 
 # !! base prefix of where to install
 PREFIX	= /usr/local
@@ -55,17 +55,15 @@ CC	= gcc
 COMMON	= '-DLIBPATH="$(LIBPATH)"' '-DVER="$(VER)"' $(ESDCFLAGS)\
 	'-DPROBESCOPE="$(PROBESCOPE)"' $(DFLAGS) -Wall -m486 -O3
 
-# !! uncomment this to use GTK+ instead of libsx for xoscope
-GTKCFLAGS = `gtk-config --cflags`
-CFLAGS = $(COMMON) $(GTKCFLAGS)
-GTKLDFLAGS = `gtk-config --libs`
-XFLAGS = $(GTKLDFLAGS)
+# !! we'll assume you want to use GTK+ to build xoscope, but...
+CFLAGS = $(COMMON) `gtk-config --cflags`
+XFLAGS = $(GTKLDFLAGS) `gtk-config --libs`
 X_OBJ	= $(GTK_OBJ)
 XY_OBJ	= com_gtk.o xy_gtk.o
 
-# !! uncomment this to use libsx instead of GTK+ for xoscope
+# !! uncomment this to use libsx instead of GTK+ to build xoscope
 # CFLAGS	= $(COMMON)
-# XFLAGS	= -L/usr/X11/lib -lsx -lXaw -lXt -lX11
+# XFLAGS	= -L/usr/X11R6/lib -lsx -lXaw -lXt -lX11
 # X_OBJ	= $(SX_OBJ)
 # XY_OBJ	= xy_sx.o
 
@@ -94,7 +92,7 @@ LDFLAGS	= -s $(ESDLDFLAGS) $(DFLAGS)
 # nothing should need changed below here
 ############################################################
 
-VER	= 1.5.3
+VER	= 1.6
 SRC	= oscope.c file.c func.c fft.c realfft.c display.c proscope.c
 VGA_SRC = $(SRC) sc_linux.c ser_unix.c gr_com.c gr_vga.c
 SX_SRC	= $(SRC) sc_linux.c ser_unix.c gr_com.c gr_sx.c freq.c dirlist.c

@@ -1,7 +1,7 @@
 /*
- * @(#)$Id: oscope.h,v 1.31 1999/08/27 04:08:14 twitham Rel $
+ * @(#)$Id: oscope.h,v 1.32 2000/03/05 23:04:06 twitham Rel $
  *
- * Copyright (C) 1996 - 1999 Tim Witham <twitham@quiknet.com>
+ * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
  * (see the files README and COPYING for more details)
  *
@@ -29,20 +29,20 @@ extern char *filename;
 extern int snd;
 
 typedef struct Scope {		/* The oscilloscope */
-  unsigned int mode;
-  unsigned int size;
-  unsigned int dma;
-  unsigned int run;
-  unsigned int scale;
-  unsigned int div;
-  unsigned int rate;
-  unsigned int grat;
-  unsigned int behind;
-  unsigned int color;
-  unsigned int select;
-  unsigned int trigch;
-  unsigned int trige;
-  unsigned int verbose;
+  int mode;
+  int size;
+  int dma;
+  int run;
+  int scale;
+  int div;
+  int rate;
+  int grat;
+  int behind;
+  int color;
+  int select;
+  int trigch;
+  int trige;
+  int verbose;
   short trig;
 } Scope;
 extern Scope scope;
@@ -83,3 +83,4 @@ void	init_channels();
 void	loadfile();
 void	savefile();
 void	startcommand();
+void	resetsoundcard();

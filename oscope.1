@@ -1,16 +1,16 @@
-.\" @(#)$Id: oscope.1,v 1.16 1999/08/27 04:17:46 twitham Rel $
+.\" @(#)$Id: oscope.1,v 1.17 2000/03/05 23:04:16 twitham Rel $
 .\"
-.\" Copyright (C) 1996 - 1999 Tim Witham <twitham@quiknet.com>
+.\" Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
 .\"
 .\" (see the files README and COPYING for more details)
 
-.TH OSCOPE 1 "August  27  1999" "Linux" "User Commands"
+.TH OSCOPE 1 "February  29  2000" "Linux" "User Commands"
 .SH NAME
 oscope xoscope \- Digital Oscilloscope via Sound Card and/or ProbeScope/osziFOX
 .SH SYNOPSIS
 oscope [oscope options] [file]
 .br
-xoscope [X toolkit options] [oscope options] [file]
+xoscope [toolkit options] [oscope options] [file]
 
 .SH DESCRIPTION
 
@@ -29,6 +29,12 @@ labeled as such.
 has no physical control over the ProbeScope/osziFOX which is
 controlled by its' own switches and built-in menus.  Please refer to
 your ProbeScope or osziFOX Owner's Manual for operating instructions.
+.P
+.B Oscope
+can be built with EsounD (Enlightened Sound Daemon) support for
+sharing a sound device among programs or over the network.  See the
+.B ENVIRONMENT
+section below for more details.
 
 .PP
 .SH "RUN\-TIME KEYBOARD CONTROLS"
@@ -78,6 +84,16 @@ Toggle the sound card input device on/off.
 Cycle the sound card DMA divisor: 4, 2, 1.  The sound driver will
 divide it's DMA buffer by this factor.  The value 4 usually gives the
 fastest display rate.
+
+Under EsounD, this value instead determines whether the connection to
+EsounD will block (4) or not (2 or 1).  Blocking mode is nicest to CPU
+usage but the
+.B oscope
+interface will not respond when the there is no sound stream coming
+from EsounD.  Nonblocking mode will let
+.B oscope
+be responsive whether sound is available or not, but will consume all
+available CPU cycles.
 
 .TP 0.5i
 .B (/)
@@ -184,9 +200,11 @@ buffers are available for signal memory.
 .PP
 .SH "MOUSE CONTROLS"
 .B Xoscope
-adds mouse controls around the edges of the scope area.  These are
-should be almost self-explanatory.  They perform the same functions as
-the equivalent keyboard commands above.
+adds mouse controls to menus or around the edges of the scope area.
+These should be nearly self-explanatory.  They perform the same
+functions as the equivalent keyboard commands above.  If built with
+GTK+, context-sensitive pop-up menus are available to select channels,
+change scale and position, recall and store signals and so on.
 
 .PP
 .SH "COMMAND\-LINE OPTIONS"
@@ -353,7 +371,16 @@ ProbeScope is found here, some known serial devices are checked.  If
 unset, "/dev/probescope" is used.  /dev/probescope could be a symbolic
 link to the real device such as /dev/ttyS1.
 
+.TP 0.5i
+.B ESPEAKER
+The host:port of the EsounD to connect to if built with EsounD
+support.  If unset, localhost is assumed.  If no EsounD connection is
+made or if there is no EsounD support compiled in, then
+.B oscope
+will try to read /dev/dsp directly.
+
 .SH LIMITATIONS
+
 The sound card should be capable of 44100 Hz sampling via the sound
 drivers.  You must use an external mixer program to select the input
 source device, level, etc.  Since these unknowns affect the amplitude,
@@ -361,11 +388,13 @@ there is no reference to voltage on the Y axis; it is in fact,
 unknown.  Instead you're given the scale in pixels per sample unit.
 Note that the ProbeScope/osziFOX doesn't have this limitation.
 ProbeScope signals have a real voltage label on the Y axis.
+.P
 
 Signal math is only valid if Channel 1 and 2 contain signals of the
 same sampling rate.
 .B It is up to you to make sure this is the case.  Doing math on signals
 .B of different sample rates will produce incorrect results!
+.P
 
 The automatic measurements count zero crossings and divide to
 determine the frequency and period.  If these zero crossings are not
@@ -373,10 +402,12 @@ determine the frequency and period.  If these zero crossings are not
 .B Oscope
 does understand how to measure the built-in FFT functions by locating
 the peak frequency.
+.P
 
 Your sound card is most-likely AC coupled so you will never see any DC
 offset.  You probably can't get DC coupling by just shorting the input
 capacitors on your sound card.  Use ProbeScope to see DC offsets.
+.P
 
 The display may not be able to keep up if you give it too much to
 plot, depending on your sound card, graphics card, and processor
@@ -385,6 +416,7 @@ kernel must then split the available CPU cycles across multiple
 processes.  To maximize refresh speed, hide all unneeded channels, use
 point or point accumulate mode, zoom in on Sec/Div as much as
 possible, and turn off the graticule.
+.P
 
 Because it uses svgalib,
 .B oscope
@@ -393,7 +425,7 @@ must be run as root or be setuid to root.
 doesn't have this restriction.
 
 .SH BUGS
-Probably.
+Possibly.
 
 .SH AUTHOR
 .B Oscope
