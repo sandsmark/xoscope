@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 1.43 1997/05/24 23:27:28 twitham Exp $
+ * @(#)$Id: display.c,v 1.44 1997/05/28 05:55:52 twitham Exp $
  *
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -26,9 +26,9 @@ void	clear_display();
 void	SyncDisplay();
 void	AddTimeOut();
 
-int triggered = 0;		/* whether we've triggered or not */
-int data_good = 1;		/* whether data may be "stale" or not */
-void *font;
+int	triggered = 0;		/* whether we've triggered or not */
+int	data_good = 1;		/* whether data may be "stale" or not */
+void	*font;
 
 /* how to convert text column (0-79) to graphics position */
 int
@@ -91,17 +91,24 @@ draw_text(int all)
     if (scope.verbose) {
       vga_write("(Esc)", 0, 0, font, KEY_FG, TEXT_BG, ALIGN_LEFT);
       vga_write("Quit", col(5), 0, font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
-      vga_write(progname,  col(12), 0, font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
+      vga_write(progname,  100, 0, font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
 
       vga_write("(@)", col(2), row(1), font, KEY_FG, TEXT_BG, ALIGN_LEFT);
-      vga_write("Load   ver:", col(5), row(1),
+      vga_write("Load", col(5), row(1),
 		font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
-      vga_write(version,  col(16), row(1), font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
+
+      sprintf(string, "ver: %s", version);
+      vga_write(string,  100, row(1), font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
 
       vga_write("(#)", col(2), row(2), font, KEY_FG, TEXT_BG, ALIGN_LEFT);
       vga_write("Save", col(5), row(2), font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
+
       sprintf(string, "%d x %d", h_points, v_points);
-      vga_write(string, col(12), row(2), font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
+      vga_write(string, 100, row(2), font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
+
+      vga_write("(%)", col(2), row(3), font, KEY_FG, TEXT_BG, ALIGN_LEFT);
+      sprintf(string, "ProbeScope %s", ps.found ? "On" : "Off");
+      vga_write(string, col(5), row(3), font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
 
       vga_write("(Enter)", col(70), 0, font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
       vga_write("Refresh", col(77), 0, font, TEXT_FG, TEXT_BG, ALIGN_RIGHT);
@@ -121,7 +128,7 @@ draw_text(int all)
 		font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
       vga_write("Color", col(75), row(3), font, TEXT_FG, TEXT_BG, ALIGN_RIGHT);
 
-      vga_write("(!)", 100, 62, font, KEY_FG, TEXT_BG, ALIGN_LEFT);
+      vga_write("(!)", 100, 62, font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
       vga_write("(space)", h_points - 100 - 8 * 4, 62,
 		font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
 
@@ -134,8 +141,7 @@ draw_text(int all)
     sprintf(string, "%s Trigger @ %d", trigs[scope.trige], scope.trig - 128);
     vga_write(string, col(40), row(2),
 	      font, ch[scope.trigch].color, TEXT_BG, ALIGN_CENTER);
-    vga_write(strings[scope.mode],
-	      100 + 8 * 3, 62, font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
+    vga_write(strings[scope.mode], 100, 62, font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
     vga_write(scope.run ? (scope.run > 1 ? "WAIT" : " RUN") : "STOP",
 	      h_points - 100, 62, font, TEXT_FG, TEXT_BG, ALIGN_RIGHT);
 
@@ -161,7 +167,7 @@ draw_text(int all)
 		  font, k, TEXT_BG, ALIGN_CENTER);
 
 	vga_write(funcnames[ch[i].func], col(69 * (i / 4)), row(j + 3),
-		  font, ch[i].func < 2 ? ch[i].signal->color : k,
+		  font, ch[i].func < FUNCEXT ? ch[i].signal->color : k,
 		  TEXT_BG, ALIGN_LEFT);
 
 	if (ch[i].func == FUNCMEM) {
@@ -186,20 +192,20 @@ draw_text(int all)
       vga_write(p->show ? "Visible" : "HIDDEN ", col(5), row(25),
 		font, p->color, TEXT_BG, ALIGN_LEFT);
 
-      vga_write("({)        (})", 0, row(26), font,KEY_FG, TEXT_BG, ALIGN_LEFT);
-      vga_write("Scale", col(4), row(26), font, p->color, TEXT_BG, ALIGN_LEFT);
+      vga_write("({)     (})", 0, row(26), font,KEY_FG, TEXT_BG, ALIGN_LEFT);
+      vga_write("Scale", col(3), row(26), font, p->color, TEXT_BG, ALIGN_LEFT);
 
-      vga_write("([)        (])", 0, row(27), font, KEY_FG, TEXT_BG,ALIGN_LEFT);
-      vga_write("Position", col(3), row(27), font, p->color,TEXT_BG,ALIGN_LEFT);
+      vga_write("([)     (])", 0, row(27), font, KEY_FG, TEXT_BG,ALIGN_LEFT);
+      vga_write("Pos.", col(3), row(27), font, p->color,TEXT_BG,ALIGN_LEFT);
 
       sprintf(string, "DMA:%d", scope.dma);
       vga_write(string, col(3), row(28), font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
 
-      vga_write("(9)(()                      ())(0)", col(40), row(26),
+      vga_write("(9)(()                       ())(0)", col(40), row(26),
 		font, KEY_FG, TEXT_BG, ALIGN_CENTER);
 
-      vga_write("(A-Z)", col(72), row(27), font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
-      vga_write("Store", col(77), row(27),
+      vga_write("(A-Z)", col(73), row(27), font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
+      vga_write("Store", col(78), row(27),
 		font, p->color, TEXT_BG, ALIGN_RIGHT);
 
       if (scope.select > 1) {
@@ -213,9 +219,9 @@ draw_text(int all)
 		  font, p->color, TEXT_BG, ALIGN_RIGHT);
       }
 
-      vga_write("(a-z)", col(72), row(28),
+      vga_write("(a-z)", col(73), row(28),
 		font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
-      vga_write("Recall", col(78), row(28),
+      vga_write("Recall", col(79), row(28),
 		font, p->color, TEXT_BG, ALIGN_RIGHT);
 
       vga_write("(", col(26), row(28), font, KEY_FG, TEXT_BG, ALIGN_LEFT);
@@ -229,14 +235,36 @@ draw_text(int all)
 	    scope.scale, scope.div);
     vga_write(string, col(40), row(26), font, p->color, TEXT_BG, ALIGN_CENTER);
 
-    sprintf(string, "%d Hz/div FFT", scope.div * p->signal->rate
-	    * p->signal->rate / 880000 / scope.scale);
+    sprintf(string, "%d Hz/div FFT", scope.div * p->signal->rate / 1000
+	    * p->signal->rate / 880 / scope.scale);
     vga_write(string, col(40), row(27), font, p->color, TEXT_BG, ALIGN_CENTER);
 
     for (i = 0 ; i < 26 ; i++) {
       sprintf(string, "%c", i + 'a');
       vga_write(string, col(27 + i), row(28),
 		font, mem[i].color, TEXT_BG, ALIGN_LEFT);
+    }
+
+    if (ps.found) {		/* ProbeScope on ? */
+      sprintf(string, "%d.%d V/div", ps.volts / 10, ps.volts % 10);
+      vga_write(string, 100, row(25), font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
+
+      vga_write(ps.trigger & PS_SINGLE ? "SINGLE" : "   RUN",
+		h_points - 100, row(25), font, TEXT_FG, TEXT_BG, ALIGN_RIGHT);
+
+      i = ps.level * (ps.trigger & PS_PEXT || ps.trigger & PS_MEXT
+		      ? 1 : ps.volts);
+      sprintf(string, "%s ~ %d.%d V", ps.trigger & PS_PINT ? "+INTERN"
+	      : ps.trigger & PS_MINT ? "-INTERN"
+	      : ps.trigger & PS_PEXT ? "+EXTERN"
+	      : ps.trigger & PS_MEXT ? "-EXTERN" : "AUTO",
+	      i / 10, i % 10);
+      vga_write(string, h_points - 100, row(27),
+		font, TEXT_FG, TEXT_BG, ALIGN_RIGHT);
+
+      if (ps.wait)
+	vga_write("WAITING!", h_points - 100, row(28),
+		  font, TEXT_FG, TEXT_BG, ALIGN_RIGHT);
     }
 
     if (all == 1)
@@ -260,7 +288,15 @@ draw_text(int all)
   if (ch[0].signal->rate != ch[1].signal->rate) {
     sprintf(string, "WARNING: math(%d,%d) is bogus!",
 	    ch[0].signal->rate, ch[1].signal->rate);
-    vga_write(string, h_points/2, row(2), font, KEY_FG, TEXT_BG, ALIGN_CENTER);
+    vga_write(string, h_points/2, 62, font, KEY_FG, TEXT_BG, ALIGN_CENTER);
+  }
+
+  if (ps.found) {		/* ProbeScope on ? */
+    sprintf(string, "%s%4.2f V %s    ", ps.flags & PS_OVERFLOW ? "/\\"
+	    : ps.flags & PS_UNDERFLOW ? "\\/ " : "",
+	    (float)ps.dvm * (float)ps.volts / 100,
+	    ps.coupling);
+    vga_write(string, 100, row(27), font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
   }
 }
 
@@ -301,7 +337,7 @@ draw_graticule()
   }
 
   /* the frame */
-  SetColor(clip ? ch[clip - 1].color : color[scope.color]);
+  SetColor(clip ? mem[clip + 22].color : color[scope.color]);
   DrawLine(100, 80, h_points - 100, 80);
   DrawLine(100, v_points - 80, h_points - 100, v_points - 80);
   DrawLine(100, 80, 100, v_points - 80);
@@ -373,11 +409,12 @@ draw_data()
 	  samples = p->signal->data + 1;
 	  l = delay;
 	}
-	if (p->func == FUNCMEM)	/* should we use the offset? */
-	  l = 100;		/* not if we're memory */
-	else if (p->func > FUNCRIGHT /* yes if we're math & 1 or 2 is */
-		 && (ch[0].func > FUNCRIGHT && ch[1].func > FUNCRIGHT))
-	  l = 100;
+	if (p->func <= FUNCRIGHT /* use the offset? */
+	    || (p->func >= FUNCEXT
+		&& (ch[0].func <= FUNCRIGHT || ch[1].func <= FUNCRIGHT)))
+	  l = l;		/* yes only if we're L or R or their math */
+	else
+	  l = 100;		/* no if we're memory or ProbeScope */
 	prev = X = Y = 0;
 	if (mode < 2)		/* point / point accumulate */
 	  for (i = 0 ; i < h_points - 100 - l ; i++) {
@@ -428,16 +465,17 @@ show_data()
 void
 animate(void *data)
 {
+  clip = 0;
+  if (ps.found) probescope();
   if (scope.run) {
     triggered = get_data();
-    probescope();
     if (triggered && scope.run > 1) {	/* auto-stop single-shot wait */
       scope.run = 0;
       draw_text(1);
     }
-    show_data();
-    data_good = 1;
   }
+  show_data();
+  data_good = 1;
   if (quit_key_pressed) {
     cleanup();
     exit(0);
