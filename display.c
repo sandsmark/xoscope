@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 1.9 1996/01/30 04:00:38 twitham Exp $
+ * @(#)$Id: display.c,v 1.10 1996/01/30 06:45:35 twitham Exp $
  *
  * Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
@@ -144,7 +144,7 @@ draw_text()
     VGA_WRITE(string, col(68), row(i*5 + 7),
 	      font, ch[i].color, TEXT_BG, ALIGN_LEFT);
   }
-  VGA_WRITE(running ? "RUN " : "STOP",
+  VGA_WRITE(scope.run ? "RUN " : "STOP",
 	    col(0), row(15), font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
   if (verbose) {
     VGA_WRITE(error,  col(0), row(0), font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
@@ -179,20 +179,20 @@ show_info(unsigned char c) {
 	    "-d %1d  %2s  %2s  %2s%s",
 	    c, actual,
 	    channels == 1 ? "-1" : "-2",
-	    sampling, scope.scale, trigger, colour, mode, dma,
+	    scope.rate, scope.scale, scope.trig, scope.color, mode, dma,
 	    point_mode ? "-p" : "-l",
 
 	    /* reverse logic if these booleans are on by default in scope.h */
 #if DEF_G
-	    graticule ? "" : "-g",
+	    scope.grat ? "" : "-g",
 #else
-	    graticule ? "-g" : "",
+	    scope.grat ? "-g" : "",
 #endif
 
 #if DEF_B
-	    behind ? "" : "-b",
+	    scope.behind ? "" : "-b",
 #else
-	    behind ? "-b" : "",
+	    scope.behind ? "-b" : "",
 #endif
 
 #if DEF_V
@@ -212,13 +212,13 @@ draw_graticule()
 {
   static int i, j;
 
-  VGA_SETCOLOR(color[colour]);
+  VGA_SETCOLOR(color[scope.color]);
   VGA_DRAWLINE(100, 80, h_points-100, 80);
   VGA_DRAWLINE(100, v_points - 80, h_points-100, v_points - 80);
   VGA_DRAWLINE(100, 80, 100, v_points - 80);
   VGA_DRAWLINE(h_points-100, 80, h_points-100, v_points - 80);
 
-  if (graticule) {
+  if (scope.grat) {
 
     /* cross-hairs every 5 x 4 divisions */
     for (i = 320 ; i < h_points - 100 ; i += 220) {
@@ -243,8 +243,8 @@ draw_graticule()
       }
     }
     /* a tick mark where the trigger level is */
-    if (trigger > -1) {
-      i = offset + trigger + ch[0].pos - 128;
+    if (scope.trig > -1) {
+      i = offset + scope.trig + ch[0].pos - 128;
       VGA_DRAWLINE(100, i, 110, i);
     }
   }
@@ -257,45 +257,43 @@ draw_data()
   static int i, j, off;
   static Signal *p;
 
-  if (point_mode < 2) {
+  if (point_mode < 2) {		/* point / point accumulate */
     for (j = 0 ; j < channels ; j++) {
       p = &ch[j];
       off = offset + p->pos;
       VGA_SETCOLOR(p->color);
-      VGA_DRAWLINE(90, off, 100, off);
       for (i = 0 ; i <= (h_points - 200) / scope.scale ; i++) {
-	if (point_mode == 0) {
-	  VGA_SETCOLOR(color[0]);	/* erase previous dot */
-	  VGA_DRAWPIXEL(i * scope.scale + 100,
-			off + p->old[i]);
+	if (point_mode == 0) {	/* erase previous dots */
+	  VGA_SETCOLOR(color[0]);
+	  VGA_DRAWPIXEL(i * scope.scale + 100, off + p->old[i] * p->scale);
+	  VGA_SETCOLOR(p->color); /* draw dots */
 	}
-	VGA_SETCOLOR(p->color); /* draw dot */
-	VGA_DRAWPIXEL(i * scope.scale + 100,
-		      off + p->data[i]);
+	VGA_DRAWPIXEL(i * scope.scale + 100, off + p->data[i] * p->scale);
 	p->old[i] = p->data[i];
       }
+      VGA_DRAWLINE(90, off, 100, off);
     }
-  } else {			/* line mode, a little slower */
+  } else {			/* line / line accumulate */
     for (j = 0 ; j < channels ; j++) {
       p = &ch[j];
       off = offset + p->pos;
       VGA_SETCOLOR(p->color);
-      VGA_DRAWLINE(90, off, 100, off);
-      for (i = 0 ; i <= (h_points - 200) / scope.scale - 1 ; i++) {
-	if (point_mode == 2) {
-	  VGA_SETCOLOR(color[0]);	/* erase previous line */
+      for (i = 0 ; i < (h_points - 200) / scope.scale ; i++) {
+	if (point_mode == 2) {	/* erase previous lines */
+	  VGA_SETCOLOR(color[0]);
 	  VGA_DRAWLINE(i * scope.scale + 100,
-		       off + p->old[i],
-		       i * scope.scale + scope.scale + 100,
-		       off + p->old[i + 1]);
+		       off + p->old[i] * p->scale,
+		       i * scope.scale + 100 + scope.scale,
+		       off + p->old[i + 1] * p->scale);
+	  VGA_SETCOLOR(p->color); /* draw lines */
 	}
-	VGA_SETCOLOR(p->color); /* draw line */
 	VGA_DRAWLINE(i * scope.scale + 100,
-		     off + p->data[i],
-		     i * scope.scale + scope.scale + 100,
-		     off + p->data[i + 1]);
+		     off + p->data[i] * p->scale,
+		     i * scope.scale + 100 + scope.scale,
+		     off + p->data[i + 1] * p->scale);
 	p->old[i] = p->data[i];
       }
+      VGA_DRAWLINE(90, off, 100, off);
       p->old[i] = p->data[i];
     }
   }
@@ -308,15 +306,14 @@ draw_data()
 static inline void
 animate(void *data)
 {
-  if (running) {
+  if (scope.run)
     get_data();
-    if (behind) {
-      draw_graticule();		/* plot data on top of graticule */
-      draw_data();
-    } else {
-      draw_data();		/* plot graticule on top of data */
-      draw_graticule();
-    }
+  if (scope.behind) {
+    draw_graticule();		/* plot data on top of graticule */
+    draw_data();
+  } else {
+    draw_data();		/* plot graticule on top of data */
+    draw_graticule();
   }
 #ifdef XSCOPE
   if (quit_key_pressed) {

@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.h,v 1.7 1996/01/28 23:41:31 twitham Exp $
+ * @(#)$Id: oscope.h,v 1.8 1996/01/30 06:45:42 twitham Exp $
  *
  * Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
@@ -17,7 +17,7 @@
 #endif
 
 /* program defaults for the command-line options */
-#define DEF_12 4		/* -1/-2: 1=single channel, 2=dual channels */
+#define DEF_12 2		/* -1/-2: 1=single channel, 2=dual channels */
 #define DEF_R 44000		/* -r: 5000 - 44100 works for SoundBlaster */
 #define DEF_S 1			/* -s: 1, 2, 4, 8, 16 */
 #define DEF_T 128		/* -t: 0 - 255 or -1 = disabled, 128 = center */
@@ -42,7 +42,7 @@
 #define CHANNELS 4
 
 /* initial colors of the channels */
-#define CHANNELCOLOR	{2,3,5,14}
+#define CHANNELCOLOR	{2,3,5,6}
 
 /* text foreground color */
 #define TEXT_FG		color[2]
@@ -52,20 +52,14 @@
 
 /* global program variables */
 extern int channels;
-extern int sampling;
-extern int trigger;
-extern int colour;
 extern int mode;
 extern int dma;
 extern int point_mode;
-extern int graticule;
-extern int behind;
 extern int verbose;
 extern char *progname;
 extern char error[256];
 extern char *def[];
 extern int quit_key_pressed;
-extern int running;
 extern int snd;
 extern char buffer[MAXWID * 2];
 extern char junk[SAMPLESKIP];
@@ -76,25 +70,22 @@ extern int actual;
 
 
 typedef struct Scope {		/* The oscilloscope */
+  short run;
   int scale;
-  int pos;
   int rate;
-  unsigned char trigpos;
-  unsigned char trigtype;
-  unsigned char graticule;
-  unsigned char run;
-  unsigned char gcolor;
-  unsigned char tcolor;
+  short trig;
+  short grat;
+  short behind;
+  short color;
 } Scope;
 extern Scope scope;
 
-typedef struct Signal {		/* Signals (channels) */
-  char data[MAXWID];
-  char old[MAXWID];
-  int scale;
-  int pos;
-  int mode;
-  int color;
+typedef struct Signal {		/* The signals (channels) */
+  short data[MAXWID];
+  short old[MAXWID];
+  short scale;
+  short pos;
+  short color;
 } Signal;
 extern Signal ch[CHANNELS];
 

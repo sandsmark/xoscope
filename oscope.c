@@ -5,7 +5,7 @@
  *
  * [x]scope --- Use Linux's /dev/dsp (a sound card) as an oscilloscope
  *
- * @(#)$Id: oscope.c,v 1.31 1996/01/29 04:38:17 twitham Exp $
+ * @(#)$Id: oscope.c,v 1.32 1996/01/30 06:45:27 twitham Exp $
  *
  * Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
@@ -62,10 +62,6 @@
 Scope scope;
 Signal ch[CHANNELS];
 int channels = DEF_12;
-int sampling = DEF_R;
-int scale = DEF_S;
-int trigger = DEF_T;
-int colour = DEF_C;
 int mode = DEF_M;
 int dma = DEF_D;
 int point_mode = DEF_PL;
@@ -85,10 +81,9 @@ char *def[] = {
   "signal",
 };
 int quit_key_pressed = 0;	/* set by handle_key() */
-int running = 1;		/* running or stopped */
 int snd;			/* file descriptor for sound device */
-char buffer[MAXWID * 2]; /* buffer for sound data */
-char junk[SAMPLESKIP];	/* junk buffer */
+char buffer[MAXWID * 2];	/* buffer for sound data */
+char junk[SAMPLESKIP];		/* junk data buffer */
 int v_points;			/* points in vertical axis */
 int h_points;			/* points in horizontal axis */
 int offset;			/* vertical offset */
@@ -102,16 +97,18 @@ void
 usage()
 {
   fprintf(stderr, "usage: %s "
-	  "[-1|-2] [-r<rate>] [-s<scale>] [-t<trigger>] [-c<colour>]
+	  "[-1|-2|-3|-4] [-r<rate>] [-s<scale>] [-t<trigger>] [-c<colour>]
              [-m<mode>] [-d<dma divisor>] [-f font] [-p|-l] [-g] [-b] [-v]
 
 Options          Runtime Keys   Description (defaults)
--1               1      toggle  Single channel, opposite of -2  %s
--2               2      toggle  Dual   channel, opposite of -1  %s
--r <rate>        R +10%% r -10%%  sampling Rate in Hz             (default=%d)
+-1               `       cycle  single hardware channel , left  input  %s
+-2               `       cycle  dual   hardware channels, right input  %s
+-3               `       cycle  Three channel, 2 hardware + 1 software %s
+-4               `       cycle  Four  channel, 2 hardware + 2 software %s
+-r <rate>        S       auto   sampling Rate in Hz             (default=%d)
 -s <scale>       S *2   s /2    time Scale or zoom: 1,2,4,8,16  (default=%d)
--t <trigger>     T +10  t -10   Trigger level:0-255,-1=disabled (default=%d)
--c <colour>      C +1   c -1    Channel 1 trace Colour          (default=%d)
+-t <trigger>     T +8   t -8    Trigger level:0-255,-1=disabled (default=%d)
+-c <colour>      C +1   c -1    graticule Colour                (default=%d)
 -m <mode>        M +1   m -1    video mode (size): 0,1,2,3,4,5,6(default=%d)
 -d <dma divisor> D *2   d /2    DMA buffer size divisor: 1,2,4  (default=%d)
 -f <font name>                  The font name as-in %s
@@ -120,16 +117,19 @@ Options          Runtime Keys   Description (defaults)
 -g               G  g   toggle  turn %s Graticule of 5 msec major divisions
 -b               B  b   toggle  %s Behind instead of in front of %s
 -v               V  v   toggle  turn %s Verbose keypress option log to stdout
-                 <space>        pause the display until another key is pressed
+                 <space>toggle  Run / Stop
                  Q q            Quit %s
 ",
 	  progname,
-	  def[!(channels - 1)], def[channels - 1],
-	  sampling, scope.scale, trigger,
-	  colour, mode, dma,
+	  def[channels == 1],
+	  def[channels == 2],
+	  def[channels == 3],
+	  def[channels == 4],
+	  scope.rate, scope.scale, scope.trig,
+	  scope.color, mode, dma,
 	  fonts(),		/* the font method for the display */
 	  def[point_mode], def[!point_mode],
-	  def[graticule + 2], def[behind + 4], def[!behind + 4],
+	  def[scope.grat + 2], def[scope.behind + 4], def[!scope.behind + 4],
 	  def[verbose + 2],
 	  progname);
   exit(1);
@@ -151,7 +151,7 @@ parse_args(int argc, char **argv)
       channels = c - '0';
       break;
     case 'r':			/* sample rate */
-      sampling = strtol(optarg, NULL, 0);
+      scope.rate = strtol(optarg, NULL, 0);
       break;
     case 's':			/* scale (zoom) */
       scope.scale = strtol(optarg, NULL, 0);
@@ -160,11 +160,11 @@ parse_args(int argc, char **argv)
 	scope.scale = 1;
       break;
     case 't':			/* trigger level */
-      trigger = strtol(optarg, NULL, 0);
-      trigger &= 0x00ff;
+      scope.trig = strtol(optarg, NULL, 0);
+      scope.trig &= 0x00ff;
       break;
     case 'c':			/* channel 1 trace colour */
-      colour = strtol(optarg, NULL, 0);
+      scope.color = strtol(optarg, NULL, 0);
       break;
     case 'm':			/* video mode */
       mode = strtol(optarg, NULL, 0);
@@ -183,10 +183,10 @@ parse_args(int argc, char **argv)
       point_mode = 0;
       break;
     case 'g':			/* graticule on/off */
-      graticule = !graticule;
+      scope.grat = !scope.grat;
       break;
     case 'b':			/* behind/front */
-      behind = !behind;
+      scope.behind = !scope.behind;
       break;
     case 'v':			/* verbose on/off */
       verbose = !verbose;
@@ -219,19 +219,17 @@ init_scope()
   int i;
   int channelcolor[] = CHANNELCOLOR;
   scope.scale = DEF_S;
-  scope.pos = 128;
   scope.rate = DEF_R;
-  scope.trigpos = DEF_T;
-  scope.graticule = DEF_G;
+  scope.trig = DEF_T;
+  scope.grat = DEF_G;
+  scope.behind = DEF_B;
   scope.run = 1;
-  scope.gcolor = color[4];
-  scope.tcolor = color[2];
+  scope.color = DEF_C;
   for (i = 0 ; i < CHANNELS ; i++) {
     memset(ch[i].data, 0, MAXWID);
     memset(ch[i].old, 0, MAXWID);
     ch[i].scale = 1;
     ch[i].pos = 0;
-    ch[i].mode = 0;
     ch[i].color = color[channelcolor[i]];
   }
 }
@@ -262,7 +260,7 @@ init_sound_card(int firsttime)
   check_status(ioctl(snd, SOUND_PCM_SUBDIVIDE, &dma), __LINE__);
 
   /* set sampling rate */
-  check_status(ioctl(snd, SOUND_PCM_WRITE_RATE, &sampling), __LINE__);
+  check_status(ioctl(snd, SOUND_PCM_WRITE_RATE, &scope.rate), __LINE__);
   check_status(ioctl(snd, SOUND_PCM_READ_RATE, &actual), __LINE__);
 }
 
@@ -304,30 +302,48 @@ handle_key(unsigned char c)
     ch[3].pos -= 8;
     clear();
     break;
-  case 'R':
-    sampling += sampling / 10;	/* 10% sample rate increase */
-    check_status(ioctl(snd, SOUND_PCM_SYNC, 0), __LINE__);
-    check_status(ioctl(snd, SOUND_PCM_WRITE_RATE, &sampling), __LINE__);
-    check_status(ioctl(snd, SOUND_PCM_READ_RATE, &actual), __LINE__);
+  case 'q':
+    ch[0].scale /= 2;
+    clear();
+    break;
+  case 'Q':
+    ch[0].scale *= 2;
+    clear();
+    break;
+  case 'w':
+    ch[1].scale /= 2;
+    clear();
+    break;
+  case 'W':
+    ch[1].scale *= 2;
+    clear();
+    break;
+  case 'e':
+    ch[2].scale /= 2;
+    clear();
+    break;
+  case 'E':
+    ch[2].scale *= 2;
     clear();
     break;
   case 'r':
-    sampling -= sampling / 10;	/* 10% sample rate decrease */
-    check_status(ioctl(snd, SOUND_PCM_SYNC, 0), __LINE__);
-    check_status(ioctl(snd, SOUND_PCM_WRITE_RATE, &sampling), __LINE__);
-    check_status(ioctl(snd, SOUND_PCM_READ_RATE, &actual), __LINE__);
+    ch[3].scale /= 2;
+    clear();
+    break;
+  case 'R':
+    ch[3].scale *= 2;
     clear();
     break;
   case 'S':
-    if (sampling == 8800) {
-      sampling = 22000;
+    if (scope.rate == 8800) {
+      scope.rate = 22000;
       check_status(ioctl(snd, SOUND_PCM_SYNC, 0), __LINE__);
-      check_status(ioctl(snd, SOUND_PCM_WRITE_RATE, &sampling), __LINE__);
+      check_status(ioctl(snd, SOUND_PCM_WRITE_RATE, &scope.rate), __LINE__);
       check_status(ioctl(snd, SOUND_PCM_READ_RATE, &actual), __LINE__);
-    } else if (sampling == 22000) {
-      sampling = 44000;
+    } else if (scope.rate == 22000) {
+      scope.rate = 44000;
       check_status(ioctl(snd, SOUND_PCM_SYNC, 0), __LINE__);
-      check_status(ioctl(snd, SOUND_PCM_WRITE_RATE, &sampling), __LINE__);
+      check_status(ioctl(snd, SOUND_PCM_WRITE_RATE, &scope.rate), __LINE__);
       check_status(ioctl(snd, SOUND_PCM_READ_RATE, &actual), __LINE__);
     } else 
       pscaler++;
@@ -337,17 +353,17 @@ handle_key(unsigned char c)
     clear();
     break;
   case 's':
-    if (sampling == 8800) {
+    if (scope.rate == 8800) {
 				/* average samples into each pixel */
-    } else if (sampling == 22000) {
-      sampling = 8800;
+    } else if (scope.rate == 22000) {
+      scope.rate = 8800;
       check_status(ioctl(snd, SOUND_PCM_SYNC, 0), __LINE__);
-      check_status(ioctl(snd, SOUND_PCM_WRITE_RATE, &sampling), __LINE__);
+      check_status(ioctl(snd, SOUND_PCM_WRITE_RATE, &scope.rate), __LINE__);
       check_status(ioctl(snd, SOUND_PCM_READ_RATE, &actual), __LINE__);
     } else if (pscaler == scaler) {
-      sampling = 22000;
+      scope.rate = 22000;
       check_status(ioctl(snd, SOUND_PCM_SYNC, 0), __LINE__);
-      check_status(ioctl(snd, SOUND_PCM_WRITE_RATE, &sampling), __LINE__);
+      check_status(ioctl(snd, SOUND_PCM_WRITE_RATE, &scope.rate), __LINE__);
       check_status(ioctl(snd, SOUND_PCM_READ_RATE, &actual), __LINE__);
     } else
       pscaler--;
@@ -355,30 +371,28 @@ handle_key(unsigned char c)
     clear();
     break;
   case 'T':
-    if (trigger < 0)		/* enable the trigger at half scale */
-      trigger = 118;
-    trigger += 10;		/* increase trigger */
-    if (trigger > 255)
-      trigger = -1;		/* disable trigger when it leaves the scale */
+    if (scope.trig < 0)		/* enable the trigger at half scale */
+      scope.trig = 120;
+    scope.trig += 8;		/* increase trigger */
+    if (scope.trig > 255)
+      scope.trig = -1;		/* disable trigger when it leaves the scale */
     clear();
     break;
   case 't':
-    if (trigger < 0)		/* enable the trigger at half scale */
-      trigger = 138;
-    trigger -= 10;		/* decrease trigger */
+    if (scope.trig < 0)		/* enable the trigger at half scale */
+      scope.trig = 136;
+    scope.trig -= 8;		/* decrease trigger */
     clear();
     break;
   case 'C':
-    colour++;			/* increase color */
-    if (colour > 15)
-      colour = 0;
-    clear();
+    scope.color++;			/* increase color */
+    if (scope.color > 15)
+      scope.color = 0;
     break;
   case 'c':
-    colour--;
-    if (colour < 0)		/* decrease color */
-      colour = 15;
-    clear();
+    scope.color--;
+    if (scope.color < 0)		/* decrease color */
+      scope.color = 15;
     break;
   case 'M':
     if (mode < 6) {
@@ -417,12 +431,12 @@ handle_key(unsigned char c)
     break;
   case 'G':
   case 'g':
-    graticule = !graticule;	/* graticule on/off */
+    scope.grat = !scope.grat;	/* graticule on/off */
     clear();
     break;
   case 'B':
   case 'b':
-    behind = !behind;		/* graticule behind/in front of signal */
+    scope.behind = !scope.behind; /* graticule behind/in front of signal */
     break;
   case 'V':
   case 'v':
@@ -430,12 +444,11 @@ handle_key(unsigned char c)
     draw_text();
     break;
   case ' ':
-    running = !running;
+    scope.run = !scope.run;
     draw_text();
     c = 0;			/* suppress verbose log */
     break;
-  case 'q':
-  case 'Q':			/* quit */
+  case '\e':			/* quit */
     quit_key_pressed = 1;
     break;
   default:
@@ -456,21 +469,21 @@ get_data()
 				/* flush the sound card's buffer */
   check_status(ioctl(snd, SNDCTL_DSP_RESET), __LINE__);
   read(snd, junk, SAMPLESKIP);	/* toss some possibly invalid samples */
-  if (trigger > -1) {		/* trigger enabled */
-    if (trigger > 128) {
+  if (scope.trig > -1) {		/* trigger enabled */
+    if (scope.trig > 128) {
       datum[0] = 255;		/* positive trigger, look for rising edge */
       do {
 	prev = datum[0];	/* remember prev. channel 1, read channel(s) */
 	read(snd, datum , (channels > 1) + 1);
       } while (((c++ < h_points)) &&
-	       ((datum[0] < trigger) || (prev > trigger)));
+	       ((datum[0] < scope.trig) || (prev > scope.trig)));
     } else {
-      datum[0] = 0;		/* negative trigger, look for falling edge */
+      datum[0] = 0;		/* negative scope.trig, look for falling edge */
       do {
 	prev = datum[0];	/* remember prev. channel 1, read channel(s) */
 	read(snd, datum, (channels > 1) + 1);
       } while (((c++ < h_points)) &&
-	       ((datum[0] > trigger) || (prev < trigger)));
+	       ((datum[0] > scope.trig) || (prev < scope.trig)));
     }
   }
   if (c > h_points)		/* haven't triggered within the screen */
