@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.h,v 1.11 1996/02/02 04:39:30 twitham Exp $
+ * @(#)$Id: oscope.h,v 1.12 1996/02/02 07:11:15 twitham Exp $
  *
  * Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
@@ -97,6 +97,7 @@ typedef struct Signal {		/* The signals (channels) */
   short min;
   short max;
   short time;
+  short func;
 } Signal;
 extern Signal ch[CHANNELS];
 

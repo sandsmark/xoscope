@@ -5,7 +5,7 @@
  *
  * [x]oscope --- Use Linux's /dev/dsp (a sound card) as an oscilloscope
  *
- * @(#)$Id: oscope.c,v 1.37 1996/02/02 04:39:20 twitham Exp $
+ * @(#)$Id: oscope.c,v 1.38 1996/02/02 07:10:37 twitham Exp $
  *
  * Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
@@ -56,7 +56,8 @@
 #include <sys/ioctl.h>
 #include <sys/soundcard.h>
 #include "oscope.h"		/* program defaults */
-#include "display.h"		/* display functions */
+#include "display.h"		/* display routines */
+#include "func.h"		/* signal math functions */
 
 /* global program defaults, defined in oscope.h (see also) */
 Scope scope;
@@ -218,7 +219,8 @@ init_channels()
     ch[i].scale = 5;
     ch[i].pos = 0;
     ch[i].color = color[channelcolor[i]];
-    ch[i].show = 1;
+    ch[i].show = (i < 2);
+    ch[i].func = i;
   }
 }
 
@@ -290,6 +292,15 @@ handle_key(unsigned char c)
   case 'j':
     ch[scope.select].pos += 16;
     clear();
+    break;
+  case 't':
+  case 'y':
+    if (scope.select > 1) {
+      ch[scope.select].func++;
+      if (ch[scope.select].func >= funccount)
+	ch[scope.select].func = 2;
+      clear();
+    }
     break;
   case '0':
     if (scope.rate == 8800) {
@@ -382,15 +393,15 @@ handle_key(unsigned char c)
     draw_text(1);
     c = 0;			/* suppress verbose log */
     break;
-  case '\e':		
-    quit_key_pressed = 1;	/* quit */
-    break;
   case '\r':
   case '\n':
     clear();			/* refresh screen */
     break;
   case '\b':		
     verbose = !verbose;		/* verbose on/off */
+    break;
+  case '\e':		
+    quit_key_pressed = 1;	/* quit */
     break;
   default:
     c = 0;			/* ignore unknown keys */
@@ -433,7 +444,7 @@ inline void
 get_data()
 {
   static unsigned char datum[2], prev, *buff;
-  int c = 0;
+  int i = 0;
 
 				/* flush the sound card's buffer */
   check_status(ioctl(snd, SNDCTL_DSP_RESET), __LINE__);
@@ -444,29 +455,29 @@ get_data()
       do {
 	prev = datum[0];	/* remember prev. channel 1, read channel(s) */
 	read(snd, datum, 2);
-      } while (((c++ < h_points)) &&
+      } while (((i++ < h_points)) &&
 	       ((datum[0] < scope.trig) || (prev > scope.trig)));
     } else {
       datum[0] = 0;		/* negative scope.trig, look for falling edge */
       do {
 	prev = datum[0];	/* remember prev. channel 1, read channel(s) */
 	read(snd, datum, 2);
-      } while (((c++ < h_points)) &&
+      } while (((i++ < h_points)) &&
 	       ((datum[0] > scope.trig) || (prev < scope.trig)));
     }
   }
-  if (c > h_points)		/* haven't triggered within the screen */
+  if (i > h_points)		/* haven't triggered within the screen */
     return;			/* give up and keep previous samples */
 
   /* now get the real data */
   read(snd, buffer, h_points * 2);
   buff = buffer;
-  for(c=0; c < h_points; c++) {
-    ch[0].data[c] = (int)(*buff++) - 128;
-    ch[1].data[c] = (int)(*buff++) - 128;
-    ch[2].data[c] = ch[0].data[c] + ch[1].data[c];
-    ch[3].data[c] = ch[0].data[c] - ch[1].data[c];
+  for(i=0; i < h_points; i++) {
+    ch[0].data[i] = (int)(*buff++) - 128;
+    ch[1].data[i] = (int)(*buff++) - 128;
   }
+  funcarray[ch[2].func](2);
+  funcarray[ch[3].func](3);
   measure_data(&ch[scope.select]);
 }
 

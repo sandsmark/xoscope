@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 1.15 1996/02/02 04:39:09 twitham Exp $
+ * @(#)$Id: display.c,v 1.16 1996/02/02 07:11:03 twitham Exp $
  *
  * Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
@@ -15,6 +15,7 @@
 #include <unistd.h>
 #include "oscope.h"		/* program defaults */
 #include "display.h"
+#include "func.h"
 
 /* libsx vs. svgalib drawing routines */
 #ifdef XOSCOPE
@@ -131,7 +132,7 @@ draw_text(int all)
 {
 #if defined XOSCOPE || defined HAVEVGAMISC
   static char string[81];
-  static int i, j;
+  static int i, j, k, l;
   static char *strings[] = {
     "Point",
     "Point Accum.",
@@ -139,6 +140,7 @@ draw_text(int all)
     "Line Accum."
   };
 
+  k = ch[scope.select].color;
   if (all) {			/* everything */
 
     /* above graticule */
@@ -146,8 +148,9 @@ draw_text(int all)
     VGA_WRITE("Quit", col(5), 0, font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
 
     VGA_WRITE("(Tab)", 0, row(1), font, KEY_FG, TEXT_BG, ALIGN_LEFT);
-    VGA_WRITE("Show Channel", col(5), row(1),
-	      font, ch[scope.select].color, TEXT_BG, ALIGN_LEFT);
+    sprintf(string, "Channel %d %s", scope.select + 1,
+	    ch[scope.select].show ? "Visible" : "Hidden ");
+    VGA_WRITE(string, col(5), row(1), font, k, TEXT_BG, ALIGN_LEFT);
 
     VGA_WRITE("(Enter)", col(73), 0, font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
     VGA_WRITE("Refresh", col(80), 0, font, TEXT_FG, TEXT_BG, ALIGN_RIGHT);
@@ -177,15 +180,21 @@ draw_text(int all)
     /* left of graticule */
     for (i = 0 ; i < 4 ; i++) {
       j = i * 5 + 5;
-      VGA_WRITE("Channel", 0, row(j), font, ch[i].color, TEXT_BG, ALIGN_LEFT);
+      l = ch[i].color;
+
+      VGA_WRITE("Channel", 0, row(j), font, l, TEXT_BG, ALIGN_LEFT);
       sprintf(string, "(%d)", i + 1);
       VGA_WRITE(string, col(7), row(j), font, KEY_FG, TEXT_BG, ALIGN_LEFT);
 
       sprintf(string, "Scale: %d/%d", mult[ch[i].scale], divi[ch[i].scale]);
-      VGA_WRITE(string, 0, row(j + 1), font, ch[i].color, TEXT_BG, ALIGN_LEFT);
+      VGA_WRITE(string, 0, row(j + 1), font, l, TEXT_BG, ALIGN_LEFT);
+
       sprintf(string, "Pos. : %d", -(ch[i].pos));
-      VGA_WRITE(string, 0, row(j + 2),
-		font, ch[i].color, TEXT_BG, ALIGN_LEFT);
+      VGA_WRITE(string, 0, row(j + 2), font, l, TEXT_BG, ALIGN_LEFT);
+
+      VGA_WRITE(funcnames[ch[i].func], 0, row(j + 3),
+		font, l, TEXT_BG, ALIGN_LEFT);
+
       if (scope.select == i) {
 	VGA_DRAWLINE(0, row(j), col(11), row(j));
 	VGA_DRAWLINE(col(11), row(j), col(11), row(j+4));
@@ -195,18 +204,14 @@ draw_text(int all)
 
     /* below graticule */
     VGA_WRITE("(r)", 0, row(25), font, KEY_FG, TEXT_BG, ALIGN_LEFT);
-    VGA_WRITE("   Scale Up", col(3), row(25),
-	      font, ch[scope.select].color, TEXT_BG, ALIGN_LEFT);
+    VGA_WRITE("   Scale Up", col(3), row(25), font, k, TEXT_BG, ALIGN_LEFT);
     VGA_WRITE("(f)", 0, row(26), font,KEY_FG, TEXT_BG, ALIGN_LEFT);
-    VGA_WRITE("   Scale Down", col(3), row(26),
-	      font,ch[scope.select].color, TEXT_BG, ALIGN_LEFT);
+    VGA_WRITE("   Scale Down", col(3), row(26), font,k, TEXT_BG, ALIGN_LEFT);
 
     VGA_WRITE("(u)", 0, row(27), font,KEY_FG, TEXT_BG, ALIGN_LEFT);
-    VGA_WRITE("Position Up", col(3), row(27),
-	      font,ch[scope.select].color, TEXT_BG, ALIGN_LEFT);
+    VGA_WRITE("Position Up", col(3), row(27), font,k, TEXT_BG, ALIGN_LEFT);
     VGA_WRITE("(j)", 0, row(28), font,KEY_FG, TEXT_BG, ALIGN_LEFT);
-    VGA_WRITE("Position Down", col(3), row(28),
-	      font,ch[scope.select].color, TEXT_BG, ALIGN_LEFT);
+    VGA_WRITE("Position Down", col(3), row(28), font,k, TEXT_BG, ALIGN_LEFT);
 
     VGA_WRITE("(9)               (0)", col(40), row(25),
 	      font, KEY_FG, TEXT_BG, ALIGN_CENTER);
@@ -224,15 +229,14 @@ draw_text(int all)
   }
 
   /* always draw the dynamic text */
-  sprintf(string, "%4d ,%4d ", ch[scope.select].min, ch[scope.select].max);
-  VGA_WRITE(string, col(40), row(0),
-	    font, ch[scope.select].color, TEXT_BG, ALIGN_CENTER);
-
   i = 1000000 / actual * ch[scope.select].time;
-  sprintf(string, " %5d us = %5d Hz ", i,  i > 1 ? 1000000/i : i);
-  VGA_WRITE(string, col(40), row(1),
-	    font, ch[scope.select].color, TEXT_BG, ALIGN_CENTER);
+  sprintf(string, "Period of %5d us = %5d Hz ", i,  i > 1 ? 1000000/i : i);
+  VGA_WRITE(string, col(40), row(0), font, k, TEXT_BG, ALIGN_CENTER);
   
+  sprintf(string, "Min:%4d , Max:%4d",
+	  ch[scope.select].min, ch[scope.select].max);
+  VGA_WRITE(string, col(40), row(1), font, k, TEXT_BG, ALIGN_CENTER);
+
 #endif
 }
 
@@ -351,6 +355,7 @@ draw_data()
 	  p->old[i] = p->data[i];
 	}
 	VGA_DRAWLINE(90, off, 100, off);
+	VGA_DRAWLINE(h_points - 100, off, h_points - 90, off);
       }
     }
   } else {			/* line / line accumulate */
@@ -375,6 +380,7 @@ draw_data()
 	  p->old[i] = p->data[i];
 	}
 	VGA_DRAWLINE(90, off, 100, off);
+	VGA_DRAWLINE(h_points - 100, off, h_points - 90, off);
 	p->old[i] = p->data[i];
       }
     }
