@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 1.51 1999/08/27 03:56:17 twitham Rel $
+ * @(#)$Id: display.c,v 1.52 1999/08/29 02:05:01 twitham Exp $
  *
  * Copyright (C) 1996 - 1999 Tim Witham <twitham@quiknet.com>
  *
@@ -23,7 +23,7 @@ void	fix_widgets();
 void	clear_display();
 
 int	triggered = 0;		/* whether we've triggered or not */
-int	data_good = 1;		/* whether data may be "stale" or not */
+int	erase_data = 1;		/* whether data may be "stale" or not */
 void	*font;
 
 /* how to convert text column (0-79) to graphics position */
@@ -66,7 +66,7 @@ void
 draw_text(int all)
 {
   static char string[81];
-  static int i, j, k, frames = 0;
+  static int i, j, k, rate, trige, frames = 0;
   static time_t sec, prev;
   static Channel *p;
   static char *strings[] = {
@@ -267,7 +267,7 @@ draw_text(int all)
 	      : ps.trigger & PS_PEXT ? "+EXTERN"
 	      : ps.trigger & PS_MEXT ? "-EXTERN" : "AUTO",
 	      (float)ps.level * (ps.trigger & PS_PEXT || ps.trigger & PS_MEXT
-			  ? 1.0 : (float)ps.volts) / 10);
+				 ? 1.0 : (float)ps.volts) / 10);
       vga_write(string, h_points - 100, row(27), font, j, TEXT_BG, ALIGN_RIGHT);
 
       if (ps.wait)
@@ -275,10 +275,12 @@ draw_text(int all)
 		  font, j, TEXT_BG, ALIGN_RIGHT);
     }
 
-    if (all == 1)
-      fix_widgets();
+    fix_widgets();
+    if (scope.rate != rate || scope.trige != trige)
+      erase_data = 1;		/* bogus data if user just tweaked these */
+    rate = scope.rate;
+    trige = scope.trige;
     show_data();
-    data_good = 0;		/* data may be bad if user just tweaked S/s */
     return;			/* show_data will call again to do the rest */
   }
 
@@ -395,18 +397,16 @@ void
 draw_data()
 {
   static int i, j, k, l, x, y, X, Y, mult, div, off;
-  static int mode, time, prev, delay, old = 100;
+  static int time, prev, delay, old = 100;
   static Channel *p;
   static short *samples;
-
-  mode = data_good ?  scope.mode : (scope.mode < 2 ? 0 : 2);
 
   /* interpolate a line between the sample just before and after trigger */
   if (scope.trige) {		/* to place time zero at trigger */
     samples = mem[k = scope.trigch + 23].data;
     if ((i = samples[0]) != (j = samples[1])) /* avoid divide by zero: */
-      delay = 100 + (j - scope.trig + 128) * 44000 * scope.scale
-	/ ((j - i) * mem[k].rate); /* y=mx+b  so  x=(y-b)/m */
+      delay = 100 + abs(j - scope.trig + 128) * 44000 * scope.scale
+	/ (abs(j - i) * mem[k].rate); /* y=mx+b  so  x=(y-b)/m */
     if (delay < 100 || delay > h_points - 200)
       delay = old;
   } else			/* no trigger, leave delay as it was */
@@ -417,13 +417,13 @@ draw_data()
       mult = p->mult;
       div = p->div;
       off = offset + p->pos;
-      for (k = !(mode % 2) ; k >= 0 ; k--) { /* once=accumulate, twice=erase */
+      for (k = !(scope.mode % 2) ; k >= 0 ; k--) { /* once=accum, twice=erase */
 	if (k) {		/* erase previous samples */
 	  SetColor(color[0]);
 	  samples = p->old + 1;
 	  l = old;
 	} else {		/* plot new samples */
-	  SetColor(p->color);
+	  SetColor(erase_data ? color[0] : p->color);
 	  samples = p->signal->data + 1;
 	  l = delay;
 	}
@@ -435,7 +435,7 @@ draw_data()
 	  l = 100;		/* no if we're memory or ProbeScope */
 	X = Y = 0;
 	prev = -1;
-	if (mode < 2)		/* point / point accumulate */
+	if (scope.mode < 2)	/* point / point accumulate */
 	  for (i = 0 ; i < h_points - 100 - l ; i++) {
 	    if ((time = i * (p->signal->rate / 100) * scope.div
 		 / scope.scale / 440) > prev && time < h_points)
@@ -460,6 +460,7 @@ draw_data()
       DrawLine(h_points - 100, off, h_points - 90, off);
     }
   }
+  erase_data = 0;
   old = delay;
 }
 
@@ -494,13 +495,12 @@ animate(void *data)
     }
   }
   show_data();
-  data_good = 1;
   if (quit_key_pressed) {
     cleanup();
     exit(0);
   }
   AddTimeOut(MSECREFRESH, animate, NULL);
-  return FALSE;
+  return TRUE;
 }
 
 /* [re]initialize graphics screen */
