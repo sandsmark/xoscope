@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.c,v 1.71 2000/02/26 16:03:17 twitham Exp $
+ * @(#)$Id: oscope.c,v 1.72 2000/02/26 20:20:53 twitham Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -119,7 +119,7 @@ init_scope()
   scope.color = DEF_C;
   scope.select = DEF_A - 1;
   scope.verbose = DEF_V;
-  snd = !DEF_X;
+  snd = DEF_X ? 0 : -1;
   ps.found = !DEF_Z;
 }
 
