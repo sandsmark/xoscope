@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 1.65 2000/07/10 23:36:51 twitham Exp $
+ * @(#)$Id: display.c,v 1.66 2000/07/11 23:01:25 twitham Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -61,6 +61,12 @@ message(char *message, int clr)
 	    font, clr, TEXT_BG, ALIGN_CENTER);
   vga_write(message, h_points / 2, row(5),
 	    font, clr, TEXT_BG, ALIGN_CENTER);
+}
+
+void
+format(char *buf, const char *fmt, float num)
+{
+  sprintf(buf, fmt, num >= 1000 ? num / 1000 : num, num >= 1000 ? "" : "m");
 }
 
 /* draw just dynamic or all text to graphics screen */
@@ -155,14 +161,9 @@ draw_text(int all)
 		font, KEY_FG, TEXT_BG, ALIGN_LEFT);
 
       if (scope.verbose || ch[i].show || scope.select == i) {
-	if (!ch[i].bits && bs.found)
-	  sprintf(string, "%g V/div",
-		  (float)bs.volts * ch[i].div / ch[i].mult / 8000);
-	else if (!ch[i].bits && (ch[i].func == FUNCPS ||
-				 (ch[i].func >= FUNCEXT
-				  && ch[0].func == FUNCPS)))
-	  sprintf(string, "%g V/div",
-		  (float)ps.volts * (float)ch[i].div / (float)ch[i].mult / 10);
+	if (!ch[i].bits && ch[i].signal->volts)
+	  format(string, "%g %sV/div",
+		 (float)ch[i].signal->volts * ch[i].div / ch[i].mult / 10);
 	else
 	  sprintf(string, "%d / %d", ch[i].mult, ch[i].div);
 	vga_write(string, col(69 * (i / 4) + 5), row(j + 1),
@@ -253,8 +254,14 @@ draw_text(int all)
   sprintf(string, "  Period of %6d us = %6d Hz  ", p->time,  p->freq);
   vga_write(string, h_points/2, row(0), font, p->color, TEXT_BG, ALIGN_CENTER);
 
-  sprintf(string, " Max:%3d - Min:%4d = %3d Pk-Pk ",
-	  p->max, p->min, p->max - p->min);
+  if (p->signal->volts)
+    sprintf(string, "   %7.5g - %7.5g = %7.5g mV   ",
+	    (float)p->max * p->signal->volts / 320,
+	    (float)p->min * p->signal->volts / 320,
+	    ((float)p->max - p->min) * p->signal->volts / 320);
+  else
+    sprintf(string, " Max:%3d - Min:%4d = %3d Pk-Pk ",
+	    p->max, p->min, p->max - p->min);
   vga_write(string, h_points/2, row(1), font, p->color, TEXT_BG, ALIGN_CENTER);
 
   vga_write(triggered ? " Triggered " : "? TRIGGER ?", h_points/2, row(3),

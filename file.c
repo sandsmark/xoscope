@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: file.c,v 1.22 2000/07/10 23:36:51 twitham Exp $
+ * @(#)$Id: file.c,v 1.23 2000/07/11 23:01:25 twitham Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -246,6 +246,9 @@ writefile(char *filename)
     for (i = 0 ; i < k ; i++) {
       fprintf(file, "%s%d", i ? "\t" : "\n#:", mem[chan[i]].rate);
     }
+    for (i = 0 ; i < k ; i++) {
+      fprintf(file, "%s%d", i ? "\t" : "\n#=", mem[chan[i]].volts);
+    }
     fprintf(file, "\n");
     for (j = 0 ; j < l ; j++) {
       for (i = 0 ; i < k ; i++) {
@@ -299,6 +302,13 @@ readfile(char *filename)
 	q = buff + 2;
 	while (q && j < 26 && (sscanf(q, "%d ", &k) == 1)) {
 	  mem[chan[j++]].rate = k;
+	  q = strchr(++q, '\t');
+	}
+      } else if (!strncmp("#=", buff, 2)) {
+	j = 0;
+	q = buff + 2;
+	while (q && j < 26 && (sscanf(q, "%d ", &k) == 1)) {
+	  mem[chan[j++]].volts = k;
 	  q = strchr(++q, '\t');
 	}
       }

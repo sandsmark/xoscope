@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: bitscope.c,v 1.9 2000/07/07 23:06:17 twitham Exp $
+ * @(#)$Id: bitscope.c,v 1.10 2000/07/11 23:01:25 twitham Exp $
  *
  * Copyright (C) 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -175,6 +175,12 @@ bs_putregs(int fd, unsigned char *reg)
 void
 bs_init(int fd)
 {
+  static int volts[] = {
+     130 * 10 / 4,  600 * 10 / 4,  1200 * 10 / 4,  3160 * 10 / 4,
+    1300 * 10 / 4, 6000 * 10 / 4, 12000 * 10 / 4, 31600 * 10 / 4,
+     632 * 10 / 4, 2900 * 10 / 4,  5800 * 10 / 4, 15280 * 10 / 4,
+  };
+
   if (fd < 3) return;
   if (snd) handle_key('&');	/* turn off sound card and probescope */
   bs.found = 1;
@@ -193,17 +199,20 @@ bs_init(int fd)
   bs.r[13] = 179;		/* 2,179 through mode 0 formula = 1644 */
 
   bs.r[14] = PRIMARY(RANGE1200 | CHANNELA | ZZCLK)
-    | SECONDARY(RANGE1200 | CHANNELB | ZZCLK);
+    | SECONDARY(RANGE600 | CHANNELB | ZZCLK);
   bs.r[15] = 0;			/* max samples per dump (256) */
   bs_putregs(fd, bs.r);
   funcnames[2] = "Logic An.";	/* relabel XYZ */
   if (bs.r[7] & UPPER16POD) {
-    bs.volts = 11600;		/* !!! attenuation should be tweakable */
+    mem[23].volts = volts[(bs.r[14] & RANGE3160) + 8];
+    mem[24].volts = volts[((bs.r[14] >> 4) & RANGE3160) + 8];
     funcnames[0] = "POD Ch. A";
     funcnames[1] = "POD Ch. B";
   } else {
-    bs.volts = 24000;
-    funcnames[0] = "BNC Ch. A";
+    mem[23].volts = volts[bs.r[14] & RANGE3160];
+    mem[24].volts = volts[(bs.r[14] >> 4) & RANGE3160];
+    funcnames[0] = bs.r[14] & PRIMARY(CHANNELA) ? "BNC Ch. A" : "BNC Ch. B";
+    funcnames[1] = bs.r[14] & SECONDARY(CHANNELA) ? "BNC Ch. A" : "BNC Ch. B";
     funcnames[1] = "BNC Ch. B";
   }
 }
@@ -266,7 +275,7 @@ bs_getdata(int fd)
 	    buff++;
 	  else {
 	    n = strtol(buff, NULL, 16);
-	    mem[23 + alt].data[k] = (n & 0xff) - 128;
+	    mem[23 + !alt].data[k] = (n & 0xff) - 128;
 	    mem[25].data[k++] = ((n & 0xff00) >> 8) - 128;
 	    buff += 5;
 	  }
@@ -283,8 +292,8 @@ bs_getdata(int fd)
   } else {			/* start a get */
     if (!bs_io(fd, "[e]@", buffer))
       return(0);
-    alt = !alt;
-    bs.r[14] = (bs.r[14] & 0xfb) | (!alt << 2); /* attempt to ALT dual trace */
+    alt = !alt;			/* attempt to ALT dual trace via nibble swap */
+    bs.r[14] = ((bs.r[14] & 0x0f) << 4) | ((bs.r[14] & 0xf0) >> 4);
     sprintf(error, "[%x]s>T", bs.r[14]);
     if (!bs_io(fd, error, buffer))
       return(0);

@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.h,v 1.38 2000/07/06 20:12:08 twitham Exp $
+ * @(#)$Id: oscope.h,v 1.39 2000/07/11 23:01:25 twitham Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -55,6 +55,7 @@ typedef struct Signal {		/* The input/memory/math signals */
   short data[MAXWID];
   int rate;
   int num;
+  int volts;
   int color;
 } Signal;
 extern Signal mem[34];

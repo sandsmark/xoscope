@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: func.c,v 1.25 2000/07/10 23:36:51 twitham Exp $
+ * @(#)$Id: func.c,v 1.26 2000/07/11 23:01:25 twitham Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -68,6 +68,7 @@ save(char c)
     memcpy(mem[i].data, ch[scope.select].signal->data, MAXWID * sizeof(short));
     mem[i].rate = ch[scope.select].signal->rate;
     mem[i].num = ch[scope.select].signal->num;
+    mem[i].volts = ch[scope.select].signal->volts;
     mem[i].color = ch[scope.select].color;
   }
   k = scope.select;
@@ -270,7 +271,7 @@ init_math()
   for (i = 0 ; i < 34 ; i++) {
     mem[i].rate = 44100;
     memset(mem[i].data, 0, MAXWID * sizeof(short));
-    mem[i].color = 0;
+    mem[i].num = mem[i].volts = mem[i].color = 0;
   }
   init_fft();
 }
@@ -308,8 +309,8 @@ cleanup_math()
 /* measure the given channel */
 void
 measure_data(Channel *sig) {
-  static int i, j, prev;
-  int first = 0, last = 0, count = 0, max = 0;
+  static long int i, j, prev;
+  float first = 0, last = 0, count = 0, max = 0;
 
   sig->min = 0;
   sig->max = 0;
@@ -322,14 +323,14 @@ measure_data(Channel *sig) {
       first = scope.cursb;
       last = scope.cursa;
     }
-    sig->min = sig->max = sig->signal->data[first];
-    if ((j = sig->signal->data[last]) < sig->min)
+    sig->min = sig->max = sig->signal->data[(int)first];
+    if ((j = sig->signal->data[(int)last]) < sig->min)
       sig->min = j;
     else if (j > sig->max)
       sig->max = j;
     count = 2;
   } else {			/* automatic period measurements */
-    for (i = 0 ; i < samples(sig->signal->rate) ; i++) {
+    for (i = 0 ; i < sig->signal->num ; i++) {
       j = sig->signal->data[i];
       if (j < sig->min)		/* minimum */
 	sig->min = j;

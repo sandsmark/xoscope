@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: bitscope.h,v 1.3 2000/07/06 16:00:43 twitham Exp $
+ * @(#)$Id: bitscope.h,v 1.4 2000/07/11 23:01:25 twitham Exp $
  *
  * Copyright (C) 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -35,7 +35,7 @@
 /* Input / Attenuation Register (R14) */
 
 #define PRIMARY(bits)	(bits)
-#define SECONDARY(bits)	(bits << 4)
+#define SECONDARY(bits)	((bits) << 4)
 
 #define RANGE130	0
 #define RANGE600	1
@@ -64,7 +64,6 @@ typedef struct BitScope {	/* The state of the BitScope */
   int version;			/* numeric version equivalent */
   int fd;			/* file descriptor */
   unsigned char r[24];		/* registers */
-  int volts;			/* actually, millivolts peek to peek */
   unsigned char buf[256 * 5 + 20]; /* serial input buffer */
   unsigned char *pos, *end;	/* ... and its pointers */
 } BitScope;

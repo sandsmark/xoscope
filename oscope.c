@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.c,v 1.83 2000/07/10 23:36:51 twitham Exp $
+ * @(#)$Id: oscope.c,v 1.84 2000/07/11 23:01:25 twitham Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -55,14 +55,14 @@ Startup Options  Description (defaults)               version %s
 -# <code>        #=1-%d, code=pos[.bits][:scale[:func#, mem a-z or cmd]] (0:1/1)
 -a <channel>     set the Active channel: 1-%d                  (%d)
 -r <rate>        sampling Rate in Hz: 8000,11025,22050,44100  (%d)
--s <scale>       time Scale: 1/20-1000 where 1=1ms/div        (%d/1)
+-s <scale>       time Scale: 1/2000-1000/1 where 1=1ms/div    (%d/1)
 -t <trigger>     Trigger level[:type[:channel]]               (%s)
 -l <cursors>     cursor Line positions: first[:second[:on?]]  (%s)
 -c <color>       graticule Color: 0-15                        (%d)
 -d <dma divisor> sound card DMA buffer size divisor: 1,2,4    (%d)
 -m <mode>        video Mode (size): 0,1,2,3                   (%d)
 -f <font name>   the Font name as-in %s
--p <type>        Plot mode: 0=point, 1=accum, 2=line, 3=accum (%d)
+-p <type>        Plot mode: 0/1=point, 2/3=line, 4/5=step     (%d)
 -g <style>       Graticule: 0=none,  1=minor, 2=major         (%d)
 -b               %s Behind instead of in front of %s
 -v               turn Verbose key help display %s

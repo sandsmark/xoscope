@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: proscope.c,v 1.6 2000/07/07 02:39:13 twitham Exp $
+ * @(#)$Id: proscope.c,v 1.7 2000/07/11 23:01:25 twitham Rel $
  *
  * Copyright (C) 1997 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -77,6 +77,7 @@ probescope()
 	PSDEBUG("1sw=%02x  ", c);
 	if ((maybe = c & PS_100V ? 100 : c & PS_10V ? 10 : 1) != ps.volts) {
 	  ps.volts = maybe;
+	  mem[25].volts = maybe * 1000;
 	  cls = 1;
 	}
 	ps.coupling = c & PS_AC ? "AC" : c & PS_DC ? "DC" : "GND";
@@ -114,6 +115,7 @@ probescope()
     }
   }
   mem[25].data[0] = mem[25].data[1];
+  mem[25].num = 128;
   if (gotdvm) ps.dvm = dvm;
   if (cls) clear();		/* non-DVM text need changed? */
   if (flush) flush_serial();	/* catch up if we're getting behind */

@@ -1,7 +1,7 @@
 /*
- * @(#)$Id: proscope.h,v 1.4 2000/07/03 18:18:14 twitham Exp $
+ * @(#)$Id: proscope.h,v 1.5 2000/07/11 23:01:25 twitham Rel $
  *
- * Copyright (C) 1997 Tim Witham <twitham@pcocd2.intel.com>
+ * Copyright (C) 1997 - 2000 Tim Witham <twitham@quiknet.com>
  *
  * (see the files README and COPYING for more details)
  *
@@ -56,7 +56,6 @@ typedef struct ProbeScope {	/* The state of the ProbeScope */
 } ProbeScope;
 extern ProbeScope ps;
 
-extern void microsleep();
 extern void init_probescope();
 extern void probescope();
 extern void init_serial();
