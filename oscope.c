@@ -5,7 +5,7 @@
  *
  * [x]scope --- Use Linux's /dev/dsp (a sound card) as an oscilloscope
  *
- * @(#)$Id: oscope.c,v 1.28 1996/01/28 03:28:55 twitham Exp $
+ * @(#)$Id: oscope.c,v 1.29 1996/01/28 08:11:02 twitham Exp $
  *
  * Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
@@ -93,7 +93,8 @@ int v_points;			/* points in vertical axis */
 int h_points;			/* points in horizontal axis */
 int offset;			/* vertical offset */
 int actual;			/* actual sampling rate */
-int scaler[] = {1,2,5,10,20,50,100,200,500,1000,2000,5000,1};
+int scaler[] = {1,2,5,10,20,50,100,200};
+int *maxscaler = &scaler[7];	/* the last one */
 int *pscaler = scaler;
 
 /* display command usage on standard error and exit */
@@ -124,7 +125,7 @@ Options          Runtime Keys   Description (defaults)
 ",
 	  progname,
 	  def[!(channels - 1)], def[channels - 1],
-	  sampling, scale, trigger,
+	  sampling, scope.scale, trigger,
 	  colour, mode, dma,
 	  fonts(),		/* the font method for the display */
 	  def[point_mode], def[!point_mode],
@@ -153,10 +154,10 @@ parse_args(int argc, char **argv)
       sampling = strtol(optarg, NULL, 0);
       break;
     case 's':			/* scale (zoom) */
-      scale = strtol(optarg, NULL, 0);
-      scale &= 0x000f;
-      if (scale < 1)
-	scale = 1;
+      scope.scale = strtol(optarg, NULL, 0);
+      scope.scale &= 0x000f;
+      if (scope.scale < 1)
+	scope.scale = 1;
       break;
     case 't':			/* trigger level */
       trigger = strtol(optarg, NULL, 0);
@@ -223,15 +224,15 @@ init_scope()
   scope.trigpos = DEF_T;
   scope.graticule = DEF_G;
   scope.run = 1;
-  scope.gcolor = YELLOW;
-  scope.tcolor = GREEN;
+  scope.gcolor = color[4];
+  scope.tcolor = color[2];
   for (i = 0 ; i < CHANNELS ; i++) {
     memset(ch[i].data, 128, MAXWID);
     memset(ch[i].old, 128, MAXWID);
     ch[i].scale = 1;
     ch[i].pos = 128;
     ch[i].mode = 0;
-    ch[i].color = i + GREEN;
+    ch[i].color = color[i + 2];
   }
 }
 
@@ -306,11 +307,15 @@ handle_key(unsigned char c)
       check_status(ioctl(snd, SOUND_PCM_READ_RATE, &actual), __LINE__);
     } else 
       pscaler++;
-    scale  = *pscaler;
+    if (pscaler > maxscaler)
+      pscaler = maxscaler;
+    scope.scale  = *pscaler;
     clear();
     break;
   case 's':
-    if (sampling == 22000) {
+    if (sampling == 8800) {
+				/* average samples into each pixel */
+    } else if (sampling == 22000) {
       sampling = 8800;
       check_status(ioctl(snd, SOUND_PCM_SYNC, 0), __LINE__);
       check_status(ioctl(snd, SOUND_PCM_WRITE_RATE, &sampling), __LINE__);
@@ -322,7 +327,7 @@ handle_key(unsigned char c)
       check_status(ioctl(snd, SOUND_PCM_READ_RATE, &actual), __LINE__);
     } else
       pscaler--;
-    scale  = *pscaler;
+    scope.scale  = *pscaler;
     clear();
     break;
   case 'T':
@@ -341,13 +346,15 @@ handle_key(unsigned char c)
     break;
   case 'C':
     colour++;			/* increase color */
+    if (colour > 15)
+      colour = 0;
     clear();
     break;
   case 'c':
-    if (colour > 0) {		/* decrease color */
-      colour--;
-      clear();
-    }
+    colour--;
+    if (colour < 0)		/* decrease color */
+      colour = 15;
+    clear();
     break;
   case 'M':
     if (mode < 6) {
@@ -446,7 +453,6 @@ get_data()
     return;			/* give up and keep previous samples */
 
   /* now get the real data */
-  /*   read(snd, buffer, (h_points * channels / scope.scale)); */
   read(snd, buffer, h_points * channels);
   buff = buffer;
   for(c=0; c < h_points; c++) {
@@ -469,6 +475,7 @@ main(int argc, char **argv)
   argc = opendisplay(argc, argv);
   parse_args(argc, argv);	/* what do you want? */
   init_sound_card(1);		/* get ready */
+  scope.scale = 1;
   init_screen(1);
   init_scope();
   show_info(' ');

@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 1.4 1996/01/28 03:28:46 twitham Exp $
+ * @(#)$Id: display.c,v 1.5 1996/01/28 08:11:19 twitham Exp $
  *
  * Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
@@ -16,22 +16,39 @@
 #include "scope.h"		/* program defaults */
 #include "display.h"
 
+int color[16];
+char *colors[] = {		/* X colors similar to 16 console colors */
+  "black",
+  "blue",
+  "green",
+  "cyan",
+  "red",
+  "magenta",
+  "brown",
+  "gray75",
+  "gray25",
+  "blue4",
+  "green4",
+  "cyan4",
+  "red4",
+  "magenta4",
+  "yellow",
+  "white"
+};
+
 #ifdef XSCOPE
 char fontname[80] = DEF_FX;
 Widget w[1];
 XFont font;
-int XX[] = {320,640,640,640,800,1024,1280};
-int XY[] = {200,200,350,480,480, 480, 480};
+int XX[] = {640,800,1024,1280};
+int XY[] = {480,480, 480, 480};	/* user can resize it taller if really want */
 #else
 char fontname[80] = DEF_F;
 int screen_modes[] = {		/* allowed modes */
-    G320x200x16,		/* 0 */
-    G640x200x16,		/* 1 */
-    G640x350x16,		/* 2 */
-    G640x480x16,		/* 3 */
-    G800x600x16,		/* 4 */
-    G1024x768x16,		/* 5 */
-    G1280x1024x16,		/* 6 */
+    G640x480x16,
+    G800x600x16,
+    G1024x768x16,
+    G1280x1024x16
 };
 #ifdef HAVEVGAMISC
 font_t font;			/* pointer to the font structure */
@@ -62,18 +79,34 @@ cleanup()
   close(snd);			/* close sound device */
 }
 
+/* how to convert text column (0-79) and row(0-30) to graphics position */
+int
+col(int x)
+{
+  return (x > 39) ? (h_points - ((80 - x) * 8)) : (x * 8);
+}
+
+int
+row(int y)
+{
+  return y * v_points / 30;
+}
+
 /* draw text to graphics screen */
 void
 draw_text()
 {
 #if defined XSCOPE || defined HAVEVGAMISC
   VGA_WRITE(running ? "RUN " : "STOP",
-	    COL(0), ROW(0),  font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
+	    col(68), row(14),  font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
+  sprintf(error, "%5d us/div",
+	  (h_points - 200) * 100000 / sampling / scope.scale);
+  VGA_WRITE(error, col(0), row(14), font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
   if (verbose) {
-    VGA_WRITE(error,  COL(0), ROW(5),  font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
+    VGA_WRITE(error,  col(0), row(0),  font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
   } else {
     VGA_WRITE("                                                                                ",
-	      COL(0), ROW(5), font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
+	      col(0), row(0), font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
   }
 #endif
 }
@@ -86,7 +119,7 @@ show_info(unsigned char c) {
 	    "-d %1d  %2s  %2s  %2s%s",
 	    c, actual,
 	    channels == 1 ? "-1" : "-2",
-	    sampling, scale, trigger, colour, mode, dma,
+	    sampling, scope.scale, trigger, colour, mode, dma,
 	    point_mode ? "-p" : "-l",
 
 	    /* reverse logic if these booleans are on by default in scope.h */
@@ -119,20 +152,22 @@ draw_graticule()
 {
   static int i, j;
 
-  VGA_SETCOLOR(colour+2);
-  VGA_DRAWLINE(100, offset-32, 540, offset-32);
-  VGA_DRAWLINE(100, offset+288, 540, offset+288);
+  VGA_SETCOLOR(color[colour]);
+  VGA_DRAWLINE(100, offset-32, h_points-100, offset-32);
+  VGA_DRAWLINE(100, offset+288, h_points-100, offset+288);
   VGA_DRAWLINE(100, offset-32, 100, offset+288);
-  VGA_DRAWLINE(540, offset-32, 540, offset+288);
+  VGA_DRAWLINE(h_points-100, offset-32, h_points-100, offset+288);
 
   if (graticule) {
 
     /* cross-hairs */
-    VGA_DRAWLINE(100, offset+128, 540, offset+128);
-    VGA_DRAWLINE(320, offset-32, 320, offset+288);
+    for (i = 320 ; i < h_points - 100 ; i += 220) {
+      VGA_DRAWLINE(i, offset-32, i, offset+288);
+    }
+    VGA_DRAWLINE(100, offset+128, h_points-100, offset+128);
 
     /* vertical dotted lines */
-    for (i = 144 ; i < 540 ; i += 44) {
+    for (i = 144 ; i < h_points-100 ; i += 44) {
       for (j = (offset - 32) * 10 ; j < (offset + 288) * 10 ; j += 64) {
 	VGA_DRAWPIXEL(i, j / 10);
       }
@@ -140,7 +175,7 @@ draw_graticule()
 
     /* horizontal dotted lines */
     for (i = offset - 32 ; i < (offset + 288) ; i += 32) {
-      for (j = 1088 ; j < 5400 ; j += 88) {
+      for (j = 1088 ; j < (h_points-100) * 10 ; j += 88) {
 	VGA_DRAWPIXEL(j / 10, i);
       }
     }
@@ -159,32 +194,32 @@ draw_data()
 
   if (point_mode < 2) {
     for (j = 0 ; j < channels ; j++) {
-      for (i = 0 ; i <= 440 / scale ; i++) {
+      for (i = 0 ; i <= (h_points - 200) / scope.scale ; i++) {
 	if (point_mode == 0) {
-	  VGA_SETCOLOR(BLACK);	/* erase previous dot */
-	  VGA_DRAWPIXEL(i * scale + 100,
+	  VGA_SETCOLOR(color[0]);	/* erase previous dot */
+	  VGA_DRAWPIXEL(i * scope.scale + 100,
 			ch[j].old[i] + offset);
 	}
 	VGA_SETCOLOR(ch[j].color); /* draw dot */
-	VGA_DRAWPIXEL(i * scale + 100,
+	VGA_DRAWPIXEL(i * scope.scale + 100,
 		      ch[j].data[i] + offset);
 	ch[j].old[i] = ch[j].data[i];
       }
     }
   } else {			/* line mode, a little slower */
     for (j = 0 ; j < channels ; j++) {
-      for (i = 0 ; i <= 440 / scale - 1 ; i++) {
+      for (i = 0 ; i <= (h_points - 200) / scope.scale - 1 ; i++) {
 	if (point_mode == 2) {
-	  VGA_SETCOLOR(BLACK);	/* erase previous line */
-	  VGA_DRAWLINE(i * scale + 100,
+	  VGA_SETCOLOR(color[0]);	/* erase previous line */
+	  VGA_DRAWLINE(i * scope.scale + 100,
 		       ch[j].old[i] + offset,
-		       i * scale + scale + 100,
+		       i * scope.scale + scope.scale + 100,
 		       ch[j].old[i + 1] + offset);
 	}
 	VGA_SETCOLOR(ch[j].color); /* draw line */
-	VGA_DRAWLINE(i * scale + 100,
+	VGA_DRAWLINE(i * scope.scale + 100,
 		     ch[j].data[i] + offset,
-		     i * scale + scale + 100,
+		     i * scope.scale + scope.scale + 100,
 		     ch[j].data[i + 1] + offset);
 	ch[j].old[i] = ch[j].data[i];
       }
@@ -223,6 +258,12 @@ animate(void *data)
 /* callback to redisplay the X11 screen */
 void
 redisplay(Widget w, int new_width, int new_height, void *data) {
+  h_points = new_width > 640
+    ? new_width - (new_width - 200) % 44
+    : 640;
+  v_points = new_height > 480 ? new_height : 480;
+  offset = v_points / 2 - 127;
+  clear();
   draw_text();
 }
 
@@ -242,6 +283,8 @@ keys_x11(Widget w, char *input, int up_or_down, void *data)
 void
 init_screen(int firsttime)
 {
+  int i;
+
   if (firsttime) {
 #ifdef XSCOPE
     h_points = XX[mode];
@@ -249,14 +292,19 @@ init_screen(int firsttime)
     w[0] = MakeDrawArea(h_points, v_points, redisplay, NULL);
     SetKeypressCB(w[0], keys_x11);
     ShowDisplay();
-    GetStandardColors();
-    SetBgColor(w[0], BLACK);
+    for (i = 0 ; i < 16 ; i++) {
+      color[i] = GetNamedColor(colors[i]);
+    }
+    SetBgColor(w[0], color[0]);
     clear();
     font = GetFont(fontname);
     SetWidgetFont(w[0], font);
 #else
 /*     vga_disabledriverreport(); */
     vga_init();
+    for (i = 0 ; i < 16 ; i++) {
+      color[i] = i;
+    }
 #ifdef HAVEVGAMISC
     vga_initfont (fontname, &font, 1, 1);
 #endif

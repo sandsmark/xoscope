@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.h,v 1.1 1996/01/23 07:59:31 twitham Exp $
+ * @(#)$Id: display.h,v 1.2 1996/01/28 08:11:09 twitham Exp $
  *
  * Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
@@ -34,37 +34,14 @@
 
 #endif
 
-/* 16-color color definitions */
-#ifndef XSCOPE
-#define BLACK		0	/* dark colors */
-#define BLUE		1
-#define GREEN		2
-#define CYAN		3
-#define RED		4
-#define MAGENTA		5
-#define BROWN		6
-#define LIGHTGRAY	7
-#define DARKGRAY	8	/* light colors */
-#define LIGHTBLUE	9
-#define LIGHTGREEN	10
-#define LIGHTCYAN	11
-#define LIGHTRED	12
-#define LIGHTMAGENTA	13
-#define YELLOW		14
-#define WHITE		15
-#endif
-
 /* text foreground color */
-#define TEXT_FG		GREEN
+#define TEXT_FG		color[2]
 
 /* text background color */
-#define TEXT_BG		BLACK
-
-/* how to convert text column (0-79) and row(-6-1,0-5) to graphics position */
-#define COL(x)	(x * 8)
-#define ROW(y)	(offset + y * 18 + 258 * (y >= 0))
+#define TEXT_BG		color[0]
 
 extern char fontname[];
+extern int color[];
 
 /* functions that are called by files other than display.c */
 void
