@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.c,v 1.59 1997/05/03 16:15:27 twitham Exp $
+ * @(#)$Id: oscope.c,v 1.60 1997/05/04 20:03:00 twitham Rel1_3 $
  *
  * Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -56,7 +56,7 @@ Startup Options  Description (defaults)               version %s
 -# <code>        #=1-%d, code=pos[:scale[:func#, mem letter, or cmd]] (0:1/1)
 -a <channel>     set the Active channel: 1-%d                  (%d)
 -r <rate>        sampling Rate in Hz: 8800,11000,22000,44000  (%d)
--s <scale>       time Scale: 1/100 - 100                      (%d/1)
+-s <scale>       time Scale: 1/100-100                        (%d/1)
 -t <trigger>     Trigger level[:type[:channel]]               (%s)
 -c <color>       graticule Color: 0-15                        (%d)
 -m <mode>        video mode (size): 0,1,2,3                   (%d)
@@ -186,11 +186,11 @@ setsoundcard(int rate)
   do_math();			/* propogate new rate to any math */
 }
 
-/* internal only */
+/* internal only, change rate and propogate it everywhere */
 void
 resetsoundcard()
 {
-  scope.rate = reset_sound_card(scope.rate, 2, 8, scope.dma);
+  scope.rate = reset_sound_card(scope.rate, 2, 8);
   mem[23].rate = mem[24].rate = scope.rate;
   do_math();			/* propogate new rate to any math */
   draw_text(1);
@@ -205,15 +205,15 @@ handle_key(unsigned char c)
 
   p = &ch[scope.select];
   if (c >= 'A' && c <= 'Z') {
-    save(c);
+    save(c);			/* store channel */
     draw_text(1);
     return;
   } else if (c >= 'a' && c <= 'z') {
-    recall(c);
+    recall(c);			/* recall signal */
     clear();
     return;
   } else if (c >= '1' && c <= '0' + CHANNELS) {
-    scope.select = (c - '1');
+    scope.select = (c - '1');	/* select channel */
     clear();
     return;
   }
@@ -222,18 +222,18 @@ handle_key(unsigned char c)
   case -1:			/* no key pressed */
     break;
   case '\t':
-    p->show = !p->show;
+    p->show = !p->show;		/* show / hide channel */
     clear();
     break;
-  case '}':			/* increase scale */
-    if (p->div > 1)
+  case '}':
+    if (p->div > 1)		/* increase scale */
       scaledown(&p->div);
     else
       scaleup(&p->mult);
     clear();
     break;
-  case '{':			/* decrease scale */
-    if (p->mult > 1)
+  case '{':
+    if (p->mult > 1)		/* decrease scale */
       scaledown(&p->mult);
     else
       scaleup(&p->div);
@@ -264,14 +264,14 @@ handle_key(unsigned char c)
     }
     break;
   case '0':
-    if (scope.div > 1)
+    if (scope.div > 1)		/* decrease time scale, zoom in */
       scaledown(&scope.div);
     else
       scaleup(&scope.scale);
     clear();
     break;
   case '9':
-    if (scope.scale > 1)
+    if (scope.scale > 1)	/* increase time scale, zoom out */
       scaledown(&scope.scale);
     else
       scaleup(&scope.div);
@@ -289,18 +289,18 @@ handle_key(unsigned char c)
       scope.trig = 255;
     clear();
     break;
-  case '_':
+  case '_':			/* change trigger channel */
     scope.trigch = !scope.trigch;
     clear();
     break;
   case '+':
-    scope.trige++;
+    scope.trige++;		/* change trigger type */
     if (scope.trige > 2)
       scope.trige = 0;
     clear();
     break;
   case '(':
-    if (scope.run)
+    if (scope.run)		/* decrease sample rate */
       if (scope.rate <= 11000)
 	setsoundcard(8800);
       else if (scope.rate <= 22000)
@@ -310,7 +310,7 @@ handle_key(unsigned char c)
     clear();
     break;
   case ')':
-    if (scope.run)
+    if (scope.run)		/* increase sample rate */
       if (scope.rate >= 22000)
 	setsoundcard(44000);
       else if (scope.rate >= 11000)
@@ -331,29 +331,17 @@ handle_key(unsigned char c)
       scope.color = 0;
     draw_text(1);
     break;
-  case '*':
-    if (scope.dma < 3) {	/* double dma */
-      scope.dma <<= 1;
-      resetsoundcard();
-    }
-    break;
-  case '&':
-    if (scope.dma > 1) {	/* half dma */
-      scope.dma >>= 1;
-      resetsoundcard();
-    }
-    break;
-  case '@':
+  case '@':			/* load file */
     if ((s = GetFile(NULL)) != NULL) {
       readfile(s);
       resetsoundcard();
     }
     break;
-  case '#':
+  case '#':			/* save file */
     if ((s = GetFile(NULL)) != NULL)
       writefile(s);
     break;
-  case '$':
+  case '$':			/* run external math */
     if (scope.select > 1) {
       if ((s = GetString("External command and args:",
 			 ch[scope.select].command)) != NULL) {
@@ -386,7 +374,7 @@ handle_key(unsigned char c)
     clear();
     break;
   case ' ':
-    scope.run++;
+    scope.run++;		/* run / wait / stop */
     if (scope.run > 2)
       scope.run = 0;
     draw_text(1);
@@ -414,12 +402,12 @@ main(int argc, char **argv)
   else
     progname++;
   init_scope();
-  open_sound_card();
   init_channels();
   init_math();
   if ((argc = OpenDisplay(argc, argv)) == FALSE)
     exit(1);
   parse_args(argc, argv);
+  init_widgets();
   init_screen();
   filename = FILENAME;
   if (optind < argc)
@@ -427,6 +415,7 @@ main(int argc, char **argv)
       filename = argv[optind];
       readfile(filename);
     }
+  open_sound_card(scope.dma);
   resetsoundcard();
   mainloop();			/* to display.c */
   cleanup();
