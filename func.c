@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: func.c,v 1.7 1996/03/02 07:09:22 twitham Exp $
+ * @(#)$Id: func.c,v 1.8 1996/03/10 01:46:14 twitham Exp $
  *
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -49,22 +49,6 @@ int memcolor[26];
 int xmap[MAXWID];
 short fftdata[MAXWID];
 
-
-/* store the currently selected signal to the given memory register */
-void
-save(char c)
-{
-  static int i;
-
-  i = c - 'A';
-  if (mem[i] == NULL)
-    mem[i] = malloc(MAXWID);
-  if (mem[i] != NULL) {
-    memcpy(mem[i], ch[scope.select].data, MAXWID);
-    memcolor[i] = ch[scope.select].color;
-  }
-}
-
 /* recall given memory register to the currently selected signal */
 void
 recall(char c)
@@ -73,12 +57,33 @@ recall(char c)
 
   i = c - 'a';
   if (mem[i] != NULL) {
-    memcpy(ch[scope.select].data, mem[i], MAXWID);
+    memcpy(ch[scope.select].data, mem[i], MAXWID * sizeof(short));
     ch[scope.select].func = 2;
     ch[scope.select].mem = c;
   }
 }
 
+/* store the currently selected signal to the given memory register */
+void
+save(char c)
+{
+  static int i, j, k;
+
+  i = c - 'A';
+  if (mem[i] == NULL)
+    mem[i] = malloc(MAXWID * sizeof(short));
+  if (mem[i] != NULL) {
+    memcpy(mem[i], ch[scope.select].data, MAXWID * sizeof(short));
+    memcolor[i] = ch[scope.select].color;
+  }
+  k = scope.select;
+  for (j = 0 ; j < CHANNELS ; j++) {
+    scope.select = j;
+    if (ch[j].mem - 'a' == i )
+      recall(i + 'a');
+  }
+  scope.select = k;
+}
 
 /* !!! The functions; they take one arg: the channel # to store results in */
 
