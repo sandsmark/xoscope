@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 1.61 2000/07/06 02:04:56 twitham Exp $
+ * @(#)$Id: display.c,v 1.62 2000/07/06 16:00:43 twitham Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -247,7 +247,7 @@ draw_text(int all)
   }
 
   /* always draw the dynamic text */
-  sprintf(string, "Period of %6d us = %5d Hz", p->time,  p->freq);
+  sprintf(string, "  Period of %6d us = %6d Hz  ", p->time,  p->freq);
   vga_write(string, h_points/2, row(0), font, p->color, TEXT_BG, ALIGN_CENTER);
 
   sprintf(string, " Max:%3d - Min:%4d = %3d Pk-Pk ",
@@ -545,7 +545,7 @@ show_data()
   SyncDisplay();
 }
 
-/* get and plot one screen full of data */
+/* get and plot some data */
 int
 animate(void *data)
 {
@@ -553,11 +553,13 @@ animate(void *data)
   if (ps.found) probescope();
   if (scope.run) {
     triggered = bs.found ? bs_getdata(bs.fd) : get_data();
-    if (triggered && scope.run > 1) {	/* auto-stop single-shot wait */
+    if (triggered && scope.run > 1) { /* auto-stop single-shot wait */
       scope.run = 0;
       draw_text(1);
     }
-  } else
+  } else if (in_progress)
+    bs.found ? bs_getdata(bs.fd) : get_data();
+  else
     microsleep(100000);		/* no need to suck all CPU cycles */
   show_data();
   if (quit_key_pressed) {

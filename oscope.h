@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.h,v 1.36 2000/07/06 02:04:56 twitham Exp $
+ * @(#)$Id: oscope.h,v 1.37 2000/07/06 16:00:44 twitham Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -31,6 +31,7 @@ extern int offset;
 extern int clip;
 extern char *filename;
 extern int snd;
+extern int in_progress;
 
 typedef struct Scope {		/* The oscilloscope */
   int mode;

@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: bitscope.c,v 1.5 2000/07/06 02:04:56 twitham Exp $
+ * @(#)$Id: bitscope.c,v 1.6 2000/07/06 16:00:43 twitham Exp $
  *
  * Copyright (C) 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -32,7 +32,6 @@ bs_cmd(int fd, char *cmd)
 /*    if (fd < 3) return(0); */
   bs.pos = bs.buf;
   *bs.pos = '\0';
-  bs.cmd = *cmd;
   j = strlen(cmd);
   PSDEBUG("bs_cmd: %s\n", cmd);
   for (i = 0; i < j; i++) {
@@ -239,7 +238,7 @@ bs_getdata(int fd)
   static int i, alt = 0, j, k, n;
 
   if (!fd) return(0);		/* device open? */
-  if (bs.getting) {		/* finish a get */
+  if (in_progress) {		/* finish a get */
     j = bs.end - bs.pos;
     if ((i = read(fd, bs.pos, j)) > 0) {
       bs.pos += i;
@@ -259,13 +258,12 @@ bs_getdata(int fd)
 	}
 	if (k > SAMPLES(mem[23].rate) || k >= MAXWID) { /* all done */
 	  k = 0;
-	  bs.getting = 0;
+	  in_progress = 0;
 	} else {			/* still need more, start another */
 	  bs_io(fd, "S", buffer);
 	}
       }
     }
-    return(1);
   } else {			/* start a get */
     if (!bs_io(fd, "[e]@", buffer))
       return(0);
@@ -277,7 +275,7 @@ bs_getdata(int fd)
     if (!bs_io(fd, "S", buffer))
       return(0);
     alt = !alt;
-    bs.getting = 1;
+    in_progress = 1;
   }
   return(1);
 }

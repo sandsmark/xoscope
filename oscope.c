@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.c,v 1.78 2000/07/06 02:04:56 twitham Exp $
+ * @(#)$Id: oscope.c,v 1.79 2000/07/06 16:00:43 twitham Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -33,6 +33,7 @@ int h_points;			/* pixels in horizontal axis */
 int offset;			/* vertical pixel offset to zero line */
 int clip = 0;			/* whether we're maxed out or not */
 char *filename;			/* default file name */
+int in_progress = 0;		/* parallel data collection in progress? */
 
 extern void open_sound_card();
 extern void close_sound_card();

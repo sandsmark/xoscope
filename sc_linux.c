@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: sc_linux.c,v 1.17 2000/07/05 03:01:51 twitham Exp $
+ * @(#)$Id: sc_linux.c,v 1.18 2000/07/06 16:00:44 twitham Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -121,60 +121,67 @@ get_data()
   static unsigned char datum[2], prev[2], *buff;
   static unsigned char buffer[MAXWID * 2], junk[DISCARDBUF];
   static int i, j, k;
-  audio_buf_info info = {0, 0, 0, MAXWID * 2};
+  audio_buf_info info = {0, 0, 0, 2048}; /* emulation values for ESD */
 
   if (!snd) return(0);		/* device open? */
 
-  /* Discard excess samples so we can keep our time snapshot close to
-     real-time and minimize sound recording overruns.  */
+  if (!in_progress) {
+    /* Discard excess samples so we can keep our time snapshot close to
+       real-time and minimize sound recording overruns.  */
 
-  check_status_ioctl(snd, SNDCTL_DSP_GETISPACE, &info, __LINE__);
+    check_status_ioctl(snd, SNDCTL_DSP_GETISPACE, &info, __LINE__);
 #ifdef DEBUG
-  printf("avail:%d\ttotal:%d\tsize:%d\tbytes:%d\n",
-	 info.fragments, info.fragstotal, info.fragsize, info.bytes);
+    printf("avail:%d\ttotal:%d\tsize:%d\tbytes:%d\n",
+	   info.fragments, info.fragstotal, info.fragsize, info.bytes);
 #endif
-  k = SAMPLES(scope.rate);	/* minimum samples needed */
-  if ((i = info.bytes - k * 4) > 0)
-    read(snd, junk, i < DISCARDBUF ? i : DISCARDBUF);
+    k = SAMPLES(scope.rate);	/* minimum samples needed */
+    if ((i = info.bytes - k * 4) > 0)
+      read(snd, junk, i < DISCARDBUF ? i : DISCARDBUF);
 #ifdef DEBUG
-  check_status_ioctl(snd, SNDCTL_DSP_GETISPACE, &info, __LINE__);
-  printf("\tavail:%d\ttotal:%d\tsize:%d\tbytes:%d\n",
-	 info.fragments, info.fragstotal, info.fragsize, info.bytes);
+    check_status_ioctl(snd, SNDCTL_DSP_GETISPACE, &info, __LINE__);
+    printf("\tavail:%d\ttotal:%d\tsize:%d\tbytes:%d\n",
+	   info.fragments, info.fragstotal, info.fragsize, info.bytes);
 #endif
-  i = 0;
-  if (scope.trige == 1) {
-    read(snd, datum, 2);	/* look for rising edge */
-    do {
-      memcpy(prev, datum, 2);	/* remember previous, read channels */
+    i = 0;
+    if (scope.trige == 1) {
+      read(snd, datum, 2);	/* look for rising edge */
+      do {
+	memcpy(prev, datum, 2);	/* remember previous, read channels */
+	read(snd, datum, 2);
+      } while (((i++ < k)) && ((datum[scope.trigch] < scope.trig) ||
+				      (prev[scope.trigch] >= scope.trig)));
+    } else if (scope.trige == 2) {
+      read(snd, datum, 2);	/* look for falling edge */
+      do {
+	memcpy(prev, datum, 2);	/* remember previous, read channels */
+	read(snd, datum, 2);
+      } while (((i++ < k)) && ((datum[scope.trigch] > scope.trig) ||
+				      (prev[scope.trigch] <= scope.trig)));
+    } else {
+      read(snd, prev, 2);
       read(snd, datum, 2);
-    } while (((i++ < k)) && ((datum[scope.trigch] < scope.trig) ||
-			     (prev[scope.trigch] >= scope.trig)));
-  } else if (scope.trige == 2) {
-    read(snd, datum, 2);	/* look for falling edge */
-    do {
-      memcpy(prev, datum, 2);	/* remember previous, read channels */
-      read(snd, datum, 2);
-    } while (((i++ < k)) && ((datum[scope.trigch] > scope.trig) ||
-			     (prev[scope.trigch] <= scope.trig)));
-  } else {
-    read(snd, prev, 2);
-    read(snd, datum, 2);
-  }
-  if (i > k)			/* haven't triggered within the screen */
-    return(0);			/* give up and keep previous samples */
+    }
+    if (i > k)			/* haven't triggered within the screen */
+      return(0);		/* give up and keep previous samples */
 
-  memcpy(buffer, prev, 2);	/* now get the post-trigger data */
-  memcpy(buffer + 2, datum, 2);
-  if ((j = read(snd, buffer + 4,  k * 2 - 4)) < 0)
-    j = 0;
-  buff = buffer;
-  for (i = 0; i < (j + 4) / 2; i++) {	/* move it into channel 1 and 2 */
-    if (*buff == 0 || *buff == 255)
-      clip = 1;
-    mem[23].data[i] = (short)(*buff++) - 127;
-    if (*buff == 0 || *buff == 255)
-      clip = 2;
-    mem[24].data[i] = (short)(*buff++) - 127;
+    mem[23].data[0] = prev[0] - 127;
+    mem[24].data[0] = prev[1] - 127;
+    mem[23].data[1] = datum[0] - 127;
+    mem[24].data[1] = datum[1] - 127;
+    in_progress = 2;
   }
+  if ((j = read(snd, buffer,  (k - in_progress) * 2)) > 0) {
+    buff = buffer;		/* get the post-trigger data */
+    i = 0;
+    while (i < j) {
+      if (i > MAXWID) break;
+      if (*buff == 0 || *buff == 255)
+	clip = i % 2 + 1;
+      mem[23 + i % 2].data[in_progress] = (short)(*buff++) - 127;
+      in_progress += i++ % 2;
+    }
+  }
+  if (in_progress >= k)
+    in_progress = 0;
   return(1);
 }
