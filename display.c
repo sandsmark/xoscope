@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 1.47 1997/06/07 21:29:46 twitham Exp $
+ * @(#)$Id: display.c,v 1.48 1997/06/10 01:55:47 twitham Exp $
  *
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -161,7 +161,12 @@ draw_text(int all)
 		font, KEY_FG, TEXT_BG, ALIGN_LEFT);
 
       if (scope.verbose || ch[i].show || scope.select == i) {
-	sprintf(string, "%d / %d", ch[i].mult, ch[i].div);
+	if (ch[i].func == FUNCPS ||
+	    (ch[i].func >= FUNCEXT && ch[0].func == FUNCPS))
+	  sprintf(string, "%g V/div",
+		  (float)ps.volts * (float)ch[i].div / (float)ch[i].mult / 10);
+	else
+	  sprintf(string, "%d / %d", ch[i].mult, ch[i].div);
 	vga_write(string, col(69 * (i / 4) + 5), row(j + 1),
 		  font, k, TEXT_BG, ALIGN_CENTER);
 
@@ -254,19 +259,18 @@ draw_text(int all)
     if (ps.found) {		/* ProbeScope on ? */
       j = mem[25].color;
 
-      sprintf(string, "%d.%d V/div", ps.volts / 10, ps.volts % 10);
+      sprintf(string, "%d Volt Range", ps.volts);
       vga_write(string, 100, row(25), font, j, TEXT_BG, ALIGN_LEFT);
 
       vga_write(ps.trigger & PS_SINGLE ? "SINGLE" : "   RUN",
 		h_points - 100, row(25), font, j, TEXT_BG, ALIGN_RIGHT);
 
-      i = ps.level * (ps.trigger & PS_PEXT || ps.trigger & PS_MEXT
-		      ? 1 : ps.volts);
-      sprintf(string, "%s ~ %d.%d V", ps.trigger & PS_PINT ? "+INTERN"
+      sprintf(string, "%s ~ %g V", ps.trigger & PS_PINT ? "+INTERN"
 	      : ps.trigger & PS_MINT ? "-INTERN"
 	      : ps.trigger & PS_PEXT ? "+EXTERN"
 	      : ps.trigger & PS_MEXT ? "-EXTERN" : "AUTO",
-	      i / 10, i % 10);
+	      (float)ps.level * (ps.trigger & PS_PEXT || ps.trigger & PS_MEXT
+			  ? 1.0 : (float)ps.volts) / 10);
       vga_write(string, h_points - 100, row(27), font, j, TEXT_BG, ALIGN_RIGHT);
 
       if (ps.wait)
@@ -299,7 +303,7 @@ draw_text(int all)
   }
 
   if (ps.found) {		/* ProbeScope on ? */
-    sprintf(string, "%s%4.2f V %s      ", ps.flags & PS_OVERFLOW ? "/\\"
+    sprintf(string, "%s%g V %s      ", ps.flags & PS_OVERFLOW ? "/\\"
 	    : ps.flags & PS_UNDERFLOW ? "\\/ " : "",
 	    (float)ps.dvm * (float)ps.volts / 100,
 	    ps.coupling ? ps.coupling : "?");
