@@ -23,7 +23,7 @@
  *
  * See the man page for a description of what this program does and what
  * the requirements to run it are.
- * 
+ *
  * It was developed using:
  * - Linux kernel 1.0
  * - gcc 2.4.5
@@ -31,7 +31,7 @@
  * - SoundBlaster Pro
  * - Trident VGA card
  * - 80386DX40 CPU with 8MB RAM
- * 
+ *
  */
 
 #include <unistd.h>
@@ -43,23 +43,23 @@
 #include <sys/soundcard.h>
 
 /* global variables */
-int quit_key_pressed;       /* set by handle_key() */
-int snd;                    /* file descriptor for sound device */
-unsigned char buffer[1024]; /* buffer for sound data */
-unsigned char old[1024];    /* previous buffer for sound data */
-int offset;                 /* vertical offset */
-int sampling = 8000;        /* selected sampling rate */
-int actual;                 /* actual sampling rate */
-int mode = G640x480x16;     /* graphics mode */
-int colour = 2;             /* colour */
-int dma = 4;                /* DMA buffer divisor */
-int point_mode = 0;         /* point v.s. line segment mode */
-int verbose = 0;            /* verbose mode */
-int v_points;               /* points in vertical axis */
-int h_points;               /* points in horizontal axis */
-int trigger = -1;           /* trigger level (-1 = disabled) */
-int graticule = 0;          /* show graticule */
-int scale = 1;		    /* time scale, pixels per sample (1,2,4,8,16,32) */
+int quit_key_pressed;		/* set by handle_key() */
+int snd;			/* file descriptor for sound device */
+unsigned char buffer[1024];	/* buffer for sound data */
+unsigned char old[1024];	/* previous buffer for sound data */
+int offset;			/* vertical offset */
+int sampling = 8000;		/* selected sampling rate */
+int actual;			/* actual sampling rate */
+int mode = G640x480x16;		/* graphics mode */
+int colour = 2;			/* colour */
+int dma = 4;			/* DMA buffer divisor */
+int point_mode = 0;		/* point v.s. line segment mode */
+int verbose = 0;		/* verbose mode */
+int v_points;			/* points in vertical axis */
+int h_points;			/* points in horizontal axis */
+int trigger = -1;		/* trigger level (-1 = disabled) */
+int graticule = 0;		/* show graticule */
+int scale = 1;			/* time scale or zoom factor */
 
 /* display command usage on standard error and exit */
 void usage()
@@ -73,10 +73,10 @@ void usage()
 	  "-c <colour>      trace colour\n"
 	  "-d <dma divide>  DMA buffer size divisor (1,2,4)\n"
 	  "-t <trigger>     trigger level (0 - 255)\n"
-	  "-s <scale>       time scale, or zoom factor (1,2,4,8,16,32)\n"
+	  "-s <scale>       time scale or zoom factor (1,2,4,8,16,32)\n"
 	  "-p               point mode (faster)\n"
 	  "-l               line segment mode (slower)\n"
-	  "-g               draw graticule\n"
+	  "-g               draw graticule (5msec major divs, 1 msec minor)\n"
 	  "-v               verbose output\n"
 	  );
   exit(1);
@@ -143,14 +143,13 @@ void parse_args(int argc, char **argv)
       break;
     }
   }
-
 }
 
 /* initialize screen data to zero level */
 void init_data()
 {
   int i;
-  
+
   for (i = 0 ; i < 1024 ; i++) {
     buffer[i] = 128;
     old[i] = 128;
@@ -172,15 +171,18 @@ inline void draw_graticule()
   vga_drawline(h_points-1, offset, h_points-1, offset+256);
 
   if (actual) {
+
     /* draw tiny tick marks at 0.5 msec intervals */
     for (i = 0 ; (j = i / 2000) < h_points ; i += (actual * scale)) {
       vga_drawpixel(j, offset);
       vga_drawpixel(j, offset + 255);
+
       /* draw bigger marks at 1 msec intervals */
       if ((j = i / 1000) < h_points) {
 	vga_drawline(j, offset, j, offset+5);
 	vga_drawline(j, offset+250, j, offset+256);
       }
+
       /* draw vertical lines at 5 msec intervals */
       if ((j = i / 200) < h_points)
 	vga_drawline(j, offset, j, offset+256);
@@ -209,11 +211,8 @@ void init_screen()
 /* cleanup: restore text mode and close sound device */
 void cleanup()
 {
-  /* restore text screen */
-  vga_setmode(TEXT);
-
-  /* close sound device */
-  close(snd);
+  vga_setmode(TEXT);		/* restore text screen */
+  close(snd);			/* close sound device */
 }
 
 /* initialize /dev/dsp */
@@ -229,7 +228,7 @@ void init_sound_card()
     cleanup();
     exit(1);
   }
-    
+
   /* set mono */
   parm = 1;
   status = ioctl(snd, SOUND_PCM_WRITE_CHANNELS, &parm);
@@ -263,6 +262,12 @@ void init_sound_card()
     cleanup();
     exit(1);
   }
+  status = ioctl(snd, SOUND_PCM_READ_RATE, &actual);
+  if (status < 0) {
+    perror("error from sound device ioctl");
+    cleanup();
+    exit(1);
+  }
 }
 
 /* handle single key commands */
@@ -270,8 +275,7 @@ inline void handle_key()
 {
   switch (vga_getkey()) {
   case 0:
-  case -1:
-    /* no key pressed */
+  case -1:			/* no key pressed */
     return;
     break;
   case 'q':
@@ -324,8 +328,8 @@ inline void handle_key()
       trigger -= 10;
       if (trigger < 0)
 	trigger = 0;
-    if (graticule)
-      draw_graticule();
+      if (graticule)
+	draw_graticule();
     }
     break;
   case 'l':
@@ -368,8 +372,7 @@ inline void handle_key()
       vga_clear();
     }
     break;
-  case ' ':
-    /* pause until key pressed */
+  case ' ':			/* pause until key pressed */
     while (vga_getkey() == 0)
       ;
     break;
@@ -386,6 +389,7 @@ inline void get_data()
 
   /* simple trigger function */
   if (trigger != -1) {
+
     /* positive trigger, look for rising edge only */
     if (trigger > 128) {
       datum = 255;
@@ -395,6 +399,7 @@ inline void get_data()
 	read(snd, &datum, 1);
       } while ((datum < trigger) || (datum <= datem));
     } else {
+
       /* negative trigger, look for falling edge only */
       datum = 0;
       do {
@@ -403,10 +408,10 @@ inline void get_data()
 	read(snd, &datum, 1);
       } while ((datum > trigger) || (datum >= datem));
     }
-  } 
-  /* now get the real data */  
-  read(snd, buffer + 1, (h_points / scale - 2));
+  }
 
+  /* now get the real data */
+  read(snd, buffer + 1, (h_points / scale - 2));
 }
 
 /* graph the data */
@@ -416,28 +421,22 @@ inline void graph_data()
 
   if (point_mode) {
     for (i = 1 ; i < (h_points / scale - 1) ; i++) {
-      /* erase previous point */
-      vga_setcolor(0);
+      vga_setcolor(0);		/* erase previous point */
       vga_drawpixel(i * scale, old[i] + offset);
-      /* draw new point */
-      vga_setcolor(colour);
+      vga_setcolor(colour);	/* draw new point */
       vga_drawpixel(i * scale, buffer[i] + offset);
-      /* this becomes the old point next time */
-      old[i] = buffer[i];
+      old[i] = buffer[i];	/* this becomes the old point next time */
     }
-  } else { /* line mode */
+  } else {			/* line mode */
     for (i = 1 ; i < (h_points / scale - 2) ; i++) {
-      /* erase previous point */
-      vga_setcolor(0);
+      vga_setcolor(0);		/* erase previous line */
       vga_drawline(i*scale, old[i] + offset,
 		   i*scale+scale, old[i+1] + offset);
-      /* draw new point */
-      vga_setcolor(colour);
+      vga_setcolor(colour);	/* draw new line */
       vga_drawline(i*scale, buffer[i] + offset,
 		   i*scale+scale, buffer[i+1] + offset);
-      old[i] = buffer[i];
+      old[i] = buffer[i];	/* end point becomes the start point */
     }
-    /* this becomes the old point next time */
     old[i] = buffer[i];
   }
 }
@@ -447,11 +446,11 @@ int
 main(int argc, char **argv)
 {
   parse_args(argc, argv);
-  init_screen();
-  init_data();  
+  init_data();
   init_sound_card();
+  init_screen();
   show_info();
-  
+
   while (!quit_key_pressed) {
     handle_key();
     get_data();
