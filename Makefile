@@ -1,4 +1,4 @@
-# @(#)$Id: Makefile,v 1.19 1997/05/01 04:32:53 twitham Rel1_3 $
+# @(#)$Id: Makefile,v 1.20 1997/05/24 23:36:40 twitham Exp $
 
 # Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
 
@@ -36,11 +36,15 @@ LIBPATH	= $(PREFIX)/lib/oscope
 # the external math commands and files to install
 EXTERN	= offt operl ofreq.ini xy
 
+# the first place to look for ProbeScope, if no PROBESCOPE environment var
+PROBESCOPE = /dev/probescope
+
 # compiler
 CC	= gcc
 
 # compiler flags; -DLIBPATH sets default value of OSCOPEPATH env variable
-CFLAGS	= '-DLIBPATH="$(LIBPATH)"' '-DVER="$(VER)"' $(DFLAGS) -Wall -O3 -m486
+CFLAGS	= '-DLIBPATH="$(LIBPATH)"' '-DVER="$(VER)"' \
+	'-DPROBESCOPE="$(PROBESCOPE)"' $(DFLAGS) -Wall -O3 -m486
 
 # load flags, add -L/extra/lib/path if necessary
 LDFLAGS	= -s
@@ -62,10 +66,10 @@ XFLAGS	= -L/usr/X11/lib -lsx -lXaw -lXt -lX11
 # nothing should need changed below here
 ############################################################
 
-VER	= 1.3
-SRC	= oscope.c file.c func.c fft.c realfft.c display.c
-VGA_SRC = $(SRC) sc_linux.c gr_vga.c
-X11_SRC	= $(SRC) sc_linux.c gr_sx.c freq.c dirlist.c
+VER	= 1.4
+SRC	= oscope.c file.c func.c fft.c realfft.c display.c proscope.c
+VGA_SRC = $(SRC) sc_linux.c ser_unix.c gr_vga.c
+X11_SRC	= $(SRC) sc_linux.c ser_unix.c gr_sx.c freq.c dirlist.c
 DOS_SRC = $(SRC) sc_sb.c gr_grx.c
 
 REL	= $(patsubst %,Rel%,$(subst .,_,$(VER)))

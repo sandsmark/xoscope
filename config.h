@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: config.h,v 1.7 1997/05/04 20:59:50 twitham Rel1_3 $
+ * @(#)$Id: config.h,v 1.8 1997/05/24 23:36:27 twitham Exp $
  *
  * Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -14,7 +14,7 @@
 /* program defaults for the command-line options (original values) */
 #define DEF_A	1		/* 1-8 (1) */
 #define DEF_R	44000		/* 8800,22000,44000 (44000) */
-#define DEF_S	1		/* 1,2,5,10,20,50,100,200 (1) */
+#define DEF_S	10		/* 1,2,5,10,20,50,100,200,500,1000 (10) */
 #define DEF_T	"0:1:x"		/* -128-127:0,1,2:x,y ("0:1:x") */
 #define DEF_C	4		/* 0-16 (4) */
 #define DEF_M	0		/* 0,1,2 (0) */
@@ -62,3 +62,7 @@
 
 /* FFT length, shorter than minimum screen width and multiple of 2 (512) */
 #define FFTLEN	512
+
+/* extra places to look for ProbeScope (set to {""} to not search) */
+/* ({"", "/dev/ttyS0", "/dev/ttyS1", "/dev/ttyS2", "/dev/ttyS3"}) */
+#define PSDEVS {"", "/dev/ttyS0", "/dev/ttyS1", "/dev/ttyS2", "/dev/ttyS3"}
