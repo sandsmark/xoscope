@@ -1,7 +1,6 @@
 /*
- * @(#)$Id: display.c,v 1.27 1996/03/10 01:41:37 twitham Exp $
+ * @(#)$Id: display.c,v 1.28 1996/04/21 02:20:35 twitham Rel1_0 $
  *
- * Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
  * (see the files README and COPYING for more details)
@@ -81,7 +80,7 @@ col(int x)
   if (x > 67)			/* right side; absolute */
     return (h_points - ((80 - x) * 8));
   /* middle; spread it out proportionally */
-  return ((x - 12) * (h_points - 200) / 56 + 100);
+  return ((x - 12) * (h_points - 200) / 55 + 100);
 }
 
 /* how to convert text row(0-29) to graphics position */
@@ -96,8 +95,8 @@ row(int y)
   return ((y - 5) * (v_points - 160) / 20 + 80);
 }
 
-/* get a file name */
 #ifndef XOSCOPE
+/* get a file name */
 char *
 GetFile(char *path)
 {
@@ -112,6 +111,24 @@ GetFile(char *path)
   return(s);
 #else
   return(filename);
+#endif
+}
+
+/* prompt for a string */
+char *
+GetString(char *msg, char *def)
+{
+#ifdef HAVEVGAMISC
+  char *s;
+
+  s = vga_prompt(0, v_points / 2,
+		 80 * 8, 8 + font.font_height, msg,
+		 &font, &font, TEXT_FG, KEY_FG, TEXT_BG, PROMPT_SCROLLABLE);
+  if (s[0] == '\e' || s[0] == '\0')
+    return(NULL);
+  return(s);
+#else
+  return(NULL);
 #endif
 }
 #endif
@@ -162,9 +179,8 @@ draw_text(int all)
     VGA_WRITE("(#)", col(2), row(2), font, KEY_FG, TEXT_BG, ALIGN_LEFT);
     VGA_WRITE("Save", col(5), row(2), font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
 
-    VGA_WRITE("(Tab)", 0, row(3), font, KEY_FG, TEXT_BG, ALIGN_LEFT);
-    VGA_WRITE(p->show ? "Visible" : "HIDDEN ", col(5), row(3),
-	      font, p->color, TEXT_BG, ALIGN_LEFT);
+    sprintf(string, "%d x %d", h_points, v_points);
+    VGA_WRITE(string, 0, row(3), font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
 
     VGA_WRITE("(Enter)", col(70), 0, font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
     VGA_WRITE("Refresh", col(77), 0, font, TEXT_FG, TEXT_BG, ALIGN_RIGHT);
@@ -218,7 +234,7 @@ draw_text(int all)
       VGA_WRITE(funcnames[ch[i].func], col(69 * (i / 4)), row(j + 3),
 		font, k, TEXT_BG, ALIGN_LEFT);
 
-      if (ch[i].func == 2) {
+      if (ch[i].func == FUNCMEM) {
 	sprintf(string, "%c", ch[i].mem);
 	VGA_WRITE(string, col(69 * (i / 4) + 7), row(j + 3),
 		  font, memcolor[ch[i].mem - 'a'], TEXT_BG, ALIGN_LEFT);
@@ -235,11 +251,15 @@ draw_text(int all)
     }
 
     /* below graticule */
-    VGA_WRITE("({)        (})", 0, row(25), font,KEY_FG, TEXT_BG, ALIGN_LEFT);
-    VGA_WRITE("Position", col(3), row(25), font, p->color, TEXT_BG, ALIGN_LEFT);
+    VGA_WRITE("(Tab)", 0, row(25), font, KEY_FG, TEXT_BG, ALIGN_LEFT);
+    VGA_WRITE(p->show ? "Visible" : "HIDDEN ", col(5), row(25),
+	      font, p->color, TEXT_BG, ALIGN_LEFT);
 
-    VGA_WRITE("([)        (])", 0, row(26), font, KEY_FG, TEXT_BG, ALIGN_LEFT);
-    VGA_WRITE("Scale", col(4), row(26), font, p->color, TEXT_BG, ALIGN_LEFT);
+    VGA_WRITE("({)        (})", 0, row(26), font,KEY_FG, TEXT_BG, ALIGN_LEFT);
+    VGA_WRITE("Position", col(3), row(26), font, p->color, TEXT_BG, ALIGN_LEFT);
+
+    VGA_WRITE("([)        (])", 0, row(27), font, KEY_FG, TEXT_BG, ALIGN_LEFT);
+    VGA_WRITE("Scale", col(4), row(27), font, p->color, TEXT_BG, ALIGN_LEFT);
 
     VGA_WRITE("(,)        (.)", 0, row(28), font, KEY_FG, TEXT_BG, ALIGN_LEFT);
     sprintf(string, "DMA:%d", scope.dma);
@@ -267,6 +287,10 @@ draw_text(int all)
     }
 
     if (scope.select > 1) {
+      VGA_WRITE("($)", col(72), row(25),
+		font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
+      VGA_WRITE("Extern", col(78), row(25),
+		font, p->color, TEXT_BG, ALIGN_RIGHT);
       VGA_WRITE("(:)    (;)", col(79), row(26),
 		font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
       VGA_WRITE("Math", col(76), row(26),
