@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 1.48 1997/06/10 01:55:47 twitham Exp $
+ * @(#)$Id: display.c,v 1.49 1997/06/11 01:07:58 twitham Rel $
  *
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -206,7 +206,7 @@ draw_text(int all)
       vga_write("([)     (])", 0, row(27), font, KEY_FG, TEXT_BG,ALIGN_LEFT);
       vga_write("Pos.", col(3), row(27), font, p->color,TEXT_BG,ALIGN_LEFT);
 
-      vga_write("(%)", 0, row(28), font, KEY_FG, TEXT_BG, ALIGN_LEFT);
+      vga_write("(^)", 0, row(28), font, KEY_FG, TEXT_BG, ALIGN_LEFT);
       sprintf(string, "ProbeScope %s", ps.found ? "On" : "Off");
       vga_write(string, col(3), row(28),
 		font, mem[25].color, TEXT_BG, ALIGN_LEFT);

@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.c,v 1.66 1997/06/10 01:28:47 twitham Exp $
+ * @(#)$Id: oscope.c,v 1.67 1997/06/11 01:07:48 twitham Rel $
  *
  * Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -379,7 +379,7 @@ handle_key(unsigned char c)
       }
     }
     break;
-  case '%':
+  case '^':
     if (ps.found) {		/* toggle ProbeScope on/off */
       ps.found = 0;
       clear();

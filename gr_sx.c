@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: gr_sx.c,v 1.15 1997/05/31 19:37:25 twitham Exp $
+ * @(#)$Id: gr_sx.c,v 1.16 1997/06/11 01:08:07 twitham Rel $
  *
  * Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -333,7 +333,7 @@ init_widgets()
   xwidg[3] = MakeButton(">", hit_key, ")");
   xwidg[4] = MakeButton(" > ", hit_key, "0");
   xwidg[5] = MakeButton("SC", hit_key, "&");
-  xwidg[6] = MakeButton("PS", hit_key, "%");
+  xwidg[6] = MakeButton("PS", hit_key, "^");
   xwidg[7] = MakeButton("Run", runmode, "1");
   xwidg[8] = MakeButton("Wait", runmode, "2");
   xwidg[9] = MakeButton("Stop", runmode, "0");
