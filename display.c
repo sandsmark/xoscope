@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 1.69 2003/06/17 22:52:32 baccala Exp $
+ * @(#)$Id: display.c,v 1.70 2003/06/20 19:51:32 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -708,6 +708,7 @@ draw_data()
 	    perror("xoscope: malloc(SignalLine)");
 	    break;
 	  }
+	  bzero(sl, sizeof(SignalLine));
 	  p->signalline[bit < 0 ? 0 : bit] = sl;
 	}
 
