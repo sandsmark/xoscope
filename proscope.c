@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: proscope.c,v 1.8 2003/06/17 22:52:32 baccala Exp $
+ * @(#)$Id: proscope.c,v 1.9 2003/06/19 07:20:59 baccala Exp $
  *
  * Copyright (C) 1997 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -50,7 +50,7 @@ idprobescope(int fd)
 }
 
 /* initialize the probescope structure */
-int
+static int
 open_probescope(void)
 {
 
@@ -61,11 +61,6 @@ open_probescope(void)
   return init_serial_probescope();
 }
 
-void
-close_probescope(void)
-{
-}
-
 static int
 serial_fd(void)
 {
@@ -74,7 +69,9 @@ serial_fd(void)
 
 static int nchans(void)
 {
-  return 1;
+  if (!ps.found) open_probescope();
+
+  return ps.found ? 1 : 0;
 }
 
 static Signal *ps_chan(int chan)
@@ -218,8 +215,6 @@ static char * status_str(int i)
 
 DataSrc datasrc_ps = {
   "ProbeScope",
-  open_probescope,
-  close_probescope,
   nchans,
   ps_chan,
   NULL, /* set_trigger, */

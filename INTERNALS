@@ -41,14 +41,9 @@ There is also a set of functions (in func.c) which create their own
 Signal's and write into them the results of various calculations
 they can perform on display channels 1 and 2.
 
-Each data source defines open() and close() functions.  These aren't
-nearly as important as their names might suggest, because the data
-source design is intended to be as non-modal as possible.  In
-particular, just because an open() failed doesn't mean that
-set_option() can't be used to set something like a device pathname
-that would then result in the device being open.  In this case, open()
-isn't called a second time.  Instead, nchans() indicates how many
-channels are presently available, which may change depending on things
+The data sources do not define open or close functions.  Instead,
+nchans() indicates how many channels are presently available, which is
+zero if the device is unavailable and may change depending on things
 like the current options, or perhaps PCMCIA cards being added or
 removed.  If nchans() is zero, it is recommended that status_str()
 display some kind of reason why.  The primary reason for this design
@@ -56,7 +51,6 @@ is to avoid issues of the this-option-must-be-set-before-open kind.
 
 Basic data source usage sequence:
 
-	open()			inform data source that it's 'active'
 	nchans()		returns zero if device not available
 	set_option()
 	set_option()
@@ -76,7 +70,6 @@ Basic data source usage sequence:
 	get_data()
 	get_data()
 	get_data()
-	close()			inform data source that it's 'inactive'
 
 Several problems exist in this design.  First, the Signal structure
 assumes that sweeps are written into the array starting at offset

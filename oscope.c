@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.c,v 1.91 2003/06/17 22:52:32 baccala Exp $
+ * @(#)$Id: oscope.c,v 1.92 2003/06/19 07:20:59 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -118,7 +118,6 @@ cleanup()
 {
   cleanup_math();
   cleanup_display();
-  if (datasrc) datasrc->close();
 }
 
 /* initialize the scope */
@@ -226,7 +225,6 @@ datasrc_close(void)
 	}
       }
     }
-    datasrc->close();
   }
 
   datasrc = NULL;
@@ -239,7 +237,7 @@ datasrc_open(DataSrc *new_datasrc)
   int i;
   int limit = sizeof(datasrcs)/sizeof(DataSrc *);
 
-  if (new_datasrc->open()) {
+  if (new_datasrc->nchans() > 0) {
 
     datasrc_close();
 
@@ -282,8 +280,6 @@ datasrc_force_open(DataSrc *new_datasrc)
   datasrc_close();
 
   datasrc = new_datasrc;
-
-  datasrc->open();
 
   for (i=0; i<limit; i++) {
     if (datasrc == datasrcs[i]) datasrci = i;
@@ -705,4 +701,66 @@ main(int argc, char **argv)
   mainloop();
   cleanup();
   exit(0);
+}
+
+/* split_field() is used when we want to take a (possibly) long string
+ * and split it across two fields.  'fieldtwo' is true to return field
+ * 2, otherwise return field 1.
+ */
+
+char * split_field(char *str, int fieldtwo, int limit)
+{
+  static char buffer[256];
+  char *sp_index = NULL;
+  int i;
+
+  if (strlen(str) > limit) {
+
+    if (!fieldtwo) {
+
+      for (i=0; i<limit; i++) {
+	buffer[i] = str[i];
+
+	if (str[i] == ' ') {
+	  sp_index = &buffer[i];
+	}
+      }
+
+      if (sp_index) {
+	*sp_index = '\0';
+      } else {
+	buffer[i] = '\0';
+      }
+
+    } else {
+
+
+      for (i=0; i<limit; i++) {
+
+	if (str[i] == ' ') {
+	  sp_index = &str[i];
+	}
+      }
+
+      if (sp_index) {
+	i = 0;
+	while (*sp_index) buffer[i++] = *sp_index++;
+	buffer[i] = '\0';
+      } else {
+	i = 0;
+	while (str[limit+i]) buffer[i] = str[i];
+	buffer[i] = '\0';
+      }
+    }
+
+    return buffer;
+
+  } else {
+
+    /* Length of string less than limit */
+
+    if (fieldtwo) return "";
+    else return str;
+
+  }
 }

@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: comedi.c,v 1.1 2003/06/17 22:52:32 baccala Exp $
+ * @(#)$Id: comedi.c,v 1.2 2003/06/19 07:20:59 baccala Exp $
  *
  * Author: Brent Baccala <baccala@freesoft.org>
  *
@@ -42,8 +42,8 @@
 
 comedi_t *comedi_dev = NULL;
 
+static int comedi_opened = 0;	/* t if open has at least been _attempted_ */
 static int comedi_running = 0;
-
 static int comedi_error = 0;
 
 /* device_name[] is an array we write the COMEDI device into if it is
@@ -340,6 +340,7 @@ close_comedi()
   if (comedi_dev) comedi_close(comedi_dev);
   comedi_dev = NULL;
   comedi_running = 0;
+  comedi_opened = 0;
 
   /* Leave active channels alone here in case we're closing
    * a device because of an error and want to re-open later.
@@ -364,6 +365,7 @@ open_comedi(void)
 
   close_comedi();
   comedi_error = 0;
+  comedi_opened = 1;
   subdevice_flags = 0;
   subdevice_type = COMEDI_SUBD_UNUSED;
 
@@ -486,6 +488,8 @@ reset_comedi(void)
 static int nchans(void)
 {
   /* XXX unclear if subdevice_type has been set correctly when we get here */
+
+  if (! comedi_opened) open_comedi();
 
   if (comedi_dev == NULL) {
     return 0;
@@ -796,25 +800,6 @@ static char * status_str(int i)
 {
   static char buffer[16];
   char *error = comedi_strerror(comedi_error);
-  static char error1[16], error2[16];
-
-  if (comedi_error && strlen(error) >= 16) {
-    char *sp_index = NULL;
-    int i;
-
-    strncpy(error1, error, sizeof(error1));
-
-    for (i=0; i<16; i++) {
-      if (error1[i] == ' ') sp_index = &error1[i];
-    }
-
-    if (sp_index) {
-      *sp_index = '\0';
-      strncpy(error2, error + (sp_index - error1), sizeof(error2));
-    } else {
-      error2[0] = '\0';
-    }
-  }
 
   switch (i) {
   case 0:
@@ -823,15 +808,12 @@ static char * status_str(int i)
     if (comedi_dev) {
       return comedi_get_board_name(comedi_dev);
     } else {
-      if (strlen(error) < 16) {
-	return error;
-      } else {
-	return error1;
-      }
+      return split_field(error, 0, 16);
     }
+
   case 4:
-    if (!comedi_dev && strlen(error) >= 16) {
-      return error2;
+    if (!comedi_dev) {
+      return split_field(error, 1, 16);
     } else {
       return "";
     }
@@ -845,20 +827,17 @@ static char * status_str(int i)
     }
   case 3:
     if (comedi_dev && comedi_error) {
-      if (strlen(error) < 16) {
-	return error;
-      } else {
-	return error1;
-      }
+      return split_field(error, 0, 16);
     } else {
       return "";
     }
   case 5:
-    if (comedi_dev && comedi_error && strlen(error) >= 16) {
-      return error2;
+    if (comedi_dev && comedi_error) {
+      return split_field(error, 1, 16);
     } else {
       return "";
     }
+
   default:
     return NULL;
   }
@@ -1005,8 +984,6 @@ static char * comedi_save_option(int i)
 
 DataSrc datasrc_comedi = {
   "COMEDI",
-  open_comedi,
-  close_comedi,
   nchans,
   comedi_chan,
   set_trigger,

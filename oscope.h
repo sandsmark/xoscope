@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.h,v 1.41 2003/06/17 22:52:32 baccala Exp $
+ * @(#)$Id: oscope.h,v 1.42 2003/06/19 07:20:59 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -67,19 +67,6 @@ extern Signal mem[26];		/* Memory channels */
 typedef struct DataSrc {	/* A source of data samples */
 
   char *	name;
-
-  /* open()/close() - but not as important as their names suggest
-   *
-   * Even if open() failed, device can still be used without calling
-   * open() again, if options are set to make device usable.
-   * open()/close() are only used to indicate to the data source when
-   * it is 'active', i.e. device will never be used without calling
-   * open() first, or after a call to close().  TRUE/FALSE return
-   * value from open() is used only to skip devices when they are
-   * being cycled through.
-   */
-  int		(* open)(void);
-  void		(* close)(void);
 
   /* returns number of data channels available.  Return value can
    * change around pretty much at will.  Zero indicates device unavailable

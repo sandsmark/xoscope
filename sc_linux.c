@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: sc_linux.c,v 1.23 2003/06/17 22:52:32 baccala Exp $
+ * @(#)$Id: sc_linux.c,v 1.24 2003/06/19 07:20:59 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -33,13 +33,13 @@
 #define ESDDEVICE "ESounD"
 #define SOUNDDEVICE "/dev/dsp"
 
-static int snd = -1;		/* file descriptor for /dev/dsp */
-static int esd = -1;		/* file descriptor for ESD */
+static int snd = -2;		/* file descriptor for /dev/dsp */
+static int esd = -2;		/* file descriptor for ESD */
 
 static int dma = 4;		/* 1, 2 or 4 */
 static int esdblock = 0;	/* 1 to block ESD; 0 to non-block */
 
-static int sc_nchans = 0;
+static int sc_chans = 0;
 static int sound_card_rate = DEF_R;	/* sampling rate of sound card */
 
 /* Signal structures we're capturing into */
@@ -50,8 +50,10 @@ static int trigmode = 0;
 static int triglev;
 static int trigch;
 
-static char * errormsg1 = NULL;
-static char * errormsg2 = NULL;
+static char * snd_errormsg1 = NULL;
+static char * snd_errormsg2 = NULL;
+static char * esd_errormsg1 = NULL;
+static char * esd_errormsg2 = NULL;
 
 /* This function is defined as do-nothing and weak, meaning it can be
  * overridden by the linker without error.  It's used for the X
@@ -70,7 +72,7 @@ close_sound_card()
 {
   if (snd >= 0) {
     close(snd);
-    snd = -1;
+    snd = -2;
   }
 }
 
@@ -78,9 +80,9 @@ close_sound_card()
 static void
 check_status_ioctl(int d, int request, void *argp, int line)
 {
-  if (!esd && ioctl(d, request, argp) < 0) {
-    errormsg1 = "sound ioctl";
-    errormsg2 = strerror(errno);
+  if (ioctl(d, request, argp) < 0) {
+    snd_errormsg1 = "sound ioctl";
+    snd_errormsg2 = strerror(errno);
     close_sound_card();
   }
 }
@@ -93,7 +95,7 @@ close_ESD()
 {
   if (esd >= 0) {
     close(esd);
-    esd = -1;
+    esd = -2;
   }
 }
 
@@ -103,13 +105,13 @@ open_ESD(void)
 {
   if (esd >= 0) return 1;
 
-  errormsg1 = NULL;
-  errormsg2 = NULL;
+  esd_errormsg1 = NULL;
+  esd_errormsg2 = NULL;
 
   if ((esd = esd_monitor_stream(ESD_BITS8|ESD_STEREO|ESD_STREAM|ESD_MONITOR,
 				ESD_DEFAULT_RATE, NULL, progname)) <= 0) {
-    errormsg1 = "opening " ESDDEVICE;
-    errormsg2 = strerror(errno);
+    esd_errormsg1 = "opening " ESDDEVICE;
+    esd_errormsg2 = strerror(errno);
     return 0;
   }
 
@@ -134,8 +136,8 @@ open_sound_card(void)
 
   if (snd >= 0) return 1;
 
-  errormsg1 = NULL;
-  errormsg2 = NULL;
+  snd_errormsg1 = NULL;
+  snd_errormsg2 = NULL;
 
   /* we try a few times in case someone else is using device (FvwmAudio) */
   while ((snd = open(SOUNDDEVICE, O_RDONLY | O_NDELAY)) < 0 && i > 0) {
@@ -144,8 +146,8 @@ open_sound_card(void)
   }
 
   if (snd < 0) {
-    errormsg1 = "opening " SOUNDDEVICE;
-    errormsg2 = strerror(errno);
+    snd_errormsg1 = "opening " SOUNDDEVICE;
+    snd_errormsg2 = strerror(errno);
     return 0;
   }
 
@@ -155,7 +157,7 @@ open_sound_card(void)
   parm = chan;			/* set mono/stereo */
   //check_status_ioctl(snd, SOUND_PCM_WRITE_CHANNELS, &parm, __LINE__);
   check_status_ioctl(snd, SNDCTL_DSP_CHANNELS, &parm, __LINE__);
-  sc_nchans = parm;
+  sc_chans = parm;
 
   parm = bits;			/* set 8-bit samples */
   check_status_ioctl(snd, SOUND_PCM_WRITE_BITS, &parm, __LINE__);
@@ -200,11 +202,20 @@ reset_sound_card(void)
   }
 }
 
-static int nchans(void)
+static int esd_nchans(void)
 {
   /* ESD always has two channels, right? */
 
-  return (snd >= 0) ? sc_nchans : (esd >= 0) ? 2 : 0;
+  if (esd == -2) open_ESD();
+
+  return (esd >= 0) ? 2 : 0;
+}
+
+static int sc_nchans(void)
+{
+  if (snd == -2) open_sound_card();
+
+  return (snd >= 0) ? sc_chans : 0;
 }
 
 static int fd(void)
@@ -379,14 +390,27 @@ get_data()
   return(1);
 }
 
-static char * status_str(int i)
+static char * snd_status_str(int i)
 {
   switch (i) {
   case 0:
-    if (errormsg1) return errormsg1;
+    if (snd_errormsg1) return snd_errormsg1;
     else return "";
   case 2:
-    if (errormsg2) return errormsg2;
+    if (snd_errormsg2) return snd_errormsg2;
+    else return "";
+  }
+  return NULL;
+}
+
+static char * esd_status_str(int i)
+{
+  switch (i) {
+  case 0:
+    if (esd_errormsg1) return esd_errormsg1;
+    else return "";
+  case 2:
+    if (esd_errormsg2) return esd_errormsg2;
     else return "";
   }
   return NULL;
@@ -447,9 +471,7 @@ static char * sc_save_option(int i)
 #if HAVE_LIBESD
 DataSrc datasrc_esd = {
   "ESD",
-  open_ESD,
-  close_ESD,
-  nchans,
+  esd_nchans,
   sc_chan,
   set_trigger,
   clear_trigger,
@@ -457,7 +479,7 @@ DataSrc datasrc_esd = {
   reset,
   fd,
   get_data,
-  status_str,
+  esd_status_str,
   NULL,  /* option1 */
   NULL,  /* option1str */
   NULL,  /* option2, */
@@ -470,9 +492,7 @@ DataSrc datasrc_esd = {
 
 DataSrc datasrc_sc = {
   "Soundcard",
-  open_sound_card,
-  close_sound_card,
-  nchans,
+  sc_nchans,
   sc_chan,
   set_trigger,
   clear_trigger,
@@ -480,7 +500,7 @@ DataSrc datasrc_sc = {
   reset,
   fd,
   get_data,
-  status_str,
+  snd_status_str,
   option1_sc,
   option1str_sc,
   NULL,  /* option2, */

@@ -1,6 +1,6 @@
-/* config.h.in.  Generated automatically from configure.in by autoheader 2.13.  */
+/* config.h.in.  Generated automatically from configure.in by autoheader.  */
 /*
- * @(#)$Id: config.h.in,v 1.8 2003/06/17 22:52:32 baccala Exp $
+ * @(#)$Id: config.h.in,v 1.9 2003/06/19 07:20:59 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -23,6 +23,9 @@
 
 /* Define if major, minor, and makedev are declared in <sysmacros.h>.  */
 #undef MAJOR_IN_SYSMACROS
+
+/* Define if you need to in order for stat and other things to work.  */
+#undef _POSIX_SOURCE
 
 /* Define as the return type of signal handlers (int or void).  */
 #undef RETSIGTYPE

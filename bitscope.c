@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: bitscope.c,v 1.20 2003/06/17 22:52:32 baccala Exp $
+ * @(#)$Id: bitscope.c,v 1.21 2003/06/19 07:20:59 baccala Exp $
  *
  * Copyright (C) 2000 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -394,11 +394,10 @@ static int open_bitscope(void)
   return init_serial_bitscope();
 }
 
-static void close_bitscope(void)
-{}
-
 static int nchans(void)
 {
+  if (! bs.found) open_bitscope();
+
   return bs.found ? 3 : 0;
 }
 
@@ -510,8 +509,6 @@ static char * status_str(int i)
 
 DataSrc datasrc_bs = {
   "BitScope",
-  open_bitscope,
-  close_bitscope,
   nchans,
   bs_chan,
   NULL, /* set_trigger, */
