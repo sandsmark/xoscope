@@ -160,7 +160,7 @@ void init_data()
 /* draw graticule */
 inline void draw_graticule()
 {
-  float i;
+  register int i,k;
 
   vga_clear();
 
@@ -172,14 +172,14 @@ inline void draw_graticule()
   vga_drawline(h_points-1, offset, h_points-1, offset+256);
 
   if (actual) {
-    for (i = 0; i < h_points-1  ; i += ((float)actual / 1000)) {
-      /* draw tick marks at 1 msec intervals */
-      vga_drawline(i, offset, i, offset+5);
-      vga_drawline(i, offset+251, i, offset+256);
+    /* draw tick marks at 1 msec intervals */
+    for (i = 0; (k = i / 1000) < h_points-1  ; i += actual) {
+      vga_drawline(k, offset, k, offset+5);
+      vga_drawline(k, offset+251, k, offset+256);
     }
-    for (i = 0; i < h_points-1  ; i += ((float)actual / 100)) {
-      /* draw vertical lines at 10 msec intervals */
-      vga_drawline(i, offset, i, offset+256);
+    /* draw vertical lines at 10 msec intervals */
+    for (i = 0; (k = i / 100) < h_points-1  ; i += actual) {
+      vga_drawline(k, offset, k, offset+256);
     }
   }
 
