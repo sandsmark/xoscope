@@ -5,7 +5,7 @@
  *
  * [x]scope --- Use Linux's /dev/dsp (a sound card) as an oscilloscope
  *
- * @(#)$Id: oscope.c,v 1.33 1996/01/31 05:50:01 twitham Exp $
+ * @(#)$Id: oscope.c,v 1.34 1996/01/31 07:19:01 twitham Exp $
  *
  * Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
@@ -61,10 +61,10 @@
 /* global program defaults, defined in scope.h (see also) */
 Scope scope;
 Signal ch[CHANNELS];
-int channels = DEF_12;
+int channels = DEF_1;
 int mode = DEF_M;
 int dma = DEF_D;
-int point_mode = DEF_PL;
+int plot_mode = DEF_P;
 int graticule = DEF_G;
 int behind = DEF_G;
 int verbose = DEF_V;
@@ -73,8 +73,6 @@ int verbose = DEF_V;
 char *progname;			/* the program's name, autoset via argv[0] */
 char error[256];		/* buffer for "one-line" error messages */
 char *def[] = {
-  "",				/* used by -1/-2/-p/-l in usage message */
-  "(default)",
   "on",				/* used by -g/-v in usage message */
   "off",
   "graticule",			/* used by -b in usage message */
@@ -89,7 +87,7 @@ int h_points;			/* points in horizontal axis */
 int offset;			/* vertical offset */
 int actual;			/* actual sampling rate */
 short mult[] = {1,1,1,1,1,1,2,4,8,16,32};
-short divi[]  = {32,16,8,4,2,1,1,1,1,1,1};
+short divi[] = {32,16,8,4,2,1,1,1,1,1,1};
 
 /* display command usage on standard error and exit */
 void
@@ -99,38 +97,28 @@ usage()
 	  "[-1|-2|-3|-4] [-r<rate>] [-s<scale>] [-t<trigger>] [-c<colour>]
              [-m<mode>] [-d<dma divisor>] [-f font] [-p|-l] [-g] [-b] [-v]
 
-Options          Runtime Keys   Description (defaults)
--1               `       cycle  single hardware channel , left  input  %s
--2               `       cycle  dual   hardware channels, right input  %s
--3               `       cycle  Three channel, 2 hardware + 1 software %s
--4               `       cycle  Four  channel, 2 hardware + 2 software %s
--r <rate>        S       auto   sampling Rate in Hz             (default=%d)
--s <scale>       S *2   s /2    time Scale or zoom: 1,2,4,8,16  (default=%d)
--t <trigger>     T +8   t -8    Trigger level:0-255,-1=disabled (default=%d)
--c <colour>      C +1   c -1    graticule Colour                (default=%d)
--m <mode>        M +1   m -1    video mode (size): 0,1,2,3,4,5,6(default=%d)
--d <dma divisor> D *2   d /2    DMA buffer size divisor: 1,2,4  (default=%d)
--f <font name>                  The font name as-in %s
--p               P  p   toggle  Point mode, opposite of -l      %s
--l               L  l   toggle  Line  mode, opposite of -p      %s
--g               G  g   toggle  turn %s Graticule of 5 msec major divisions
--b               B  b   toggle  %s Behind instead of in front of %s
--v               V  v   toggle  turn %s Verbose keypress option log to stdout
-                 <space>toggle  Run / Stop
-                 Q q            Quit %s
+Startup Options  Description (defaults)
+-#               Number of channels shown        (%d)
+-r <rate>        sampling Rate in Hz             (%d)
+-s <scale>       time Scale: 1,2,5,10,20,100,200 (%d)
+-t <trigger>     Trigger level:0-255,-1=disabled (%d)
+-c <colour>      graticule Color                 (%d)
+-m <mode>        video mode (size): 0,1,2,3      (%d)
+-d <dma divisor> DMA buffer size divisor: 1,2,4  (%d)
+-f <font name>   The font name as-in %s
+-p               Plot mode, 0,1,2,3              (%d)
+-g               turn %s Graticule
+-b               %s Behind instead of in front of %s
+-v               turn %s Verbose keypress option log to stdout
 ",
 	  progname,
-	  def[channels == 1],
-	  def[channels == 2],
-	  def[channels == 3],
-	  def[channels == 4],
-	  scope.rate, scope.scale, scope.trig,
-	  scope.color, mode, dma,
+	  channels,
+	  DEF_R, DEF_S, DEF_T,
+	  DEF_C, mode, dma,
 	  fonts(),		/* the font method for the display */
-	  def[point_mode], def[!point_mode],
-	  def[scope.grat + 2], def[scope.behind + 4], def[!scope.behind + 4],
-	  def[verbose + 2],
-	  progname);
+	  plot_mode,
+	  def[scope.grat], def[scope.behind + 2], def[!scope.behind + 2],
+	  def[verbose]);
   exit(1);
 }
 
@@ -138,7 +126,7 @@ Options          Runtime Keys   Description (defaults)
 void
 parse_args(int argc, char **argv)
 {
-  const char     *flags = "12r:s:t:c:m:d:f:plgbv";
+  const char     *flags = "1234r:s:t:c:m:d:f:p:gbv";
   int             c;
 
   while ((c = getopt(argc, argv, flags)) != EOF) {
@@ -162,7 +150,7 @@ parse_args(int argc, char **argv)
       scope.trig = strtol(optarg, NULL, 0);
       scope.trig &= 0x00ff;
       break;
-    case 'c':			/* channel 1 trace colour */
+    case 'c':			/* graticule colour */
       scope.color = strtol(optarg, NULL, 0);
       break;
     case 'm':			/* video mode */
@@ -176,10 +164,7 @@ parse_args(int argc, char **argv)
       strcpy(fontname, optarg);
       break;
     case 'p':			/* point mode */
-      point_mode = 1;
-      break;
-    case 'l':			/* line mode */
-      point_mode = 0;
+      plot_mode = strtol(optarg, NULL, 0);
       break;
     case 'g':			/* graticule on/off */
       scope.grat = !scope.grat;
@@ -403,22 +388,22 @@ handle_key(unsigned char c)
     if (scope.color < 0)	/* decrease color */
       scope.color = 15;
     break;
-  case '>':
+  case '.':
     if (dma < 3) {		/* double dma */
       dma <<= 1;
       init_sound_card(0);
     }
     break;
-  case '<':
+  case ',':
     if (dma > 1) {		/* half dma */
       dma >>= 1;
       init_sound_card(0);
     }
     break;
   case 'p':
-    point_mode++;		/* point, point accumulate, line, line acc. */
-    if (point_mode > 3)
-      point_mode = 0;
+    plot_mode++;		/* point, point accumulate, line, line acc. */
+    if (plot_mode > 3)
+      plot_mode = 0;
     clear();
     break;
   case '[':
@@ -440,6 +425,9 @@ handle_key(unsigned char c)
   case '\r':
   case '\n':
     clear();			/* refresh screen */
+    break;
+  case '\b':		
+    verbose = !verbose;		/* verbose on/off */
     break;
   default:
     c = 0;			/* ignore unknown keys */
@@ -500,15 +488,14 @@ main(int argc, char **argv)
     progname = argv[0];
   else
     progname++;
-
   argc = opendisplay(argc, argv);
-  parse_args(argc, argv);	/* what do you want? */
   init_scope();
+  parse_args(argc, argv);
   init_screen(1);
   init_sound_card(1);
   init_channels();
   show_info(' ');
-  mainloop();			/* from display.h */
-  cleanup();			/* close sound, back to text mode */
+  mainloop();			/* to display.c */
+  cleanup();
   exit(0);
 }

@@ -1,12 +1,12 @@
 /*
- * @(#)$Id: display.c,v 1.11 1996/01/31 05:49:29 twitham Exp $
+ * @(#)$Id: display.c,v 1.12 1996/01/31 07:19:09 twitham Exp $
  *
  * Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
  * (see scope.c and the file COPYING for more details)
  *
- * This file implements the display for both scope and xscope
+ * This file implements the display for both the console and X11
  *
  */
 
@@ -166,7 +166,7 @@ draw_text()
 	    font, TEXT_FG, TEXT_BG, ALIGN_RIGHT);
 
   VGA_WRITE("(p)", 100, 62, font, KEY_FG, TEXT_BG, ALIGN_LEFT);
-  VGA_WRITE(strings[point_mode],
+  VGA_WRITE(strings[plot_mode],
 	    100+8*3, 62, font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
 
   VGA_WRITE("(9)               (0)", col(40), 62,
@@ -236,12 +236,11 @@ clear()
 void
 show_info(unsigned char c) {
   if (verbose) {
-    sprintf(error, "%1c %5dHz:  %2s  -r %5d  -s %2d  -t %3d  -c %2d  -m %2d  "
+    sprintf(error, "%1c %5dHz:  -%d  -r %5d  -s %2d  -t %3d  -c %2d  -m %2d  "
 	    "-d %1d  %2s  %2s  %2s%s",
-	    c, actual,
-	    channels == 1 ? "-1" : "-2",
+	    c, actual, channels,
 	    scope.rate, scope.scale, scope.trig, scope.color, mode, dma,
-	    point_mode ? "-p" : "-l",
+	    plot_mode ? "-p" : "-l",
 
 	    /* reverse logic if these booleans are on by default in scope.h */
 #if DEF_G
@@ -262,7 +261,6 @@ show_info(unsigned char c) {
 	    verbose ? "  -v" : ""
 #endif
 	    );
-    draw_text();
     printf("%s\n", error);
   }
 }
@@ -319,13 +317,13 @@ draw_data()
   static int i, j, off;
   static Signal *p;
 
-  if (point_mode < 2) {		/* point / point accumulate */
+  if (plot_mode < 2) {		/* point / point accumulate */
     for (j = 0 ; j < channels ; j++) {
       p = &ch[j];
       off = offset + p->pos;
       VGA_SETCOLOR(p->color);
       for (i = 0 ; i <= (h_points - 200) / scope.scale ; i++) {
-	if (point_mode == 0) {	/* erase previous dots */
+	if (plot_mode == 0) {	/* erase previous dots */
 	  VGA_SETCOLOR(color[0]);
 	  VGA_DRAWPIXEL(i * scope.scale + 100,
 			off + p->old[i] * mult[p->scale] / divi[p->scale]);
@@ -343,7 +341,7 @@ draw_data()
       off = offset + p->pos;
       VGA_SETCOLOR(p->color);
       for (i = 0 ; i < (h_points - 200) / scope.scale ; i++) {
-	if (point_mode == 2) {	/* erase previous lines */
+	if (plot_mode == 2) {	/* erase previous lines */
 	  VGA_SETCOLOR(color[0]);
 	  VGA_DRAWLINE(i * scope.scale + 100,
 		       off + p->old[i] * mult[p->scale] / divi[p->scale],
@@ -384,7 +382,7 @@ animate(void *data)
     cleanup();
     exit(0);
   }
-  AddTimeOut(10, animate, NULL);
+  AddTimeOut(MSECREFRESH, animate, NULL);
 #endif
 }
 
@@ -457,6 +455,7 @@ init_screen(int firsttime)
 void
 mainloop()
 {
+  draw_text();
 #ifdef XSCOPE
   animate(NULL);
   MainLoop();

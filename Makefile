@@ -1,4 +1,4 @@
-# @(#)$Id: Makefile,v 1.6 1996/01/23 08:00:10 twitham Exp $
+# @(#)$Id: Makefile,v 1.7 1996/01/31 07:18:53 twitham Exp $
 
 # Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
 # Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
@@ -12,6 +12,9 @@ TARGET	= scope xscope
 
 # uncomment this line if you don't have libvgamisc from the g3fax package
 #DFLAGS	= -DNOVGAMISC
+
+# uncomment this line if you don't want console-based scope
+#TARGET = xscope
 
 # uncomment these 2 if you don't have libsx or if you don't want xscope
 #EFLAGS	= -DNOSX
@@ -45,11 +48,11 @@ X11_OBJ	= $(X11_SRC:.c=.o)
 
 all:	$(TARGET)
 
-scope:	$(OBJ) scope.h
+scope:	$(OBJ)
 	$(CC) $(OBJ) $(LDFLAGS) -o scope -lvgamisc -lvga
 	chmod u+s scope
 
-xscope:	$(X11_OBJ) scope.h
+xscope:	$(X11_OBJ)
 	$(CC) $(X11_OBJ) $(LDFLAGS) -o xscope \
 		-lsx -lXaw -lXt -lX11 -L/usr/X11/lib
 

@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.h,v 1.8 1996/01/30 06:45:42 twitham Exp $
+ * @(#)$Id: oscope.h,v 1.9 1996/01/31 07:18:43 twitham Exp $
  *
  * Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
@@ -17,19 +17,19 @@
 #endif
 
 /* program defaults for the command-line options */
-#define DEF_12 2		/* -1/-2: 1=single channel, 2=dual channels */
-#define DEF_R 44000		/* -r: 5000 - 44100 works for SoundBlaster */
-#define DEF_S 1			/* -s: 1, 2, 4, 8, 16 */
-#define DEF_T 128		/* -t: 0 - 255 or -1 = disabled, 128 = center */
-#define DEF_C 4			/* -c: channel 1 green like a real scope */
-#define DEF_M 0			/* -m: predefined 640x480 */
-#define DEF_D 4			/* -d: 1, 2, 4 */
-#define DEF_F ""		/* empty-string is the default8x16 */
-#define DEF_FX "8x16"		/* for X scope, an equivalent 8x16 */
-#define DEF_PL 2		/* -p/-l: 0=line,                 1=point */
-#define DEF_G 1			/* -g:    0=graticule off, 1=graticule on */
-#define DEF_B 0			/* -b:    0=graticule in front, 1=in back */
-#define DEF_V 0			/* -v:    0=verbose log off, 1=verbose on */
+#define DEF_1 2
+#define DEF_R 44000
+#define DEF_S 1
+#define DEF_T 128
+#define DEF_C 4
+#define DEF_M 0
+#define DEF_D 4
+#define DEF_F ""
+#define DEF_FX "8x16"
+#define DEF_P 2
+#define DEF_G 1
+#define DEF_B 0
+#define DEF_V 0
 
 /* maximum screen width, also the maximum number of samples in memory at once */
 #define MAXWID	1600
@@ -41,20 +41,26 @@
 /* max number of channels */
 #define CHANNELS 4
 
-/* initial colors of the channels */
+/* initial colors of the channels (see top of display.c) */
 #define CHANNELCOLOR	{2,3,5,6}
 
 /* text foreground color */
 #define TEXT_FG		color[2]
 
+/* key foreground color */
+#define KEY_FG		color[5]
+
 /* text background color */
 #define TEXT_BG		color[0]
+
+/* minimum number of milliseconds between refresh on X11 version */
+#define MSECREFRESH	10
 
 /* global program variables */
 extern int channels;
 extern int mode;
 extern int dma;
-extern int point_mode;
+extern int plot_mode;
 extern int verbose;
 extern char *progname;
 extern char error[256];
@@ -67,11 +73,12 @@ extern int v_points;
 extern int h_points;
 extern int offset;
 extern int actual;
-
+extern short mult[];
+extern short divi[];
 
 typedef struct Scope {		/* The oscilloscope */
   short run;
-  int scale;
+  short scale;
   int rate;
   short trig;
   short grat;
