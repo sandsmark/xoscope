@@ -1,7 +1,7 @@
 /*
- * @(#)$Id: oscope.c,v 1.68 1997/08/29 04:57:48 twitham Exp $
+ * @(#)$Id: oscope.c,v 1.69 1999/08/27 04:00:36 twitham Rel $
  *
- * Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
+ * Copyright (C) 1996 - 1999 Tim Witham <twitham@quiknet.com>
  *
  * (see the files README and COPYING for more details)
  *
@@ -27,8 +27,6 @@ char *progname;			/* the program's name, autoset via argv[0] */
 char version[] = VER;		/* version of the program, from Makefile */
 char error[256];		/* buffer for "one-line" error messages */
 int quit_key_pressed = 0;	/* set by handle_key() */
-char buffer[MAXWID * 2];	/* buffer for stereo sound data */
-char junk[SAMPLESKIP];		/* junk data buffer */
 int v_points;			/* pixels in vertical axis */
 int h_points;			/* pixels in horizontal axis */
 int offset;			/* vertical pixel offset to zero line */
@@ -215,12 +213,46 @@ resetsoundcard()
   draw_text(1);
 }
 
+/* gr_* UIs call this after selecting file and confirming overwrite */
+void
+savefile(char *file)
+{
+  writefile(filename = file);
+}
+
+/* gr_* UIs call this after selecting file to load */
+void
+loadfile(char *file)
+{
+  close_sound_card();
+  readfile(filename = file);
+  if (snd) {
+    open_sound_card(scope.dma);
+    resetsoundcard();
+  }
+  if (ps.found) {
+    init_probescope();
+    init_serial();
+  }
+}
+
+/* gr_* UIs call this after prompting for command to run */
+void
+startcommand(char *command)
+{
+  if (scope.select > 1) {
+    strcpy(ch[scope.select].command, command);
+    ch[scope.select].func = FUNCEXT;
+    ch[scope.select].mem = EXTSTART;
+    clear();
+  }
+}
+
 /* handle single key commands */
 void
 handle_key(unsigned char c)
 {
   static Channel *p;
-  char *s;
 
   p = &ch[scope.select];
   if (c >= 'A' && c <= 'Z') {
@@ -260,10 +292,14 @@ handle_key(unsigned char c)
     break;
   case ']':
     p->pos -= 16;		/* position up */
+    if (p->pos < -1 * v_points / 2)
+      p->pos = v_points / 2;
     clear();
     break;
   case '[':
     p->pos += 16;		/* position down */
+    if (p->pos > v_points / 2)
+      p->pos = -1 * v_points / 2;
     clear();
     break;
   case ';':
@@ -305,7 +341,7 @@ handle_key(unsigned char c)
   case '-':
     scope.trig -= 8;		/* decrease trigger */
     if (scope.trig < 0)
-      scope.trig = 255;
+      scope.trig = 248;
     clear();
     break;
   case '_':			/* change trigger channel */
@@ -351,33 +387,16 @@ handle_key(unsigned char c)
     draw_text(1);
     break;
   case '@':			/* load file */
-    if ((s = GetFile(NULL)) != NULL) {
-      close_sound_card();
-      readfile(s);
-      if (snd) {
-	open_sound_card(scope.dma);
-	resetsoundcard();
-      }
-      if (ps.found) {
-	init_probescope();
-	init_serial();
-      }
-    }
+    LoadSaveFile(0);
     break;
   case '#':			/* save file */
-    if ((s = GetFile(NULL)) != NULL)
-      writefile(s);
+    LoadSaveFile(1);
     break;
   case '$':			/* run external math */
-    if (scope.select > 1) {
-      if ((s = GetString("External command and args:",
-			 ch[scope.select].command)) != NULL) {
-	strcpy(ch[scope.select].command, s);
-	ch[scope.select].func = FUNCEXT;
-	ch[scope.select].mem = EXTSTART;
-	clear();
-      }
-    }
+    if (scope.select > 1)
+      ExternCommand();
+    else
+      message("External commands can not run on Channel 1 or 2", KEY_FG);
     break;
   case '^':
     if (ps.found) {		/* toggle ProbeScope on/off */
@@ -439,7 +458,7 @@ handle_key(unsigned char c)
   case '\n':
     clear();			/* refresh screen */
     break;
-  case '\e':		
+  case '\e':
     quit_key_pressed = 1;	/* quit */
     break;
   default:
