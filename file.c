@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: file.c,v 1.9 1997/05/03 16:15:18 twitham Exp $
+ * @(#)$Id: file.c,v 1.10 1997/05/04 20:07:57 twitham Rel1_3 $
  *
  * Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -72,7 +72,7 @@ handle_opt(int opt, char *optarg)
     break;
   case 'd':			/* dma divisor */
   case 'D':
-    scope.dma = limit(strtol(optarg, NULL, 0), 0, 4);
+    scope.dma = limit(strtol(optarg, NULL, 0), 1, 4);
     break;
   case 'f':			/* font name */
   case 'F':
@@ -245,6 +245,10 @@ readfile(char *filename)
     perror(error);
     return;
   }
+  init_scope();			/* reset everything */
+  init_channels();
+  init_math();
+  init_screen();
   while (fgets(buff, 256, file)) {
     if (buff[0] == '#') {
       if (!strncmp("# -", buff, 3)) {
@@ -276,7 +280,7 @@ readfile(char *filename)
       while (j < 26 && (!j || ((p = strchr(q, '\t')) != NULL))) {
 	if (p == NULL)
 	  p = buff;
-	if (chan[j] > -1 && i < h_points)
+	if (chan[j] > -1 && i < MAXWID)
 	  mem[chan[j]].data[i] = strtol(p++, NULL, 0);
 	j++;
 	q = p;
