@@ -1,7 +1,7 @@
 /*
- * @(#)$Id: com_gtk.h,v 1.1 1999/08/27 04:24:47 twitham Rel $
+ * @(#)$Id: com_gtk.h,v 1.2 2000/03/05 23:00:31 twitham Rel $
  *
- * Copyright (C) 1996 - 1999 Tim Witham <twitham@quiknet.com>
+ * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
  * (see the files README and COPYING for more details)
  *
@@ -9,7 +9,7 @@
  *
  */
 
-GdkColor gdkcolor[];
+GdkColor gdkcolor[16];
 GdkGC *gc;
 GdkPixmap *pixmap;
 GdkRectangle update_rect;
@@ -17,8 +17,8 @@ GtkWidget *drawing_area;
 GtkWidget *menubar;
 GtkWidget *vbox;
 GtkWidget *window;
-char *colors[];
-int color[];
+char *colors[16];
+int color[16];
 
 gint expose_event();
 gint key_press_event();
