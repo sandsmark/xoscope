@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: file.c,v 1.12 1997/05/31 21:20:58 twitham Exp $
+ * @(#)$Id: file.c,v 1.13 1997/06/07 21:38:15 twitham Rel $
  *
  * Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -109,11 +109,13 @@ handle_opt(int opt, char *optarg)
   case 'A':
     scope.select = limit(strtol(optarg, NULL, 0) - 1, 0, CHANNELS - 1);
     break;
-  case ':':			/* help or unknown option */
-  case '?':
-  case 'h':
+  case 'h':			/* help */
   case 'H':
-    usage();
+    usage(0);
+    break;
+  case ':':			/* unknown option */
+  case '?':
+    usage(1);
     break;
   default:			/* channel settings */
     if (opt >= '1' && opt <= '0' + CHANNELS) {
