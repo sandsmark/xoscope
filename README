@@ -1,27 +1,41 @@
 This is "[x]oscope", a digital oscilloscope for /dev/dsp.
 
-It is based on the original "scope-0.1" by Jeff Tranter
+Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
+
+(see the bottom of this file and the file COPYING for more details)
+
+
+[x]oscope is based on the original "scope-0.1" by Jeff Tranter
 (Jeff_Tranter@Mitel.com) but has been greatly extended by adding text
 to the display, making a resizable X client, and adding many
 digital-scope-like features.  The name was changed since there is
-already an xscope program that is nothing like this program.
+already an xscope program that is nothing like this program.  Also,
+the name oscope makes it more obvious what this is.
+
+
+WHAT YOU NEED:
+
+* You will need a mixer program to select input source and levels.
 
 * You will need "libsx" to get the X client (highly recommended).
 
-* You will need "libvgamisc" from the "g3vga" kit to get text on the
-  console version (highly recommended).
+* You will need "libvga" from the "svgalib" package to build the
+  console version.
 
-If you don't have both of these, or if they're in strange places, you
-will need to tweak the Makefile.  See the Makefile and oscope.h for
-configuration options.  If you don't have either of these, you will
-have to read oscope.c or display.c and memorize the controls since
-they can't be displayed on your screen (bummer!).  If I were you, I'd
-get the libraries instead. :-)
+* You will need "libvgamisc" from the "g3vga" kit to get text on the
+  console version (highly recommended if you use the console version).
+
+If you don't have these libraries, or if they're in strange places,
+you will need to tweak the Makefile.  See the Makefile and config.h
+for configuration options.  If you don't have libsx or libvgamisc, you
+will have to read the manual page and memorize the controls since they
+can't be displayed on your screen (bummer!).  If I were you, I'd get
+the libraries instead. :-)
 
 
 INSTALLATION:
 
-* tweak Makefile and oscope.h if necessary
+* edit Makefile and config.h if necessary
 
 * make
 
@@ -39,18 +53,60 @@ since the svgalib can only be started by root.  xoscope doesn't
 require any special permissions.
 
 
+USAGE:
+
+Please see the man page for instructions on how to use [x]oscope.
+
+
+PLATFORMS:
+
+[x]oscope was developed specifically for Linux on:
+ - Linux kernel 1.2.10
+ - gcc 2.6.3
+ - svgalib 1.22
+ - libsx 1.1
+ - SoundBlaster 16
+ - ATI Win Turbo 2MB VRAM
+ - 100 MHz Intel Pentium(R) Processor, 32MB RAM
+
+To date, this is all it has been tried on.  You will probably need a
+fast processor and video card if you want to see several traces in
+near real-time.  Please let me know if it has problems on your
+specific Linux system or sound card.
+
+
 CREDITS:
 
 Thanks to Jeff Tranter for writing the original scope-0.1
 
+Thanks to Philip VanBaren for the realfft.c code from his freq5.  If
+you want a Spectrum Analyzer, you should get freq.
+
 Thanks to the Cthugha-L program (Torps Productions, Harald
 Deischinger) for inspiring the X11 client and some coding ideas.
+
+Thanks to Dominic Giamapolo <dbg@sgi.com> for libsx which makes the
+X11 client possible.  Also, freq.c and dirlist.c are from libsx.
 
 Thanks to Mitch D'Souza <Mitch@Dubai.Sun.COM> for libvgamisc which
 makes the 16-color console text possible.
 
-Thanks to Dominic Giamapolo <dbg@sgi.com> for libsx which makes the
-X11 client possible.
+
+COPYING:
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or (at
+your option) any later version.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 
 Enjoy,
