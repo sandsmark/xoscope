@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: gr_gtk.c,v 1.10 1999/08/25 03:01:51 twitham Exp $
+ * @(#)$Id: gr_gtk.c,v 1.11 1999/08/27 03:57:44 twitham Rel $
  *
  * Copyright (C) 1996 - 1999 Tim Witham <twitham@quiknet.com>
  *
@@ -630,14 +630,14 @@ get_main_menu(GtkWidget *window, GtkWidget ** menubar)
     {"<Main>/Scope/Graticule/None", NULL, graticule, "2"},
     {"<Main>/Scope/Graticule/Minor Divisions", NULL, graticule, "3"},
     {"<Main>/Scope/Graticule/Minor & Major", NULL, graticule, "4"},
+    {"<Main>/Scope/<separator>", NULL, NULL, NULL},
+    {"<Main>/Scope/SoundCard On|Off", NULL, hit_key, "&"},
+    {"<Main>/Scope/ProbeScope On|Off", NULL, hit_key, "^"},
 
     {"<Main>/<<", NULL, hit_key, "9"},
     {"<Main>/<", NULL, hit_key, "("},
     {"<Main>/>", NULL, hit_key, ")"},
     {"<Main>/>> ", NULL, hit_key, "0"},
-
-    {"<Main>/SC", NULL, hit_key, "&"},
-    {"<Main>/PS", NULL, hit_key, "^"},
 
     {"<Main>/Run", NULL, runmode, "1"},
     {"<Main>/Wait", NULL, runmode, "2"},
