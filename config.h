@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: config.h,v 1.9 1997/05/31 21:23:49 twitham Exp $
+ * @(#)$Id: config.h,v 1.10 1997/06/10 01:56:54 twitham Rel $
  *
  * Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -15,7 +15,7 @@
 #define DEF_A	1		/* 1-8 (1) */
 #define DEF_R	44000		/* 8800,22000,44000 (44000) */
 #define DEF_S	10		/* 1,2,5,10,20,50,100,200,500,1000 (10) */
-#define DEF_T	"0:1:x"		/* -128-127:0,1,2:x,y ("0:1:x") */
+#define DEF_T	"0:0:x"		/* -128-127:0,1,2:x,y ("0:0:x") */
 #define DEF_C	4		/* 0-16 (4) */
 #define DEF_M	0		/* 0,1,2 (0) */
 #define DEF_D	4		/* 1,2,4 (4) */
