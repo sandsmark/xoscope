@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.c,v 1.56 1997/05/01 04:44:45 twitham Exp $
+ * @(#)$Id: oscope.c,v 1.57 1997/05/02 04:04:00 twitham Exp $
  *
  * Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -110,6 +110,7 @@ init_scope()
   scope.dma = DEF_D;
   scope.mode = DEF_P;
   scope.scale = DEF_S;
+  scope.div = 1;
   scope.rate = DEF_R;
   handle_opt('t', DEF_T);
   scope.grat = DEF_G;
@@ -138,7 +139,7 @@ init_channels()
   }
 }
 
-/* scale num upward like a scope does, 1 to 200 */
+/* scale num upward like a scope does, 1 to 100 */
 void
 scaleup(int *num)
 {
@@ -152,19 +153,15 @@ scaleup(int *num)
     *num = 20;
   else if (*num < 50)
     *num = 50;
-  else if (*num < 100)
-    *num = 100;
   else
-    *num = 200;
+    *num = 100;
 }
 
-/* scale num downward like a scope does, 200 to 1 */
+/* scale num downward like a scope does, 100 to 1 */
 void
 scaledown(int *num)
 {
-  if (*num > 100)
-    *num = 100;
-  else if (*num > 50)
+  if (*num > 50)
     *num = 50;
   else if (*num > 20)
     *num = 20;
@@ -255,11 +252,17 @@ handle_key(unsigned char c)
     }
     break;
   case '0':
-    scaleup(&scope.scale);
+    if (scope.div > 1)
+      scaledown(&scope.div);
+    else
+      scaleup(&scope.scale);
     clear();
     break;
   case '9':
-    scaledown(&scope.scale);
+    if (scope.scale > 1)
+      scaledown(&scope.scale);
+    else
+      scaleup(&scope.div);
     clear();
     break;
   case '=':

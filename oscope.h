@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.h,v 1.25 1997/05/01 04:47:40 twitham Exp $
+ * @(#)$Id: oscope.h,v 1.26 1997/05/02 04:07:43 twitham Exp $
  *
  * Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -32,19 +32,20 @@ extern int clip;
 extern char *filename;
 
 typedef struct Scope {		/* The oscilloscope */
-  int mode;
-  int size;
-  int dma;
-  int run;
-  int scale;
-  int rate;
-  int grat;
-  int behind;
-  int color;
-  int select;
-  int trigch;
-  int trige;
-  int verbose;
+  unsigned int mode;
+  unsigned int size;
+  unsigned int dma;
+  unsigned int run;
+  unsigned int scale;
+  unsigned int div;
+  unsigned int rate;
+  unsigned int grat;
+  unsigned int behind;
+  unsigned int color;
+  unsigned int select;
+  unsigned int trigch;
+  unsigned int trige;
+  unsigned int verbose;
   short trig;
 } Scope;
 extern Scope scope;

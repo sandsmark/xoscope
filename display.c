@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 1.38 1997/05/01 04:45:09 twitham Exp $
+ * @(#)$Id: display.c,v 1.39 1997/05/02 04:06:36 twitham Exp $
  *
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -195,7 +195,7 @@ draw_text(int all)
       sprintf(string, "DMA:%d", scope.dma);
       vga_write(string, col(4), row(28), font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
 
-      vga_write("(9)(()                 ())(0)", col(40), row(26),
+      vga_write("(9)(()                      ())(0)", col(40), row(26),
 		font, KEY_FG, TEXT_BG, ALIGN_CENTER);
 
       vga_write("(A-Z)", col(72), row(27), font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
@@ -221,16 +221,16 @@ draw_text(int all)
       vga_write("(", col(26), row(28), font, KEY_FG, TEXT_BG, ALIGN_LEFT);
       vga_write(")", col(53), row(28), font, KEY_FG, TEXT_BG, ALIGN_LEFT);
     }
-    i = 1000 / scope.scale;
+    i = 1000 * scope.div / scope.scale;
     sprintf(string, "%d %cs/div", i > 999 ? i / 1000 : i, i > 999 ? 'm' : 'u');
     vga_write(string, col(40), row(25), font, TEXT_FG, TEXT_BG, ALIGN_CENTER);
 
-    sprintf(string, "%d S/s * %d", p->signal->rate, scope.scale * 44000
-	    / p->signal->rate);
+    sprintf(string, "%d S/s * %d / %d", p->signal->rate,
+	    scope.scale, scope.div);
     vga_write(string, col(40), row(26), font, p->color, TEXT_BG, ALIGN_CENTER);
 
-    i = p->signal->rate / 20 * p->signal->rate / 44000 / scope.scale;
-    sprintf(string, "%d Hz/div FFT", i);
+    sprintf(string, "%d Hz/div FFT", scope.div * p->signal->rate
+	    * p->signal->rate / 880000 / scope.scale);
     vga_write(string, col(40), row(27), font, p->color, TEXT_BG, ALIGN_CENTER);
 
     for (i = 0 ; i < 26 ; i++) {
@@ -278,7 +278,7 @@ draw_graticule()
   /* a mark where the trigger level is, if the triggered channel is shown */
   i = -1;
   for (j = 7 ; j >= 0 ; j--) {
-    if (ch[j].func == scope.trigch)
+    if (ch[j].show && ch[j].func == scope.trigch)
       i = j;
   }
   if (i > -1) {
@@ -327,14 +327,13 @@ draw_graticule()
 void
 draw_data()
 {
-  static int i, j, k, l, m, off, delay, old = 100, mult, div, mode, prev;
-  static int x, y, X, Y;
+  static int i, j, k, x, y, X, Y, mult, div, off, delay, old = 100;
+  static unsigned int l, m, mode, prev;
   static Channel *p;
   static short *samples;
 
   mode = data_good ?  scope.mode : (scope.mode < 2 ? 0 : 2);
   /* interpolate a line between the sample just before and after trigger */
-  off = 100 - scope.scale;	/* then shift all samples horizontally */
   if (scope.trige) {		/* to place time zero at trigger */
     samples = mem[k = scope.trigch + 23].data;
     if ((i = samples[0]) != (j = samples[1])) /* avoid divide by zero: */
@@ -370,13 +369,15 @@ draw_data()
 	X = Y = 0;
 	if (mode < 2)		/* point / point accumulate */
 	  for (i = 0 ; i < h_points - 100 - l ; i++) {
-	    if ((m = i * p->signal->rate / scope.scale / 44000 ) != prev)
+	    if ((m = i * p->signal->rate * scope.div / scope.scale / 44000)
+		!= prev && (m < h_points))
 	      DrawPixel(i + l, off - samples[m] * mult / div);
 	    prev = m;
 	  }
 	else			/* line / line accumulate */
 	  for (i = 0 ; i < h_points - 100 - l ; i++) {
-	    if ((m = i * p->signal->rate / scope.scale / 44000) != prev) {
+	    if ((m = i * p->signal->rate / scope.scale * scope.div / 44000)
+		!= prev && m < h_points) {
 	      x = i + l; y = off - samples[m] * mult / div;
 	      if (X)
 		DrawLine(X, Y, x, y);
@@ -388,7 +389,7 @@ draw_data()
 	  }
       }
       memcpy(p->old, p->signal->data,
-	     sizeof(short) * (h_points - 200) + sizeof(short));
+	     sizeof(short) * h_points + sizeof(short));
       DrawLine(90, off, 100, off);
       DrawLine(h_points - 100, off, h_points - 90, off);
     }
