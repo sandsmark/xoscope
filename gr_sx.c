@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: gr_sx.c,v 1.1 1996/02/28 06:09:06 twitham Exp $
+ * @(#)$Id: gr_sx.c,v 1.2 1996/03/01 04:27:08 twitham Exp $
  *
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -15,14 +15,17 @@
 #include "oscope.h"		/* program defaults */
 #include "x11.h"
 #include "display.h"
+#include "func.h"
 
 Widget draw_widget;		/* scope drawing area */
 Widget file[4];			/* file menu */
 Widget plot[5];			/* plot menu */
 Widget grat[4];			/* graticule menu */
 Widget x[7];			/* extra horizontal widgets */
-Widget y[15];			/* vertical widgets */
+Widget y[30];			/* vertical widgets */
 Widget c[CHANNELS];		/* channel button widgets */
+Widget **math;			/* math menu */
+int **matharray;		/* indexes of math functions */
 int XX[] = {640,800,1024,1280};
 int XY[] = {480,600, 768,1024};
 XFont font;
@@ -128,6 +131,17 @@ graticule(Widget w, void *data)
   clear();
 }
 
+void
+mathselect(Widget w, void *data)
+{
+  int *c = (int *)data;
+
+  if (scope.select > 1) {
+    ch[scope.select].func = *c;
+    clear();
+  }
+}
+
 /* close the window */
 void
 dismiss(Widget w, void *data)
@@ -179,6 +193,28 @@ hit_key(Widget w, void *data)
   handle_key(*c);
 }
 
+void
+nomalloc(int line)
+{
+  sprintf(error, "%s: out of memory at x11.c line %d!", progname, line);
+  perror(error);
+  exit(1);
+}
+
+void
+cleanup_x11()
+{
+  int i;
+
+  for (i = 0 ; i < funccount - 3 ; i++) {
+    free(math[i]);
+    free(matharray[i]);
+  }
+  free(math);
+  free(matharray);
+  FreeFont(font);
+}
+
 /* set current state colors, labels, and check marks on widgets */
 void
 fix_widgets()
@@ -191,6 +227,10 @@ fix_widgets()
   }
   for (i = 0 ; i < 3 ; i++) {
     SetMenuItemChecked(grat[i + 1], scope.grat == i);
+  }
+
+  for (i = 0 ; i < funccount - 3 ; i++) {
+    SetMenuItemChecked(*math[i], ch[scope.select].func == i + 3);
   }
 
   SetBgColor(y[2], ch[scope.trigch].color);
@@ -299,13 +339,26 @@ init_widgets()
 
   y[11] = MakeLabel("Scal");
   y[12] = MakeButton(" /\\ ", hit_key, "]");
-  y[13] = MakeButton("Math", hit_key, ";");
+  y[13] = MakeMenu("Math");
   y[14] = MakeButton(" \\/ ", hit_key, "[");
 
   SetWidgetPos(y[11],  PLACE_RIGHT, draw_widget, PLACE_UNDER, c[CHANNELS - 1]);
   SetWidgetPos(y[12],  PLACE_RIGHT, draw_widget, PLACE_UNDER, y[11]);
   SetWidgetPos(y[13],  PLACE_RIGHT, draw_widget, PLACE_UNDER, y[12]);
   SetWidgetPos(y[14],  PLACE_RIGHT, draw_widget, PLACE_UNDER, y[13]);
+
+  if ((math = malloc(sizeof(Widget *) * (funccount - 3))) == NULL)
+    nomalloc(__LINE__);
+  if ((matharray = malloc(sizeof(int *) * (funccount - 3))) == NULL)
+    nomalloc(__LINE__);
+  for (i = 0 ; i < funccount - 3 ; i++) {
+    if ((math[i] = malloc(sizeof(Widget))) == NULL)
+      nomalloc(__LINE__);
+    if ((matharray[i] = malloc(sizeof(int))) == NULL)
+      nomalloc(__LINE__);
+    *matharray[i] = i + 3;
+    *math[i] = MakeMenuItem(y[13], funcnames[3 + i], mathselect, matharray[i]);
+  }
 
   ShowDisplay();
 
