@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: proscope.h,v 1.2 1997/05/28 05:49:07 twitham Exp $
+ * @(#)$Id: proscope.h,v 1.3 1997/05/30 04:13:47 twitham Rel $
  *
  * Copyright (C) 1997 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -53,5 +53,6 @@ extern void microsleep();
 extern void init_probescope();
 extern void probescope();
 extern void init_serial();
+extern void flush_serial();
 extern void cleanup_serial();
 extern int getonebyte();

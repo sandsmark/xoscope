@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: ser_unix.c,v 1.2 1997/05/28 05:35:07 twitham Exp $
+ * @(#)$Id: ser_unix.c,v 1.3 1997/05/30 04:13:23 twitham Rel $
  *
  * Copyright (C) 1997 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -24,6 +24,41 @@ int speed=B19200, bits=CS7, stopbits=0, parity=0;
 char device[512] = "";		/* Serial device */
 int psfd=0;			/* ProbeScope file descriptor */
 struct termio stbuf, svbuf;	/* termios: svbuf=saved, stbuf=set */
+
+/* return a single byte from the serial device or return -1 if none avail. */
+int
+getonebyte()
+{
+  static unsigned char ch;
+
+  if (read(psfd, &ch, 1) == 1)
+    return(ch);
+  return(-1);
+}
+
+/* return a single byte from the serial device or return -1 if none avail. */
+int
+GETONEBYTE()			/* we buffer here just to be safe */
+{
+  static unsigned char buff[256];
+  static int count = 0, pos = 0;
+
+  if (pos >= count) {
+    if (psfd)
+      if ((count = read(psfd, buff, 256 * sizeof(unsigned char))) < 1)
+	return(-1);
+    pos = 0;
+  }
+  return buff[pos++];
+}
+
+/* discard all input, clearing the serial FIFO queue to catch up */
+void
+flush_serial()
+{
+  while (getonebyte() > -1) {
+  }
+}
 
 /* serial cleanup routine called as the program exits */
 void
@@ -66,6 +101,7 @@ findscope(char *dev)
     close(psfd);
     return(0);
   }
+  flush_serial();
   while (byte < 300 && try < 25) { /* give up in 2.5ms */
     if ((c = getonebyte()) < 0) {
       microsleep(100);		/* try again in 0.1ms */
@@ -102,31 +138,4 @@ init_serial()
     }
   }
   if (!ps.found) psfd = 0;
-}
-
-/* return a single byte from the serial device or return -1 if none avail. */
-int
-getonebyte()
-{
-  static unsigned char ch;
-
-  if (read(psfd, &ch, 1) == 1)
-    return(ch);
-  return(-1);
-}
-
-/* return a single byte from the serial device or return -1 if none avail. */
-int
-GETONEBYTE()			/* we buffer here just to be safe */
-{
-  static unsigned char buff[256];
-  static int count = 0, pos = 0;
-
-  if (pos >= count) {
-    if (psfd)
-      if ((count = read(psfd, buff, 256 * sizeof(unsigned char))) < 1)
-	return(-1);
-    pos = 0;
-  }
-  return buff[pos++];
 }
