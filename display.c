@@ -1,12 +1,12 @@
 /*
- * @(#)$Id: display.c,v 1.25 1996/02/22 06:25:46 twitham Exp $
+ * @(#)$Id: display.c,v 1.26 1996/03/02 06:53:54 twitham Exp $
  *
  * Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
- * (see oscope.c and the file COPYING for more details)
+ * (see the files README and COPYING for more details)
  *
- * This file implements the display for both the console and X11
+ * This file implements display code common to console and X11
  *
  */
 
@@ -20,30 +20,14 @@
 /* libsx vs. svgalib drawing routines */
 #ifdef XOSCOPE
 
-#include <libsx.h>
-#define VGA_DRAWPIXEL	DrawPixel
-#define VGA_DRAWLINE	DrawLine
-#define VGA_SETCOLOR	SetColor
-#define ALIGN_RIGHT	1
-#define ALIGN_LEFT	2
-#define ALIGN_CENTER	3
-int
-VGA_WRITE(char *s, short x, short y, XFont f, short fg, short bg, char p)
-{
-  SetColor(fg);
-  if (p == ALIGN_CENTER)
-    x -= (TextWidth(f, s) / 2);
-  else if (p == ALIGN_RIGHT)
-    x -= (TextWidth(f, s));
-  DrawText(s, x, y + FontHeight(f));
-  return(1);
-}
+#include "x11.h"
 
 #else
 
 #include <vga.h>
-#define VGA_DRAWPIXEL	vga_drawpixel
-#define VGA_DRAWLINE	vga_drawline
+#define VGA_DRAWPIXEL(x,y)	vga_drawpixel(x, y > 0 ? y : 0)
+#define VGA_DRAWLINE(x1,y1,x2,y2)	\
+	vga_drawline(x1, y1 > 0 ? y1 : 0, x2, y2 > 0 ? y2 : 0)
 #define VGA_SETCOLOR	vga_setcolor
 #define VGA_WRITE(s,x,y,f,fg,bg,p)	;
 #ifdef HAVEVGAMISC
@@ -55,32 +39,11 @@ VGA_WRITE(char *s, short x, short y, XFont f, short fg, short bg, char p)
 #endif
 
 int triggered = 0;		/* whether we've triggered or not */
-int color[16];
-char *colors[] = {		/* X colors similar to 16 console colors */
-  "black",			/* 0 */
-  "blue",
-  "green",			/* 2 */
-  "cyan",
-  "red",			/* 4 */
-  "magenta",
-  "orange",			/* 6 */
-  "gray75",
-  "gray25",			/* 8 */
-  "blue4",
-  "green4",			/* 10 */
-  "cyan4",
-  "red4",			/* 12 */
-  "magenta4",
-  "yellow",			/* 14 */
-  "white"
-};
 
 #ifdef XOSCOPE
 char fontname[80] = DEF_FX;
-int XX[] = {640,800,1024,1280};
-int XY[] = {480,600, 768,1024};
-XFont font;
-Widget w[1];
+void
+show_data();
 #else
 char fontname[80] = DEF_F;
 int screen_modes[] = {		/* allowed modes */
@@ -89,6 +52,7 @@ int screen_modes[] = {		/* allowed modes */
   G1024x768x16,
   G1280x1024x16
 };
+int color[] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
 #ifdef HAVEVGAMISC
 font_t font;			/* pointer to the font structure */
 #endif
@@ -100,7 +64,7 @@ cleanup()
 {
   cleanup_math();
 #ifdef XOSCOPE
-  FreeFont(font);
+  cleanup_x11();
 #else
   vga_setmode(TEXT);		/* restore text screen */
 #endif
@@ -138,7 +102,7 @@ draw_text(int all)
 #if defined XOSCOPE || defined HAVEVGAMISC
   static char string[81];
   static int i, j, k;
-  Signal *p;
+  static Signal *p;
   static char *strings[] = {
     "Point",
     "Point Accum.",
@@ -224,8 +188,9 @@ draw_text(int all)
 	VGA_SETCOLOR(k);
 	k = i < 4 ? 11 : 80 - 11;
 	VGA_DRAWLINE(col(i < 4 ? 0 : 79), row(j), col(k), row(j));
-	VGA_DRAWLINE(col(k), row(j), col(k), row(j + 5));
-	VGA_DRAWLINE(col(i < 4 ? 0 : 79), row(j + 5), col(k), row(j + 5));
+	VGA_DRAWLINE(col(k), row(j), col(k), row(j + 5) - 1);
+	VGA_DRAWLINE(col(i < 4 ? 0 : 79), row(j + 5) - 1,
+		     col(k), row(j + 5) - 1);
       }
     }
 
@@ -257,7 +222,8 @@ draw_text(int all)
 
     if (actual >= 44000) {
       VGA_WRITE("(A-Z)", col(72), row(27), font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
-      VGA_WRITE("Save", col(76), row(27), font, p->color, TEXT_BG, ALIGN_RIGHT);
+      VGA_WRITE("Store", col(77), row(27),
+		font, p->color, TEXT_BG, ALIGN_RIGHT);
     }
 
     if (scope.select > 1) {
@@ -280,6 +246,11 @@ draw_text(int all)
 		  font, memcolor[i], TEXT_BG, ALIGN_LEFT);
       }
     }
+#ifdef XOSCOPE
+    if (all == 1)
+      fix_widgets();
+#endif
+    show_data();
   }
 
   /* always draw the dynamic text */
@@ -292,7 +263,6 @@ draw_text(int all)
 
   VGA_WRITE(triggered ? " Triggered " : "? TRIGGER ?", col(40), row(3),
 	    font, ch[scope.trigch].color, TEXT_BG, ALIGN_CENTER);
-    
 #endif
 }
 
@@ -419,22 +389,28 @@ draw_data()
 #endif
 }
 
-/* get and plot one screen full of data and draw the graticule */
-static inline void
-animate(void *data)
+void
+show_data()
 {
-  if (scope.run) {
-    triggered = get_data();
-    draw_text(0);
-  }
   do_math();
   measure_data(&ch[scope.select]);
+  draw_text(0);
   if (scope.behind) {
     draw_graticule();		/* plot data on top of graticule */
     draw_data();
   } else {
     draw_data();		/* plot graticule on top of data */
     draw_graticule();
+  }
+}
+
+/* get and plot one screen full of data and draw the graticule */
+static inline void
+animate(void *data)
+{
+  if (scope.run) {
+    triggered = get_data();
+    show_data();
   }
 #ifdef XOSCOPE
   if (quit_key_pressed) {
@@ -445,64 +421,26 @@ animate(void *data)
 #endif
 }
 
-#ifdef XOSCOPE
-/* callback to redisplay the X11 screen */
-void
-redisplay(Widget w, int new_width, int new_height, void *data) {
-  h_points = new_width > 640
-    ? new_width - (new_width - 200) % 44
-    : 640;
-  v_points = new_height > 480
-    ? new_height - (new_height - 160) % 64
-    : 480;
-  offset = v_points / 2;
-  clear();
-  draw_text(1);
-}
-
-/* callback for keypress events on the X11 screen */
-void
-keys_x11(Widget w, char *input, int up_or_down, void *data)
-{
-  if (!up_or_down)		/* 0 press, 1 release */
-    return;
-  if (input[1] == '\0') {	/* single character to handle */
-    handle_key(input[0]);
-  }
-}
-#endif
-
 /* [re]initialize graphics screen */
 void
-init_screen(int firsttime)
+init_screen()
 {
-  int i;
+  int i, channelcolor[] = CHANNELCOLOR;
 
-  if (firsttime) {
 #ifdef XOSCOPE
-    h_points = XX[scope.size];
-    v_points = XY[scope.size];
-    w[0] = MakeDrawArea(h_points, v_points, redisplay, NULL);
-    SetKeypressCB(w[0], keys_x11);
-    ShowDisplay();
-    for (i = 0 ; i < 16 ; i++) {
-      color[i] = GetNamedColor(colors[i]);
-    }
-    SetBgColor(w[0], color[0]);
-    font = GetFont(fontname);
-    SetWidgetFont(w[0], font);
-#else
-    /*     vga_disabledriverreport(); */
-    vga_init();
-    for (i = 0 ; i < 16 ; i++) {
-      color[i] = i;
-    }
-#ifdef HAVEVGAMISC
-    vga_initfont (fontname, &font, 1, 1);
+  init_widgets();		/* get color definitions from x11.c */
 #endif
-#endif
+  for (i = 0 ; i < CHANNELS ; i++) {
+    ch[i].color = color[channelcolor[i]];
   }
-#ifndef XOSCOPE
+#ifdef XOSCOPE
+  fix_widgets();		/* reset widget colors */
+#else
+  /*     vga_disabledriverreport(); */
+  vga_init();
+#ifdef HAVEVGAMISC
+  vga_initfont (fontname, &font, 1, 1);
+#endif
   vga_setmode(screen_modes[scope.size]);
   v_points = vga_getydim();
   h_points = vga_getxdim();
@@ -526,15 +464,15 @@ mainloop()
 #endif
 }
 
-/* parse X11 args and connect to the display or do nothing much */
-int
+/* parse command-line args and connect to the X display if necessary */
+void
 opendisplay(int argc, char **argv)
 {
 #ifdef XOSCOPE
   if ((argc = OpenDisplay(argc, argv)) == FALSE)
     exit(1);
 #endif
-  return(argc);
+  parse_args(argc, argv);
 }
 
 /* return a string indicating the source of fonts for the -f usage */
