@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: func.c,v 1.22 2000/07/05 03:01:51 twitham Exp $
+ * @(#)$Id: func.c,v 1.23 2000/07/06 02:04:56 twitham Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -42,6 +42,8 @@ char *funcnames[] =
 
 /* the total number of "functions" */
 int funccount = sizeof(funcnames) / sizeof(char *);
+
+int total_samples;
 
 /* 0-22=A-W=memories, 23=X=left, 24=Y=right, 25=Z=ProbeScope, 26-33=functions */
 Signal mem[34];
@@ -166,7 +168,7 @@ inv(int num, int chan)
 
   a = ch[chan].signal->data;
   b = ch[num].signal->data;
-  for (i = 0 ; i < h_points ; i++) {
+  for (i = 0 ; i < total_samples ; i++) {
     *b++ = -1 * *a++;
   }
 }
@@ -193,7 +195,7 @@ sum(int num)
   a = ch[0].signal->data;
   b = ch[1].signal->data;
   c = ch[num].signal->data;
-  for (i = 0 ; i < h_points ; i++) {
+  for (i = 0 ; i < total_samples ; i++) {
     *c++ = *a++ + *b++;
   }
 }
@@ -208,7 +210,7 @@ diff(int num)
   a = ch[0].signal->data;
   b = ch[1].signal->data;
   c = ch[num].signal->data;
-  for (i = 0 ; i < h_points ; i++) {
+  for (i = 0 ; i < total_samples ; i++) {
     *c++ = *a++ - *b++;
   }
 }
@@ -223,7 +225,7 @@ avg(int num)
   a = ch[0].signal->data;
   b = ch[1].signal->data;
   c = ch[num].signal->data;
-  for (i = 0 ; i < h_points ; i++) {
+  for (i = 0 ; i < total_samples ; i++) {
     *c++ = (*a++ + *b++) / 2;
   }
 }
@@ -278,6 +280,7 @@ do_math()
 {
   static int i, j;
 
+  total_samples = SAMPLES(ch[0].signal->rate);
   for (i = 2 ; i < CHANNELS ; i++) {
     if (ch[i].pid && ch[i].func != FUNCEXT) { /* external needs halted */
       j = ch[i].mem;

@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.c,v 1.77 2000/07/03 23:01:29 twitham Exp $
+ * @(#)$Id: oscope.c,v 1.78 2000/07/06 02:04:56 twitham Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -131,12 +131,15 @@ void
 init_channels()
 {
   int i, j[] = {23, 24, 25, 0, 0, 0, 0, 0};
+  static int first = 1;
 
   for (i = 0 ; i < CHANNELS ; i++) {
     if (ch[i].pid)
       ch[i].mem = EXTSTOP;
   }
-  do_math();			/* halt currently running commands */
+  if (!first)
+    do_math();			/* halt currently running commands */
+  first = 0;
   for (i = 0 ; i < CHANNELS ; i++) {
     ch[i].signal = &mem[j[i]];
     memset(ch[i].old, 0, MAXWID * sizeof(short));

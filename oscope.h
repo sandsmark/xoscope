@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.h,v 1.35 2000/07/05 03:01:51 twitham Exp $
+ * @(#)$Id: oscope.h,v 1.36 2000/07/06 02:04:56 twitham Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -17,7 +17,7 @@
 #include "config.h"
 
 /* samples needed to draw the current display, macro for efficiency */
-#define SAMPLES(r)	(((long)r * ((h_points - 200) / 44) * scope.div / \
+#define SAMPLES(r)	(int)(((long)r * ((h_points - 200) / 44) * scope.div / \
 			scope.scale / 1000) + 2)
 
 /* global program variables */

@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: bitscope.c,v 1.4 2000/07/05 22:34:59 twitham Exp $
+ * @(#)$Id: bitscope.c,v 1.5 2000/07/06 02:04:56 twitham Exp $
  *
  * Copyright (C) 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -176,7 +176,6 @@ bs_init(int fd)
   mem[23].rate = mem[24].rate = mem[25].rate = 25000000;
 
   bs_getregs(fd, bs.r);		/* get and reset registers */
-  bs.volts = 2400;		/* !!! attenuation should be tweakable */
   bs.r[3] = bs.r[4] = 0;
   bs.r[5] = 0;
   bs.r[6] = 127;		/*  scope.trig; ? */
@@ -188,6 +187,16 @@ bs_init(int fd)
     | SECONDARY(RANGE1200 | CHANNELB | ZZCLK);
   bs.r[15] = 0;			/* max samples per dump (256) */
   bs_putregs(fd, bs.r);
+  funcnames[2] = "Logic An.";	/* relabel XYZ */
+  if (bs.r[7] & UPPER16POD) {
+    bs.volts = 11600;		/* !!! attenuation should be tweakable */
+    funcnames[0] = "POD Ch. A";
+    funcnames[1] = "POD Ch. B";
+  } else {
+    bs.volts = 24000;
+    funcnames[0] = "BNC Ch. A";
+    funcnames[1] = "BNC Ch. B";
+  }
 }
 
 /* identify a BitScope (2), ProbeScope (1) or none (0) */
@@ -216,16 +225,13 @@ idscope(int probescope)
       strncpy(bs.bcid, error + 1, sizeof(bs.bcid));
       bs.bcid[8] = '\0';
       bs_init(bs.fd);
-      funcnames[0] = "Channel A"; /* relabel XYZ */
-      funcnames[1] = "Channel B";
-      funcnames[2] = "Logic An.";
       return(2);		/* BitScope found! */
     }
   }
   return(0);
 }
 
-/* get available data from FD */
+/* get pending available data from FD, or initiate new data collection */
 int
 bs_getdata(int fd)
 {
@@ -240,6 +246,8 @@ bs_getdata(int fd)
       if (bs.pos >= bs.end) {	/* got some data! */
 	buff = bs.buf;
 	while (*buff != '\0') {
+	  if (k >= MAXWID)
+	    break;
 	  if (*buff == '\r' || *buff == '\n')
 	    buff++;
 	  else {
@@ -249,14 +257,15 @@ bs_getdata(int fd)
 	    buff += 5;
 	  }
 	}
-	if (k > SAMPLES(mem[23].rate)) { /* all done */
+	if (k > SAMPLES(mem[23].rate) || k >= MAXWID) { /* all done */
 	  k = 0;
 	  bs.getting = 0;
-	} else {			/* need more */
+	} else {			/* still need more, start another */
 	  bs_io(fd, "S", buffer);
 	}
       }
     }
+    return(1);
   } else {			/* start a get */
     if (!bs_io(fd, "[e]@", buffer))
       return(0);

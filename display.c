@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 1.60 2000/07/05 03:01:51 twitham Exp $
+ * @(#)$Id: display.c,v 1.61 2000/07/06 02:04:56 twitham Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -152,11 +152,12 @@ draw_text(int all)
 		font, KEY_FG, TEXT_BG, ALIGN_LEFT);
 
       if (scope.verbose || ch[i].show || scope.select == i) {
-	if (bs.found)
+	if (!ch[i].bits && bs.found)
 	  sprintf(string, "%g V/div",
-		  (float)bs.volts * (float)ch[i].div / (float)ch[i].mult / 800);
-	else if (ch[i].func == FUNCPS ||
-		 (ch[i].func >= FUNCEXT && ch[0].func == FUNCPS))
+		  (float)bs.volts * ch[i].div / ch[i].mult / 8000);
+	else if (!ch[i].bits && (ch[i].func == FUNCPS ||
+				 (ch[i].func >= FUNCEXT
+				  && ch[0].func == FUNCPS)))
 	  sprintf(string, "%g V/div",
 		  (float)ps.volts * (float)ch[i].div / (float)ch[i].mult / 10);
 	else
@@ -290,8 +291,9 @@ draw_text(int all)
     sprintf(string, "%d S/s", p->signal->rate);
     vga_write(string, col(40), row(26), font, p->color, TEXT_BG, ALIGN_CENTER);
 
-    sprintf(string, "%d Hz/div FFT", scope.div * p->signal->rate / 1000
-	    * p->signal->rate / 880 / scope.scale);
+/*      sprintf(string, "%d Hz/div FFT", scope.div * p->signal->rate / 1000 */
+/*  	    * p->signal->rate / 880 / scope.scale); */
+    sprintf(string, "%d Samples", SAMPLES(p->signal->rate) - 2);
     vga_write(string, col(40), row(27), font, p->color, TEXT_BG, ALIGN_CENTER);
 
     for (i = 0 ; i < 26 ; i++) {
@@ -476,8 +478,12 @@ draw_data()
 	    prev = -1;
 	    bitoff = bit * 16 - end * 8 + 4;
 	    for (i = 0 ; i < h_points - 100 - l ; i++) {
-	      if ((time = i * num / 10000) > prev && time < h_points - 1)
-		DrawPixel(i + l,
+	      if ((time = i * num / 10000) > prev && time < MAXWID)
+		if ((x = i + l) > h_points - 100) {
+		  i = MAXWID;
+		  continue;	/* edge of screen, exit loop*/
+		}
+		DrawPixel(x,
 			  off - (bit < 0 ? samples[time]
 			   : (bitoff - (samples[time] & (1 << bit) ? 0 : 8)))
 			  * mult / div);
@@ -551,7 +557,8 @@ animate(void *data)
       scope.run = 0;
       draw_text(1);
     }
-  }
+  } else
+    microsleep(100000);		/* no need to suck all CPU cycles */
   show_data();
   if (quit_key_pressed) {
     cleanup();
