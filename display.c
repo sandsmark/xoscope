@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 1.35 1996/10/06 05:43:18 twitham Exp $
+ * @(#)$Id: display.c,v 1.36 1996/10/12 07:48:53 twitham Rel1_2 $
  *
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -139,16 +139,16 @@ draw_text(int all)
     /* sides of graticule */
     for (i = 0 ; i < CHANNELS ; i++) {
 
+      j = (i % 4) * 5 + 5;
+      k = ch[i].color;
+
+      vga_write("Channel", col(69 * (i / 4)), row(j),
+		font, k, TEXT_BG, ALIGN_LEFT);
+      sprintf(string, "(%d)", i + 1);
+      vga_write(string, col(69 * (i / 4) + 7), row(j),
+		font, KEY_FG, TEXT_BG, ALIGN_LEFT);
+
       if (scope.verbose || ch[i].show || scope.select == i) {
-	j = (i % 4) * 5 + 5;
-	k = ch[i].color;
-
-	vga_write("Channel", col(69 * (i / 4)), row(j),
-		  font, k, TEXT_BG, ALIGN_LEFT);
-	sprintf(string, "(%d)", i + 1);
-	vga_write(string, col(69 * (i / 4) + 7), row(j),
-		  font, KEY_FG, TEXT_BG, ALIGN_LEFT);
-
 	sprintf(string, "Pos. :%4d", -(ch[i].pos));
 	vga_write(string, col(69 * (i / 4)), row(j + 1),
 		  font, k, TEXT_BG, ALIGN_LEFT);
@@ -172,7 +172,7 @@ draw_text(int all)
 	DrawLine(col(i < 4 ? 0 : 79), row(j), col(k), row(j));
 	DrawLine(col(k), row(j), col(k), row(j + 5) - 1);
 	DrawLine(col(i < 4 ? 0 : 79), row(j + 5) - 1,
-		     col(k), row(j + 5) - 1);
+		 col(k), row(j + 5) - 1);
       }
     }
 
@@ -427,7 +427,6 @@ init_screen()
   for (i = 0 ; i < CHANNELS ; i++) {
     ch[i].color = color[channelcolor[i]];
   }
-  /*     vga_disabledriverreport(); */
   fix_widgets();
   offset = v_points / 2;
 }
