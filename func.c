@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: func.c,v 1.11 1996/08/03 22:26:31 twitham Rel1_1 $
+ * @(#)$Id: func.c,v 1.12 1996/08/06 04:56:42 twitham Exp $
  *
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -240,7 +240,7 @@ avg(int num)
   b = ch[1].data;
   c = ch[num].data;
   for (i = 0 ; i < h_points ; i++) {
-    *c++ = (*a++ - *b++) / 2;
+    *c++ = (*a++ + *b++) / 2;
   }
 }
 
