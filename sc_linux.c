@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: sc_linux.c,v 1.3 1997/05/03 05:44:20 twitham Exp $
+ * @(#)$Id: sc_linux.c,v 1.4 1997/05/03 06:03:04 twitham Exp $
  *
  * Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -91,6 +91,7 @@ int
 get_data()
 {
   static unsigned char datum[2], prev[2], *buff;
+  static char buffer[MAXWID * 2], junk[SAMPLESKIP];
   int i = 0;
 
   /* flush the sound card's buffer */

@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.h,v 1.26 1997/05/02 04:07:43 twitham Exp $
+ * @(#)$Id: oscope.h,v 1.27 1997/05/03 06:02:43 twitham Exp $
  *
  * Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -21,13 +21,9 @@ extern char *progname;
 extern char version[];
 extern char error[256];
 extern int quit_key_pressed;
-extern int snd;
-extern char buffer[MAXWID * 2];
-extern char junk[SAMPLESKIP];
 extern int v_points;
 extern int h_points;
 extern int offset;
-extern int actual;
 extern int clip;
 extern char *filename;
 
