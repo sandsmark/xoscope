@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.c,v 1.49 1996/04/21 02:28:39 twitham Rel1_0 $
+ * @(#)$Id: oscope.c,v 1.50 1996/07/12 03:02:27 twitham Exp $
  *
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -163,7 +163,7 @@ init_sound_card(int firsttime)
   check_status(ioctl(snd, SOUND_PCM_WRITE_BITS, &parm), __LINE__);
 
   /* set DMA buffer size */
-  check_status(ioctl(snd, SOUND_PCM_SUBDIVIDE, &(scope.dma)), __LINE__);
+  check_status(ioctl(snd, SOUND_PCM_SUBDIVIDE, &scope.dma), __LINE__);
 
   /* set sampling rate */
   check_status(ioctl(snd, SOUND_PCM_WRITE_RATE, &scope.rate), __LINE__);
@@ -418,34 +418,37 @@ handle_key(unsigned char c)
 int
 get_data()
 {
-  static unsigned char datum[2], prev, *buff;
+  static unsigned char datum[2], prev[2], *buff;
   int i = 0;
 
   /* flush the sound card's buffer */
   check_status(ioctl(snd, SNDCTL_DSP_RESET), __LINE__);
   read(snd, junk, SAMPLESKIP);	/* toss some possibly invalid samples */
   if (scope.trige == 1) {
-    datum[scope.trigch] = 255;	/* look for rising edge */
+    read(snd, datum, 2);	/* look for rising edge */
     do {
-      prev = datum[scope.trigch]; /* remember previous, read channels */
+      memcpy(prev, datum, 2);	/* remember previous, read channels */
       read(snd, datum, 2);
-    } while (((i++ < h_points)) &&
-	     ((datum[scope.trigch] < scope.trig) || (prev >= scope.trig)));
+    } while (((i++ < h_points)) && ((datum[scope.trigch] < scope.trig) ||
+				    (prev[scope.trigch] >= scope.trig)));
   } else if (scope.trige == 2) {
-    datum[scope.trigch] = 0;	/* look for falling edge */
+    read(snd, datum, 2);	/* look for falling edge */
     do {
-      prev = datum[scope.trigch]; /* remember previous, read channels */
+      memcpy(prev, datum, 2);	/* remember previous, read channels */
       read(snd, datum, 2);
-    } while (((i++ < h_points)) &&
-	     ((datum[scope.trigch] > scope.trig) || (prev <= scope.trig)));
+    } while (((i++ < h_points)) && ((datum[scope.trigch] > scope.trig) ||
+				    (prev[scope.trigch] <= scope.trig)));
   }
   if (i > h_points)		/* haven't triggered within the screen */
     return(0);			/* give up and keep previous samples */
 
-  clip = 0;			/* now get the real data */
-  read(snd, buffer, h_points * 2);
+  clip = 0;
+  memcpy(buffer, prev, 2);	/* now get the post-trigger data */
+  memcpy(buffer + 2, datum, 2);
+  read(snd, buffer + (scope.trige ? 4 : 0),
+       h_points * 2 - (scope.trige ? 4 : 0));
   buff = buffer;
-  for(i=0; i < h_points; i++) {
+  for(i=0; i < h_points; i++) {	/* move it into channel 1 and 2 */
     if (*buff == 0 || *buff == 255)
       clip = 1;
     ch[0].data[i] = (short)(*buff++) - 128;
@@ -466,11 +469,12 @@ main(int argc, char **argv)
   else
     progname++;
   init_scope();
+  init_sound_card(1);
   init_channels();
   init_math();
   opendisplay(argc, argv);	/* in display.c, calls parse_args */
   init_screen();
-  init_sound_card(1);
+  init_sound_card(0);
   filename = FILENAME;
   if (optind < argc)
     if (argv[optind] != NULL) {
