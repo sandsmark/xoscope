@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: bitscope.c,v 1.11 2000/07/14 02:32:56 twitham Exp $
+ * @(#)$Id: bitscope.c,v 1.12 2000/07/14 05:02:49 twitham Exp $
  *
  * Copyright (C) 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -118,6 +118,7 @@ bs_io(int fd, char *in, char *out)
   case 'p':
     return bs_read(fd, out, 4);
   case 'R':
+  case 'W':
     if (bs.version >= 110)
       return bs_read(fd, out, 4);
   }
@@ -279,16 +280,25 @@ bs_getdata(int fd)
       bs.pos += i;
       if (bs.pos >= bs.end) {	/* got some data! */
 	buff = bs.buf;
-	while (*buff != '\0') {
-	  if (k >= MAXWID)
-	    break;
-	  if (*buff == '\r' || *buff == '\n')
-	    buff++;
-	  else {
-	    n = strtol(buff, NULL, 16);
-	    mem[23 + !alt].data[k] = (n & 0xff) - 128;
-	    mem[25].data[k++] = ((n & 0xff00) >> 8) - 128;
-	    buff += 5;
+	if (bs.version >= 110) { /* M mode, simple bytes */
+	  while (buff < bs.end) {
+	    if (k >= MAXWID)
+	      break;
+	    mem[25].data[k] = *buff++ - 128;
+	    mem[23 + !alt].data[k++] = *buff++ - 128;
+	  }
+	} else {		/* S mode, hex ASCII */
+	  while (*buff != '\0') {
+	    if (k >= MAXWID)
+	      break;
+	    if (*buff == '\r' || *buff == '\n')
+	      buff++;
+	    else {
+	      n = strtol(buff, NULL, 16);
+	      mem[23 + !alt].data[k] = (n & 0xff) - 128;
+	      mem[25].data[k++] = ((n & 0xff00) >> 8) - 128;
+	      buff += 5;
+	    }
 	  }
 	}
 	mem[23 + !alt].num = mem[25].num = k < MAXWID ? k : MAXWID;
@@ -296,7 +306,7 @@ bs_getdata(int fd)
 	  k = 0;
 	  in_progress = 0;
 	} else {		/* still need more, start another */
-	  bs_io(fd, "S", buffer);
+	  bs_io(fd, bs.version >= 110 ? "M" : "S", buffer);
 	}
       }
     }
@@ -309,7 +319,7 @@ bs_getdata(int fd)
     if (!bs_io(fd, error, buffer))
       return(0);
     fprintf(stderr, "%s", buffer);
-    if (!bs_io(fd, "S", buffer))
+    if (!bs_io(fd, bs.version >= 110 ? "M" : "S", buffer))
       return(0);
     k = 0;
     in_progress = 1;
