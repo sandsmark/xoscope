@@ -1,13 +1,18 @@
+
+
 /*
  *                      /-----------------------\
  *                      | Software Oscilloscope |
  *                      \-----------------------/
  *
+ *
+ * scope --- Use /dev/dsp (a sound card) as an oscilloscope under Linux
+ *
  * Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
  *
- * Enhanced by Tim Witham <twitham@pcocd2.intel.com>
+ * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
- * @(#)$Id: oscope.c,v 1.15 1996/01/01 20:45:12 twitham Exp $
+ * @(#)$Id: oscope.c,v 1.16 1996/01/02 00:31:54 twitham Exp $
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,9 +31,10 @@
  ********************************************************************
  *
  * See the man page for a description of what this program does and what
- * the requirements to run it are.
+ * the requirements to run it are.  If you don't like the defaults,
+ * tweak scope.h and re-make.
  *
- * It was developed using:
+ * scope 0.1 (Jeff Tranter) was developed using:
  * - Linux kernel 1.0
  * - gcc 2.4.5
  * - svgalib version 1.05
@@ -36,69 +42,95 @@
  * - Trident VGA card
  * - 80386DX40 CPU with 8MB RAM
  *
+ * scope 1.1+ (Tim Witham) was developed using:
+ * - Linux kernel 1.2.10
+ * - gcc 2.6.3
+ * - svgalib 1.22
+ * - SoundBlaster Pro
+ * - ATI Win Turbo 2MB VRAM
+ * 100 MHz Intel Pentium(R) Processor, 32MB RAM
+ *
+ * So if your computer can't keep up with the latest,
+ * you may want to try 0.1
+ *
  */
 
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <sys/types.h>
 #include <fcntl.h>
+#include <sys/ioctl.h>
 #include <vga.h>
 #include <sys/soundcard.h>
+#include "scope.h"
 
 /* always redraw the frame when we clear the screen */
 #define CLEAR	vga_clear(); draw_frame()
 
-/* global variables */
+/* program defaults, see scope.h for explanation */
+int sampling = DEF_R;
+int scale = DEF_S;
+int trigger = DEF_T;
+int colour = DEF_C;
+int mode = DEF_M;
+int dma = DEF_D;
+int point_mode = DEF_P;
+int graticule = DEF_G;
+int behind = DEF_G;
+int verbose = DEF_V;
+
+
+/* extra global variables */
+char *progname;			/* the program's name, autoset via argv[0] */
+char error[256];		/* buffer for "one-line" error messages */
+char *def[] = {		
+  "on",				/* used by -g/-v in usage message */
+  "off",
+  "",				/* used by -p/-l in usage message */
+  ", default",
+  "graticule",			/* used by -b in usage message */
+  "signal"
+};
 int quit_key_pressed;		/* set by handle_key() */
 int snd;			/* file descriptor for sound device */
-unsigned char buffer[1024];	/* buffer for sound data */
-unsigned char old[1024];	/* previous buffer for sound data */
-int offset;			/* vertical offset */
-int sampling = 8000;		/* selected sampling rate */
-int actual;			/* actual sampling rate */
-int mode = G640x480x16;		/* graphics mode */
-int colour = 2;			/* colour */
-int dma = 4;			/* DMA buffer divisor */
-int point_mode = 0;		/* point v.s. line segment mode */
-int verbose = 0;		/* verbose mode? */
+unsigned char buffer[MAXWID];	/* buffer for sound data */
+unsigned char old[MAXWID];	/* previous buffer for sound data */
 int v_points;			/* points in vertical axis */
 int h_points;			/* points in horizontal axis */
-int trigger = -1;		/* trigger level (-1 = disabled) */
-int graticule = 0;		/* show graticule */
-int behind = 0;			/* graticule behind the signal? */
-int scale = 1;			/* time scale or zoom factor */
-char *def[] = {			/* for -p/-l in the usage message */
-  "",	
-  ", default"
-};
+int offset;			/* vertical offset */
+int actual;			/* actual sampling rate */
 
 /* display command usage on standard error and exit */
 void
 usage()
 {
-  fprintf(stderr, "usage: scope"
-	  " [-r<rate>] [-s<scale>] [-t<trigger>] [-c<colour>]
+  fprintf(stderr, "usage: %s [-r<rate>] [-s<scale>] [-t<trigger>] [-c<colour>]
              [-m<mode>] [-d<dma divisor>] [-p|-l] [-g] [-b] [-v]
 
 Options          Runtime Increase Decrease or Toggle Keys
--r <rate>        R=+10%% r=-10%%  sampling Rate in Hz             (default=%d)
--s <scale>       S=*2   s=/2    time Scale or zoom factor (1-32, default=%d)
--t <trigger>     T=+10  t=-10   Trigger level (0-255,-1=disabled,default=%d)
--c <colour>      C=+1   c=-1    trace Colour                    (default=%d)
--m <mode>                       SVGA graphics Mode              (default=%d)
--d <dma divisor>                DMA buffer size divisor  (1,2,4, default=%d)
--p               P p =toggle    Point mode (faster, opposite of -l%s)
--l               L l =toggle    Line  mode (slower, opposite of -p%s)
--g               G g =toggle    draw Graticule (5 msec major divs, 1 msec minor)
--b               B b =toggle    draw graticule Behind / in front of signal
--v               V v =toggle    Verbose keypress / option log to stdout
+-r <rate>        R +10%% r -10%%  sampling Rate in Hz             (default=%d)
+-s <scale>       S *2   s /2    time Scale or zoom factor (1-32, default=%d)
+-t <trigger>     T +10  t -10   Trigger level (0-255,-1=disabled,default=%d)
+-c <colour>      C +1   c -1    trace Colour                    (default=%d)
+-m <mode>        M +1   m -1    SVGA graphics Mode (USE CAUTION, default=%d)
+-d <dma divisor> D *2   d /2    DMA buffer size divisor  (1,2,4, default=%d)
+-p               P  p   toggle  Point mode (faster, opposite of -l%s)
+-l               L  l   toggle  Line  mode (slower, opposite of -p%s)
+-g               G  g   toggle  turn %s Graticule (5 msec major divisions)
+-b               B  b   toggle  %s Behind instead of in front of %s
+-v               V  v   toggle  turn %s Verbose keypress option log to stdout
                  <space>        pause the display until another key is pressed
-                 Q q            Quit program
+                 Q q            Quit %s
 ",
+	  progname,
 	  sampling, scale, trigger,
 	  colour, mode, dma,
-	  def[point_mode], def[!point_mode]);
+	  def[point_mode + 2], def[!point_mode + 2],
+	  def[graticule], def[behind + 4], def[!behind + 4],
+	  def[verbose],
+	  progname);
   exit(1);
 }
 
@@ -109,10 +141,25 @@ show_info(unsigned char c) {
     printf("%1c %5dHz:  -r %5d  -s %2d  -t %3d  -c %2d  -m %2d  -d %1d  "
 	   "%2s  %2s  %2s%s\n",
 	   c, actual, sampling, scale, trigger, colour, mode, dma,
+
 	   point_mode ? "-p" : "-l",
+#if DEF_G
+	   graticule ? "" : "-g",
+#else
 	   graticule ? "-g" : "",
+#endif
+
+#if DEF_B
+	   behind ? "" : "-b",
+#else
 	   behind ? "-b" : "",
+#endif
+
+#if DEF_V
+	   verbose ? "" : "  -v"
+#else
 	   verbose ? "  -v" : ""
+#endif
 	   );
   }
 }
@@ -155,13 +202,13 @@ parse_args(int argc, char **argv)
       point_mode = 0;
       break;
     case 'g':
-      graticule = 1;
+      graticule = !graticule;
       break;
     case 'b':
-      behind = 1;
+      behind = !behind;
       break;
     case 'v':
-      verbose = 1;
+      verbose = !verbose;
       break;
     case ':':
     case '?':
@@ -181,10 +228,12 @@ cleanup()
 
 /* abort and show system error if given ioctl status is bad */
 static inline void
-check_status(int status)
+check_status(int status, int line)
 {
   if (status < 0) {
-    perror("error from sound device ioctl");
+    sprintf(error, "%s: error from sound device ioctl at line %d",
+	    progname, line);
+    perror(error);
     cleanup();
     exit(1);
   }
@@ -243,6 +292,64 @@ draw_graticule()
 
 }
 
+/* initialize screen data to zero level */
+void
+init_data()
+{
+  int i;
+
+  for (i = 0 ; i < 1024 ; i++) {
+    buffer[i] = 128;
+    old[i] = 128;
+  }
+}
+
+/* initialize /dev/dsp */
+void
+init_sound_card(int firsttime)
+{
+  int parm;
+
+  if (!firsttime)
+    close(snd);
+  snd = open("/dev/dsp", O_RDONLY);
+  if (snd < 0) {		/* open DSP device for read */
+    sprintf(error, "%s: cannot open /dev/dsp", progname);
+    perror(error);
+    cleanup();
+    exit(1);
+  }
+
+  parm = 1;			/* set mono */
+  check_status(ioctl(snd, SOUND_PCM_WRITE_CHANNELS, &parm), __LINE__);
+
+  parm = 8;			/* set 8-bit samples */
+  check_status(ioctl(snd, SOUND_PCM_WRITE_BITS, &parm), __LINE__);
+
+  /* set DMA buffer size */
+  check_status(ioctl(snd, SOUND_PCM_SUBDIVIDE, &dma), __LINE__);
+
+  /* set sampling rate */
+  check_status(ioctl(snd, SOUND_PCM_WRITE_RATE, &sampling), __LINE__);
+  check_status(ioctl(snd, SOUND_PCM_READ_RATE, &actual), __LINE__);
+}
+
+/* initialize graphics screen */
+void
+init_screen(int firsttime)
+{
+  if (firsttime) {
+    vga_disabledriverreport();
+    vga_init();
+  }
+  vga_setmode(mode);
+  v_points = vga_getydim();
+  h_points = vga_getxdim();
+  offset = v_points / 2 - 127;
+  CLEAR;
+  draw_graticule();
+}
+
 /* handle single key commands */
 static inline unsigned char
 handle_key()
@@ -255,44 +362,44 @@ handle_key()
     break;
   case 'R':
     sampling *= 1.1;		/* 10% sample rate increase */
-    check_status(ioctl(snd, SOUND_PCM_SYNC, 0));
-    check_status(ioctl(snd, SOUND_PCM_WRITE_RATE, &sampling));
-    check_status(ioctl(snd, SOUND_PCM_READ_RATE, &actual));
+    check_status(ioctl(snd, SOUND_PCM_SYNC, 0), __LINE__);
+    check_status(ioctl(snd, SOUND_PCM_WRITE_RATE, &sampling), __LINE__);
+    check_status(ioctl(snd, SOUND_PCM_READ_RATE, &actual), __LINE__);
     CLEAR;
     break;
   case 'r':
     sampling *= 0.9;		/* 10% sample rate decrease */
-    check_status(ioctl(snd, SOUND_PCM_SYNC, 0));
-    check_status(ioctl(snd, SOUND_PCM_WRITE_RATE, &sampling));
-    check_status(ioctl(snd, SOUND_PCM_READ_RATE, &actual));
+    check_status(ioctl(snd, SOUND_PCM_SYNC, 0), __LINE__);
+    check_status(ioctl(snd, SOUND_PCM_WRITE_RATE, &sampling), __LINE__);
+    check_status(ioctl(snd, SOUND_PCM_READ_RATE, &actual), __LINE__);
     CLEAR;
     break;
   case 'S':
-    scale <<= 1;		/* double the scale (zoom) */
-    if (scale > 32)
-      scale = 32;
-    CLEAR;
+    if (scale < 16) {		/* double the scale (zoom) */
+      scale <<= 1;	
+      CLEAR;
+    }
     break;
   case 's':	
-    scale >>= 1;		/* half the scale */
-    if (scale < 1)
-      scale = 1;
-    CLEAR;
+    if (scale > 1) {		/* half the scale */
+      scale >>= 1;
+      CLEAR;
+    }
     break;
   case 'T':
     if (trigger == -1)		/* enable the trigger at half scale */
       trigger = 118;
-    trigger += 10;
-    if (trigger > 255)		/* disable trigger when it leaves the scale */
-      trigger = -1;
+    trigger += 10;		/* increase trigger */
+    if (trigger > 255)
+      trigger = -1;		/* disable trigger when it leaves the scale */
     CLEAR;
     break;
   case 't':
     if (trigger == -1)		/* enable the trigger at half scale */
       trigger = 138;
-    trigger -= 10;
-    if (trigger < 0)		/* disable trigger when it leaves the scale */
-      trigger = -1;
+    trigger -= 10;		/* decrease trigger */
+    if (trigger < 0)
+      trigger = -1;		/* disable trigger when it leaves the scale */
     CLEAR;
     break;
   case 'C':
@@ -303,6 +410,30 @@ handle_key()
     if (colour > 0) {		/* decrease color */
       colour--;
       CLEAR;
+    }
+    break;
+  case 'M':
+    mode++;			/* increase video mode */
+    init_screen(0);
+    CLEAR;
+    break;
+  case 'm':
+    if (mode > 0) {		/* decrease video mode */
+      mode--;
+      init_screen(0);
+      CLEAR;
+    }
+    break;
+  case 'D':
+    if (dma < 3) {		/* double dma */
+      dma <<= 1;
+      init_sound_card(0);
+    }
+    break;
+  case 'd':
+    if (dma > 1) {		/* half dma */
+      dma >>= 1;
+      init_sound_card(0);
     }
     break;
   case 'L':		
@@ -398,71 +529,24 @@ graph_data()
   }
 }
 
-/* initialize screen data to zero level */
-void
-init_data()
-{
-  int i;
-
-  for (i = 0 ; i < 1024 ; i++) {
-    buffer[i] = 128;
-    old[i] = 128;
-  }
-}
-
-/* initialize /dev/dsp */
-void
-init_sound_card()
-{
-  int parm;
-				/* open DSP device for read */
-  snd = open("/dev/dsp", O_RDONLY);
-  if (snd < 0) {
-    perror("cannot open /dev/dsp");
-    cleanup();
-    exit(1);
-  }
-
-  parm = 1;			/* set mono */
-  check_status(ioctl(snd, SOUND_PCM_WRITE_CHANNELS, &parm));
-
-  parm = 8;			/* set 8-bit samples */
-  check_status(ioctl(snd, SOUND_PCM_WRITE_BITS, &parm));
-
-				/* set DMA buffer size */
-  check_status(ioctl(snd, SOUND_PCM_SUBDIVIDE, &dma));
-
-				/* set sampling rate */
-  check_status(ioctl(snd, SOUND_PCM_WRITE_RATE, &sampling));
-  check_status(ioctl(snd, SOUND_PCM_READ_RATE, &actual));
-}
-
-/* initialize graphics screen */
-void
-init_screen()
-{
-  vga_disabledriverreport();
-  vga_init();
-  vga_setmode(mode);
-  v_points = vga_getydim();
-  h_points = vga_getxdim();
-  offset = v_points / 2 - 127;
-  CLEAR;
-  draw_graticule();
-}
-
 /* main program */
 int
 main(int argc, char **argv)
 {
-  parse_args(argc, argv);
+  progname = strrchr(argv[0], '/');
+  if (progname == NULL)		/* who are we? */
+    progname = argv[0];
+  else
+    progname++;
+
+  parse_args(argc, argv);	/* what do you want? */
   init_data();
-  init_sound_card();
-  init_screen();
+  init_sound_card(1);
+  init_screen(1);
   show_info(' ');
 
   while (!quit_key_pressed) {
-    get_data();			/* Keys are now handled in get_data */
+    get_data();			/* keys are now handled in get_data */
     if (behind) {
       draw_graticule();		/* plot data on top of graticule */
       graph_data();
