@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.c,v 1.86 2000/07/18 03:02:02 twitham Exp $
+ * @(#)$Id: oscope.c,v 1.87 2000/08/31 18:37:57 twitham Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -109,6 +109,8 @@ cleanup()
 void
 init_scope()
 {
+  int i;
+
   scope.size = DEF_M;
   scope.dma = DEF_D;
   scope.mode = DEF_P;
@@ -125,6 +127,9 @@ init_scope()
   scope.verbose = DEF_V;
   snd = DEF_X ? 0 : -1;
   ps.found = bs.found = !DEF_Z;
+  for (i = 0; i < sizeof(bs.R) / sizeof(bs.R[0]); i++) {
+    bs.R[i] = -1;
+  }
 }
 
 /* initialize the signals */

@@ -1,12 +1,12 @@
 /*
- * @(#)$Id: bitscope.c,v 1.15 2000/07/18 06:01:55 twitham Exp $
+ * @(#)$Id: bitscope.c,v 1.16 2000/08/31 18:37:57 twitham Exp $
  *
  * Copyright (C) 2000 Tim Witham <twitham@quiknet.com>
  *
  * (see the files README and COPYING for more details)
  *
  * This file implements the BitScope (www.bitscope.com) driver.
- * Developed on a 10 MHz "BC000100" BitScope with Motorola MC10319 ADC.
+ * Developed on a 10 MHz "BC000112" BitScope with Motorola MC10319 ADC.
  * Some parts based on bitscope.c by Ingo Cyliax
  *
  */
@@ -91,6 +91,7 @@ bs_read_async(int fd, char *buf, int n, char c)
       pos += i;
       if (pos >= end) {
 	in_progress = 0;
+	buf[n] = '\0';
 	return(n);
       }
     }
@@ -108,21 +109,26 @@ bs_read_async(int fd, char *buf, int n, char c)
 int
 bs_io(int fd, char *in, char *out)
 {
+  char c;
 
   out[0] = '\0';
-  if (!in_progress)
-    bs_cmd(fd, in);
-  switch (in[strlen(in) - 1]) {
+  if (!in_progress) {
+    if (in[0] == 'M')
+      bs_cmd(fd, bs.version >= 110 ? "M" : "S");
+    else
+      bs_cmd(fd, in);
+  }
+  switch (c = in[strlen(in) - 1]) {
   case 'T':
-    return bs_read_async(fd, out, 6, 'T');
+    return bs_read_async(fd, out, 6, c);
   case 'M':
     if (bs.version >= 110)
-      return bs_read_async(fd, out, R15 * 2, 'M');
+      return bs_read_async(fd, out, R15 * 2, c);
   case 'A':
     if (bs.version >= 110)
-      return bs_read_async(fd, out, R15, 'A');
+      return bs_read_async(fd, out, R15, c);
   case 'S':			/* DDAA, per sample + newlines per 16 */
-    return bs_read_async(fd, out, R15 * 5 + (R15 / 16) + 1, 'S');
+    return bs_read_async(fd, out, R15 * 5 + (R15 / 16) + 1, c);
   case 'P':
     if (bs.version >= 110)
       return bs_read(fd, out, 14);
@@ -160,9 +166,10 @@ bs_getregs(int fd, unsigned char *reg)
   if (!bs_cmd(fd, "[3]@"))
     return(0);
   for (i = 3; i < 24; i++) {
-    if (bs_io(fd, "p", buf))
+    if (!bs_io(fd, "p", buf))
       return(0);
     reg[i] = strtol(buf, NULL, 16);
+//    printf("reg[%d]=%d\n", i, reg[i]);
     if (!bs_io(fd, "n", buf))
       return(0);
   }
@@ -200,6 +207,35 @@ bs_flush_serial()
   }
 }
 
+
+void
+bs_writeoptions(FILE *file)
+{
+  int i, regs[] = {0, 5, 6, 7, 14}; /* regs to save */
+
+  for (i = 0; i < sizeof(regs) / sizeof(regs[0]); i++) {
+    fprintf(file, "# -o %d:0x%02x\n", regs[i], bs.r[regs[i]]);
+  }
+}
+
+
+void
+bs_option(char *optarg)
+{
+  char *p;
+  int reg = 0, val = 0;
+
+  reg = strtol(optarg, NULL, 0);
+  if (reg >= 0 && reg < 24) {
+    if ((p = strchr(optarg, ':')) != NULL) {
+      val = strtol(++p, NULL, 0);
+      bs.R[reg] = val;
+//      printf("bs_option: %s b[%d] = %d\n", optarg, reg, val);
+    }
+  }
+}
+
+
 void
 bs_changerate(int fd, int dir)
 {
@@ -210,9 +246,45 @@ bs_changerate(int fd, int dir)
     bs.r[13] = bs.r[13] ? bs.r[13] / 2 : 128; /* TB	time base */
   else if (dir < 0)
     bs.r[13] = bs.r[13] ? bs.r[13] * 2 : 1;
-  mem[23].rate = mem[24].rate = mem[25].rate = 1250000 / (19 + 3 * (R13 + 1));
+//  mem[23].rate = mem[24].rate = mem[25].rate = 1250000 / (19 + 3 * (R13 + 1));
   sprintf(buf, "[d]@[%x]s", bs.r[13]);
   bs_cmd(fd, buf);
+}
+
+
+void
+bs_fixregs(int fd)
+{
+  int i;
+
+  bs.r[3] = bs.r[4] = 0;
+//  bs.r[5] = 0;
+//  bs.r[6] = 127;		/*  scope.trig; ? */
+  //  bs.r[6] = 0xff;		/* don't care */
+//  bs.r[7] = TRIGEDGE | TRIGEDGEF2T | LOWER16BNC | TRIGCOMPARE | TRIGANALOG;
+  bs.r[8] = 1;			/* trace mode, 0-4 */
+
+  /* 0: 0, 2, 179 */
+  /* 1: 63, 53, 1 */
+  /* 2: 0, 80, 1 */
+  /* 3: 0, 16319, 1 */
+
+  //  SETWORD(&bs.r[11], 2);	/* try to just fill the 16384 memory: */
+  //  bs.r[13] = 179;		/* 2,179 through mode 0 formula = 1644 */
+
+  bs.r[20] = 63;			/* PRETD	pre trigger delay */
+  SETWORD(&bs.r[11], 53);	/* PTD		post trigger delay */
+  bs.r[13] = 1;
+  bs_changerate(fd, 0);
+
+//  bs.r[14] = PRIMARY(RANGE1200 | CHANNELA | ZZCLK)
+//    | SECONDARY(RANGE1200 | CHANNELB | ZZCLK);
+  bs.r[15] = 0;			/* max samples per dump (256) */
+//  bs.r[0] = 0x11;
+  for (i = 0; i < 24; i++) {
+    if (bs.R[i] > -1)
+      bs.r[i] = bs.R[i];
+  }
 }
 
 /* initialize previously identified BitScope FD */
@@ -224,7 +296,7 @@ bs_init(int fd)
     1300 * 5 / 2, 6000 * 5 / 2, 12000 * 5 / 2, 31600 * 5 / 2,
      632 * 5 / 2, 2900 * 5 / 2,  5800 * 5 / 2, 15280 * 5 / 2,
   };
-  char *labels[] = {
+  static char *labels[] = {
     "BNC B x1",		"BNC A x1",
     "BNC B x10",	"BNC A x10",
     "POD Ch. A",	"POD Ch. B",
@@ -237,32 +309,13 @@ bs_init(int fd)
   in_progress = 0;
   bs.version = strtol(bs.bcid + 2, NULL, 10);
   mem[23].rate = mem[24].rate = mem[25].rate = 25000000;
+//  mem[23].rate = mem[24].rate = mem[25].rate = 12500000;
 
-  bs_getregs(fd, bs.r);		/* get and reset registers */
-  bs.r[3] = bs.r[4] = 0;
-  bs.r[5] = 0;
-  bs.r[6] = 127;		/*  scope.trig; ? */
-//  bs.r[6] = 0xff;		/* don't care */
-  bs.r[7] = TRIGEDGE | TRIGEDGEF2T | LOWER16BNC | TRIGCOMPARE | TRIGANALOG;
-  bs.r[8] = 4;			/* trace mode, 0-4 */
-
-  /* 0: 0, 2, 179 */
-  /* 1: 0, 107, 1 */
-  /* 2: 0, 80, 1 */
-  /* 3: 0, 16319, 1 */
-
-//  SETWORD(&bs.r[11], 2);	/* try to just fill the 16384 memory: */
-//  bs.r[13] = 179;		/* 2,179 through mode 0 formula = 1644 */
-
-  bs.r[20] = 1;			/* PRETD	pre trigger delay */
-  SETWORD(&bs.r[11], 16319);	/* PTD		post trigger delay */
-  bs.r[13] = 1;
-  bs_changerate(fd, 0);
-
-  bs.r[14] = PRIMARY(RANGE1200 | CHANNELA | ZZCLK)
-    | SECONDARY(RANGE1200 | CHANNELB | ZZCLK);
-  bs.r[15] = 0;			/* max samples per dump (256) */
+//  printf("bs_init\n");
+  bs_getregs(fd, bs.r);
+  bs_fixregs(fd);
   bs_putregs(fd, bs.r);
+
   funcnames[2] = labels[6];
   if (bs.r[7] & UPPER16POD) {
     mem[23].volts = volts[(bs.r[14] & RANGE3160) + 8];
@@ -270,15 +323,14 @@ bs_init(int fd)
     funcnames[0] = labels[4];
     funcnames[1] = labels[5];
   } else {
-    bs.x10 = 0x11;
     mem[23].volts = volts[(bs.r[14] & RANGE3160)
-			 + (bs.x10 & 0x01 ? 4 : 0)];
+			 + (bs.r[0] & 0x01 ? 4 : 0)];
     mem[24].volts = volts[((bs.r[14] >> 4) & RANGE3160)
-			 + (bs.x10 & 0x10 ? 4 : 0)];
+			 + (bs.r[0] & 0x10 ? 4 : 0)];
     funcnames[0] = labels[((bs.r[14] & PRIMARY(CHANNELA)) ? 1 : 0)
-			 + ((bs.x10 & 0x01) ? 2 : 0)];
+			 + ((bs.r[0] & 0x01) ? 2 : 0)];
     funcnames[1] = labels[((bs.r[14] & SECONDARY(CHANNELA)) ? 1 : 0)
-			 + ((bs.x10 & 0x10) ? 2 : 0)];
+			 + ((bs.r[0] & 0x10) ? 2 : 0)];
   }
 }
 
@@ -320,7 +372,7 @@ int
 bs_getdata(int fd)
 {
   static unsigned char *buff;
-  static int alt = 1, k, n;
+  static int alt = 0, k, n;
 
   if (!fd) return(0);		/* device open? */
   if (in_progress == 'M') {	/* finish a get */
@@ -330,11 +382,14 @@ bs_getdata(int fd)
 	while (buff < bs.buf + n) {
 	  if (k >= MAXWID)
 	    break;
+	  if (k > 8192)
+	    alt = 1;
 	  mem[25].data[k] = *buff++ - 128;
-	  mem[23 + alt].data[k] = *buff++ - 128;
-	  if (alt) k++;
-	  alt = !alt;
+	  mem[23 + alt].data[k++ - alt * 8193] = *buff++ - 128;
 	}
+	mem[23].num = k > 8192 ? 8192 : k;
+	if (k > 8192) mem[24].num = k - 8192;
+	mem[25].num = k;
       } else {		/* S mode, hex ASCII */
 	while (*buff != '\0') {
 	  if (k >= MAXWID)
@@ -351,9 +406,11 @@ bs_getdata(int fd)
 	  }
 	}
       }
-      mem[23].num = mem[24].num = mem[25].num = k < MAXWID ? k : MAXWID;
-      if (k >= samples(mem[23].rate) || k >= 8 * 1024) { /* all done */
+//      mem[23].num = mem[24].num = mem[25].num = k < MAXWID ? k : MAXWID;
+//      if (k >= samples(mem[23].rate) || k >= 16 * 1024) { /* all done */
+      if (k >= 8192 + samples(mem[23].rate) || k >= 16 * 1024) {
 	k = 0;
+	alt = 0;
 	in_progress = 0;
       } else {		/* still need more, start another */
 	bs_io(fd, "M", bs.buf);

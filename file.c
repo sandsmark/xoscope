@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: file.c,v 1.23 2000/07/11 23:01:25 twitham Exp $
+ * @(#)$Id: file.c,v 1.24 2000/08/31 18:37:57 twitham Rel $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -37,6 +37,10 @@ handle_opt(int opt, char *optarg)
   Channel *s;
 
   switch (opt) {
+  case 'o':			/* bitscope option */
+  case 'O':
+    bs_option(optarg);
+    break;
   case 'r':			/* sample rate */
   case 'R':
     scope.rate = limit(strtol(optarg, NULL, 0), 8000, 44100);
@@ -229,6 +233,7 @@ writefile(char *filename)
       fprintf(file, "%d", i > 1 ? (p->func - FUNC0 + 1) : 0);
     fprintf(file, "\n");
   }
+  bs_writeoptions(file);
   for (i = 0 ; i < 23 ; i++) {
     if (mem[i].color != 0)
       chan[k++] = i;
@@ -269,7 +274,7 @@ readfile(char *filename)
   FILE *file;
   char c, *p, *q, buff[256];
   int i = 0, j = 0, k, valid = 0, chan[26] =
-  {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
+  {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
 
   if ((file = fopen(filename, "r")) == NULL) {
