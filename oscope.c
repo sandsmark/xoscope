@@ -5,7 +5,7 @@
  *
  * [x]oscope --- Use Linux's /dev/dsp (a sound card) as an oscilloscope
  *
- * @(#)$Id: oscope.c,v 1.42 1996/02/03 21:09:03 twitham Exp $
+ * @(#)$Id: oscope.c,v 1.43 1996/02/04 04:00:49 twitham Exp $
  *
  * Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
@@ -69,12 +69,13 @@ char *progname;			/* the program's name, autoset via argv[0] */
 char error[256];		/* buffer for "one-line" error messages */
 int quit_key_pressed = 0;	/* set by handle_key() */
 int snd;			/* file descriptor for sound device */
-char buffer[MAXWID * 2];	/* buffer for sound data */
+char buffer[MAXWID * 2];	/* buffer for stereo sound data */
 char junk[SAMPLESKIP];		/* junk data buffer */
-int v_points;			/* points in vertical axis */
-int h_points;			/* points in horizontal axis */
-int offset;			/* vertical offset */
+int v_points;			/* pixels in vertical axis */
+int h_points;			/* pixels in horizontal axis */
+int offset;			/* vertical pixel offset to zero line */
 int actual;			/* actual sampling rate */
+int triggered = 0;		/* whether we've triggered or not */
 
 /* display command usage on standard error and exit */
 void
@@ -197,6 +198,8 @@ init_scope()
   scope.scale = DEF_S;
   scope.rate = DEF_R;
   scope.trig = DEF_T;
+  scope.trigch = 0;
+  scope.trige = 0;
   scope.grat = DEF_G;
   scope.behind = DEF_B;
   scope.run = 1;
@@ -262,11 +265,11 @@ handle_key(unsigned char c)
   static Signal *p;
 
   p = &ch[scope.select];
-  if (c >= 'A' && c <= 'Z') {
+  if (c >= 'A' && c <= 'Z' && actual >= 44000) {
     save(c);
     draw_text(1);
     return;
-  } else if (c >= 'a' && c <= 'z' && scope.select > 1) {
+  } else if (c >= 'a' && c <= 'z' && scope.select > 1 && actual >= 44000) {
     recall(c);
     draw_text(1);
     return;
@@ -316,20 +319,19 @@ handle_key(unsigned char c)
     break;
   case '0':
     if (scope.run)
-      if (scope.rate <= 8800) {
+      if (actual <= 8800) {
 	scope.rate = 22000;
 	check_status(ioctl(snd, SOUND_PCM_SYNC, 0), __LINE__);
 	check_status(ioctl(snd, SOUND_PCM_WRITE_RATE, &scope.rate), __LINE__);
 	check_status(ioctl(snd, SOUND_PCM_READ_RATE, &actual), __LINE__);
-      } else if (scope.rate <= 22000) {
-
+      } else if (actual <= 22000) {
 	scope.rate = 44000;
 	check_status(ioctl(snd, SOUND_PCM_SYNC, 0), __LINE__);
 	check_status(ioctl(snd, SOUND_PCM_WRITE_RATE, &scope.rate), __LINE__);
 	check_status(ioctl(snd, SOUND_PCM_READ_RATE, &actual), __LINE__);
       } else
 	pscaler++;
-    else if (scope.rate >= 44000)
+    else if (actual >= 44000)
       pscaler++;
     if (pscaler > maxscaler)
       pscaler = maxscaler;
@@ -338,9 +340,9 @@ handle_key(unsigned char c)
     break;
   case '9':
     if (scope.run)
-      if (scope.rate == 8800) {
+      if (actual <= 8800) {
 	/* average several samples into each pixel */
-      } else if (scope.rate == 22000) {
+      } else if (actual <= 22000) {
 	scope.rate = 8800;
 	check_status(ioctl(snd, SOUND_PCM_SYNC, 0), __LINE__);
 	check_status(ioctl(snd, SOUND_PCM_WRITE_RATE, &scope.rate), __LINE__);
@@ -369,6 +371,14 @@ handle_key(unsigned char c)
     if (scope.trig < 0)		/* enable the trigger at half scale */
       scope.trig = 136;
     scope.trig -= 8;		/* decrease trigger */
+    clear();
+    break;
+  case '_':
+    scope.trigch = !scope.trigch;
+    clear();
+    break;
+  case '+':
+    scope.trige = !scope.trige;
     clear();
     break;
   case ')':
@@ -458,8 +468,8 @@ measure_data(Signal *sig) {
     sig->time = (last - first) / (count - 2) * 2;
 }
 
-/* get data from sound card */
-inline void
+/* get data from sound card, return value is whether we triggered or not */
+int
 get_data()
 {
   static unsigned char datum[2], prev, *buff;
@@ -468,25 +478,25 @@ get_data()
 				/* flush the sound card's buffer */
   check_status(ioctl(snd, SNDCTL_DSP_RESET), __LINE__);
   read(snd, junk, SAMPLESKIP);	/* toss some possibly invalid samples */
-  if (scope.trig > -1) {		/* trigger enabled */
-    if (scope.trig > 128) {
-      datum[0] = 255;		/* positive trigger, look for rising edge */
+  if (scope.trig > -1) {	/* trigger enabled */
+    if (scope.trige) {
+      datum[scope.trigch] = 255; /* look for rising edge */
       do {
-	prev = datum[0];	/* remember prev. channel 1, read channel(s) */
+	prev = datum[scope.trigch]; /* remember previous, read channels */
 	read(snd, datum, 2);
       } while (((i++ < h_points)) &&
-	       ((datum[0] < scope.trig) || (prev > scope.trig)));
+	       ((datum[scope.trigch] < scope.trig) || (prev > scope.trig)));
     } else {
-      datum[0] = 0;		/* negative scope.trig, look for falling edge */
+      datum[scope.trigch] = 0;	/* look for falling edge */
       do {
-	prev = datum[0];	/* remember prev. channel 1, read channel(s) */
+	prev = datum[scope.trigch]; /* remember previous, read channels */
 	read(snd, datum, 2);
       } while (((i++ < h_points)) &&
-	       ((datum[0] > scope.trig) || (prev < scope.trig)));
+	       ((datum[scope.trigch] > scope.trig) || (prev < scope.trig)));
     }
   }
   if (i > h_points)		/* haven't triggered within the screen */
-    return;			/* give up and keep previous samples */
+    return(0);			/* give up and keep previous samples */
 
   /* now get the real data */
   read(snd, buffer, h_points * 2);
@@ -495,6 +505,7 @@ get_data()
     ch[0].data[i] = (short)(*buff++) - 128;
     ch[1].data[i] = (short)(*buff++) - 128;
   }
+  return(scope.trig > -1);
 }
 
 /* main program */
@@ -502,7 +513,7 @@ int
 main(int argc, char **argv)
 {
   progname = strrchr(argv[0], '/');
-  if (progname == NULL)		/* who are we? */
+  if (progname == NULL)
     progname = argv[0];
   else
     progname++;

@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 1.21 1996/02/03 21:08:28 twitham Exp $
+ * @(#)$Id: display.c,v 1.22 1996/02/04 04:00:43 twitham Exp $
  *
  * Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
@@ -155,7 +155,7 @@ draw_text(int all)
 
     VGA_WRITE("(Tab)", 0, row(1), font, KEY_FG, TEXT_BG, ALIGN_LEFT);
     sprintf(string, "Channel %d %s", scope.select + 1,
-	    p->show ? "Visible" : "Hidden ");
+	    p->show ? "Visible" : "HIDDEN ");
     VGA_WRITE(string, col(5), row(1), font, p->color, TEXT_BG, ALIGN_LEFT);
 
     VGA_WRITE("(Enter)", col(71), 0, font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
@@ -247,11 +247,12 @@ draw_text(int all)
 	    i > 999 ? 'm' : 'u');
     VGA_WRITE(string, col(40), row(25), font, TEXT_FG, TEXT_BG, ALIGN_CENTER);
 
-    VGA_WRITE("(-)               (+)", col(40), row(27),
+    VGA_WRITE("(_)(-)                      (=)(+)", col(40), row(27),
 	      font, KEY_FG, TEXT_BG, ALIGN_CENTER);
-    sprintf(string, "Trigger: %d", scope.trig - 128);
+    sprintf(string, "%s Trigger @ %3d",
+	    scope.trige ? " Rising" : "Falling", scope.trig - 128);
     VGA_WRITE(scope.trig > -1 ? string : "No Trigger", col(40), row(27),
-	      font, TEXT_FG, TEXT_BG, ALIGN_CENTER);
+	      font, ch[scope.trigch].color, TEXT_BG, ALIGN_CENTER);
 
     VGA_WRITE("(A-Z)", col(74), row(27), font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
     VGA_WRITE("Save  ", col(80), row(27), font, p->color, TEXT_BG, ALIGN_RIGHT);
@@ -287,6 +288,9 @@ draw_text(int all)
 	  p->max, p->min, p->max - p->min);
   VGA_WRITE(string, col(40), row(1), font, p->color, TEXT_BG, ALIGN_CENTER);
 
+  VGA_WRITE(triggered ? " Triggered " : "? TRIGGER ?", col(40), row(2),
+	    font, ch[scope.trigch].color, TEXT_BG, ALIGN_CENTER);
+    
 #endif
 }
 
@@ -340,17 +344,19 @@ draw_graticule()
 {
   static int i, j;
 
+  /* a mark where the trigger level is */
+  if (scope.trig > -1) {
+    i = offset + ch[scope.trigch].pos + 128 - scope.trig;
+    VGA_SETCOLOR(ch[scope.trigch].color);
+    VGA_DRAWLINE(90, i + (scope.trige ? -10 : 10),
+		 110, i + (scope.trige ? 10 : -10));
+  }
+
   VGA_SETCOLOR(color[scope.color]);
   VGA_DRAWLINE(100, 80, h_points-100, 80);
   VGA_DRAWLINE(100, v_points - 80, h_points-100, v_points - 80);
   VGA_DRAWLINE(100, 80, 100, v_points - 80);
   VGA_DRAWLINE(h_points-100, 80, h_points-100, v_points - 80);
-
-  /* a tick mark where the trigger level is */
-  if (scope.trig > -1) {
-    i = offset - scope.trig + ch[0].pos + 128;
-    VGA_DRAWLINE(100, i, 110, i);
-  }
 
   if (scope.grat) {
 
@@ -393,7 +399,7 @@ draw_data()
 	off = offset + p->pos;
 	VGA_SETCOLOR(p->color);
 	for (i = 0 ; i <= (h_points - 200) / scope.scale ; i++) {
-	  if (scope.mode == 0) {	/* erase previous dots */
+	  if (scope.mode == 0) { /* erase previous dots */
 	    VGA_SETCOLOR(color[0]);
 	    VGA_DRAWPIXEL(i * scope.scale + 100,
 			  off - p->old[i] * p->mult / p->div);
@@ -414,7 +420,7 @@ draw_data()
 	off = offset + p->pos;
 	VGA_SETCOLOR(p->color);
 	for (i = 0 ; i < (h_points - 200) / scope.scale ; i++) {
-	  if (scope.mode == 2) {	/* erase previous lines */
+	  if (scope.mode == 2) { /* erase previous lines */
 	    VGA_SETCOLOR(color[0]);
 	    VGA_DRAWLINE(i * scope.scale + 100,
 			 off - p->old[i] * p->mult / p->div,
@@ -444,7 +450,7 @@ static inline void
 animate(void *data)
 {
   if (scope.run) {
-    get_data();
+    triggered = get_data();
     draw_text(0);
   }
   do_math();
