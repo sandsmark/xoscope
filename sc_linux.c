@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: sc_linux.c,v 1.9 1999/08/27 03:53:04 twitham Rel $
+ * @(#)$Id: sc_linux.c,v 1.10 1999/08/29 01:59:10 twitham Exp $
  *
  * Copyright (C) 1996 - 1999 Tim Witham <twitham@quiknet.com>
  *
@@ -45,11 +45,14 @@ int
 set_sound_card(int rate)
 {
   int actual = rate;
+  static char junk[SAMPLESKIP];
 
   if (!snd) return(rate);
   check_status(ioctl(snd, SOUND_PCM_SYNC, 0), __LINE__);
   check_status(ioctl(snd, SOUND_PCM_WRITE_RATE, &actual), __LINE__);
+  check_status(ioctl(snd, SNDCTL_DSP_RESET), __LINE__);
   check_status(ioctl(snd, SOUND_PCM_READ_RATE, &actual), __LINE__);
+  read(snd, junk, SAMPLESKIP);
   return(actual);
 }
 
@@ -104,17 +107,19 @@ get_data()
 
   if (!snd) return(0);		/* device open? */
 
-  /* Discard excess samples so we can keep our time snapshot in
+  /* Discard excess samples so we can keep our time snapshot close to
      real-time and minimize sound recording overruns.  If we flush too
-     much, then we have to wait for more to accumulate.  So, keep a
-     couple screenfuls in the queue, plus some for locating trigger.  */
+     much, then we have to wait for more to accumulate.  In 1.5 I kept
+     only 2 screenfuls of samples and flushed the rest, but this was
+     too few for slow sample rates.  So, let's just keep the buffer
+     about 1/3 full, which should work better for all rates.  */
 
   check_status(ioctl(snd, SNDCTL_DSP_GETISPACE, &info), __LINE__);
 #ifdef DEBUG
   printf("avail:%d\ttotal:%d\tsize:%d\tbytes:%d\n",
 	 info.fragments, info.fragstotal, info.fragsize, info.bytes);
 #endif
-  if ((i = info.bytes - h_points * 5) > 0)
+  if ((i = info.bytes - info.fragstotal * info.fragsize / 6 * 2) > 0)
     read(snd, junk, i < DISCARDBUF ? i : DISCARDBUF);
 #ifdef DEBUG
   check_status(ioctl(snd, SNDCTL_DSP_GETISPACE, &info), __LINE__);
