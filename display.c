@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 1.8 1996/01/29 04:37:14 twitham Exp $
+ * @(#)$Id: display.c,v 1.9 1996/01/30 04:00:38 twitham Exp $
  *
  * Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
@@ -74,34 +74,22 @@ char *colors[] = {		/* X colors similar to 16 console colors */
 
 #ifdef XSCOPE
 char fontname[80] = DEF_FX;
-Widget w[1];
-XFont font;
 int XX[] = {640,800,1024,1280};
-int XY[] = {480,480, 480, 480};	/* user can resize it taller if really want */
+int XY[] = {480,600, 768,1024};
+XFont font;
+Widget w[1];
 #else
 char fontname[80] = DEF_F;
 int screen_modes[] = {		/* allowed modes */
-    G640x480x16,
-    G800x600x16,
-    G1024x768x16,
-    G1280x1024x16
+  G640x480x16,
+  G800x600x16,
+  G1024x768x16,
+  G1280x1024x16
 };
 #ifdef HAVEVGAMISC
 font_t font;			/* pointer to the font structure */
 #endif
 #endif
-
-/* clear the display and redraw any text */
-void
-clear()
-{
-#ifdef XSCOPE
-  ClearDrawArea();
-#else
-  vga_clear();
-#endif
-  draw_text();
-}
 
 /* restore text mode and close sound device */
 void
@@ -115,7 +103,7 @@ cleanup()
   close(snd);			/* close sound device */
 }
 
-/* how to convert text column to graphics position */
+/* how to convert text column (0-79) to graphics position */
 int
 col(int x)
 {
@@ -130,7 +118,11 @@ col(int x)
 int
 row(int y)
 {
-  return (y * v_points / 30);
+  if (y < 5)			/* top; absolute */
+    return (y * 16);
+  if (y > 24)			/* bottom; absolute */
+    return (v_points - ((30 - y) * 16));
+  return (y * v_points / 30);	/* center; spread out proportionally */
 }
 
 /* draw text to graphics screen */
@@ -158,10 +150,25 @@ draw_text()
     VGA_WRITE(error,  col(0), row(0), font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
   }
   sprintf(string, "%d S/s", actual);
-  VGA_WRITE(string, col(40), row(4)-1, font, TEXT_FG, TEXT_BG, ALIGN_CENTER);
-  sprintf(string, "%d us/div", 44000000 / actual / scope.scale);
+  VGA_WRITE(string, col(40), 62, font, TEXT_FG, TEXT_BG, ALIGN_CENTER);
+  i = 44000000 / actual / scope.scale;
+  sprintf(string, "%d %cs/div",
+	  i > 999 ? i / 1000 : i,
+	  i > 999 ? 'm' : 'u');
   VGA_WRITE(string, col(40), row(25), font, TEXT_FG, TEXT_BG, ALIGN_CENTER);
 #endif
+}
+
+/* clear the display and redraw any text */
+void
+clear()
+{
+#ifdef XSCOPE
+  ClearDrawArea();
+#else
+  vga_clear();
+#endif
+  draw_text();
 }
 
 /* if verbose mode, show current parameter settings on standard out */
@@ -206,28 +213,31 @@ draw_graticule()
   static int i, j;
 
   VGA_SETCOLOR(color[colour]);
-  VGA_DRAWLINE(100, offset-160, h_points-100, offset-160);
-  VGA_DRAWLINE(100, offset+160, h_points-100, offset+160);
-  VGA_DRAWLINE(100, offset-160, 100, offset+160);
-  VGA_DRAWLINE(h_points-100, offset-160, h_points-100, offset+160);
+  VGA_DRAWLINE(100, 80, h_points-100, 80);
+  VGA_DRAWLINE(100, v_points - 80, h_points-100, v_points - 80);
+  VGA_DRAWLINE(100, 80, 100, v_points - 80);
+  VGA_DRAWLINE(h_points-100, 80, h_points-100, v_points - 80);
 
   if (graticule) {
 
-    /* cross-hairs every 5 divisions */
+    /* cross-hairs every 5 x 4 divisions */
     for (i = 320 ; i < h_points - 100 ; i += 220) {
-      VGA_DRAWLINE(i, offset-160, i, offset+160);
+      VGA_DRAWLINE(i, 80, i, v_points - 80);
     }
-    VGA_DRAWLINE(100, offset, h_points-100, offset);
+    for (i = 0 ; (offset - i) > 80 ; i += 128) {
+      VGA_DRAWLINE(100, offset - i, h_points - 100, offset - i);
+      VGA_DRAWLINE(100, offset + i, h_points - 100, offset + i);
+    }
 
     /* vertical dotted lines */
     for (i = 144 ; i < h_points-100 ; i += 44) {
-      for (j = (offset - 160) * 10 ; j < (offset + 160) * 10 ; j += 64) {
+      for (j = 800 ; j < (v_points - 80) * 10 ; j += 64) {
 	VGA_DRAWPIXEL(i, j / 10);
       }
     }
 
     /* horizontal dotted lines */
-    for (i = offset - 160 ; i < (offset + 160) ; i += 32) {
+    for (i = 80 ; i < v_points - 80 ; i += 32) {
       for (j = 1088 ; j < (h_points-100) * 10 ; j += 88) {
 	VGA_DRAWPIXEL(j / 10, i);
       }
@@ -324,8 +334,10 @@ redisplay(Widget w, int new_width, int new_height, void *data) {
   h_points = new_width > 640
     ? new_width - (new_width - 200) % 44
     : 640;
-  v_points = new_height > 480 ? new_height : 480;
-  offset = v_points / 2 + 1;
+  v_points = new_height > 480
+    ? new_height - (new_height - 160) % 64
+    : 480;
+  offset = v_points / 2;
   clear();
   draw_text();
 }
@@ -378,7 +390,7 @@ init_screen(int firsttime)
   v_points = vga_getydim();
   h_points = vga_getxdim();
 #endif
-  offset = v_points / 2 + 1;
+  offset = v_points / 2;
   clear();
   draw_graticule();
 }
