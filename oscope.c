@@ -3,13 +3,13 @@
  *                      | Software Oscilloscope |
  *                      \-----------------------/
  *
- * scope --- Use /dev/dsp (a sound card) as an oscilloscope under Linux
+ * [x]scope --- Use Linux's /dev/dsp (a sound card) as an oscilloscope
  *
  * Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
  *
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
- * @(#)$Id: oscope.c,v 1.23 1996/01/20 08:27:11 twitham Exp $
+ * @(#)$Id: oscope.c,v 1.24 1996/01/22 07:00:19 twitham Exp $
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -55,17 +55,31 @@
 #include <sys/types.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
-#include <vga.h>
 #include <sys/soundcard.h>
 #include "scope.h"		/* program defaults */
 
+/* libsx vs. svgalib drawing macros */
+#ifdef XSCOPE
+
+#define CLEAR	ClearDrawArea(); draw_text()
+#define vga_drawpixel	DrawPixel
+#define vga_drawline	DrawLine
+#define vga_setcolor	SetColor
+#define VGA_WRITE(s,x,y,f,fg,bg,p) SetColor(fg);DrawText(s,x,y+FontHeight(f))
+#include <libsx.h>
+
+#else
+
+#include <vga.h>
+#define CLEAR	vga_clear(); draw_text()
+#define VGA_WRITE(s,x,y,f,fg,bg,p)	;
 #ifdef HAVEVGAMISC
+#undef VGA_WRITE
+#define VGA_WRITE(s,x,y,f,fg,bg,p)	vga_write(s,x,y,&f,fg,bg,p)
 #include <fontutils.h>
 #endif
 
-
-/* a macro to always redraw the "static" data when we clear the screen */
-#define CLEAR	vga_clear(); draw_frame(); draw_text()
+#endif
 
 /* global program defaults, defined in scope.h (see also) */
 int channels = DEF_12;
@@ -74,8 +88,12 @@ int scale = DEF_S;
 int trigger = DEF_T;
 int colour = DEF_C;
 int mode = DEF_M;
+#ifdef XSCOPE
+char fontname[80] = DEF_FX;
+#else
+char fontname[80] = DEF_F;
+#endif
 int dma = DEF_D;
-char fontname[64] = DEF_F;
 int point_mode = DEF_PL;
 int graticule = DEF_G;
 int behind = DEF_G;
@@ -91,17 +109,45 @@ char *def[] = {
   "on",				/* used by -g/-v in usage message */
   "off",
   "graticule",			/* used by -b in usage message */
-  "signal"
+  "signal",
 };
 int quit_key_pressed;		/* set by handle_key() */
+int running = 1;		/* running or stopped */
 int snd;			/* file descriptor for sound device */
 unsigned char buffer[MAXWID * 2]; /* buffer for sound data */
 unsigned char old[MAXWID * 2];	/* previous buffer for sound data */
+unsigned char junk[SAMPLESKIP];	/* junk buffer */
 int v_points;			/* points in vertical axis */
 int h_points;			/* points in horizontal axis */
 int offset;			/* vertical offset */
 int actual;			/* actual sampling rate */
+
+#ifdef XSCOPE
+Widget w[1];
+XFont font;
+char x11_key = '\0';
+void redisplay(Widget w, int new_width, int new_height, void * data);
+void keys_x11(Widget w, char *input, int up_or_down, void *data);
+/* int XX[] = {320,640,640,640,800,1024,1280}; */
+/* int XY[] = {200,200,350,480,600, 768,1024}; */
+int XX[] = {320,640,640,640,800,1024,1280};
+int XY[] = {200,200,350,480,480, 480, 480};
+#else
+int screen_modes[] = {		/* allowed modes */
+    G320x200x16,		/* 0 */
+    G640x200x16,		/* 1 */
+    G640x350x16,		/* 2 */
+    G640x480x16,		/* 3 */
+    G800x600x16,		/* 4 */
+    G1024x768x16,		/* 5 */
+    G1280x1024x16,		/* 6 */
+};
+int nr_screen_modes = sizeof(screen_modes) / sizeof(int);
+#ifdef HAVEVGAMISC
 font_t font;			/* pointer to the font structure */
+#endif
+#endif
+
 
 /* display command usage on standard error and exit */
 void
@@ -118,9 +164,9 @@ Options          Runtime Keys   Description (defaults)
 -s <scale>       S *2   s /2    time Scale or zoom: 1,2,4,8,16  (default=%d)
 -t <trigger>     T +10  t -10   Trigger level:0-255,-1=disabled (default=%d)
 -c <colour>      C +1   c -1    Channel 1 trace Colour          (default=%d)
--m <mode>        M +1   m -1    SVGA graphics Mode USE CAUTION  (default=%d)
+-m <mode>        M +1   m -1    video mode (size): 0,1,2,3,4,5,6(default=%d)
 -d <dma divisor> D *2   d /2    DMA buffer size divisor: 1,2,4  (default=%d)
--f <font name>                  The font name as-in /usr/lib/kbd/consolefonts/
+-f <font name>                  The font name as-in %s
 -p               P  p   toggle  Point mode, opposite of -l      %s
 -l               L  l   toggle  Line  mode, opposite of -p      %s
 -g               G  g   toggle  turn %s Graticule of 5 msec major divisions
@@ -133,6 +179,11 @@ Options          Runtime Keys   Description (defaults)
 	  def[!(channels - 1)], def[channels - 1],
 	  sampling, scale, trigger,
 	  colour, mode, dma,
+#ifdef XSCOPE
+	  "xlsfonts",
+#else
+	  "/usr/lib/kbd/consolefonts/",
+#endif
 	  def[point_mode], def[!point_mode],
 	  def[graticule + 2], def[behind + 4], def[!behind + 4],
 	  def[verbose + 2],
@@ -144,16 +195,15 @@ Options          Runtime Keys   Description (defaults)
 static inline void
 draw_text()
 {
-#ifdef HAVEVGAMISC
-  static int i;
-
-  vga_write("RUN ",  COL(0), ROW(0),  &font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
-  if (verbose)
-    vga_write(error,  COL(0), ROW(5),  &font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
-  else
-    for (i = 0; i < 80 ; i++) {
-      vga_putc(' ', COL(i), ROW(5), &font, TEXT_FG, TEXT_BG);
-    }
+#if defined XSCOPE || defined HAVEVGAMISC
+  VGA_WRITE(running ? "RUN " : "STOP",
+	    COL(0), ROW(0),  font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
+  if (verbose) {
+    VGA_WRITE(error,  COL(0), ROW(5),  font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
+  } else {
+    VGA_WRITE("                                                                                ",
+	      COL(0), ROW(5), font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
+  }
 #endif
 }
 
@@ -260,7 +310,11 @@ parse_args(int argc, char **argv)
 void
 cleanup()
 {
+#ifdef XSCOPE
+  FreeFont(font);
+#else
   vga_setmode(TEXT);		/* restore text screen */
+#endif
   close(snd);			/* close sound device */
 }
 
@@ -277,22 +331,17 @@ check_status(int status, int line)
   }
 }
 
-/* draw a frame, done only when screen is cleared by CLEAR macro */
-static inline void
-draw_frame()
-{
-  vga_setcolor(colour+2);
-  vga_drawline(0, offset-1, h_points-1, offset-1);
-  vga_drawline(0, offset+256, h_points-1, offset+256);
-  vga_drawline(0, offset-1, 0, offset+256);
-  vga_drawline(h_points-1, offset, h_points-1, offset+256);
-}
-
 /* if graticule mode, draw graticule, done in main loop */
 static inline void
 draw_graticule()
 {
   static int i, j;
+
+  vga_setcolor(colour+2);
+  vga_drawline(0, offset-1, h_points-1, offset-1);
+  vga_drawline(0, offset+256, h_points-1, offset+256);
+  vga_drawline(0, offset-1, 0, offset+256);
+  vga_drawline(h_points-1, offset, h_points-1, offset+256);
 
   if (graticule) {
 
@@ -327,19 +376,13 @@ draw_graticule()
       vga_drawline(0, offset+trigger, 5, offset+trigger);
 
   }
-
 }
 
 /* initialize screen data to half scale */
 void
 init_data()
 {
-  int i;
-
-  for (i = 0 ; i < MAXWID * 2 ; i++) {
-    buffer[i] = 128;
-    old[i] = 128;
-  }
+  memset(buffer, MAXWID * 2, 128);
 }
 
 /* [re]initialize /dev/dsp */
@@ -378,16 +421,36 @@ init_screen(int firsttime)
 {
   if (firsttime) {
 /*     vga_disabledriverreport(); */
+#ifdef XSCOPE
+    h_points = XX[mode];
+    v_points = XY[mode];
+    w[0] = MakeDrawArea(h_points, v_points, redisplay, NULL);
+    SetKeypressCB(w[0], keys_x11);
+    ShowDisplay();
+    GetStandardColors();
+    SetBgColor(w[0], BLACK);
+    CLEAR;
+    font = GetFont(fontname);
+    SetWidgetFont(w[0], font);
+#else
     vga_init();
-    vga_initfont (fontname, &font, 1, 1);
+#ifdef HAVEVGAMISC
+    vga_initfont (fontname, font, 1, 1);
+#endif
+#endif
   }
-  vga_setmode(mode);
+#ifndef XSCOPE
+  vga_setmode(screen_modes[mode]);
   v_points = vga_getydim();
   h_points = vga_getxdim();
+#endif
   offset = v_points / 2 - 127;
   CLEAR;
   draw_graticule();
 }
+
+#ifdef XSCOPE
+#endif
 
 /* handle single key commands */
 static inline unsigned char
@@ -395,7 +458,11 @@ handle_key()
 {
   unsigned char c;
 
+#ifdef XSCOPE
+  switch (c = x11_key) {
+#else
   switch (c = vga_getkey()) {
+#endif
   case 0:
   case -1:			/* no key pressed */
     break;
@@ -456,9 +523,11 @@ handle_key()
     }
     break;
   case 'M':
-    mode++;			/* increase video mode */
-    init_screen(0);
-    CLEAR;
+    if (mode < 6) {
+      mode++;			/* increase video mode */
+      init_screen(0);
+      CLEAR;
+    }
     break;
   case 'm':
     if (mode > 1) {		/* decrease video mode */
@@ -501,12 +570,7 @@ handle_key()
     draw_text();
     break;
   case ' ':
-#ifdef HAVEVGAMISC
-    vga_write("STOP",  COL(0), ROW(0),  &font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
-#endif
-    while (vga_getkey() <= 0)	/* pause until key pressed */
-      ;
-    c = 0;			/* pretend like nothing happened */
+    running = !running;
     draw_text();
     break;
   case 'q':
@@ -521,42 +585,43 @@ handle_key()
   return(c);
 }
 
-/* get data from sound card, calling handle_key internally */
+/* get data from sound card */
 static inline void
 get_data()
 {
-  static unsigned char datum[2], prev, c;
+  static unsigned char datum[2], prev;
+  int c = 0;
 
+				/* flush the sound card's buffer */
   check_status(ioctl(snd, SNDCTL_DSP_RESET), __LINE__);
-  read(snd, buffer, SAMPLESKIP); /* toss some possibly invalid samples */
+  read(snd, junk, SAMPLESKIP);	/* toss some possibly invalid samples */
   if (trigger > -1) {		/* trigger enabled */
     if (trigger > 128) {
       datum[0] = 255;		/* positive trigger, look for rising edge */
       do {
 	prev = datum[0];	/* remember prev. channel 1, read channel(s) */
 	read(snd, datum , channels);
-      } while (((c = handle_key()) <= 0)
-	       && ((datum[0] < trigger) || (prev > trigger)));
+      } while (((c++ < h_points)) &&
+	       ((datum[0] < trigger) || (prev > trigger)));
     } else {
       datum[0] = 0;		/* negative trigger, look for falling edge */
       do {
 	prev = datum[0];	/* remember prev. channel 1, read channel(s) */
 	read(snd, datum, channels);
-      } while (((c = handle_key()) <= 0)
-	       && ((datum[0] > trigger) || (prev < trigger)));
+      } while (((c++ < h_points)) &&
+	       ((datum[0] > trigger) || (prev < trigger)));
     }
-  } else {			/* not triggering */
-    c = handle_key();
   }
-  if (c > 0)			/* skip again if key exit'd the trigger */
-    read(snd, buffer, SAMPLESKIP);
-  /* now get the real data and discard extra since the screen can't keep up */
+  if (c > h_points)		/* haven't triggered within the screen */
+    return;			/* give up and keep previous samples */
+
+  /* now get the real data */
   read(snd, buffer + channels, (h_points * channels / scale - 2));
 }
 
 /* graph the data */
 static inline void
-graph_data()
+draw_data()
 {
   static int i, j, k;
 
@@ -564,7 +629,7 @@ graph_data()
     for (j = 0 ; j < channels ; j++) {
       for (i = 1 ; i < (h_points / scale - 1) ; i++) {
 	k = i * channels + j;	/* calc this offset once for efficiency */
-	vga_setcolor(0);	/* erase previous dot */
+	vga_setcolor(BLACK);	/* erase previous dot */
 	vga_drawpixel(i * scale,
 		      old[k] + offset);
 	vga_setcolor(colour + j); /* draw dot */
@@ -577,7 +642,7 @@ graph_data()
     for (j = 0 ; j < channels ; j++) {
       for (i = 1 ; i < (h_points / scale - 2) ; i++) {
 	k = i * channels + j;	/* calc this offset once for efficiency */
-	vga_setcolor(0);	/* erase previous line */
+	vga_setcolor(BLACK);	/* erase previous line */
 	vga_drawline(i * scale,
 		     old[k] + offset,
 		     i * scale + scale,
@@ -592,7 +657,51 @@ graph_data()
       old[i * channels + j] = buffer[i * channels + j];
     }
   }
+#ifdef XSCOPE
+  SyncDisplay();
+#endif
 }
+
+void
+animate(void *data)
+{
+  if (running) {
+    get_data();
+    if (behind) {
+      draw_graticule();		/* plot data on top of graticule */
+      draw_data();
+    } else {
+      draw_data();		/* plot graticule on top of data */
+      draw_graticule();
+    }
+  }
+#ifdef XSCOPE
+  AddTimeOut(10, animate, NULL); /* 10 msec */
+  if (quit_key_pressed) {
+    cleanup();
+    exit(0);
+  }
+#endif
+}
+
+#ifdef XSCOPE
+void
+redisplay(Widget w, int new_width, int new_height, void * data) {
+  draw_text();
+  animate(NULL);
+}
+
+void
+keys_x11(Widget w, char *input, int up_or_down, void *data)
+{
+  if (!up_or_down)		/* 0 press, 1 release */
+    return;
+  if (input[1] == '\0') {
+    x11_key = input[0];
+    handle_key();
+  }
+}
+#endif
 
 /* main program */
 int
@@ -604,23 +713,25 @@ main(int argc, char **argv)
   else
     progname++;
 
+#ifdef XSCOPE
+  if ((argc = OpenDisplay(argc, argv)) == FALSE)
+    exit(1);
+#endif
+
   parse_args(argc, argv);	/* what do you want? */
   init_data();
   init_sound_card(1);		/* get ready */
   init_screen(1);
   show_info(' ');
 
+#ifdef XSCOPE
+  MainLoop();
+#else
   while (!quit_key_pressed) {
-    get_data();			/* keys are now handled in get_data */
-    if (behind) {
-      draw_graticule();		/* plot data on top of graticule */
-      graph_data();
-    } else {
-      graph_data();		/* plot graticule on top of data */
-      draw_graticule();
-    }
+    handle_key();
+    animate(NULL);
   }
-
+#endif
   cleanup();			/* close sound, back to text mode */
   exit(0);
 }
