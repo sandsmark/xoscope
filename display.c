@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 1.14 1996/02/02 03:04:17 twitham Exp $
+ * @(#)$Id: display.c,v 1.15 1996/02/02 04:39:09 twitham Exp $
  *
  * Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
@@ -136,15 +136,7 @@ draw_text(int all)
     "Point",
     "Point Accum.",
     "Line",
-    "Line Accum.",
-    "1 2 3 4",
-    "q w e r",
-    "a s d f",
-    "z x c v",
-    "Position Up  ",
-    "   Scale Up  ",
-    "   Scale Down",
-    "Position Down"
+    "Line Accum."
   };
 
   if (all) {			/* everything */
@@ -154,14 +146,15 @@ draw_text(int all)
     VGA_WRITE("Quit", col(5), 0, font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
 
     VGA_WRITE("(Tab)", 0, row(1), font, KEY_FG, TEXT_BG, ALIGN_LEFT);
-    sprintf(string, "Channels: %d", channels);
-    VGA_WRITE(string, col(5), row(1), font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
+    VGA_WRITE("Show Channel", col(5), row(1),
+	      font, ch[scope.select].color, TEXT_BG, ALIGN_LEFT);
 
     VGA_WRITE("(Enter)", col(73), 0, font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
     VGA_WRITE("Refresh", col(80), 0, font, TEXT_FG, TEXT_BG, ALIGN_RIGHT);
 
     VGA_WRITE("([)", col(71), row(1), font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
-    VGA_WRITE("Graticule", col(80), row(1), font, TEXT_FG, TEXT_BG, ALIGN_RIGHT);
+    VGA_WRITE("Graticule", col(80), row(1),
+	      font, TEXT_FG, TEXT_BG, ALIGN_RIGHT);
 
     VGA_WRITE("(])", col(71), row(2), font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
     VGA_WRITE(scope.behind ? "Behind   " : "In Front ", col(80), row(2),
@@ -178,33 +171,43 @@ draw_text(int all)
 
     VGA_WRITE("(space)", h_points - 100 - 8*4, 62,
 	      font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
-    VGA_WRITE(scope.run ? " RUN" : "STOP",
-	      h_points - 100, 62, font, TEXT_FG, TEXT_BG, ALIGN_RIGHT);
+    VGA_WRITE(scope.run ? " RUN" : "STOP", h_points - 100, 62,
+	      font, TEXT_FG, TEXT_BG, ALIGN_RIGHT);
 
     /* left of graticule */
     for (i = 0 ; i < 4 ; i++) {
-      sprintf(string, "Channel %d", i+1);
-      VGA_WRITE(string, 0, row(i*5 + 5),
-		font, ch[i].color, TEXT_BG, ALIGN_LEFT);
+      j = i * 5 + 5;
+      VGA_WRITE("Channel", 0, row(j), font, ch[i].color, TEXT_BG, ALIGN_LEFT);
+      sprintf(string, "(%d)", i + 1);
+      VGA_WRITE(string, col(7), row(j), font, KEY_FG, TEXT_BG, ALIGN_LEFT);
+
       sprintf(string, "Scale: %d/%d", mult[ch[i].scale], divi[ch[i].scale]);
-      VGA_WRITE(string, 0, row(i*5 + 6),
-		font, ch[i].color, TEXT_BG, ALIGN_LEFT);
+      VGA_WRITE(string, 0, row(j + 1), font, ch[i].color, TEXT_BG, ALIGN_LEFT);
       sprintf(string, "Pos. : %d", -(ch[i].pos));
-      VGA_WRITE(string, 0, row(i*5 + 7),
+      VGA_WRITE(string, 0, row(j + 2),
 		font, ch[i].color, TEXT_BG, ALIGN_LEFT);
-    }
-    for (i = 0 ; i < 4 ; i++) {
-      for (j = 0 ; j < 4 ; j++) {
-	VGA_WRITE(&strings[j+4][i*2], col(i*2+1), row(25+j),
-		  font, ch[i].color, TEXT_BG, ALIGN_LEFT);
+      if (scope.select == i) {
+	VGA_DRAWLINE(0, row(j), col(11), row(j));
+	VGA_DRAWLINE(col(11), row(j), col(11), row(j+4));
+	VGA_DRAWLINE(0, row(j+4), col(11), row(j+4));
       }
-      VGA_WRITE("(", 0, row(25+i), font, KEY_FG, TEXT_BG, ALIGN_LEFT);
-      VGA_WRITE(")", col(8), row(25+i), font, KEY_FG, TEXT_BG, ALIGN_LEFT);
-      VGA_WRITE(strings[i+8], col(9), row(25+i),
-		font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
     }
 
     /* below graticule */
+    VGA_WRITE("(r)", 0, row(25), font, KEY_FG, TEXT_BG, ALIGN_LEFT);
+    VGA_WRITE("   Scale Up", col(3), row(25),
+	      font, ch[scope.select].color, TEXT_BG, ALIGN_LEFT);
+    VGA_WRITE("(f)", 0, row(26), font,KEY_FG, TEXT_BG, ALIGN_LEFT);
+    VGA_WRITE("   Scale Down", col(3), row(26),
+	      font,ch[scope.select].color, TEXT_BG, ALIGN_LEFT);
+
+    VGA_WRITE("(u)", 0, row(27), font,KEY_FG, TEXT_BG, ALIGN_LEFT);
+    VGA_WRITE("Position Up", col(3), row(27),
+	      font,ch[scope.select].color, TEXT_BG, ALIGN_LEFT);
+    VGA_WRITE("(j)", 0, row(28), font,KEY_FG, TEXT_BG, ALIGN_LEFT);
+    VGA_WRITE("Position Down", col(3), row(28),
+	      font,ch[scope.select].color, TEXT_BG, ALIGN_LEFT);
+
     VGA_WRITE("(9)               (0)", col(40), row(25),
 	      font, KEY_FG, TEXT_BG, ALIGN_CENTER);
     i = 44000000 / actual / scope.scale;
@@ -221,12 +224,14 @@ draw_text(int all)
   }
 
   /* always draw the dynamic text */
-  sprintf(string, "%4d ,%4d ", ch[0].min, ch[0].max);
-  VGA_WRITE(string, col(40), row(0), font, TEXT_FG, TEXT_BG, ALIGN_CENTER);
+  sprintf(string, "%4d ,%4d ", ch[scope.select].min, ch[scope.select].max);
+  VGA_WRITE(string, col(40), row(0),
+	    font, ch[scope.select].color, TEXT_BG, ALIGN_CENTER);
 
-  i = 1000000 / actual * ch[0].time;
+  i = 1000000 / actual * ch[scope.select].time;
   sprintf(string, " %5d us = %5d Hz ", i,  i > 1 ? 1000000/i : i);
-  VGA_WRITE(string, col(40), row(1), font, TEXT_FG, TEXT_BG, ALIGN_CENTER);
+  VGA_WRITE(string, col(40), row(1),
+	    font, ch[scope.select].color, TEXT_BG, ALIGN_CENTER);
   
 #endif
 }
@@ -247,9 +252,9 @@ clear()
 void
 show_info(unsigned char c) {
   if (verbose) {
-    sprintf(error, "%1c %5dHz:  -%d  -r %5d  -s %2d  -t %3d  -c %2d  -m %2d  "
+    sprintf(error, "%1c %5dHz:  -r %5d  -s %2d  -t %3d  -c %2d  -m %2d  "
 	    "-d %1d  %2s  %2s  %2s%s",
-	    c, actual, channels,
+	    c, actual,
 	    scope.rate, scope.scale, scope.trig, scope.color, mode, dma,
 	    plot_mode ? "-p" : "-l",
 
@@ -329,45 +334,49 @@ draw_data()
   static Signal *p;
 
   if (plot_mode < 2) {		/* point / point accumulate */
-    for (j = 0 ; j < channels ; j++) {
+    for (j = 0 ; j < CHANNELS ; j++) {
       p = &ch[j];
-      off = offset + p->pos;
-      VGA_SETCOLOR(p->color);
-      for (i = 0 ; i <= (h_points - 200) / scope.scale ; i++) {
-	if (plot_mode == 0) {	/* erase previous dots */
-	  VGA_SETCOLOR(color[0]);
+      if (p->show) {
+	off = offset + p->pos;
+	VGA_SETCOLOR(p->color);
+	for (i = 0 ; i <= (h_points - 200) / scope.scale ; i++) {
+	  if (plot_mode == 0) {	/* erase previous dots */
+	    VGA_SETCOLOR(color[0]);
+	    VGA_DRAWPIXEL(i * scope.scale + 100,
+			  off - p->old[i] * mult[p->scale] / divi[p->scale]);
+	    VGA_SETCOLOR(p->color); /* draw dots */
+	  }
 	  VGA_DRAWPIXEL(i * scope.scale + 100,
-			off - p->old[i] * mult[p->scale] / divi[p->scale]);
-	  VGA_SETCOLOR(p->color); /* draw dots */
+			off - p->data[i] * mult[p->scale] / divi[p->scale]);
+	  p->old[i] = p->data[i];
 	}
-	VGA_DRAWPIXEL(i * scope.scale + 100,
-		      off - p->data[i] * mult[p->scale] / divi[p->scale]);
-	p->old[i] = p->data[i];
+	VGA_DRAWLINE(90, off, 100, off);
       }
-      VGA_DRAWLINE(90, off, 100, off);
     }
   } else {			/* line / line accumulate */
-    for (j = 0 ; j < channels ; j++) {
+    for (j = 0 ; j < CHANNELS ; j++) {
       p = &ch[j];
-      off = offset + p->pos;
-      VGA_SETCOLOR(p->color);
-      for (i = 0 ; i < (h_points - 200) / scope.scale ; i++) {
-	if (plot_mode == 2) {	/* erase previous lines */
-	  VGA_SETCOLOR(color[0]);
+      if (p->show) {
+	off = offset + p->pos;
+	VGA_SETCOLOR(p->color);
+	for (i = 0 ; i < (h_points - 200) / scope.scale ; i++) {
+	  if (plot_mode == 2) {	/* erase previous lines */
+	    VGA_SETCOLOR(color[0]);
+	    VGA_DRAWLINE(i * scope.scale + 100,
+			 off - p->old[i] * mult[p->scale] / divi[p->scale],
+			 i * scope.scale + 100 + scope.scale,
+			 off - p->old[i + 1] * mult[p->scale] / divi[p->scale]);
+	    VGA_SETCOLOR(p->color); /* draw lines */
+	  }
 	  VGA_DRAWLINE(i * scope.scale + 100,
-		       off - p->old[i] * mult[p->scale] / divi[p->scale],
+		       off - p->data[i] * mult[p->scale] / divi[p->scale],
 		       i * scope.scale + 100 + scope.scale,
-		       off - p->old[i + 1] * mult[p->scale] / divi[p->scale]);
-	  VGA_SETCOLOR(p->color); /* draw lines */
+		       off - p->data[i + 1] * mult[p->scale] / divi[p->scale]);
+	  p->old[i] = p->data[i];
 	}
-	VGA_DRAWLINE(i * scope.scale + 100,
-		     off - p->data[i] * mult[p->scale] / divi[p->scale],
-		     i * scope.scale + 100 + scope.scale,
-		     off - p->data[i + 1] * mult[p->scale] / divi[p->scale]);
+	VGA_DRAWLINE(90, off, 100, off);
 	p->old[i] = p->data[i];
       }
-      VGA_DRAWLINE(90, off, 100, off);
-      p->old[i] = p->data[i];
     }
   }
 #ifdef XOSCOPE

@@ -5,7 +5,7 @@
  *
  * [x]oscope --- Use Linux's /dev/dsp (a sound card) as an oscilloscope
  *
- * @(#)$Id: oscope.c,v 1.36 1996/02/02 03:04:31 twitham Exp $
+ * @(#)$Id: oscope.c,v 1.37 1996/02/02 04:39:20 twitham Exp $
  *
  * Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
@@ -61,7 +61,6 @@
 /* global program defaults, defined in oscope.h (see also) */
 Scope scope;
 Signal ch[CHANNELS];
-int channels = DEF_1;
 int mode = DEF_M;
 int dma = DEF_D;
 int plot_mode = DEF_P;
@@ -94,11 +93,10 @@ void
 usage()
 {
   fprintf(stderr, "usage: %s "
-	  "[-1|-2|-3|-4] [-r<rate>] [-s<scale>] [-t<trigger>] [-c<colour>]
-             [-m<mode>] [-d<dma divisor>] [-f font] [-p|-l] [-g] [-b] [-v]
+	  "[-r<rate>] [-s<scale>] [-t<trigger>] [-c<colour>]
+             [-m<mode>] [-d<dma divisor>] [-f font] [-p] [-g] [-b] [-v]
 
 Startup Options  Description (defaults)
--#               Number of channels shown        (%d)
 -r <rate>        sampling Rate in Hz             (%d)
 -s <scale>       time Scale: 1,2,5,10,20,100,200 (%d)
 -t <trigger>     Trigger level:0-255,-1=disabled (%d)
@@ -112,7 +110,6 @@ Startup Options  Description (defaults)
 -v               turn %s Verbose keypress option log to stdout
 ",
 	  progname,
-	  channels,
 	  DEF_R, DEF_S, DEF_T,
 	  DEF_C, mode, dma,
 	  fonts(),		/* the font method for the display */
@@ -131,11 +128,10 @@ parse_args(int argc, char **argv)
 
   while ((c = getopt(argc, argv, flags)) != EOF) {
     switch (c) {
-    case '1':			/* single channel (mono) */
-    case '2':			/* dual channels (stereo) */
+    case '1':
+    case '2':
     case '3':
     case '4':
-      channels = c - '0';
       break;
     case 'r':			/* sample rate */
       scope.rate = strtol(optarg, NULL, 0);
@@ -207,6 +203,7 @@ init_scope()
   scope.behind = DEF_B;
   scope.run = 1;
   scope.color = DEF_C;
+  scope.select = 0;
 }
 
 /* initialize the signals */
@@ -221,6 +218,7 @@ init_channels()
     ch[i].scale = 5;
     ch[i].pos = 0;
     ch[i].color = color[channelcolor[i]];
+    ch[i].show = 1;
   }
 }
 
@@ -240,7 +238,7 @@ init_sound_card(int firsttime)
     exit(1);
   }
 
-  parm = (channels > 1) + 1;	/* set mono/stereo */
+  parm = 2;			/* set mono/stereo */
   check_status(ioctl(snd, SOUND_PCM_WRITE_CHANNELS, &parm), __LINE__);
 
   parm = 8;			/* set 8-bit samples */
@@ -267,65 +265,30 @@ handle_key(unsigned char c)
   case -1:			/* no key pressed */
     break;
   case '\t':
-    channels++;
-    if (channels > 4)
-      channels = 1;
-    init_sound_card(0);
+    ch[scope.select].show = !ch[scope.select].show;
     clear();
     break;
   case '1':
   case '2':
   case '3':
   case '4':
-    ch[c - '1'].pos -= 16;
-    clear();
-    break;
-  case 'z':
-    ch[0].pos += 16;
-    clear();
-    break;
-  case 'x':
-    ch[1].pos += 16;
-    clear();
-    break;
-  case 'c':
-    ch[2].pos += 16;
-    clear();
-    break;
-  case 'v':
-    ch[3].pos += 16;
-    clear();
-    break;
-  case 'q':
-    ch[0].scale++;
-    clear();
-    break;
-  case 'w':
-    ch[1].scale++;
-    clear();
-    break;
-  case 'e':
-    ch[2].scale++;
+    scope.select = (c - '1');
     clear();
     break;
   case 'r':
-    ch[3].scale++;
-    clear();
-    break;
-  case 'a':
-    ch[0].scale--;
-    clear();
-    break;
-  case 's':
-    ch[1].scale--;
-    clear();
-    break;
-  case 'd':
-    ch[2].scale--;
+    ch[scope.select].scale++;
     clear();
     break;
   case 'f':
-    ch[3].scale--;
+    ch[scope.select].scale--;
+    clear();
+    break;
+  case 'u':
+    ch[scope.select].pos -= 16;
+    clear();
+    break;
+  case 'j':
+    ch[scope.select].pos += 16;
     clear();
     break;
   case '0':
@@ -480,14 +443,14 @@ get_data()
       datum[0] = 255;		/* positive trigger, look for rising edge */
       do {
 	prev = datum[0];	/* remember prev. channel 1, read channel(s) */
-	read(snd, datum , (channels > 1) + 1);
+	read(snd, datum, 2);
       } while (((c++ < h_points)) &&
 	       ((datum[0] < scope.trig) || (prev > scope.trig)));
     } else {
       datum[0] = 0;		/* negative scope.trig, look for falling edge */
       do {
 	prev = datum[0];	/* remember prev. channel 1, read channel(s) */
-	read(snd, datum, (channels > 1) + 1);
+	read(snd, datum, 2);
       } while (((c++ < h_points)) &&
 	       ((datum[0] > scope.trig) || (prev < scope.trig)));
     }
@@ -496,16 +459,15 @@ get_data()
     return;			/* give up and keep previous samples */
 
   /* now get the real data */
-  read(snd, buffer, h_points * ((channels > 1) + 1));
+  read(snd, buffer, h_points * 2);
   buff = buffer;
   for(c=0; c < h_points; c++) {
-    ch[0].data[c] = (int)(*buff) - 128;
-    buff += (channels > 1);
+    ch[0].data[c] = (int)(*buff++) - 128;
     ch[1].data[c] = (int)(*buff++) - 128;
     ch[2].data[c] = ch[0].data[c] + ch[1].data[c];
     ch[3].data[c] = ch[0].data[c] - ch[1].data[c];
   }
-  measure_data(&ch[0]);
+  measure_data(&ch[scope.select]);
 }
 
 /* main program */

@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.h,v 1.10 1996/01/31 07:40:37 twitham Exp $
+ * @(#)$Id: oscope.h,v 1.11 1996/02/02 04:39:30 twitham Exp $
  *
  * Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
@@ -57,7 +57,6 @@
 #define MSECREFRESH	10
 
 /* global program variables */
-extern int channels;
 extern int mode;
 extern int dma;
 extern int plot_mode;
@@ -84,6 +83,7 @@ typedef struct Scope {		/* The oscilloscope */
   short grat;
   short behind;
   short color;
+  short select;
 } Scope;
 extern Scope scope;
 
@@ -93,6 +93,10 @@ typedef struct Signal {		/* The signals (channels) */
   short scale;
   short pos;
   short color;
+  short show;
+  short min;
+  short max;
+  short time;
 } Signal;
 extern Signal ch[CHANNELS];
 
