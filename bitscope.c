@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: bitscope.c,v 1.10 2000/07/11 23:01:25 twitham Exp $
+ * @(#)$Id: bitscope.c,v 1.11 2000/07/14 02:32:56 twitham Exp $
  *
  * Copyright (C) 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -176,14 +176,21 @@ void
 bs_init(int fd)
 {
   static int volts[] = {
-     130 * 10 / 4,  600 * 10 / 4,  1200 * 10 / 4,  3160 * 10 / 4,
-    1300 * 10 / 4, 6000 * 10 / 4, 12000 * 10 / 4, 31600 * 10 / 4,
-     632 * 10 / 4, 2900 * 10 / 4,  5800 * 10 / 4, 15280 * 10 / 4,
+     130 * 5 / 2,  600 * 5 / 2,  1200 * 5 / 2,  3160 * 5 / 2,
+    1300 * 5 / 2, 6000 * 5 / 2, 12000 * 5 / 2, 31600 * 5 / 2,
+     632 * 5 / 2, 2900 * 5 / 2,  5800 * 5 / 2, 15280 * 5 / 2,
+  };
+  char *labels[] = {
+    "BNC B x1",		"BNC A x1",
+    "BNC B x10",	"BNC A x10",
+    "POD Ch. A",	"POD Ch. B",
+    "Logic An.",
   };
 
   if (fd < 3) return;
   if (snd) handle_key('&');	/* turn off sound card and probescope */
   bs.found = 1;
+  in_progress = 0;
   bs.version = strtol(bs.bcid + 2, NULL, 10);
   mem[23].rate = mem[24].rate = mem[25].rate = 25000000;
 
@@ -202,18 +209,22 @@ bs_init(int fd)
     | SECONDARY(RANGE600 | CHANNELB | ZZCLK);
   bs.r[15] = 0;			/* max samples per dump (256) */
   bs_putregs(fd, bs.r);
-  funcnames[2] = "Logic An.";	/* relabel XYZ */
+  funcnames[2] = labels[6];
   if (bs.r[7] & UPPER16POD) {
     mem[23].volts = volts[(bs.r[14] & RANGE3160) + 8];
     mem[24].volts = volts[((bs.r[14] >> 4) & RANGE3160) + 8];
-    funcnames[0] = "POD Ch. A";
-    funcnames[1] = "POD Ch. B";
+    funcnames[0] = labels[4];
+    funcnames[1] = labels[5];
   } else {
-    mem[23].volts = volts[bs.r[14] & RANGE3160];
-    mem[24].volts = volts[(bs.r[14] >> 4) & RANGE3160];
-    funcnames[0] = bs.r[14] & PRIMARY(CHANNELA) ? "BNC Ch. A" : "BNC Ch. B";
-    funcnames[1] = bs.r[14] & SECONDARY(CHANNELA) ? "BNC Ch. A" : "BNC Ch. B";
-    funcnames[1] = "BNC Ch. B";
+    bs.x10 = 0x11;
+    mem[23].volts = volts[(bs.r[14] & RANGE3160)
+			 + (bs.x10 & 0x01 ? 4 : 0)];
+    mem[24].volts = volts[((bs.r[14] >> 4) & RANGE3160)
+			 + (bs.x10 & 0x10 ? 4 : 0)];
+    funcnames[0] = labels[((bs.r[14] & PRIMARY(CHANNELA)) ? 1 : 0)
+			 + ((bs.x10 & 0x01) ? 2 : 0)];
+    funcnames[1] = labels[((bs.r[14] & SECONDARY(CHANNELA)) ? 1 : 0)
+			 + ((bs.x10 & 0x10) ? 2 : 0)];
   }
 }
 
@@ -280,7 +291,7 @@ bs_getdata(int fd)
 	    buff += 5;
 	  }
 	}
-	mem[23].num = mem[24].num = mem[25].num = k < MAXWID ? k : MAXWID;
+	mem[23 + !alt].num = mem[25].num = k < MAXWID ? k : MAXWID;
 	if (k >= samples(mem[23].rate) || k >= 16 * 1024) { /* all done */
 	  k = 0;
 	  in_progress = 0;
@@ -300,6 +311,7 @@ bs_getdata(int fd)
     fprintf(stderr, "%s", buffer);
     if (!bs_io(fd, "S", buffer))
       return(0);
+    k = 0;
     in_progress = 1;
   }
   return(1);

@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 1.66 2000/07/11 23:01:25 twitham Exp $
+ * @(#)$Id: display.c,v 1.67 2000/07/14 02:32:56 twitham Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -337,7 +337,8 @@ draw_text(int all)
     frames = 0;
     prev = sec;
   }
-  frames++;
+  if (frames++ > 20)		/* fps over 20 is overkill, so try to be nice */
+    usleep((frames - 20) * 100000);
 }
 
 /* clear the display and redraw all text */

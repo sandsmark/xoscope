@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.c,v 1.84 2000/07/11 23:01:25 twitham Exp $
+ * @(#)$Id: oscope.c,v 1.85 2000/07/14 02:32:56 twitham Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -203,6 +203,7 @@ void
 resetsoundcard(int rate)
 {
   scope.rate = mem[23].rate = mem[24].rate = reset_sound_card(rate, 2, 8);
+  mem[23].volts = mem[24].volts = 0;
   do_math();			/* propogate new rate to any math */
   draw_text(1);
 }
