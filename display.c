@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 1.41 1997/05/03 05:39:26 twitham Exp $
+ * @(#)$Id: display.c,v 1.42 1997/05/04 20:09:19 twitham Rel1_3 $
  *
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -191,9 +191,8 @@ draw_text(int all)
       vga_write("([)        (])", 0, row(27), font, KEY_FG, TEXT_BG,ALIGN_LEFT);
       vga_write("Position", col(3), row(27), font, p->color,TEXT_BG,ALIGN_LEFT);
 
-      vga_write("(&)        (*)", 0, row(28), font, KEY_FG, TEXT_BG,ALIGN_LEFT);
       sprintf(string, "DMA:%d", scope.dma);
-      vga_write(string, col(4), row(28), font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
+      vga_write(string, col(3), row(28), font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
 
       vga_write("(9)(()                      ())(0)", col(40), row(26),
 		font, KEY_FG, TEXT_BG, ALIGN_CENTER);
@@ -448,7 +447,6 @@ init_screen()
 {
   int i, channelcolor[] = CHANNELCOLOR;
 
-  init_widgets();
   for (i = 0 ; i < CHANNELS ; i++) {
     ch[i].color = mem[i + 23].color = color[channelcolor[i]];
   }
