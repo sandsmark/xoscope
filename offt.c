@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: offt.c,v 1.2 1996/04/21 03:11:51 twitham Rel1_0 $
+ * @(#)$Id: offt.c,v 1.3 1996/08/03 22:30:17 twitham Rel $
  *
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -7,7 +7,7 @@
  *
  * [x]oscope external math filter command example in C.
  *
- * See oscope.perl for an example that can do arbitrary math at run-time.
+ * See operl for an example that can do arbitrary math at run-time.
  *
  * An external oscope command must continuously read two shorts from
  * stdin and write one short to stdout.  It must exit when stdin
@@ -17,13 +17,13 @@
  *
  * This example provides the FFT algorithm as an external command.
  *
- * usage: oscope.fft [ channel [ samples ] ]
+ * usage: offt [ channel [ samples ] ]
  *
  * The first command-line argument should be a number (default = 1):
  *
  * 0: FFT *one* signal from stdin.  Use this only at the end of a pipe
  *    that has already split oscope's two signals down to one signal.
- *    For example: oscope.perl '$x * $y' | oscope.fft 0
+ *    For example: operl '$x * $y' | offt 0
  * 
  * 1: FFT of channel 1
  * 
