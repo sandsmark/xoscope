@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: func.c,v 1.16 1997/05/04 20:13:54 twitham Rel1_3 $
+ * @(#)$Id: func.c,v 1.17 1997/05/27 03:24:40 twitham Rel $
  *
  * Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -23,13 +23,14 @@
 #include "display.h"
 #include "func.h"
 
-/* !!! The function names, the first four are special */
+/* !!! The function names, the first five are special */
 char *funcnames[] =
 {
   "Left  Mix",
   "Right Mix",
-  "External",
+  "ProbeScope",
   "Memory  ",
+  "External",
   "Inv. 1  ",
   "Inv. 2  ",
   "Sum  1+2",
@@ -42,7 +43,7 @@ char *funcnames[] =
 /* the total number of "functions" */
 int funccount = sizeof(funcnames) / sizeof(char *);
 
-/* the signals: 0-22=A-W=memories, 23=X=left, 24=Y=right, 26-33=functions */
+/* 0-22=A-W=memories, 23=X=left, 24=Y=right, 25=Z=ProbeScope, 26-33=functions */
 Signal mem[34];
 
 /* recall given memory register to the currently selected signal */
@@ -53,7 +54,7 @@ recall(char c)
 
   i = c - 'a';
   ch[scope.select].signal = &mem[i];
-  ch[scope.select].func = i == 23 ? FUNCLEFT : i == 24 ? FUNCRIGHT : FUNCMEM;
+  ch[scope.select].func = c >= 'x' ? c - 'x' : FUNCMEM;
   ch[scope.select].mem = c;
 }
 
@@ -70,7 +71,7 @@ save(char c)
     mem[i].color = ch[scope.select].color;
   }
   k = scope.select;
-  for (j = 0 ; j < CHANNELS ; j++) {
+  for (j = 0 ; j < CHANNELS ; j++) { /* propogate to any display channels */
     scope.select = j;
     if (ch[j].mem - 'a' == i )
       recall(i + 'a');
@@ -240,13 +241,14 @@ fft2(int num)
   fft(ch[1].signal->data, ch[num].signal->data);
 }
 
-/* !!! Array of the functions, the first four shouldn't be changed */
+/* !!! Array of the functions, the first five shouldn't be changed */
 void (*funcarray[])(int) =
 {
   NULL,				/* left */
   NULL,				/* right */
-  pipeto,			/* external math commands */
+  NULL,				/* ProbeScope */
   NULL,				/* memory */
+  pipeto,			/* external math commands */
   inv1,
   inv2,
   sum,

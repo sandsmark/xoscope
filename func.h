@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: func.h,v 1.11 1997/05/03 16:15:57 twitham Rel1_3 $
+ * @(#)$Id: func.h,v 1.12 1997/05/27 03:25:30 twitham Rel $
  *
  * Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -11,9 +11,10 @@
 
 #define FUNCLEFT  0
 #define FUNCRIGHT 1
-#define FUNCEXT	  2
+#define FUNCPS	  2
 #define FUNCMEM	  3
-#define FUNC0	  4
+#define FUNCEXT	  4
+#define FUNC0	  5
 
 #define EXTSTOP  0
 #define EXTSTART 1
