@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: gr_gtk.c,v 1.22 2000/07/18 18:35:41 twitham Exp $
+ * @(#)$Id: gr_gtk.c,v 1.23 2000/07/18 19:00:33 twitham Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -937,40 +937,48 @@ button_event(GtkWidget *widget, GdkEventButton *event, gpointer data)
     handle_key('?');
   else if (y == 28 && x >= 27 && x <= 53) {
     if (b > 1)
-    gtk_menu_popup(GTK_MENU(gtk_item_factory_get_widget
-			    (factory, "/Channel/Store")),
-		   NULL, NULL, NULL, NULL, event->button, event->time);
+      gtk_menu_popup(GTK_MENU(gtk_item_factory_get_widget
+			      (factory, "/Channel/Store")),
+		     NULL, NULL, NULL, NULL, event->button, event->time);
     else
       handle_key((x - 27) + 'a');
-  } else if (y < 4)
-    gtk_menu_popup(GTK_MENU(gtk_item_factory_get_widget
-			    (factory, "/Trigger")),
-		   NULL, NULL, NULL, NULL, event->button, event->time);
-  else if (y == 4)
-    gtk_menu_popup(GTK_MENU(gtk_item_factory_get_widget
-			    (factory, "/Scope/Plot Mode")),
-		   NULL, NULL, NULL, NULL, event->button, event->time);
-  else if (y < 25 && (x < 11 || x > 69)) {
+  } else if (y < 4) {
+    if (b == 1) handle_key('-');
+    else if (b == 2) handle_key('=');
+    else gtk_menu_popup(GTK_MENU(gtk_item_factory_get_widget
+				 (factory, "/Trigger")),
+			NULL, NULL, NULL, NULL, event->button, event->time);
+  } else if (y == 4) {
+    if (b < 3) handle_key('!');
+    else gtk_menu_popup(GTK_MENU(gtk_item_factory_get_widget
+				 (factory, "/Scope/Plot Mode")),
+			NULL, NULL, NULL, NULL, event->button, event->time);
+  }  else if (y < 25 && (x < 11 || x > 69)) {
     handle_key((y - 5) / 5 + '1' + (x > 69 ? 4 : 0));
-    if (b > 1) {
-      if (!((y - 1) % 5))
-	gtk_menu_popup(GTK_MENU(gtk_item_factory_get_widget
-				(factory, "/Channel/Scale")),
-		       NULL, NULL, NULL, NULL, event->button, event->time);
-      else if (!((y - 2) % 5)) {
-	if (x < 4 || (x > 69 && x < 74))
-	  gtk_menu_popup(GTK_MENU(gtk_item_factory_get_widget
-				  (factory, "/Channel/Bits")),
-			 NULL, NULL, NULL, NULL, event->button, event->time);
-	else
-	  gtk_menu_popup(GTK_MENU(gtk_item_factory_get_widget
-				  (factory, "/Channel/Position")),
-			 NULL, NULL, NULL, NULL, event->button, event->time);
-      } else
-	gtk_menu_popup(GTK_MENU(gtk_item_factory_get_widget
-				(factory, "/Channel")),
-		       NULL, NULL, NULL, NULL, event->button, event->time);
-    }
+    if (!((y - 1) % 5)) {
+      if (b == 1) handle_key('{');
+      else if (b == 2) handle_key('}');
+      else gtk_menu_popup(GTK_MENU(gtk_item_factory_get_widget
+				   (factory, "/Channel/Scale")),
+			  NULL, NULL, NULL, NULL, event->button, event->time);
+    } else if (!((y - 2) % 5)) {
+      if (x < 4 || (x > 69 && x < 74)) {
+	if (b == 1) handle_key('`');
+	else if (b == 2) handle_key('~');
+	else gtk_menu_popup(GTK_MENU(gtk_item_factory_get_widget
+				     (factory, "/Channel/Bits")),
+			    NULL, NULL, NULL, NULL, event->button, event->time);
+      } else {
+	if (b == 1) handle_key('[');
+	else if (b == 2) handle_key(']');
+	else gtk_menu_popup(GTK_MENU(gtk_item_factory_get_widget
+				     (factory, "/Channel/Position")),
+			    NULL, NULL, NULL, NULL, event->button, event->time);
+      }
+    } else if (b > 1)
+      gtk_menu_popup(GTK_MENU(gtk_item_factory_get_widget
+			      (factory, "/Channel")),
+		     NULL, NULL, NULL, NULL, event->button, event->time);
   } else if (b > 1)
     gtk_menu_popup(GTK_MENU(gtk_item_factory_get_widget
 			    (factory, "/Scope")),
