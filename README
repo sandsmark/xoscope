@@ -1,3 +1,23 @@
+This is "[x]oscope", a digital oscilloscope for /dev/dsp.
+
+It is based on "scope" by Jeff Tranter but has been greately extended
+by adding text to the display and making an X client.  The name was
+changed since there is already an xscope which is nothing like this
+program.
+
+You need "libmisc" from the "g3fax" kit to get text on the console
+version (highly recommended).
+
+You need "libsx" to get the X client (highly recommended).
+
+See the Makefile and scope.h for config options.
+
+Enjoy,
+
+Tim Witham <twitham@pcocd2.intel.com>
+
+Jeff's README:
+------------------------------------------------------------
 This is "scope", a simple software emulation of an oscilloscope.
 
 See the man page for more information on what the program does and how
