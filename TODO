@@ -150,3 +150,37 @@ v1.4: The display now works with rates up to 20,000,000 S/s.
 	bother to turn amplitude measurements into voltages.  The
 	peaks could be referenced to a level other than the center.
 	But, at least the peak-to-peak could read in literal volts.
+
+
+30	BitScope support (www.bitscope.com)
+
+	I plan to write this in the year 2000 when I will finally have
+	time, unless someone sends me the code to do it before then.
+
+	The BitScope is a "Mixed Signal Capture Engine."  Way cool
+	programmable hardware that aquires data and makes it available
+	through a serial port.  With its 2 analog channels and 8
+	digital, it has the potential to turn xoscope into a real
+	combined digital scope and logic analyzer at up to 100 MHz!
+	My rough initial plan of attack is:
+
+	+ 2 way serial communications to the device
+
+	+ modularized programming and I/O functions
+
+	+ a new channel display mode that instead of drawing one
+	analog line draws 8 digital ones.  This way the existing
+	buffer memory capabilities will work for the LA too.
+
+	+ the keyboard interface may need replaced with some sort of
+	on-screen menu system to organize the many features, similar
+	to the menus of real DSOs.
+
+	+ this likely will be a separate configuration at build-time,
+	completely separate from soundcard and probeScope devices
+	since the hardware is so much more sophistocated.  In other
+	words, it will produce a separate program, for BitScope only.
+
+	Obviously this will not be trivial but will be very well worth
+	the effort.  Sorry I never had time to do it yet.  I am still
+	looking forward to using BitScope with xoscope on Linux.

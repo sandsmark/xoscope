@@ -1,19 +1,22 @@
 /*
- * @(#)$Id: config.h,v 1.10 1997/06/10 01:56:54 twitham Rel $
+ * @(#)$Id: config.h,v 1.11 1999/08/27 04:17:25 twitham Rel $
  *
- * Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
+ * Copyright (C) 1996 - 1999 Tim Witham <twitham@quiknet.com>
  *
  * (see the files README and COPYING for more details)
  *
  * This file simply sets the program's configurable options.
  * To reconfigure, simply edit them here, make clean, and make.
- * Original shipped values are in (parentheses)
+ * Original shipped values are in (parentheses).
+ *
+ * On second thought, you probably don't really want to change much of
+ * this.  But it's a good place for me to define things for the app.
  *
  */
 
 /* program defaults for the command-line options (original values) */
 #define DEF_A	1		/* 1-8 (1) */
-#define DEF_R	44000		/* 8800,22000,44000 (44000) */
+#define DEF_R	44100		/* 8000,11025,22050,44100 (44100) */
 #define DEF_S	10		/* 1,2,5,10,20,50,100,200,500,1000 (10) */
 #define DEF_T	"0:0:x"		/* -128-127:0,1,2:x,y ("0:0:x") */
 #define DEF_C	4		/* 0-16 (4) */
@@ -31,9 +34,12 @@
 /* maximum screen width, also max number of samples in memory at once (1600) */
 #define MAXWID		1600
 
-/* The first few samples after a reset seem invalid.  If you see
-   strange "glitches" at the left edge of the screen, increase this (32) */
+/* As-of version 1.5, this is used only by DOS.  If you see strange
+   "glitches" at the left edge of the screen, increase this (32) */
 #define SAMPLESKIP	32
+
+/* maximum samples to discard at each pass if we have too many (16384) */
+#define DISCARDBUF 16384
 
 /* max number of channels, up to 8 (8) */
 #define CHANNELS	8
@@ -50,8 +56,10 @@
 /* text background color (color[0]) */
 #define TEXT_BG		color[0]
 
-/* minimum number of milliseconds between refresh on X11 version (20) */
-#define MSECREFRESH	20
+/* minimum number of milliseconds between refresh on X11 version (30) */
+#define MSECREFRESH	30
+/* a lower number here can increase refresh rate but at the expense of
+   interactive response time as the X server becomes too busy */
 
 /* bourne shell command for X11 Help ("man xoscope 2>&1") */
 #define HELPCOMMAND	"man xoscope 2>&1"

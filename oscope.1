@@ -1,12 +1,12 @@
-.\" @(#)$Id: oscope.1,v 1.15 1997/06/11 02:35:54 twitham Rel $
+.\" @(#)$Id: oscope.1,v 1.16 1999/08/27 04:17:46 twitham Rel $
 .\"
-.\" Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
+.\" Copyright (C) 1996 - 1999 Tim Witham <twitham@quiknet.com>
 .\"
 .\" (see the files README and COPYING for more details)
 
-.TH OSCOPE 1 "June  10  1997" "Linux" "User Commands"
+.TH OSCOPE 1 "August  27  1999" "Linux" "User Commands"
 .SH NAME
-oscope xoscope \- Digital Oscilloscope via Sound Card and/or ProbeScope
+oscope xoscope \- Digital Oscilloscope via Sound Card and/or ProbeScope/osziFOX
 .SH SYNOPSIS
 oscope [oscope options] [file]
 .br
@@ -18,16 +18,17 @@ xoscope [X toolkit options] [oscope options] [file]
 is a digital real-time oscilloscope. It graphically displays signal
 amplitude as a function of time. The input is via a sound card and/or
 a serial port connected to a Radio Shack ProbeScope, Cat. No. 22-310.
-Either or both input devices may be used at the same time.  Signals
-may be displayed, saved, recalled, and manipulated by math functions.
+This device is also known as an osziFOX.  Either or both input devices
+may be used at the same time.  Signals may be displayed, saved,
+recalled, and manipulated by math functions.
 .P
 
 Some of the controls below apply only to the sound card and are
 labeled as such.
 .B Oscope
-has no physical control over the ProbeScope which is controlled by
-its' own switches and built-in menus.  Please refer to your Radio
-Shack ProbeScope Owner's Manual for operating instructions.
+has no physical control over the ProbeScope/osziFOX which is
+controlled by its' own switches and built-in menus.  Please refer to
+your ProbeScope or osziFOX Owner's Manual for operating instructions.
 
 .PP
 .SH "RUN\-TIME KEYBOARD CONTROLS"
@@ -184,8 +185,8 @@ buffers are available for signal memory.
 .SH "MOUSE CONTROLS"
 .B Xoscope
 adds mouse controls around the edges of the scope area.  These are
-color coded and should be self-explanatory.  They perform the same
-functions as the equivalent keyboard commands above.
+should be almost self-explanatory.  They perform the same functions as
+the equivalent keyboard commands above.
 
 .PP
 .SH "COMMAND\-LINE OPTIONS"
@@ -220,7 +221,7 @@ Active, or selected, channel.
 .TP 0.5i
 .B -r <rate>
 Sound card sampling Rate in samples per second.  Current valid values
-are 8800, 11000, 22000, or 44000.
+are 8000, 11025, 22050, or 44100.
 
 .TP 0.5i
 .B -s <scale>
@@ -347,19 +348,19 @@ the built-in default is used.
 
 .TP 0.5i
 .B PROBESCOPE
-The serial device your ProbeScope is connected to.  If no ProbeScope
-is found here, some known serial devices are checked.  If unset,
-"/dev/probescope" is used.  /dev/probescope could be a symbolic link
-to the real device such as /dev/ttyS1.
+The serial device your ProbeScope or osziFOX is connected to.  If no
+ProbeScope is found here, some known serial devices are checked.  If
+unset, "/dev/probescope" is used.  /dev/probescope could be a symbolic
+link to the real device such as /dev/ttyS1.
 
 .SH LIMITATIONS
-The sound card should be capable of 44000 Hz sampling via the sound
+The sound card should be capable of 44100 Hz sampling via the sound
 drivers.  You must use an external mixer program to select the input
 source device, level, etc.  Since these unknowns affect the amplitude,
 there is no reference to voltage on the Y axis; it is in fact,
 unknown.  Instead you're given the scale in pixels per sample unit.
-Note that the ProbeScope doesn't have this limitation.  ProbeScope
-signals have a real voltage label on the Y axis.
+Note that the ProbeScope/osziFOX doesn't have this limitation.
+ProbeScope signals have a real voltage label on the Y axis.
 
 Signal math is only valid if Channel 1 and 2 contain signals of the
 same sampling rate.
@@ -396,7 +397,7 @@ Probably.
 
 .SH AUTHOR
 .B Oscope
-was written by Tim Witham (twitham@pcocd2.intel.com), originally based
+was written by Tim Witham (twitham@quiknet.com), originally based
 on "scope" by Jeff Tranter (Jeff_Tranter@Mitel.COM).
 .B Oscope
 is released under the conditions of the GNU General Public License.

@@ -177,3 +177,17 @@ Please let me know if you port it to any OS; I have no time or
 incentive to do any further porting myself.
 
 v1.4: The serial connection to ProbeScope is implemented in ser_*.c.
+DOS port works but in mono only (Left == Right) due to my lack of
+ability to figure out how to do stereo recording.  But it demonstrates
+the portability of the code.
+
+v1.5: GTK+ port works great.  Apparently GTK+ is being ported to
+non-unix's so someday this may simplify ports to other OSs.
+
+
+29	Port to the GTK+ user interface on X.	(twitham@quiknet.com)
+
+v1.5: DONE.  Supports GTK+ 1.0 or higher.  Future releases will
+require GTK+ 1.2 or higher so that fancier things can be done in the
+menubar.  GTK+ versions less than 1.2 will no longer be supported
+after this release.
