@@ -1,17 +1,25 @@
 /*
- * @(#)$Id: sc_linux.c,v 1.11 1999/09/02 01:24:07 twitham Exp $
+ * @(#)$Id: sc_linux.c,v 1.12 2000/02/26 08:19:10 twitham Exp $
  *
  * Copyright (C) 1996 - 1999 Tim Witham <twitham@quiknet.com>
  *
  * (see the files README and COPYING for more details)
  *
- * This file implements the Linux /dev/dsp sound card interface
+ * This file implements the Linux /dev/dsp or ESD sound card interface
  *
  */
 
 #include <stdio.h>
 #include <unistd.h>
 #include <fcntl.h>
+
+#ifdef ESD
+#define SOUNDDEVICE "ESounD"
+#include <esd.h>
+#else
+#define SOUNDDEVICE "/dev/dsp"
+#endif
+
 #include <sys/ioctl.h>
 #include <sys/soundcard.h>
 #include "oscope.h"		/* program defaults */
@@ -19,6 +27,9 @@
 
 int snd = 0;			/* file descriptor for sound device */
 
+#ifdef ESD
+#define check_status(status, line) {}
+#else
 				/* quick macro */
 /* show system error and close sound device if given ioctl status is bad */
 #define check_status(status, line) \
@@ -30,6 +41,7 @@ int snd = 0;			/* file descriptor for sound device */
     close_sound_card(); \
   } \
 }
+#endif
 
 /* close the sound device */
 void
@@ -44,18 +56,28 @@ close_sound_card()
 void
 open_sound_card(int dma)
 {
-  int parm, i = 5;
+  int parm;
+  char device[] = SOUNDDEVICE;
+  int i = 3;
 
   if (snd) close(snd);
 
+#ifdef ESD
+  snd = esd_monitor_stream(ESD_BITS8|ESD_STEREO|ESD_STREAM|ESD_MONITOR,
+			   ESD, NULL, progname);
+  fcntl(snd, F_SETFL, O_NONBLOCK);
+  i = 0;
+#else
   /* we try a few times in case someone else is using device (FvwmAudio) */
-  while ((snd = open("/dev/dsp", O_RDONLY)) < 0 && i > 0) {
-    sprintf(error, "%s: can't open /dev/dsp, retrying %d", progname, i--);
+  while ((snd = open(device, O_RDONLY)) < 0 && i > 0) {
+    sprintf(error, "%s: can't open %s, retrying %d", progname, device, i--);
     perror(error);
     sleep(1);
   }
+#endif
+
   if (snd < 0) {		/* open DSP device for read */
-    sprintf(error, "%s: can't open /dev/dsp", progname);
+    sprintf(error, "%s: can't open %s", progname, device);
     perror(error);
     snd = 0;
     return;
@@ -87,7 +109,11 @@ reset_sound_card(int rate, int chan, int bits)
 
   read(snd, junk, SAMPLESKIP);
 
+#ifdef ESD
+  return(ESD);
+#else
   return(parm);
+#endif
 }
 
 /* get data from sound card, return value is whether we triggered or not */
@@ -97,7 +123,7 @@ get_data()
   static unsigned char datum[2], prev[2], *buff;
   static char buffer[MAXWID * 2], junk[DISCARDBUF];
   static int i;
-  audio_buf_info info;
+  audio_buf_info info = {0, 0, 0, MAXWID * 2};
 
   if (!snd) return(0);		/* device open? */
 
@@ -141,8 +167,9 @@ get_data()
 
   memcpy(buffer, prev, 2);	/* now get the post-trigger data */
   memcpy(buffer + 2, datum, 2);
-  read(snd, buffer + (scope.trige ? 4 : 0),
-       h_points * 2 - (scope.trige ? 4 : 0));
+  if (read(snd, buffer + (scope.trige ? 4 : 0),
+	   h_points * 2 - (scope.trige ? 4 : 0)) < 0)
+    return(0);
   buff = buffer;
   for(i=0; i < h_points; i++) {	/* move it into channel 1 and 2 */
     if (*buff == 0 || *buff == 255)

@@ -1,4 +1,4 @@
-# @(#)$Id: Makefile,v 1.22 1999/08/27 04:24:25 twitham Rel $
+# @(#)$Id: Makefile,v 1.23 2000/02/26 08:19:16 twitham Exp $
 
 # Copyright (C) 1996 - 1999 Tim Witham <twitham@quiknet.com>
 
@@ -10,15 +10,23 @@
 SCOPES	= oscope xoscope
 MISC	= -lvgamisc
 
+# !! uncomment this line if you don't want console-based oscope
+SCOPES	= xoscope
+
+# !! uncomment this line if you don't have GTK or libsx or don't want xoscope
+# SCOPES	= oscope
+
 # !! uncomment these lines if you don't have libvgamisc from the g3vga package
 # DFLAGS	= -DNOVGAMISC
 # MISC	=
 
-# !! uncomment this line if you don't want console-based oscope
-# SCOPES	= xoscope
+# we'll assume you're using /dev/dsp, but...
+ESDCFLAGS=
+ESDLDFLAGS=
 
-# !! uncomment this line if you don't have GTK or libsx or don't want xoscope
-# SCOPES	= oscope
+# !! uncomment these lines if you want to use ESD instead of /dev/dsp
+ESDCFLAGS	= -DESD=44100
+ESDLDFLAGS	= -lesd
 
 # !! base prefix of where to install
 PREFIX	= /usr/local
@@ -44,7 +52,7 @@ PROBESCOPE = /dev/probescope
 CC	= gcc
 
 # compiler flags; -DLIBPATH sets default value of OSCOPEPATH env variable
-COMMON	= '-DLIBPATH="$(LIBPATH)"' '-DVER="$(VER)"' \
+COMMON	= '-DLIBPATH="$(LIBPATH)"' '-DVER="$(VER)"' $(ESDCFLAGS)\
 	'-DPROBESCOPE="$(PROBESCOPE)"' $(DFLAGS) -Wall -m486 -O3
 
 # !! uncomment this to use GTK+ instead of libsx for xoscope
@@ -62,7 +70,7 @@ XY_OBJ	= com_gtk.o xy_gtk.o
 # XY_OBJ	= xy_sx.o
 
 # load flags, add -L/extra/lib/path if necessary
-LDFLAGS	= -s $(DFLAGS)
+LDFLAGS	= -s $(ESDLDFLAGS) $(DFLAGS)
 
 ############################################################
 
@@ -86,7 +94,7 @@ LDFLAGS	= -s $(DFLAGS)
 # nothing should need changed below here
 ############################################################
 
-VER	= 1.5
+VER	= 1.5.3
 SRC	= oscope.c file.c func.c fft.c realfft.c display.c proscope.c
 VGA_SRC = $(SRC) sc_linux.c ser_unix.c gr_com.c gr_vga.c
 SX_SRC	= $(SRC) sc_linux.c ser_unix.c gr_com.c gr_sx.c freq.c dirlist.c
