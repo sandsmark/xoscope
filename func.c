@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: func.c,v 1.15 1997/05/03 16:15:45 twitham Exp $
+ * @(#)$Id: func.c,v 1.16 1997/05/04 20:13:54 twitham Rel1_3 $
  *
  * Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -265,6 +265,7 @@ init_math()
   for (i = 0 ; i < 34 ; i++) {
     mem[i].rate = 44000;
     memset(mem[i].data, 0, MAXWID * sizeof(short));
+    mem[i].color = 0;
   }
   init_fft();
 }
