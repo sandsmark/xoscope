@@ -1,30 +1,36 @@
 /*
- * @(#)$Id: func.c,v 1.8 1996/03/10 01:46:14 twitham Exp $
+ * @(#)$Id: func.c,v 1.9 1996/04/16 04:16:51 twitham Exp $
  *
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
  * (see the files README and COPYING for more details)
  *
  * This file implements the signal math and memory.
- * To add functions, search for !!! and add to those sections.
+ * To add math functions, search for !!! and add to those sections.
  *
  */
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <math.h>
+#include <signal.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 #include "oscope.h"
 #include "fft.h"
+#include "display.h"
 
 /* must be shorter than minimum screen width and multiple of 2 */
 #define FFTLEN	512
 
-/* !!! The function names, the first three are special */
+/* !!! The function names, the first four are special */
 char *funcnames[] =
 {
   "Left  Mix",
   "Right Mix",
   "Memory  ",
+  "External",
   "FFT. 1  ",
   "FFT. 2  ",
   "Sum  1+2",
@@ -32,10 +38,10 @@ char *funcnames[] =
   "Avg. 1,2",
 };
 
-/* The total number of functions */
+/* the total number of functions */
 int funccount = sizeof(funcnames) / sizeof(char *);
 
-/* The pointers to the signal memories */
+/* the pointers to the signal memories */
 short *mem[26] = {
   NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
   NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
@@ -48,6 +54,10 @@ int memcolor[26];
 /* for the fft function: x position to bin number map, and data buffer */
 int xmap[MAXWID];
 short fftdata[MAXWID];
+
+/* the external commands and their PIDs */
+char command[CHANNELS][256];
+pid_t pid[] = {0, 0, 0, 0, 0, 0, 0, 0};
 
 /* recall given memory register to the currently selected signal */
 void
@@ -85,6 +95,72 @@ save(char c)
   scope.select = k;
 }
 
+/* Pipe through external process */
+void
+pipeto(int num)
+{
+  static short *a, *b, *c;
+  static int i, j;
+  static int to[CHANNELS][2], from[CHANNELS][2]; /* pipes to/from the child */
+
+  if (ch[num].mem == 1) {
+    if (pid[num] > 0) {		/* close previous command pipes */
+      close(to[num][1]);
+      close(from[num][0]);	/* and reap the child process */
+      waitpid(pid[num], NULL, 0);
+    }
+    if (pipe(to[num]) || pipe(from[num])) { /* get a set of pipes */
+      sprintf(error, "%s: Can't create pipes", progname);
+      perror(error);
+      return;
+    }
+    signal(SIGPIPE, SIG_IGN);
+    if ((pid[num] = fork()) > 0) { /* parent */
+	close(to[num][0]);
+	close(from[num][1]);
+    } else if (pid[num] == 0) {	/* child */
+      close(to[num][1]);
+      close(from[num][0]);
+      close(0);
+      close(1);			/* redirect stdin/out through pipes */
+      dup2(to[num][0], 0);
+      dup2(from[num][1], 1);
+      close(to[num][0]);
+      close(from[num][1]);
+      execlp("/bin/sh", "sh", "-c", command[num], NULL);
+      sprintf(error, "%s: child can't exec /bin/sh -c '%s'",
+	      progname, command[num]);
+      perror(error);
+      exit(1);
+    } else {			/* fork error */
+      sprintf(error, "%s: Can't fork", progname);
+      perror(error);
+      return;
+    }
+    message(command[num], ch[num].color);
+    ch[num].mem = 2;
+  }
+  if (ch[num].mem == 2) {	/* write to / read from child process */
+    a = ch[0].data;
+    b = ch[1].data;
+    c = ch[num].data;
+    j = 0;
+    for (i = 0 ; i < h_points ; i++) {
+      if (write(to[num][1], a++, sizeof(short)) != sizeof(short))
+	j++;
+      if (write(to[num][1], b++, sizeof(short)) != sizeof(short))
+	j++;
+      if (read(from[num][0], c++, sizeof(short)) != sizeof(short))
+	j++;
+    }
+    if (j) {
+      sprintf(error, "%d pipe read/write errors from '%s'", i, command[num]);
+      perror(error);
+      ch[num].mem = 0;
+    }
+  }
+}
+
 /* !!! The functions; they take one arg: the channel # to store results in */
 
 /* The sum of the two channels */
@@ -92,12 +168,13 @@ void
 sum(int num)
 {
   static int i;
-  static Signal *a, *b, *c;
-  a = &ch[0];
-  b = &ch[1];
-  c = &ch[num];
+  static short *a, *b, *c;
+
+  a = ch[0].data;
+  b = ch[1].data;
+  c = ch[num].data;
   for (i = 0 ; i < h_points ; i++) {
-    c->data[i] = a->data[i] + b->data[i];
+    *c++ = *a++ + *b++;
   }
 }
 
@@ -106,12 +183,13 @@ void
 diff(int num)
 {
   static int i;
-  static Signal *a, *b, *c;
-  a = &ch[0];
-  b = &ch[1];
-  c = &ch[num];
+  static short *a, *b, *c;
+
+  a = ch[0].data;
+  b = ch[1].data;
+  c = ch[num].data;
   for (i = 0 ; i < h_points ; i++) {
-    c->data[i] = a->data[i] - b->data[i];
+    *c++ = *a++ - *b++;
   }
 }
 
@@ -120,12 +198,13 @@ void
 avg(int num)
 {
   static int i;
-  static Signal *a, *b, *c;
-  a = &ch[0];
-  b = &ch[1];
-  c = &ch[num];
+  static short *a, *b, *c;
+
+  a = ch[0].data;
+  b = ch[1].data;
+  c = ch[num].data;
   for (i = 0 ; i < h_points ; i++) {
-    c->data[i] = (a->data[i] + b->data[i]) / 2;
+    *c++ = (*a++ - *b++) / 2;
   }
 }
 
@@ -140,9 +219,7 @@ fft(int num, int sig)
   a = fftdata;
   b = ch[sig].data;
   for(i = 0 ; i < MAXWID ; i++) {
-    *a=((long)(*b)  * 32767) >> 7;
-    a++;
-    b++;
+    *a++=((long)(*b++)  * 32767) >> 7;
   }
   RealFFT(fftdata);
   a = ch[num].data;
@@ -179,9 +256,10 @@ fft2(int num)
 /* !!! Array of the functions, the first three should be NULL */
 void (*funcarray[])(int) =
 {
-  NULL,
-  NULL,
-  NULL,
+  NULL,				/* left */
+  NULL,				/* right */
+  NULL,				/* memory */
+  pipeto,			/* external commands */
   fft1,
   fft2,
   sum,
@@ -195,6 +273,9 @@ init_math()
 {
   static int i;
 
+  for (i = 0 ; i < CHANNELS ; i++) {
+    strcpy(command[i], COMMAND);
+  }
   for (i = 0 ; i < MAXWID ; i++) {
     fftdata[i] = 0;
     xmap[i]=floor((double)i / 440.0 * FFTLEN / 2.0 + 0.5);
@@ -255,12 +336,12 @@ measure_data(Signal *sig) {
     }
     prev = j;
   }
-  if (sig->func == 3 || sig->func == 4) { /* frequency from peak FFT */
+  if (sig->func == 4 || sig->func == 5) { /* frequency from peak FFT */
     if ((sig->freq = actual * max / 880) > 0)
       sig->time = 1000000 / sig->freq;
     else
       sig->time = 0;
-  } else if (count > 1) {	/* wave: period = length / # periods */
+  } else if (count > 1) {	/* assume a wave: period = length / # periods */
     if ((sig->time = 1000000 * (last - first) / (count - 1) / actual) > 0)
       sig->freq = 1000000 / sig->time;
     else
