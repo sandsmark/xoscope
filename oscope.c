@@ -5,7 +5,7 @@
  *
  * [x]oscope --- Use Linux's /dev/dsp (a sound card) as an oscilloscope
  *
- * @(#)$Id: oscope.c,v 1.41 1996/02/03 08:30:30 twitham Exp $
+ * @(#)$Id: oscope.c,v 1.42 1996/02/03 21:09:03 twitham Exp $
  *
  * Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
@@ -218,7 +218,7 @@ init_channels()
     ch[i].pos = 0;
     ch[i].color = color[channelcolor[i]];
     ch[i].show = (i < 2);
-    ch[i].func = i;
+    ch[i].func = i < 2 ? i : 2;
   }
 }
 
@@ -270,17 +270,14 @@ handle_key(unsigned char c)
     recall(c);
     draw_text(1);
     return;
+  } else if (c >= '1' && c <= '8') {
+    scope.select = (c - '1');
+    clear();
+    return;
   }
   switch (c) {
   case 0:
   case -1:			/* no key pressed */
-    break;
-  case '1':			/* channel keys */
-  case '2':
-  case '3':
-  case '4':
-    scope.select = (c - '1');
-    clear();
     break;
   case '\t':
     p->show = !p->show;
@@ -396,7 +393,7 @@ handle_key(unsigned char c)
       init_sound_card(0);
     }
     break;
-  case '\'':
+  case '!':
     scope.mode++;		/* point, point accumulate, line, line acc. */
     if (scope.mode > 3)
       scope.mode = 0;

@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: func.h,v 1.3 1996/02/03 08:53:53 twitham Exp $
+ * @(#)$Id: func.h,v 1.4 1996/02/03 21:08:54 twitham Exp $
  *
  * Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
@@ -25,3 +25,6 @@ save(char);
 
 void
 recall(char);
+
+void
+do_math();

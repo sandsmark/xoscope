@@ -1,12 +1,13 @@
 /*
- * @(#)$Id: func.c,v 1.3 1996/02/03 08:53:46 twitham Exp $
+ * @(#)$Id: func.c,v 1.4 1996/02/03 21:08:48 twitham Exp $
  *
  * Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
  * (see oscope.c and the file COPYING for more details)
  *
- * This file implements the internal math functions
+ * This file implements the signal math and memory.
+ * To add functions, search for !!! and add to those sections.
  *
  */
 
@@ -14,7 +15,7 @@
 #include <stdlib.h>
 #include "oscope.h"
 
-/* The function names, the first three are special */
+/* !!! The function names, the first three are special */
 char *funcnames[] =
 {
   "Left  In",
@@ -35,6 +36,7 @@ short *mem[26] = {
   NULL, NULL, NULL, NULL, NULL, NULL
 };
 
+/* The signal color that was recorded into the memory */
 int memcolor[26];
 
 /* store the currently selected signal to the given memory register */
@@ -64,7 +66,7 @@ recall(char c)
   }
 }
 
-/* The functions; they take one arg: the channel # to store results in */
+/* !!! The functions; they take one arg: the channel # to store results in */
 
 /* The sum of the two channels */
 void
@@ -108,7 +110,7 @@ avg(int num)
   }
 }
 
-/* Array of the functions */
+/* !!! Array of the functions, the first three should be NULL */
 void (*funcarray[])(int) =
 {
   NULL,
@@ -118,3 +120,15 @@ void (*funcarray[])(int) =
   diff,
   avg
 };
+
+/* Perform any math on the software channels */
+void
+do_math()
+{
+  static int i;
+
+  for (i = 2 ; i < CHANNELS ; i++) {
+    if (ch[i].func > 2)
+      funcarray[ch[i].func](i);
+  }
+}

@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.h,v 1.15 1996/02/03 08:53:36 twitham Exp $
+ * @(#)$Id: oscope.h,v 1.16 1996/02/03 21:08:37 twitham Exp $
  *
  * Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
@@ -39,10 +39,10 @@
 #define SAMPLESKIP	32
 
 /* max number of channels */
-#define CHANNELS 4
+#define CHANNELS 8
 
-/* initial colors of the channels (see top of display.c) */
-#define CHANNELCOLOR	{2,3,5,6}
+/* initial colors of the channels (see color definition in display.c) */
+#define CHANNELCOLOR	{2,3,5,6,14,1,4,15}
 
 /* text foreground color */
 #define TEXT_FG		color[2]
