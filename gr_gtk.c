@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: gr_gtk.c,v 1.3 1998/08/22 18:46:12 twitham Exp $
+ * @(#)$Id: gr_gtk.c,v 1.4 1998/08/23 00:33:46 twitham Exp $
  *
  * Copyright (C) 1996 - 1998 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -25,13 +25,15 @@ GdkGC *gc;
 GtkWidget *menubar;
 GtkWidget *filemenu;
 GtkWidget *vbox;
+GtkWidget *hbox;
 GtkWidget *table;
+GtkWidget *table2;
 
 GtkWidget colormenu[17];		/* color menu */
 GtkWidget xwidg[11];		/* extra horizontal widgets */
 GtkWidget *mwidg[57];		/* memory / math widgets */
-GtkWidget cwidg[CHANNELS];	/* channel button widgets */
-GtkWidget ywidg[15];		/* vertical widgets */
+GtkWidget *cwidg[CHANNELS];	/* channel button widgets */
+GtkWidget *ywidg[15];		/* vertical widgets */
 GtkWidget **math;			/* math menu */
 int **intarray;			/* indexes of math functions */
 int XX[] = {640,800,1024,1280};
@@ -193,15 +195,36 @@ GetString(char *msg, char *def)
 /* #endif */
 }
 
+void
+file_ok_sel(GtkWidget *w, GtkFileSelection *fs)
+{
+  g_print("%s\n", gtk_file_selection_get_filename(GTK_FILE_SELECTION(fs)));
+}
+
+void
+destroy(GtkWidget *widget, gpointer data)
+{
+  gtk_main_quit ();
+}
+
 /* get a file name */
 char *
 GetFile(char *path)
 {
-/* #ifdef HAVEVGAMISC */
-/*   return GetString("Filename:", path); */
-/* #else */
-/*   return filename; */
-/* #endif */
+  GtkWidget *filew;
+
+  filew = gtk_file_selection_new ("File selection");
+  gtk_signal_connect(GTK_OBJECT(filew), "destroy",
+		     (GtkSignalFunc)destroy, &filew);
+  gtk_signal_connect(GTK_OBJECT(GTK_FILE_SELECTION(filew)->ok_button),
+		     "clicked", (GtkSignalFunc)file_ok_sel, filew);
+  gtk_signal_connect_object(GTK_OBJECT(GTK_FILE_SELECTION(filew)->cancel_button),
+			    "clicked", (GtkSignalFunc)gtk_widget_destroy,
+			    GTK_OBJECT (filew));
+  gtk_file_selection_set_filename(GTK_FILE_SELECTION(filew),
+				  path);
+  gtk_widget_show(filew);
+
   return path;
 }
 
@@ -493,11 +516,13 @@ get_main_menu(GtkWidget *window, GtkWidget ** menubar)
     {"<Main>/Wait", NULL, runmode, "2"},
     {"<Main>/Stop", NULL, runmode, "0"},
     {"<Main>/ ? ", NULL, hit_key, "?"},
+    {"<Main>/Help", NULL, hit_key, "?"},
   };
   int nmenu_items = sizeof(menu_items) / sizeof(menu_items[0]);
 
   GtkMenuFactory *factory;
   GtkMenuFactory *subfactory;
+  GtkMenuPath *menu_path;
 
   factory = gtk_menu_factory_new(GTK_MENU_FACTORY_MENU_BAR);
   subfactory = gtk_menu_factory_new(GTK_MENU_FACTORY_MENU_BAR);
@@ -505,6 +530,9 @@ get_main_menu(GtkWidget *window, GtkWidget ** menubar)
   gtk_menu_factory_add_subfactory(factory, subfactory, "<Main>");
   gtk_menu_factory_add_entries(factory, menu_items, nmenu_items);
   gtk_window_add_accelerator_table(GTK_WINDOW(window), subfactory->table);
+
+  menu_path = gtk_menu_factory_find(factory,  "<Main>/Help");
+  gtk_menu_item_right_justify(menu_path->widget);
 
   if (menubar)
     *menubar = subfactory->widget;
@@ -516,34 +544,114 @@ init_widgets()
 {
   int i;
   GtkWidget *menubar;
+  static char *s[] = {"1", "2", "3", "4", "5", "6", "7", "8"};
+
+  h_points = XX[scope.size];
+  v_points = XY[scope.size];
 
   window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
   gtk_signal_connect(GTK_OBJECT (window), "delete_event",
 		     GTK_SIGNAL_FUNC (delete_event), NULL);
+  gtk_signal_connect(GTK_OBJECT(window),"key_press_event",
+		     (GtkSignalFunc) key_press_event, NULL);
 
   vbox = gtk_vbox_new(FALSE, 0);
-  gtk_container_border_width(GTK_CONTAINER(vbox), 1);
   gtk_container_add(GTK_CONTAINER(window), vbox);
-  gtk_widget_show(vbox);
 
   get_main_menu(window, &menubar);
   gtk_box_pack_start(GTK_BOX(vbox), menubar, FALSE, TRUE, 0);
   gtk_widget_show(menubar);
 
   drawing_area = gtk_drawing_area_new();
-  /*   gtk_drawing_area_size(drawing_area, h_points, v_points); */
-  gtk_drawing_area_size(GTK_DRAWING_AREA(drawing_area), 640, 480);
+  gtk_drawing_area_size(GTK_DRAWING_AREA(drawing_area), h_points, v_points);
   gtk_signal_connect(GTK_OBJECT(drawing_area), "expose_event",
 		     (GtkSignalFunc) expose_event, NULL);
   gtk_signal_connect(GTK_OBJECT(drawing_area),"configure_event",
 		     (GtkSignalFunc) configure_event, NULL);
-  gtk_signal_connect(GTK_OBJECT(window),"key_press_event",
-		     (GtkSignalFunc) key_press_event, NULL);
-  gtk_box_pack_start(GTK_BOX(vbox), drawing_area, TRUE, TRUE, 0);
+
+  table2 = gtk_table_new(21, 2, FALSE);
+
+  ywidg[1] = gtk_label_new("Trig");
+  gtk_table_attach_defaults(GTK_TABLE(table2), ywidg[1], 0, 2, 0, 1);
+
+  ywidg[2] = gtk_button_new_with_label("/\\");
+  gtk_table_attach_defaults(GTK_TABLE(table2), ywidg[2], 0, 2, 1, 2);
+  gtk_signal_connect(GTK_OBJECT(ywidg[2]), "clicked",
+		     GTK_SIGNAL_FUNC(hit_key), "=");
+
+  ywidg[3] = gtk_button_new_with_label("<");
+  gtk_table_attach_defaults(GTK_TABLE(table2), ywidg[3], 0, 1, 2, 3);
+  gtk_signal_connect(GTK_OBJECT(ywidg[3]), "clicked",
+		     GTK_SIGNAL_FUNC(hit_key), "_");
+
+  ywidg[4] = gtk_button_new_with_label(">");
+  gtk_table_attach_defaults(GTK_TABLE(table2), ywidg[4], 1, 2, 2, 3);
+  gtk_signal_connect(GTK_OBJECT(ywidg[4]), "clicked",
+		     GTK_SIGNAL_FUNC(hit_key), "+");
+
+  ywidg[5] = gtk_button_new_with_label("\\/");
+  gtk_table_attach_defaults(GTK_TABLE(table2), ywidg[5], 0, 2, 3, 4);
+  gtk_signal_connect(GTK_OBJECT(ywidg[5]), "clicked",
+		     GTK_SIGNAL_FUNC(hit_key), "-");
+
+  ywidg[6] = gtk_label_new("Scal");
+  gtk_table_attach_defaults(GTK_TABLE(table2), ywidg[6], 0, 2, 4, 5);
+
+  ywidg[7] = gtk_button_new_with_label("/\\");
+  gtk_table_attach_defaults(GTK_TABLE(table2), ywidg[7], 0, 2, 5, 6);
+  gtk_signal_connect(GTK_OBJECT(ywidg[7]), "clicked",
+		     GTK_SIGNAL_FUNC(hit_key), "}");
+
+  ywidg[8] = gtk_button_new_with_label("\\/");
+  gtk_table_attach_defaults(GTK_TABLE(table2), ywidg[8], 0, 2, 6, 7);
+  gtk_signal_connect(GTK_OBJECT(ywidg[8]), "clicked",
+		     GTK_SIGNAL_FUNC(hit_key), "{");
+
+  ywidg[9] = gtk_label_new("Chan");
+  gtk_table_attach_defaults(GTK_TABLE(table2), ywidg[9], 0, 2, 7, 8);
+
+  for (i = 0 ; i < CHANNELS ; i++) {
+    cwidg[i] = gtk_button_new_with_label(&s[i][0]);
+    gtk_table_attach_defaults(GTK_TABLE(table2), cwidg[i], 0, 2, i + 8, i + 9);
+    gtk_widget_show(cwidg[i]);
+    gtk_signal_connect(GTK_OBJECT(cwidg[i]), "clicked",
+		       GTK_SIGNAL_FUNC(hit_key), &s[i][0]);
+  }
+
+  ywidg[10] = gtk_label_new("Pos.");
+  gtk_table_attach_defaults(GTK_TABLE(table2), ywidg[10], 0, 2, 16, 17);
+
+  ywidg[11] = gtk_button_new_with_label("/\\");
+  gtk_table_attach_defaults(GTK_TABLE(table2), ywidg[11], 0, 2, 17, 18);
+  gtk_signal_connect(GTK_OBJECT(ywidg[11]), "clicked",
+		     GTK_SIGNAL_FUNC(hit_key), "]");
+
+  ywidg[12] = gtk_button_new_with_label("\\/");
+  gtk_table_attach_defaults(GTK_TABLE(table2), ywidg[12], 0, 2, 18, 19);
+  gtk_signal_connect(GTK_OBJECT(ywidg[12]), "clicked",
+		     GTK_SIGNAL_FUNC(hit_key), "[");
+
+  ywidg[13] = gtk_label_new("");
+  gtk_table_attach_defaults(GTK_TABLE(table2), ywidg[13], 0, 2, 19, 20);
+
+  ywidg[14] = gtk_button_new_with_label("Hide");
+  gtk_table_attach_defaults(GTK_TABLE(table2), ywidg[14], 0, 2, 20, 21);
+  gtk_signal_connect(GTK_OBJECT(ywidg[14]), "clicked",
+		     GTK_SIGNAL_FUNC(hit_key), "\t");
+
+  for (i = 1 ; i < 15 ; i++) {
+    gtk_widget_show(ywidg[i]);
+  }
+
+  hbox = gtk_hbox_new(FALSE, 0);
+  gtk_box_pack_start(GTK_BOX(hbox), drawing_area, TRUE, TRUE, 0);
+  gtk_box_pack_start(GTK_BOX(hbox), table2, FALSE, TRUE, 0);
+  gtk_box_pack_start(GTK_BOX(vbox), hbox, TRUE, TRUE, 0);
   gtk_widget_show(drawing_area);
+  gtk_widget_show(table2);
+  gtk_widget_show(hbox);
 
   table = gtk_table_new(2, 29, FALSE);
-  gtk_box_pack_start(GTK_BOX(vbox), table, FALSE, TRUE, 0);
   mwidg[0]  = gtk_label_new(" Store ");
   mwidg[29]  = gtk_label_new(" Recall");
   gtk_table_attach_defaults(GTK_TABLE(table), mwidg[0], 0, 1, 0, 1);
@@ -569,6 +677,8 @@ init_widgets()
     gtk_widget_show(mwidg[i + 30]);
   }
 
+  gtk_box_pack_start(GTK_BOX(vbox), table, FALSE, TRUE, 0);
+  gtk_widget_show(vbox);
   gtk_widget_show(window);
 
   gc = gdk_gc_new(drawing_area->window);
@@ -585,63 +695,7 @@ init_widgets()
   gdk_gc_set_background(gc, &gdkcolor[0]);
   SetColor(15);
 
-/*   static char *s[] = {" 1  ", " 2  ", " 3  ", " 4  ", */
-/* 		      " 5  ", " 6  ", " 7  ", " 8  "}; */
-/*   int i, j; */
-
 /*   colormenu[0] = MakeMenu("Color"); */
-
-/*   /* the drawing area for the scope */
-  h_points = XX[scope.size];
-  v_points = XY[scope.size];
-/*   drawing_area = MakeDrawArea(h_points, v_points, redisplay, NULL); */
-/*   SetKeypressCB(drawing_area, keys); */
-/*   SetWidgetPos(drawing_area, PLACE_UNDER, file[0], NO_CARE, NULL); */
-
-/*   /* right column of widgets */
-/*   ywidg[0] = MakeButton("Help", help, NULL); */
-
-/*   ywidg[1] = MakeLabel("Trig"); */
-/*   ywidg[2] = MakeButton(" /\\ ", hit_key, "="); */
-/*   ywidg[3] = MakeButton("<", hit_key, "_"); */
-/*   ywidg[4] = MakeButton(">", hit_key, "+"); */
-/*   ywidg[5] = MakeButton(" \\/ ", hit_key, "-"); */
-
-/*   ywidg[6] = MakeLabel("Scal"); */
-/*   ywidg[7] = MakeButton(" /\\ ", hit_key, "}"); */
-/*   ywidg[8] = MakeButton(" \\/ ", hit_key, "{"); */
-
-/*   ywidg[9] = MakeLabel("Chan"); */
-
-/*   SetWidgetPos(ywidg[0],  PLACE_RIGHT, drawing_area, NO_CARE, NULL); */
-/*   SetWidgetPos(ywidg[1],  PLACE_RIGHT, drawing_area, PLACE_UNDER, ywidg[0]); */
-/*   SetWidgetPos(ywidg[2],  PLACE_RIGHT, drawing_area, PLACE_UNDER, ywidg[1]); */
-/*   SetWidgetPos(ywidg[3],  PLACE_RIGHT, drawing_area, PLACE_UNDER, ywidg[2]); */
-/*   SetWidgetPos(ywidg[4],  PLACE_RIGHT, ywidg[3], PLACE_UNDER, ywidg[2]); */
-/*   SetWidgetPos(ywidg[5],  PLACE_RIGHT, drawing_area, PLACE_UNDER, ywidg[4]); */
-/*   SetWidgetPos(ywidg[6],  PLACE_RIGHT, drawing_area, PLACE_UNDER, ywidg[5]); */
-/*   SetWidgetPos(ywidg[7],  PLACE_RIGHT, drawing_area, PLACE_UNDER, ywidg[6]); */
-/*   SetWidgetPos(ywidg[8],  PLACE_RIGHT, drawing_area, PLACE_UNDER, ywidg[7]); */
-/*   SetWidgetPos(ywidg[9],  PLACE_RIGHT, drawing_area, PLACE_UNDER, ywidg[8]); */
-  
-/*   for (i = 0 ; i < CHANNELS ; i++) { */
-/*     cwidg[i] = MakeButton(s[i], hit_key, &s[i][1]); */
-/*     SetWidgetPos(cwidg[i],  PLACE_RIGHT, drawing_area, */
-/* 		 PLACE_UNDER, i ? cwidg[i - 1] : ywidg[9]); */
-/*   } */
-
-/*   ywidg[10] = MakeLabel("Pos."); */
-/*   ywidg[11] = MakeButton(" /\\ ", hit_key, "]"); */
-/*   ywidg[12] = MakeButton(" \\/ ", hit_key, "["); */
-/*   ywidg[13] = MakeLabel(""); */
-/*   ywidg[14] = MakeButton("Hide", hit_key, "\t"); */
-
-/*   SetWidgetPos(ywidg[10],  PLACE_RIGHT, drawing_area, */
-/* 	       PLACE_UNDER, cwidg[CHANNELS - 1]); */
-/*   SetWidgetPos(ywidg[11],  PLACE_RIGHT, drawing_area, PLACE_UNDER, ywidg[10]); */
-/*   SetWidgetPos(ywidg[12],  PLACE_RIGHT, drawing_area, PLACE_UNDER, ywidg[11]); */
-/*   SetWidgetPos(ywidg[13],  PLACE_RIGHT, drawing_area, PLACE_UNDER, ywidg[12]); */
-/*   SetWidgetPos(ywidg[14],  PLACE_RIGHT, drawing_area, PLACE_UNDER, ywidg[13]); */
 
 /*   /* bottom rows of widgets */
 
@@ -686,8 +740,8 @@ void
 mainloop()
 {
   draw_text(1);
-/*   animate(NULL); */
-  AddTimeOut(MSECREFRESH, animate, NULL);
+  animate(NULL);
+/*   AddTimeOut(MSECREFRESH, animate, NULL); */
 /*   MainLoop(); */
   gtk_main();
 }
