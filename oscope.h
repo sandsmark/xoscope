@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.h,v 1.13 1996/02/03 04:08:13 twitham Exp $
+ * @(#)$Id: oscope.h,v 1.14 1996/02/03 06:52:24 twitham Exp $
  *
  * Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
@@ -70,32 +70,32 @@ extern int offset;
 extern int actual;
 
 typedef struct Scope {		/* The oscilloscope */
-  short mode;
-  short size;
+  int mode;
+  int size;
   int dma;
-  short run;
-  short scale;
+  int run;
+  int scale;
   int rate;
+  int grat;
+  int behind;
+  int color;
+  int select;
   short trig;
-  short grat;
-  short behind;
-  short color;
-  short select;
 } Scope;
 extern Scope scope;
 
 typedef struct Signal {		/* The signals (channels) */
   short data[MAXWID];
   short old[MAXWID];
-  short mult;
-  short div;
-  short pos;
-  short color;
-  short show;
   short min;
   short max;
-  short time;
-  short func;
+  int time;
+  int mult;
+  int div;
+  int pos;
+  int color;
+  int show;
+  int func;
 } Signal;
 extern Signal ch[CHANNELS];
 

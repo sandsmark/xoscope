@@ -5,7 +5,7 @@
  *
  * [x]oscope --- Use Linux's /dev/dsp (a sound card) as an oscilloscope
  *
- * @(#)$Id: oscope.c,v 1.39 1996/02/03 04:08:07 twitham Exp $
+ * @(#)$Id: oscope.c,v 1.40 1996/02/03 06:52:35 twitham Exp $
  *
  * Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
@@ -259,65 +259,71 @@ handle_key(unsigned char c)
   static int scaler[] = {1,2,5,10,20,50,100,200};
   static int *maxscaler = &scaler[7];	/* the last one */
   static int *pscaler = scaler;
+  static Signal *p;
 
+  p = &ch[scope.select];
   switch (c) {
   case 0:
   case -1:			/* no key pressed */
     break;
-  case '\t':
-    ch[scope.select].show = !ch[scope.select].show;
-    clear();
-    break;
-  case '1':
+  case '1':			/* channel keys */
   case '2':
   case '3':
   case '4':
     scope.select = (c - '1');
     clear();
     break;
-  case 'r':
-    if (ch[scope.select].div > 1)
-      ch[scope.select].div >>= 1;
+  case '\t':
+    p->show = !p->show;
+    clear();
+    break;
+  case ']':
+    if (p->div > 1)		/* double scale */
+      p->div >>= 1;
     else
-      ch[scope.select].mult <<= 1;
+      p->mult <<= 1;
     clear();
     break;
-  case 'f':
-    if (ch[scope.select].mult > 1)
-      ch[scope.select].mult >>= 1;
+  case '[':
+    if (p->mult > 1)		/* half scale */
+      p->mult >>= 1;
     else
-      ch[scope.select].div <<= 1;
+      p->div <<= 1;
     clear();
     break;
-  case 'u':
-    ch[scope.select].pos -= 16;
+  case '}':
+    p->pos -= 16;		/* position up */
     clear();
     break;
-  case 'j':
-    ch[scope.select].pos += 16;
+  case '{':
+    p->pos += 16;		/* position down */
     clear();
     break;
-  case 't':
-  case 'y':
-    if (scope.select > 1) {
-      ch[scope.select].func++;
-      if (ch[scope.select].func >= funccount)
-	ch[scope.select].func = 2;
+  case ';':
+  case ':':
+    if (scope.select > 1) {	/* cycle math function */
+      p->func++;
+      if (p->func >= funccount)
+	p->func = 2;
       clear();
     }
     break;
   case '0':
-    if (scope.rate == 8800) {
-      scope.rate = 22000;
-      check_status(ioctl(snd, SOUND_PCM_SYNC, 0), __LINE__);
-      check_status(ioctl(snd, SOUND_PCM_WRITE_RATE, &scope.rate), __LINE__);
-      check_status(ioctl(snd, SOUND_PCM_READ_RATE, &actual), __LINE__);
-    } else if (scope.rate == 22000) {
-      scope.rate = 44000;
-      check_status(ioctl(snd, SOUND_PCM_SYNC, 0), __LINE__);
-      check_status(ioctl(snd, SOUND_PCM_WRITE_RATE, &scope.rate), __LINE__);
-      check_status(ioctl(snd, SOUND_PCM_READ_RATE, &actual), __LINE__);
-    } else 
+    if (scope.run)
+      if (scope.rate <= 8800) {
+	scope.rate = 22000;
+	check_status(ioctl(snd, SOUND_PCM_SYNC, 0), __LINE__);
+	check_status(ioctl(snd, SOUND_PCM_WRITE_RATE, &scope.rate), __LINE__);
+	check_status(ioctl(snd, SOUND_PCM_READ_RATE, &actual), __LINE__);
+      } else if (scope.rate <= 22000) {
+
+	scope.rate = 44000;
+	check_status(ioctl(snd, SOUND_PCM_SYNC, 0), __LINE__);
+	check_status(ioctl(snd, SOUND_PCM_WRITE_RATE, &scope.rate), __LINE__);
+	check_status(ioctl(snd, SOUND_PCM_READ_RATE, &actual), __LINE__);
+      } else
+	pscaler++;
+    else if (scope.rate >= 44000)
       pscaler++;
     if (pscaler > maxscaler)
       pscaler = maxscaler;
@@ -325,19 +331,22 @@ handle_key(unsigned char c)
     clear();
     break;
   case '9':
-    if (scope.rate == 8800) {
-				/* average samples into each pixel */
-    } else if (scope.rate == 22000) {
-      scope.rate = 8800;
-      check_status(ioctl(snd, SOUND_PCM_SYNC, 0), __LINE__);
-      check_status(ioctl(snd, SOUND_PCM_WRITE_RATE, &scope.rate), __LINE__);
-      check_status(ioctl(snd, SOUND_PCM_READ_RATE, &actual), __LINE__);
-    } else if (pscaler == scaler) {
-      scope.rate = 22000;
-      check_status(ioctl(snd, SOUND_PCM_SYNC, 0), __LINE__);
-      check_status(ioctl(snd, SOUND_PCM_WRITE_RATE, &scope.rate), __LINE__);
-      check_status(ioctl(snd, SOUND_PCM_READ_RATE, &actual), __LINE__);
-    } else
+    if (scope.run)
+      if (scope.rate == 8800) {
+	/* average several samples into each pixel */
+      } else if (scope.rate == 22000) {
+	scope.rate = 8800;
+	check_status(ioctl(snd, SOUND_PCM_SYNC, 0), __LINE__);
+	check_status(ioctl(snd, SOUND_PCM_WRITE_RATE, &scope.rate), __LINE__);
+	check_status(ioctl(snd, SOUND_PCM_READ_RATE, &actual), __LINE__);
+      } else if (pscaler == scaler) {
+	scope.rate = 22000;
+	check_status(ioctl(snd, SOUND_PCM_SYNC, 0), __LINE__);
+	check_status(ioctl(snd, SOUND_PCM_WRITE_RATE, &scope.rate), __LINE__);
+	check_status(ioctl(snd, SOUND_PCM_READ_RATE, &actual), __LINE__);
+      } else
+	pscaler--;
+    else if (pscaler > scaler)
       pscaler--;
     scope.scale  = *pscaler;
     clear();
@@ -362,18 +371,18 @@ handle_key(unsigned char c)
       scope.color = 0;
     break;
   case '-':
-    scope.color--;
-    if (scope.color < 0)	/* decrease color */
+    scope.color--;		/* decrease color */
+    if (scope.color < 0)
       scope.color = 15;
     break;
   case '.':
-    if (scope.dma < 3) {		/* double dma */
+    if (scope.dma < 3) {	/* double dma */
       scope.dma <<= 1;
       init_sound_card(0);
     }
     break;
   case ',':
-    if (scope.dma > 1) {		/* half dma */
+    if (scope.dma > 1) {	/* half dma */
       scope.dma >>= 1;
       init_sound_card(0);
     }
@@ -384,11 +393,11 @@ handle_key(unsigned char c)
       scope.mode = 0;
     clear();
     break;
-  case '[':
+  case '&':
     scope.grat = !scope.grat;	/* graticule on/off */
     clear();
     break;
-  case ']':
+  case '*':
     scope.behind = !scope.behind; /* graticule behind/in front of signal */
     draw_text(1);
     break;
@@ -477,12 +486,9 @@ get_data()
   read(snd, buffer, h_points * 2);
   buff = buffer;
   for(i=0; i < h_points; i++) {
-    ch[0].data[i] = (int)(*buff++) - 128;
-    ch[1].data[i] = (int)(*buff++) - 128;
+    ch[0].data[i] = (short)(*buff++) - 128;
+    ch[1].data[i] = (short)(*buff++) - 128;
   }
-  funcarray[ch[2].func](2);
-  funcarray[ch[3].func](3);
-  measure_data(&ch[scope.select]);
 }
 
 /* main program */
