@@ -209,3 +209,26 @@ and believe this will work nicely.
 	because not only would it look at lot different, it'd now
 	be built around a widget, that should be put in a shared library,
 	that could be used in other applications.
+
+
+99	mini TODOs
+
+	new defaults - default device, default min update interval
+	Bitscope dialog - test it and finish it
+	memory utilization
+	figure out how to use stock buttons on Glade dialogs
+	count.dat
+	anti-jitter in COMEDI's rt_timer
+	max rate option in COMEDI's rt_timer
+	fix multi-sample scan delay in COMEDI's rt_timer
+	investigate RTAI scheduling issues - how badly do we need anti-jitter?
+	ability to resize to a small(er) window
+	COMEDI gain control
+	shouldn't lose display information when moving signal up/down
+	time scale normalization - when it's done and how
+	noise causing false triggers on 16-bit data sources
+	should we note clipping?  older versions did
+	COMEDI rate logic
+	make sure -m option works (screen size)
+	cursors - should always show same voltage left/right
+	cursors - move around if sampling rate on active channel changes
