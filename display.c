@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 1.54 2000/04/09 04:26:39 twitham Exp $
+ * @(#)$Id: display.c,v 1.55 2000/04/22 01:59:16 twitham Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -444,12 +444,12 @@ draw_data()
 	if (scope.mode < 2)	/* point / point accumulate */
 	  for (bit = start ; bit <= end ; bit++) {
 	    prev = -1;
-	    bitoff = bit * 32 - end * 16 + 8;
+	    bitoff = bit * 16 - end * 8 + 4;
 	    for (i = 0 ; i < h_points - 100 - l ; i++) {
 	      if ((time = i * num / 10000) > prev && time < h_points - 1)
 		DrawPixel(i + l,
 			  off - (bit < 0 ? samples[time]
-			   : (bitoff - (samples[time] & (1 << bit) ? 0 : 16)))
+			   : (bitoff - (samples[time] & (1 << bit) ? 0 : 8)))
 			  * mult / div);
 	      if (time > prev) prev = time;
 	    }
@@ -458,12 +458,12 @@ draw_data()
 	  for (bit = start ; bit <= end ; bit++) {
 	    prev = -1;
 	    X = 0;
-	    bitoff = bit * 32 - end * 16 + 8;
+	    bitoff = bit * 16 - end * 8 + 4;
 	    for (i = 0 ; i < h_points - 100 - l ; i++) {
 	      if ((time = i * num / 10000) > prev && time < h_points - 1) {
 		x = i + l;
 		y = off - (bit < 0 ? samples[time]
-			   : (bitoff - (samples[time] & (1 << bit) ? 0 : 16)))
+			   : (bitoff - (samples[time] & (1 << bit) ? 0 : 8)))
 		  * mult / div;
 		if (X) {
 		  if (bit < 0)
