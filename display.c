@@ -1,30 +1,26 @@
 /*
- * @(#)$Id: display.c,v 1.49 1997/06/11 01:07:58 twitham Rel $
+ * @(#)$Id: display.c,v 1.50 1999/08/26 04:47:22 twitham Exp $
  *
- * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
+ * Copyright (C) 1996 - 1999 Tim Witham <twitham@quiknet.com>
  *
  * (see the files README and COPYING for more details)
  *
- * This file implements display code common to console and X11
+ * This file implements the UI-independent display code
  *
  */
 
 #include <stdio.h>
+#include <time.h>
 #include "oscope.h"		/* program defaults */
 #include "display.h"
 #include "func.h"
 #include "proscope.h"
 
-void	show_data();		/* other function prototypes */
+void	show_data();
 int	vga_write();
-void	DrawPixel();		/* these are defined in */
-void	DrawLine();		/* a display-specific file */
-void	SetColor();		/* like gr_vga.c or gr_sx.c */
 void	init_widgets();
 void	fix_widgets();
 void	clear_display();
-void	SyncDisplay();
-void	AddTimeOut();
 
 int	triggered = 0;		/* whether we've triggered or not */
 int	data_good = 1;		/* whether data may be "stale" or not */
@@ -59,9 +55,9 @@ void
 message(char *message, int clr)
 {
   vga_write("                                                  ",
-	    h_points / 2, v_points / 2,
+	    h_points / 2, row(5),
 	    font, clr, TEXT_BG, ALIGN_CENTER);
-  vga_write(message, h_points / 2, v_points / 2,
+  vga_write(message, h_points / 2, row(5),
 	    font, clr, TEXT_BG, ALIGN_CENTER);
 }
 
@@ -70,7 +66,8 @@ void
 draw_text(int all)
 {
   static char string[81];
-  static int i, j, k;
+  static int i, j, k, frames = 0;
+  static time_t sec, prev;
   static Channel *p;
   static char *strings[] = {
     "Point",
@@ -216,7 +213,7 @@ draw_text(int all)
       vga_write("(()              ())", col(40), row(26),
 		font, KEY_FG, TEXT_BG, ALIGN_CENTER);
 
-      vga_write("(A-Z)", col(73), row(27), font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
+      vga_write("(A-W)", col(73), row(27), font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
       vga_write("Store", col(78), row(27),
 		font, p->color, TEXT_BG, ALIGN_RIGHT);
 
@@ -288,7 +285,7 @@ draw_text(int all)
   /* always draw the dynamic text */
   sprintf(string, "Period of %6d us = %5d Hz", p->time,  p->freq);
   vga_write(string, h_points/2, row(0), font, p->color, TEXT_BG, ALIGN_CENTER);
-  
+
   sprintf(string, " Max:%3d - Min:%4d = %3d Pk-Pk ",
 	  p->max, p->min, p->max - p->min);
   vga_write(string, h_points/2, row(1), font, p->color, TEXT_BG, ALIGN_CENTER);
@@ -309,6 +306,16 @@ draw_text(int all)
 	    ps.coupling ? ps.coupling : "?");
     vga_write(string, 100, row(27), font, mem[25].color, TEXT_BG, ALIGN_LEFT);
   }
+
+  time(&sec);
+  if (sec != prev) {		/* show frames per second refresh rate */
+    sprintf(string, "fps:%3d", frames);
+    vga_write(string, h_points - 100, row(2), font,
+	      TEXT_FG, TEXT_BG, ALIGN_RIGHT);
+    frames = 0;
+    prev = sec;
+  }
+  frames++;
 }
 
 /* clear the display and redraw all text */
@@ -474,7 +481,7 @@ show_data()
 }
 
 /* get and plot one screen full of data */
-void
+int
 animate(void *data)
 {
   clip = 0;
@@ -493,6 +500,7 @@ animate(void *data)
     exit(0);
   }
   AddTimeOut(MSECREFRESH, animate, NULL);
+  return FALSE;
 }
 
 /* [re]initialize graphics screen */
