@@ -1,10 +1,10 @@
-.\" @(#)$Id: oscope.1,v 1.8 1996/04/21 02:40:30 twitham Rel1_0 $
+.\" @(#)$Id: oscope.1,v 1.9 1996/08/03 22:37:05 twitham Rel1_1 $
 .\"
 .\" Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
 .\"
 .\" (see the files README and COPYING for more details)
 
-.TH OSCOPE 1 "April 24  1996" "Linux" "User Commands"
+.TH OSCOPE 1 "August  3  1996" "Linux" "User Commands"
 .SH NAME
 oscope xoscope \- Digital Oscilloscope for /dev/dsp
 .SH SYNOPSIS
@@ -127,10 +127,9 @@ available on channel 1 & 2.
 .B $
 Show the result of an external math command on the selected channel.
 You are prompted for the command.  The command must accept samples of
-channel 1 & 2 on stdin and write a new signal to stdout.  See
-oscope.perl and oscopefft.c in the distribution for examples of
-external math filter commands.  Not available on channel 1 & 2 or if
-your
+channel 1 & 2 on stdin and write a new signal to stdout.  See operl
+and offt.c in the distribution for examples of external math filter
+commands.  Not available on channel 1 & 2 or if your
 .B oscope
 can't display text.
 
@@ -245,13 +244,13 @@ previously saved by
 
 .SH EXAMPLES
 .TP 0.5i
-.B oscope -1 80 -2 -80 -3 0:1/100:1 -4 -160:1/100:2
+.B oscope -1 80 -2 -80 -3 0:1/5:6 -4 -160:1/5:7
 
 This runs
 .B oscope
 with channel 1 above and channel 2 below the center of the display.
 Also channel 3 and 4 are made visible to show the FFT of channel 1 and
-2 respectively at a reduced scale of 1/100.
+2 respectively at a reduced scale of 1/5.
 
 .TP 0.5i
 .B xoscope oscope.dat
@@ -285,21 +284,19 @@ plot "oscope.dat" using 0:1, "oscope.dat" using 0:2
 
 would plot the first and second columns of the "oscope.dat" data file.
 
-.SH PORTABILITY
+.SH ENVIRONMENT
+
+.TP 0.5i
+.B OSCOPEPATH
+The path to use when looking for external math commands.  If unset,
+the built-in default is used.
+
+.SH LIMITATIONS
 .B Oscope
 was written specifically for Linux, and uses the Linux sound driver
 and svgalib or libsx plotting routines.  You need a sound card capable
-of 44000 Hz sampling via the Linux kernel sound drivers.  It would
-probably be possible to port this to other systems by hacking oscope.c
-and display.c.
+of 44000 Hz sampling via the Linux kernel sound drivers.
 
-Enhancements that could be added: 16 bit sampling, single shot mode,
-envelope mode, X-Y mode, and log scales and window functions for the
-FFT.  If you really want a Spectrum Analyzer with more options, get
-"freq" by Philip VanBaren.
-
-.SH LIMITATIONS
-.PP
 Because it uses svgalib,
 .B oscope
 must be run as root or be setuid to root.
@@ -314,7 +311,7 @@ Instead you're given the scale in pixels per sample unit.
 The display may not be able to keep up if you give it too much to
 plot, depending on your sound card, graphics card, and processor
 speed.  External math commands are particularly expensive since the
-kernel must then spread the available CPU cycles across multiple
+kernel must then split the available CPU cycles across multiple
 processes.  Floating point math is used only by the FFT, so a math
 coprocessor shouldn't make much difference.  To maximize refresh
 speed, hide all unneeded channels, use point or point accumulate mode,
