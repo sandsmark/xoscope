@@ -1,239 +1,247 @@
-.\" This file Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
-.\"           Copyright (C) 1996 Tim Witham (twitham@pcocd2.intel.com)
+.\" Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
+.\" Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
 .\"
-.\" It may be distributed under the GNU Public License, version 2, or
-.\" any higher version.  See section COPYING of the GNU Public license
-.\" for conditions under which this file may be redistributed.
+.\" (see scope.c and the file COPYING for more details)
 .\"
-.\" @(#)$Id: oscope.1,v 1.4 1996/01/31 07:40:37 twitham Exp $
+.\" @(#)$Id: oscope.1,v 1.5 1996/03/02 07:03:47 twitham Exp $
 
-.TH OSCOPE 1 "January 3  1996" "Linux" "User Commands"
+.TH OSCOPE 1 "March 1  1996" "Linux" "User Commands"
 .SH NAME
-oscope \- Software Oscilloscope
+oscope xoscope \- Digital Oscilloscope for /dev/dsp
 .SH SYNOPSIS
-oscope [-1|-2] [-r<rate>] [-s <scale>] [-c<colour>] [-t<trigger>] \
-[-m<mode>] [-d<dma divisor>] [-p|-l] [-g] [-b] [-v]
+oscope [oscope options]
+.br
+xoscope [X toolkit options] [oscope options]
 
 .SH DESCRIPTION
 
 .B Oscope
-is a simple software emulation of an oscilloscope. It graphically
-displays voltage as a function of time. The input is via a sound card
-using the kernel sound device /dev/dsp.
-
-The svgalib library is used to implement a real-time waveform display.
-
-.PP
-.SH "COMMAND\-LINE OPTIONS"
-Use
-.B oscope -h
-(an invalid option) to produce a usage message showing these options,
-their default values, and key equivalents.  All options can be
-interactively changed, see the
-.B RUN-TIME CONTROLS
-section below.
-
-.TP 0.5i
-.B -1
-.TP 0.5i
-.B -2
-These options are mutually exclusive. In single channel mode (-1), one
-of the audio channels is sampled and plotted.  In dual channel mode
-(-2), both audio channels are sampled and plotted in two colors.  Dual
-channel mode is slower.
-
-.TP 0.5i
-.B -r <rate>
-Specify the sampling rate in samples per second. The upper and lower
-limits depend on the sound card you have.
-
-.TP 0.5i
-.B -s <scale>
-Sets the time scale factor in number of horizontal pixels per sample.
-This can be 1, 2, 4, 8, or 16.
-
-.TP 0.5i
-.B -t <trigger>
-Sets the trigger level.
-.B oscope
-will wait until it receives a signal "edge" at this level. It should
-be in the range 0 - 255.  -1 causes
-.B oscope
-to run without waiting for a trigger. Note that the top of the display
-is 0, the bottom is 255, and the midpoint is 128.
-
-.TP 0.5i
-.B -c <colour>
-Sets the channel 1 trace colour. The colours available depend on the
-graphics mode selected.  Channel 2 is drawn in colour+1 and the
-graticule is drawn in colour+2.
-
-.TP 0.5i
-.B -m <mode>
-Sets the graphics mode to use. The modes are listed in the svgalib
-header file "vga.h". If you select a graphics mode with a vertical
-resolution of less than 255 you may not be able to display the entire
-waveform. Don't use graphics modes that are not supported by your
-monitor.
-
-.TP 0.5i
-.B -d <dma divisor>
-Sets the divisor for DMA buffer size. Valid numbers are 1, 2, or 4.
-The kernel sound driver will divide it's DMA buffer by this factor.
-The value 4 usually gives the fastest display rate.
-
-.TP 0.5i
-.B -p
-.TP 0.5i
-.B -l
-These options are mutually exclusive. In point mode (-p) the graph is
-shown as individual data points. In line mode (-l) the points are
-joined using lines. Line mode gives a better display, but is somewhat
-slower than point mode.
-
-.TP 0.5i
-.B -g
-Toggles a graticule.  This draws a frame around the waveform and adds
-a time scale.  The time scale is always 5 millisecond major divisions
-and 1 millisecond minor divisions.  The minor divisions in turn have
-micro divisions at 0.1 millisecond.  If trigger is enabled, a small
-tick mark is also shown on the graticule corresponding to the trigger
-level.  This option slows the display down but is needed to read a
-time period or frequency.
-
-.TP 0.5i
-.B -b
-Toggles whether the graticule is drawn behind or in front of the
-signals.  Obviously has no effect if the graticule is not on.
-
-.TP 0.5i
-.B -v
-Toggles
-.B oscope
-verbose mode.  Key press and option information is displayed on
-standard output.
+is a digital real-time oscilloscope. It graphically displays amplitude
+as a function of time. The input is via a sound card using the kernel
+sound device /dev/dsp.
 
 .PP
 .SH "RUN\-TIME CONTROLS"
 .PP
 
-While the program is running, it accepts the following single key
-commands:
+.B Oscope
+is an interactive program and can be completely controlled from the
+keyboard at run-time.  Each available key is shown on the screen in
+(parentheses).  The following single key commands are available:
 
 .TP 0.5i
-.B 1/2
-Toggle single/dual channel mode.  Single channel mode is faster.
+.B Escape
+Immediately quit the program.
 
 .TP 0.5i
-.B R/r
-Increase/decrease sampling rate 10%.  Use this to give the signals
-more or less detail.  This also stretches or shrinks the time scale on
-the graticule.
+.B Enter
+Clear and refresh the entire screen.
 
 .TP 0.5i
-.B S/s
-Increase/decrease time scale by a factor of 2.  Use this to zoom
-in/out or to get a more readable graticule.  Increasing scale speeds
-up the display considerably.
+.B Space
+Toggle Run/Stop: pauses or continues the acquiring of new samples.
 
 .TP 0.5i
-.B T/t
-Increase/decrease trigger level 10 units.  Use this to stabilize a
-"moving" waveform.  Pushing the trigger level beyond the limit of the
-signal will cause the display to "freeze" as it waits for trigger.  In
-this state, each key press will force a trigger.  Pushing the trigger
-off the vertical axis will disable the trigger.  Pressing
-.B T/t
-once again will re-enable the trigger at mid-scale.
+.B !
+Cycle the plotting mode: point, point accumulate, line, or line
+accumulate.
 
 .TP 0.5i
-.B C/c
-Increment/decrement colour used.  This could make the display easier
-to see.
+.B 9/0
+Increase/decrease the Sec/Div horizontal time scale.
 
 .TP 0.5i
-.B M/m
-Increment/decrement video mode.  USE WITH CAUTION; using video modes
-not supported by your video card or monitor will not work.
+.B -/=
+Decrease/increase the trigger level.
 
 .TP 0.5i
-.B D/d
-Increase/decrease DMA divisor.  The higher values will usually give
+.B _
+Toggle the trigger channel: 1 or 2.
+
+.TP 0.5i
+.B +
+Cycle the trigger type: none, rising edge, or falling edge.
+
+.TP 0.5i
+.B &
+Cycle the graticule style: none, minor divisions only, or minor and
+major divisions.
+
+.TP 0.5i
+.B *
+Toggle the graticule position: behind or in front of the signals.
+
+.TP 0.5i
+.B (/)
+Decrease/increase the graticule color.
+
+.TP 0.5i
+.B ,/.
+Decrease/increase the DMA divisor.  Higher values will usually give
 the fastest display rate.
 
 .TP 0.5i
-.B P/L/p/l
-Toggle point/line mode.  Use this to speed up/slow down the display or
-to better visualize the signals.
+.B 1\-8
+Select the corresponding channel.  Auto-measurements are displayed.
+Channel 1 and 2 are always the Left and Right sound channels, as
+controlled by an external mixer program.  Channel 3 through 8 are
+software channels that can each display a math function or the
+contents of one of 26 memory buffers.  The remaining single key
+commands operate on the currently selected channel:
 
 .TP 0.5i
-.B G/g
-Toggle on/off graticule.  Turning off the graticule speeds up the
-display.
+.B Tab
+Toggle visibility: Hide or show the selected channel.
 
 .TP 0.5i
-.B B/b
-Toggle graticule behind/in front of signals.
+.B {/}
+Decrease/Increase vertical position of the selected channel.
 
 .TP 0.5i
-.B V/v
-Toggle verbose usage log on/off to stdout.  The verbose log shows one
-line of current sampling rate and options for each key pressed.
+.B [/]
+Decrease/Increase vertical scale of the selected channel.
 
 .TP 0.5i
-.B <space>
-Pause the display until another key is pressed.  Use this to "freeze"
-the display.
+.B ;/:
+Increase/Decrease the math function of the selected channel.  Not
+available on channel 1 & 2.
 
 .TP 0.5i
-.B Q/q
-Quit the program.
+.B A-Z
+Store the currently selected channel into the corresponding memory
+buffer.  This is only available when the sampling rate is 44000.
+
+.TP 0.5i
+.B a-z
+Recall the corresponding memory buffer onto the currently selected
+channel.  Not available on channel 1 & 2.
+
+.PP
+.SH "MOUSE CONTROLS"
+.B Xoscope
+adds mouse controls around the edges of the scope area.  These are
+color coded and should be self-explanatory.  They perform the same
+functions as the corresponding keyboard commands above.
+
+.PP
+.SH "COMMAND\-LINE OPTIONS"
+
+.TP 0.5i
+.B -h
+Produce a usage message showing these startup options with their
+default values, then exit.
+
+.TP 0.5i
+.B -# <code>
+Specify the startup conditions of the channel.  # is a channel number
+from 1 to 8.  Code can have up to three fields, separated by colons:
+position[:scale[:function#]].  Position is the number of pixels above
+(positive) or below (negative) the center of the display.  Scale is a
+valid scaling factor from 1/200 to 200.  Function number is the math
+function to perform on the channel.
+
+.TP 0.5i
+.B -r <rate>
+Specify the sampling rate in samples per second.  Current valid values
+are 8800, 22000, or 44000.
+
+.TP 0.5i
+.B -s <scale>
+Sets the time scale factor, 1, 2, 5, 10, 20, 100, or 200.
+
+.TP 0.5i
+.B -t <trigger>
+Sets the trigger level, -128 to 127.
+.B oscope
+will wait until it receives a signal "edge" at this level.  255 = no
+trigger.
+
+.TP 0.5i
+.B -c <color>
+Sets the graticule color, 0 - 16.
+
+.TP 0.5i
+.B -m <mode>
+Sets the graphics mode to use on the console.  For xoscope, use the
+more flexible -geometry instead.  0 = 640x480x16, 1 = 800x600x16, 2 =
+1024x768x16, 3 = 1280x1024x16.  WARNING: not all modes are supported
+by all video cards; don't use unsupported modes!
+
+.TP 0.5i
+.B -d <dma divisor>
+Sets the divisor for DMA buffer size, 1, 2, or 4.  The kernel sound
+driver will divide it's DMA buffer by this factor.  The value 4
+usually gives the fastest display rate.
+
+.TP 0.5i
+.B -f
+Font to use.  For oscope, these are listed in
+/usr/lib/kbd/consolfonts.  For xoscope, they're the output of
+xlsfonts.  The default should work best.
+
+.TP 0.5i
+.B -p <type>
+Plot type.  0 = point, 1 = point accumulate, 2 = line, 3 = line
+accumulate.
+
+.TP 0.5i
+.B -g <style>
+Graticule style.  0 = none, 1 = minor divisions only, 2 = minor and
+major divisions.
+
+.TP 0.5i
+.B -b
+Whether the graticule is drawn behind or in front of the signals.
+
 
 .SH EXAMPLES
 .TP 0.5i
-.B oscope -r 44000 -l -t 128
+.B xoscope -1 80 -2 -80 -3 0:1/100:1 -4 -160:1/100:2
 
 This runs
 .B oscope
-at a 44kHz sampling rate, in line mode, with a trigger set at
-mid-scale.
+with channel 1 above and channel 2 below the center of the display.
+Also channel 3 and 4 are made visible to show the FFT of channel 1 and
+2 respectively at a reduced scale of 1/100.
 
 .SH PORTABILITY
 .B Oscope
 was written specifically for Linux, and uses the Linux sound driver
-and svgalib plotting routines. Obviously you need a sound card, VGA
-graphics, and the Linux kernel sound drivers.
+and svgalib or libsx plotting routines.  You need a sound card capable
+of 44000 Hz sampling via the Linux kernel sound drivers.
 
 .SH BUGS/LIMITATIONS
 .PP
 This should be considered BETA software.  It was basically written for
-fun but may actually be useful for audio frequencies only. It may have
-bugs, and it could use a better user interface. Unfortunately, adding
-anything to the display (controls, etc...) would slow it down
-considerably.
+fun but should actually be useful for audio frequencies only.
 
 Because it uses svgalib,
 .B oscope
 must be run as root or setuid to root.
+.B xoscope
+doesn't have this restriction.
 
-The display will probably not be able to keep up at higher sampling
-rates, depending on your sound card, graphics card, and processor
-speed. No floating point math is used, so a math coprocessor doesn't
-make any difference.
+The display may not be able to keep up when you give it too much to
+plot, depending on your sound card, graphics card, and processor
+speed.  Floating point math is used only by the FFT, so a math
+coprocessor shouldn't make much difference.  To optimize refresh
+speed, hide all unneeded channels, use point or point accumulate mode,
+zoom in on Sec/Div as much as possible, and hide the graticule.
 
 You have to use an external mixer program to select the input source
-device, level, etc... (if you use a microphone the default should
-work).
+device, level, etc.  Since these unknowns affect the amplitude, there
+is no reference to voltage on the Y axis; it is in fact, unknown.
+Instead you're given the scale in pixels per sample unit.
 
-I can think of a bunch of enhancements that might be fun to add: 16
-bit, single shot mode, envelope mode, spectrum analyzer (FFT) mode,
-graphical controls (mouse), and storage mode (with waveform
-save/load), but it would probably run too slowly.
+Enhancements that could be added: 16 bit sampling, single shot mode,
+envelope mode, log scales and window functions for the FFT.  If you
+really want a Spectrum Analyzer with more options, get "freq" by
+Philip VanBaren.
 
 .SH AUTHOR
 .B Oscope
-was written by Jeff Tranter (Jeff_Tranter@Mitel.COM) and later
-enhanced by Tim Witham (twitham@pcocd2.intel.com).
+was written by Tim Witham (twitham@pcocd2.intel.com), based on the
+original "scope" by Jeff Tranter (Jeff_Tranter@Mitel.COM).
 .B Oscope
 is released under the conditions of the GNU General Public License.
-See the file COPYING and notes in the source code for details.
+See the files README and COPYING in the distribution for details.
