@@ -1,7 +1,7 @@
 /*
- * @(#)$Id: display.c,v 1.52 1999/08/29 02:05:01 twitham Exp $
+ * @(#)$Id: display.c,v 1.53 2000/03/03 22:11:01 twitham Rel $
  *
- * Copyright (C) 1996 - 1999 Tim Witham <twitham@quiknet.com>
+ * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
  * (see the files README and COPYING for more details)
  *
@@ -138,13 +138,6 @@ draw_text(int all)
       vga_write("Help", col(79), 0, font, TEXT_FG, TEXT_BG, ALIGN_RIGHT);
     }
 
-    sprintf(string, "%s Trigger @ %d", trigs[scope.trige], scope.trig - 128);
-    vga_write(string, col(40), row(2),
-	      font, ch[scope.trigch].color, TEXT_BG, ALIGN_CENTER);
-    vga_write(strings[scope.mode], 100, 62, font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
-    vga_write(scope.run ? (scope.run > 1 ? "WAIT" : " RUN") : "STOP",
-	      h_points - 100, 62, font, TEXT_FG, TEXT_BG, ALIGN_RIGHT);
-
     /* sides of graticule */
     for (i = 0 ; i < CHANNELS ; i++) {
 
@@ -236,6 +229,55 @@ draw_text(int all)
       vga_write("(", col(26), row(28), font, KEY_FG, TEXT_BG, ALIGN_LEFT);
       vga_write(")", col(53), row(28), font, KEY_FG, TEXT_BG, ALIGN_LEFT);
     }
+
+    fix_widgets();
+    if (scope.rate != rate || scope.trige != trige)
+      erase_data = 1;		/* bogus data if user just tweaked these */
+    rate = scope.rate;
+    trige = scope.trige;
+    prev = -1;
+    show_data();
+    return;			/* show_data will call again to do the rest */
+  }
+
+  /* always draw the dynamic text */
+  sprintf(string, "Period of %6d us = %5d Hz", p->time,  p->freq);
+  vga_write(string, h_points/2, row(0), font, p->color, TEXT_BG, ALIGN_CENTER);
+
+  sprintf(string, " Max:%3d - Min:%4d = %3d Pk-Pk ",
+	  p->max, p->min, p->max - p->min);
+  vga_write(string, h_points/2, row(1), font, p->color, TEXT_BG, ALIGN_CENTER);
+
+  vga_write(triggered ? " Triggered " : "? TRIGGER ?", h_points/2, row(3),
+	    font, ch[scope.trigch].color, TEXT_BG, ALIGN_CENTER);
+
+  if (ch[0].signal->rate != ch[1].signal->rate) {
+    sprintf(string, "WARNING: math(%d,%d) is bogus!",
+	    ch[0].signal->rate, ch[1].signal->rate);
+    vga_write(string, h_points/2, 62, font, KEY_FG, TEXT_BG, ALIGN_CENTER);
+  }
+
+  if (ps.found) {		/* ProbeScope on ? */
+    sprintf(string, "%s%g V %s      ", ps.flags & PS_OVERFLOW ? "/\\"
+	    : ps.flags & PS_UNDERFLOW ? "\\/ " : "",
+	    (float)ps.dvm * (float)ps.volts / 100,
+	    ps.coupling ? ps.coupling : "?");
+    vga_write(string, 100, row(27), font, mem[25].color, TEXT_BG, ALIGN_LEFT);
+  }
+
+  time(&sec);
+  if (sec != prev) {		/* fix "scribbled" text once a second */
+
+    sprintf(string, "%s Trigger @ %d", trigs[scope.trige], scope.trig - 128);
+    vga_write(string, col(40), row(2),
+	      font, ch[scope.trigch].color, TEXT_BG, ALIGN_CENTER);
+    vga_write(strings[scope.mode], 100, 62, font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
+    vga_write(scope.run ? (scope.run > 1 ? "WAIT" : " RUN") : "STOP",
+	      h_points - 100, 62, font, TEXT_FG, TEXT_BG, ALIGN_RIGHT);
+    sprintf(string, "fps:%3d", frames);
+    vga_write(string, h_points - 100, row(2), font,
+	      TEXT_FG, TEXT_BG, ALIGN_RIGHT);
+
     i = 1000 * scope.div / scope.scale;
     sprintf(string, "%d %cs/div", i > 999 ? i / 1000 : i, i > 999 ? 'm' : 'u');
     vga_write(string, col(40), row(25), font, TEXT_FG, TEXT_BG, ALIGN_CENTER);
@@ -275,45 +317,6 @@ draw_text(int all)
 		  font, j, TEXT_BG, ALIGN_RIGHT);
     }
 
-    fix_widgets();
-    if (scope.rate != rate || scope.trige != trige)
-      erase_data = 1;		/* bogus data if user just tweaked these */
-    rate = scope.rate;
-    trige = scope.trige;
-    show_data();
-    return;			/* show_data will call again to do the rest */
-  }
-
-  /* always draw the dynamic text */
-  sprintf(string, "Period of %6d us = %5d Hz", p->time,  p->freq);
-  vga_write(string, h_points/2, row(0), font, p->color, TEXT_BG, ALIGN_CENTER);
-
-  sprintf(string, " Max:%3d - Min:%4d = %3d Pk-Pk ",
-	  p->max, p->min, p->max - p->min);
-  vga_write(string, h_points/2, row(1), font, p->color, TEXT_BG, ALIGN_CENTER);
-
-  vga_write(triggered ? " Triggered " : "? TRIGGER ?", h_points/2, row(3),
-	    font, ch[scope.trigch].color, TEXT_BG, ALIGN_CENTER);
-
-  if (ch[0].signal->rate != ch[1].signal->rate) {
-    sprintf(string, "WARNING: math(%d,%d) is bogus!",
-	    ch[0].signal->rate, ch[1].signal->rate);
-    vga_write(string, h_points/2, 62, font, KEY_FG, TEXT_BG, ALIGN_CENTER);
-  }
-
-  if (ps.found) {		/* ProbeScope on ? */
-    sprintf(string, "%s%g V %s      ", ps.flags & PS_OVERFLOW ? "/\\"
-	    : ps.flags & PS_UNDERFLOW ? "\\/ " : "",
-	    (float)ps.dvm * (float)ps.volts / 100,
-	    ps.coupling ? ps.coupling : "?");
-    vga_write(string, 100, row(27), font, mem[25].color, TEXT_BG, ALIGN_LEFT);
-  }
-
-  time(&sec);
-  if (sec != prev) {		/* show frames per second refresh rate */
-    sprintf(string, "fps:%3d", frames);
-    vga_write(string, h_points - 100, row(2), font,
-	      TEXT_FG, TEXT_BG, ALIGN_RIGHT);
     frames = 0;
     prev = sec;
   }
@@ -445,7 +448,7 @@ draw_data()
 	else			/* line / line accumulate */
 	  for (i = 0 ; i < h_points - 100 - l ; i++) {
 	    if ((time = i * (p->signal->rate / 100) * scope.div
-		 / scope.scale / 440) > prev && time < h_points) {
+		 / scope.scale / 440) > prev && time < h_points - 1) {
 	      x = i + l; y = off - samples[time] * mult / div;
 	      if (X) DrawLine(X, Y, x, y);
 	      else DrawPixel(x, y);
