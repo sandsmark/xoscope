@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: proscope.c,v 1.3 1997/05/30 04:23:19 twitham Exp $
+ * @(#)$Id: proscope.c,v 1.4 1997/05/30 04:44:18 twitham Rel $
  *
  * Copyright (C) 1997 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -57,6 +57,7 @@ probescope()
     if (c < 0) {		/* byte available? no: */
       if (++try > 10 && byte <= 1) {
 	PSDEBUG("%s\n", "!");
+	byte = -1;
 	try = 999;		/* give up if we've retried ~ 4ms */
       } else {
 	PSDEBUG("%s", ".");
@@ -74,9 +75,9 @@ probescope()
 	}
 	while ((c = getonebyte()) > 0x7b && ++try < 280) {
 	}			/* suck all available sync/wait bytes */
-	if (ps.wait) {
-	  byte = -1;		/* return now if we're waiting */
-	  try = 999;
+	if (ps.wait || try >= 280) {
+	  byte = -1;		/* return now if we're waiting or timed out */
+	  try = 888;
 	} else if (c > -1) {	/* we have byte 1 now */
 	  byte = 1;
 	} else {		/* byte 1 could be next */
