@@ -1,46 +1,38 @@
 /*
- * @(#)$Id: fft.c,v 1.1 1996/04/16 03:59:25 twitham Exp $
+ * @(#)$Id: fft.c,v 1.2 1996/04/21 02:25:05 twitham Rel1_0 $
  *
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
  * (see the files README and COPYING for more details)
  *
- * This file implements an external fft function for oscope.
+ * This file implements internal & external FFT function for oscope.
  *
  */
 
-#include "stdio.h"
-#include "stdlib.h"
-#include "math.h"
+#include <math.h>
 #include "oscope.h"
 #include "fft.h"
-
-/* must be shorter than minimum screen width and multiple of 2 */
-#define FFTLEN	512
 
 /* for the fft function: x position to bin number map, and data buffer */
 int xmap[MAXWID];
 short fftdata[MAXWID];
-short indata[2][MAXWID];
-short outdata[MAXWID];
-int channel, samples;
 
-/* Fast Fourier Transform of channel sig */
-static inline void
-fft()
+/* Fast Fourier Transform of in to out */
+void
+fft(short *in, short *out)
 {
   static int i, bri;
   static long re, im, root, mask, it;
   static short *a, *b;
 
   a = fftdata;
-  b = indata[channel];
+  b = in;
   for(i = 0 ; i < MAXWID ; i++) {
     *a++=((long)(*b++)  * 32767) >> 7;
   }
   RealFFT(fftdata);
-  a = outdata;
-  for (i = 0 ; i < samples ; i++) {
+  a = out;
+  for (i = 0 ; i < h_points ; i++) {
     if (xmap[i] > -1) {
       bri = BitReversed[xmap[i]];
       re = fftdata[bri];
@@ -58,19 +50,11 @@ fft()
   }
 }
 
-int
-main(int argc, char **argv)
+/* initialize global buffers for FFT */
+void
+init_fft()
 {
-  short buff[sizeof(short)];
-  short *in[2], *out = outdata, *inmax;
-  int i, j = 1;
-
-  channel = 0;
-  if (argc > 1)
-    channel = ((j = atoi(argv[1])) == 2 ? 1 : 0);
-  samples = 640;
-  if (argc > 2)
-    samples = atoi(argv[2]);
+  int i;
 
   for (i = 0 ; i < MAXWID ; i++) {
     fftdata[i] = 0;
@@ -81,33 +65,4 @@ main(int argc, char **argv)
       xmap[i] = -1;
   }
   InitializeFFT(FFTLEN);
-
-  in[0] = indata[0];
-  in[1] = indata[1];
-  inmax = indata[0] + samples;
-
-  while (1) {
-    if ((i = read(0, buff, sizeof(short))) != sizeof(short))
-      exit(i);
-    *(in[0]) = (short)(*buff);
-    if (j) {
-      if ((i = read(0, buff, sizeof(short))) != sizeof(short))
-	exit(i);
-      *(in[1]) = (short)(*buff);
-    }
-
-    in[0]++;
-    in[1]++;
-    out++;
-    if (in[0] >= inmax) {
-      in[0] = indata[0];
-      in[1] = indata[1];
-      out = outdata;
-      fft();
-    }
-
-    if ((i = write(1, out, sizeof(short))) != sizeof(short))
-      exit(i);
-  }
-  EndFFT();
 }
