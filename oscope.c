@@ -1,7 +1,6 @@
 /*
- * @(#)$Id: oscope.c,v 1.48 1996/03/10 01:39:25 twitham Exp $
+ * @(#)$Id: oscope.c,v 1.49 1996/04/21 02:28:39 twitham Rel1_0 $
  *
- * Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
  * (see the files README and COPYING for more details)
@@ -55,7 +54,7 @@ usage()
 
 Startup Options  Description (defaults)
 -h               this Help message and exit
--# <code>        #=1-%d, code=pos[:scale[:func num or memory letter]] (0:1/1:0)
+-# <code>        #=1-%d, code=pos[:scale[:func#, mem letter, or cmd]] (0:1/1:0)
 -a <channel>     set the Active channel: 1-%d                  (%d)
 -r <rate>        sampling Rate in Hz: 8800,22000,44000        (%d)
 -s <scale>       time Scale: 1,2,5,10,20,100,200              (%d)
@@ -67,13 +66,14 @@ Startup Options  Description (defaults)
 -p <type>        Plot mode: 0=point, 1=accum, 2=line, 3=accum (%d)
 -g <style>       Graticule: 0=none,  1=minor, 2=major         (%d)
 -b               %s Behind instead of in front of %s
+file             %s file to load to restore settings and memory
 ",
 	  progname, CHANNELS, CHANNELS, DEF_A,
 	  DEF_R, DEF_S, DEF_T,
 	  DEF_C, scope.size, scope.dma,
 	  fonts(),		/* the font method for the display */
 	  scope.mode,
-	  scope.grat, def[scope.behind], def[!scope.behind]);
+	  scope.grat, def[scope.behind], def[!scope.behind], progname);
   exit(1);
 }
 
@@ -135,7 +135,8 @@ init_channels()
     ch[i].div = 1;
     ch[i].pos = 0;
     ch[i].show = (i < 2);
-    ch[i].func = i < 2 ? i : 2;
+    ch[i].func = i < 2 ? i : FUNCMEM;
+    ch[i].mem = 0;
   }
 }
 
@@ -263,15 +264,15 @@ handle_key(unsigned char c)
   case ';':
     if (scope.select > 1) {	/* next math function */
       p->func++;
-      if (p->func >= funccount)
-	p->func = 3;
+      if (p->func >= funccount || p->func < FUNCFFT1)
+	p->func = FUNCFFT1;
       clear();
     }
     break;
   case ':':
     if (scope.select > 1) {	/* previous math function */
       p->func--;
-      if (p->func <3)
+      if (p->func < FUNCFFT1)
 	p->func = funccount - 1;
       clear();
     }
@@ -370,6 +371,17 @@ handle_key(unsigned char c)
     if ((s = GetFile(NULL)) != NULL)
       writefile(s);
     break;
+  case '$':
+    if (scope.select > 1) {
+      if ((s = GetString("External command and args:",
+			 command[scope.select])) != NULL) {
+	strcpy(command[scope.select], s);
+	ch[scope.select].func = FUNCEXT;
+	ch[scope.select].mem = EXTSTART;
+	clear();
+      }
+    }
+    break;
   case '!':
     scope.mode++;		/* point, point accumulate, line, line acc. */
     if (scope.mode > 3)
@@ -455,10 +467,10 @@ main(int argc, char **argv)
     progname++;
   init_scope();
   init_channels();
+  init_math();
   opendisplay(argc, argv);	/* in display.c, calls parse_args */
   init_screen();
   init_sound_card(1);
-  init_math();
   filename = FILENAME;
   if (optind < argc)
     if (argv[optind] != NULL) {

@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.h,v 1.21 1996/03/10 01:39:46 twitham Exp $
+ * @(#)$Id: oscope.h,v 1.22 1996/04/21 02:28:48 twitham Rel1_1 $
  *
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -75,4 +75,7 @@ void
 handle_key(unsigned char);
 
 void
-parse_args(int argc, char **argv);
+parse_args(int, char **);
+
+char *
+GetString(char *, char *);
