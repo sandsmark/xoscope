@@ -9,7 +9,7 @@
  *
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
- * @(#)$Id: oscope.c,v 1.20 1996/01/03 05:41:24 twitham Exp $
+ * @(#)$Id: oscope.c,v 1.21 1996/01/19 07:12:34 twitham Exp $
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -43,7 +43,7 @@
  * - Linux kernel 1.2.10
  * - gcc 2.6.3
  * - svgalib 1.22
- * - SoundBlaster Pro
+ * - SoundBlaster 16
  * - ATI Win Turbo 2MB VRAM
  * - 100 MHz Intel Pentium(R) Processor, 32MB RAM
  */
@@ -57,6 +57,7 @@
 #include <sys/ioctl.h>
 #include <vga.h>
 #include <sys/soundcard.h>
+#include "fontutils.h"
 #include "scope.h"		/* program defaults */
 
 
@@ -71,6 +72,7 @@ int trigger = DEF_T;
 int colour = DEF_C;
 int mode = DEF_M;
 int dma = DEF_D;
+char fontname[64] = DEF_F;
 int point_mode = DEF_PL;
 int graticule = DEF_G;
 int behind = DEF_G;
@@ -96,6 +98,7 @@ int v_points;			/* points in vertical axis */
 int h_points;			/* points in horizontal axis */
 int offset;			/* vertical offset */
 int actual;			/* actual sampling rate */
+font_t font;			/* pointer to the font structure */
 
 /* display command usage on standard error and exit */
 void
@@ -103,7 +106,7 @@ usage()
 {
   fprintf(stderr, "usage: %s "
 	  "[-1|-2] [-r<rate>] [-s<scale>] [-t<trigger>] [-c<colour>]
-             [-m<mode>] [-d<dma divisor>] [-p|-l] [-g] [-b] [-v]
+             [-m<mode>] [-d<dma divisor>] [-f font] [-p|-l] [-g] [-b] [-v]
 
 Options          Runtime Keys   Description (defaults)
 -1               1      toggle  Single channel, opposite of -2  %s
@@ -114,6 +117,7 @@ Options          Runtime Keys   Description (defaults)
 -c <colour>      C +1   c -1    Channel 1 trace Colour          (default=%d)
 -m <mode>        M +1   m -1    SVGA graphics Mode USE CAUTION  (default=%d)
 -d <dma divisor> D *2   d /2    DMA buffer size divisor: 1,2,4  (default=%d)
+-f <font name>                  The font name as-in /usr/lib/kbd/consolefonts/
 -p               P  p   toggle  Point mode, opposite of -l      %s
 -l               L  l   toggle  Line  mode, opposite of -p      %s
 -g               G  g   toggle  turn %s Graticule of 5 msec major divisions
@@ -137,33 +141,34 @@ Options          Runtime Keys   Description (defaults)
 static inline void
 show_info(unsigned char c) {
   if (verbose) {
-    printf("%1c %5dHz:  %2s  -r %5d  -s %2d  -t %3d  -c %2d  -m %2d  -d %1d  "
-	   "%2s  %2s  %2s%s\n",
-	   c, actual,
-	   channels == 1 ? "-1" : "-2",
-	   sampling, scale, trigger, colour, mode, dma,
+    sprintf(error, "%1c %5dHz:  %2s  -r %5d  -s %2d  -t %3d  -c %2d  -m %2d  "
+	    "-d %1d  %2s  %2s  %2s%s",
+	    c, actual,
+	    channels == 1 ? "-1" : "-2",
+	    sampling, scale, trigger, colour, mode, dma,
+	    point_mode ? "-p" : "-l",
 
-	   point_mode ? "-p" : "-l",
-
-	   /* reverse logic if these booleans are on by default in scope.h */
+	    /* reverse logic if these booleans are on by default in scope.h */
 #if DEF_G
-	   graticule ? "" : "-g",
+	    graticule ? "" : "-g",
 #else
-	   graticule ? "-g" : "",
+	    graticule ? "-g" : "",
 #endif
 
 #if DEF_B
-	   behind ? "" : "-b",
+	    behind ? "" : "-b",
 #else
-	   behind ? "-b" : "",
+	    behind ? "-b" : "",
 #endif
 
 #if DEF_V
-	   verbose ? "" : "  -v"
+	    verbose ? "" : "  -v"
 #else
-	   verbose ? "  -v" : ""
+	    verbose ? "  -v" : ""
 #endif
-	   );
+	    );
+    vga_write(error,  COL(0), ROW(5),  &font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
+    printf("%s\n", error);
   }
 }
 
@@ -171,7 +176,7 @@ show_info(unsigned char c) {
 void
 parse_args(int argc, char **argv)
 {
-  const char     *flags = "12r:s:t:c:m:d:plgbv";
+  const char     *flags = "12r:s:t:c:m:d:f:plgbv";
   int             c;
 
   while ((c = getopt(argc, argv, flags)) != EOF) {
@@ -204,6 +209,9 @@ parse_args(int argc, char **argv)
     case 'd':			/* dma divisor */
       dma = strtol(optarg, NULL, 0);
       dma &= 0x0007;
+      break;
+    case 'f':			/* font name */
+      strcpy(fontname, optarg);
       break;
     case 'p':			/* point mode */
       point_mode = 1;
@@ -349,8 +357,9 @@ void
 init_screen(int firsttime)
 {
   if (firsttime) {
-    vga_disabledriverreport();
+/*     vga_disabledriverreport(); */
     vga_init();
+    vga_initfont (fontname, &font, 1, 1);
   }
   vga_setmode(mode);
   v_points = vga_getydim();
@@ -471,8 +480,10 @@ handle_key()
     verbose = !verbose;		/* verbose log on/off */
     break;
   case ' ':
+    vga_write("STOP",  COL(0), ROW(0),  &font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
     while (vga_getkey() <= 0)	/* pause until key pressed */
       ;
+    vga_write("RUN ",  COL(0), ROW(0),  &font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
     break;
   case 'q':
   case 'Q':			/* quit */
@@ -513,6 +524,7 @@ get_data()
   }
   /* now get the real data */
   read(snd, buffer + channels, (h_points * channels / scale - 2));
+  check_status(ioctl(snd, SNDCTL_DSP_RESET), __LINE__);
 }
 
 /* graph the data */
