@@ -1,0 +1,204 @@
+
+	[x]oscope infinite TODO list, in rough order of suggestion
+
+	This is a list of (most) everything that's been thought up or
+	suggested along with my comments.  I don't know how many of
+	them will ever get done or if some of them are even practical
+	without major work.
+
+	If you have suggestions not listed here, or have strong
+	opinions on the priorities of some of these features, please
+	let me know!  -Tim Witham <twitham@pcocd2.intel.com>
+
+
+1	16 bit sampling			(Jeff_Tranter@Mitel.Com)
+
+	Oscope would just divide by 256 to show 1/1 scale.  The
+	obvious advantage to this is better clarity when you zoom in
+	on signals of small amplitude, or for use with x10 probes.
+	For math to work, the size of everything would need doubled
+	from 16 to 32 bits to avoid overflow.
+
+
+2	single shot mode		(Jeff_Tranter@Mitel.Com)
+
+	This should be fairly easy to do and should be done.
+
+
+3	envelope mode			(Jeff_Tranter@Mitel.Com)
+
+	This only applies at slower sweep speeds, right?  See #23.
+
+
+4	make drawing area mouse aware	(Jeff_Tranter@Mitel.Com)
+
+	Be able to drag signals up and down for example.
+
+
+5	clean up the cluttered screen	(twitham@pcocd2.intel.com)
+
+	Tough to do unless I invent a smarter menu-driven interface.
+	And how do I do that on svgalib?  Maybe drop console support?
+	I could at least hide the (keys) and let them show up when you
+	hit a certain help key, say (?).  That's how freq does it.
+
+
+6	X-Y mode			(Grant_Siemers@ccm.fm.intel.com)
+
+	To be of most use, X and/or Y should be able to come from
+	memory or math.  This could be an external command as
+	described in the external spectrum analyzer idea, #16.
+
+
+7	smarter maximum sample rate	(twitham@pcocd2.intel.com)
+
+	If your sound card can do greater than 44kHz, oscope won't
+	currently take advantage of it.  It should determine the
+	optimum rate at run-time.  I used 44kHz because it was the
+	most my card could do at a one sample per pixel screen
+	resolution.  But, for example, if your card can do 88kHz it
+	could plot every other sample until you zoom in to get 1:1.
+
+
+8	trigger on math or memory	(twitham@pcocd2.intel.com)
+
+	You could hide 1 and 2 and use an external command as input.
+	Also allows you to trigger when 1 equals 2 or whatever.
+
+
+9	show pre-trigger samples	(twitham@pcocd2.intel.com)
+
+	Let user position trigger horizontally.  Remember samples
+	until we find trigger, then capture h_points - pos more.
+
+
+10	external command history	(twitham@pcocd2.intel.com)
+
+	Remember previous commands and make them available in a list.
+	Possibly record them all to the data file.
+
+
+11	vertical scale calibration	(Grant_Siemers@ccm.fm.intel.com)
+
+	Ask user to apply a signal of known amplitude and use the
+	result to correctly label voltage on the Y axis.  I wonder how
+	many folks could actually do this?
+
+
+12	channel colors			(Grant_Siemers@ccm.fm.intel.com)
+
+	Let user customize the colors of the channels.
+
+
+13	redefine external interface	(Sean_Eilert@ccm.fm.intel.com)
+
+	Let user decide which signals to pass to external command.
+	This lets you do math on memory or on other math.  Enables you
+	to ask questions like what is the difference between this
+	signal and a previous reference in memory?
+
+	There would need to be a command protocol established on the
+	pipe.  This could also mark the trigger points so externals
+	could "sync" correctly after window resizing.
+
+
+14	redefine math			(twitham@pcocd2.intel.com)
+
+	Let internal math operate on arbitrary channels.
+	
+
+15	autosetup			(Sean_Eilert@ccm.fm.intel.com)
+
+	Auto-find one period and set the time scale appropriately.
+
+
+17	no hard-wired inputs		(twitham@pcocd2.intel.com)
+
+	Disconnect the "hard-wiring" of Left and Right sound inputs to
+	channel 1 and 2.  Make all display channels equivalent.  This
+	could enable the sound card to become optional and make it
+	easier to add other types of input "devices" to any channel.
+
+
+18	signal input from files		(twitham@pcocd2.intel.com)
+
+	Read input signal from a file and loop over it.  You could
+	generate perfect test signals in software, save them to files,
+	then use oscope to see them or do math on them.
+
+
+19	serial "Probe Scope" input	(twitham@pcocd2.intel.com)
+
+	Radio Shack now has an affordable 20 MHz "Probe Scope" that
+	can send samples out a serial cable to PC software.
+	Unfortunately, it is only 6 bit.  It would still be fun and
+	useful to support it as an input device, assuming I could
+	figure out its' protocol.  Oscope would just multiply by 4 to
+	get to the 1:1 scale.  Of course the time scaling would also
+	need to be reworked.  Then oscope would be able to do 20 MHz!
+
+
+22	increase time/div range		(twitham@pcocd2.intel.com)
+
+	Currently, the slowest sweep speed is 1 sample per pixel for
+	one screen full.  Slower sweeps could be done by skipping
+	samples, averaging, etc.  Will need to plot a fraction of the
+	screen then sample and plot more beyond the first, instead of
+	the current gather all, plot all loop.
+
+
+23	more aquisition modes		(twitham@pcocd2.intel.com)
+
+	With #22, we could do various modes like peak detect,
+	envelope, average.  I'm thinking all samples could really be
+	stored in memory in which case these would really be display
+	modes.  That is, how you see a combination of samples
+	represented at one horizontal pixel position on the screen.
+
+
+24	port to other OSs		(twitham@pcocd2.intel.com)
+
+	Yack!  Might already work on other unixes.  I need to pull the
+	soundcard specifics out to a separate file like Philip did for
+	freq.  Display stuff is already modular; just write a new file
+	like x11.c and put more #ifdefs in display.c.
+
+25	separate sample / display buffers	(twitham@pcocd2.intel.com)
+
+	Internally, collect samples in a different buffer and then
+	move them into a separate waveform buffer.  This would greatly
+	simplify implementation of several of the above features.
+
+	------------------------------------------------------------
+
+
+	These are items that were in the TODO list above but are now
+	done, as of the oscope version listed.
+
+
+16	external spectrum analyzer	(Sean_Eilert@ccm.fm.intel.com)
+
+DONE	For xoscope, modify Philip VanBaren's xfreq to be an external
+v1.1	command, displaying the frequency domain in another window!
+	This idea could be used for X-Y also.  Of course it only works
+	with a windowing system (X11).
+
+
+20	external command OSCOPEPATH	(twitham@pcocd2.intel.com)
+
+DONE	Maybe oscope should look for external commands in known
+v1.1	directories so they don't have to be on the users' $PATH.
+	There could be a default that the user can override with an
+	environment variable.  This would simply modify the PATH
+	environment variable for the subprocesses.
+
+
+21	increase "horizontal resolution"	(twitham@pcocd2.intel.com)
+
+DONE	When "zoomed in" on a high frequency signal, display pixels
+v1.1	are skipped, resulting in a lousy horizontal resolution of
+	roughly 25 micro seconds.  For repetitive signals, this could
+	be improved by "estimating" where the trigger really was and
+	shifting the signal an appropriate amount horizontally before
+	plotting.  In conjunction with dot accumulate, this would plot
+	more of the horizontal pixels and produce a cleaner picture.
