@@ -1,4 +1,4 @@
-# @(#)$Id: Makefile,v 1.9 1996/01/31 07:55:06 twitham Exp $
+# @(#)$Id: Makefile,v 1.10 1996/02/04 22:01:23 twitham Exp $
 
 # Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
 # Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
@@ -7,41 +7,41 @@
 
 # we'll assume you want both console-based oscope and X11-based xoscope
 TARGET	= oscope xoscope
+MISC	= -lvgamisc
 
 # configuration defines
 
-# uncomment this line if you don't have libvgamisc from the g3fax package
+# uncomment these lines if you don't have libvgamisc from the g3vga package
 #DFLAGS	= -DNOVGAMISC
+#MISC	=
 
 # uncomment this line if you don't want console-based oscope
-#TARGET = xoscope
+#TARGET	= xoscope
 
-# uncomment these 2 if you don't have libsx or if you don't want xoscope
-#EFLAGS	= -DNOSX
+# uncomment this line if you don't have libsx or if you don't want xoscope
 #TARGET	= oscope
 
-# where to install:
+# where to install (/bin and /man/man1 will be appended):
 PREFIX	= /usr/local
 
 # compiler
 CC	= gcc
 
 # compiler flags
-CFLAGS	= $(DFLAGS) $(EFLAGS) \
-		-Wall -O4 -fomit-frame-pointer -funroll-loops -m486
+CFLAGS	= $(DFLAGS) -Wall -O4 -fomit-frame-pointer -funroll-loops -m486
 
 # loader
 LD	= gcc
 
 # load flags
-LDFLAGS = -s
+LDFLAGS	= -s
 
 # nothing should need changed below here
 ############################################################
 
-VER	= 0.2
-SRC	= display.c oscope.c
-X11_SRC	= xdisplay.c oscope.c
+VER	= 0.3
+SRC	= display.c oscope.c func.c
+X11_SRC	= xdisplay.c oscope.c func.c
 
 OBJ	= $(SRC:.c=.o)
 X11_OBJ	= $(X11_SRC:.c=.o)
@@ -49,16 +49,17 @@ X11_OBJ	= $(X11_SRC:.c=.o)
 all:	$(TARGET)
 
 oscope:	$(OBJ)
-	$(CC) $(OBJ) $(LDFLAGS) -o oscope -lvgamisc -lvga
+	$(CC) $(OBJ) $(LDFLAGS) -o oscope $(MISC) -lvga
 	chmod u+s oscope
 
 xoscope:	$(X11_OBJ)
 	$(CC) $(X11_OBJ) $(LDFLAGS) -o xoscope \
 		-lsx -lXaw -lXt -lX11 -L/usr/X11/lib
 
-install: oscope
+install: all
 	cp -p *oscope $(PREFIX)/bin
 	chmod u+s $(PREFIX)/bin/oscope
+	chmod go-w $(PREFIX)/bin/oscope
 	cp *.1 $(PREFIX)/man/man1
 
 clean:
