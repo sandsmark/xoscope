@@ -1,7 +1,7 @@
 /*
- * @(#)$Id: sc_linux.c,v 1.8 1997/05/31 19:36:29 twitham Rel $
+ * @(#)$Id: sc_linux.c,v 1.9 1999/08/27 03:53:04 twitham Rel $
  *
- * Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
+ * Copyright (C) 1996 - 1999 Tim Witham <twitham@quiknet.com>
  *
  * (see the files README and COPYING for more details)
  *
@@ -19,6 +19,18 @@
 
 int snd = 0;			/* file descriptor for sound device */
 
+				/* quick macro */
+/* show system error and close sound device if given ioctl status is bad */
+#define check_status(status, line) \
+{ \
+  if (status < 0) { \
+    sprintf(error, "%s: error from sound device ioctl at line %d", \
+	    progname, line); \
+    perror(error); \
+    close_sound_card(); \
+  } \
+}
+
 /* close the sound device */
 void
 close_sound_card()
@@ -26,18 +38,6 @@ close_sound_card()
   if (snd)
     close(snd);
   snd = 0;
-}
-
-/* show system error and close sound device if given ioctl status is bad */
-void
-check_status(int status, int line)
-{
-  if (status < 0) {
-    sprintf(error, "%s: error from sound device ioctl at line %d",
-	    progname, line);
-    perror(error);
-    close_sound_card();
-  }
 }
 
 /* attempt to change sample rate and return actual sample rate set */
@@ -98,14 +98,30 @@ int
 get_data()
 {
   static unsigned char datum[2], prev[2], *buff;
-  static char buffer[MAXWID * 2], junk[SAMPLESKIP];
-  int i = 0;
+  static char buffer[MAXWID * 2], junk[DISCARDBUF];
+  static int i;
+  audio_buf_info info;
 
   if (!snd) return(0);		/* device open? */
 
-  /* flush the sound card's buffer */
-  check_status(ioctl(snd, SNDCTL_DSP_RESET), __LINE__);
-  read(snd, junk, SAMPLESKIP);	/* toss some possibly invalid samples */
+  /* Discard excess samples so we can keep our time snapshot in
+     real-time and minimize sound recording overruns.  If we flush too
+     much, then we have to wait for more to accumulate.  So, keep a
+     couple screenfuls in the queue, plus some for locating trigger.  */
+
+  check_status(ioctl(snd, SNDCTL_DSP_GETISPACE, &info), __LINE__);
+#ifdef DEBUG
+  printf("avail:%d\ttotal:%d\tsize:%d\tbytes:%d\n",
+	 info.fragments, info.fragstotal, info.fragsize, info.bytes);
+#endif
+  if ((i = info.bytes - h_points * 5) > 0)
+    read(snd, junk, i < DISCARDBUF ? i : DISCARDBUF);
+#ifdef DEBUG
+  check_status(ioctl(snd, SNDCTL_DSP_GETISPACE, &info), __LINE__);
+  printf("\tavail:%d\ttotal:%d\tsize:%d\tbytes:%d\n",
+	 info.fragments, info.fragstotal, info.fragsize, info.bytes);
+#endif
+  i = 0;
   if (scope.trige == 1) {
     read(snd, datum, 2);	/* look for rising edge */
     do {
