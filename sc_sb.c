@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: sc_sb.c,v 1.8 1998/09/24 01:00:48 twitham Rel $
+ * @(#)$Id: sc_sb.c,v 1.9 1999/09/02 01:24:48 twitham Rel $
  *
  * Copyright (C) 1997 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -29,22 +29,13 @@ close_sound_card()
   snd = 0;
 }
 
-/* attempt to change sample rate and return actual sample rate set */
-int
-set_sound_card(int rate, int chan, int bits)
-{
-  if (!snd) return(rate);
-  
-  return(sb_set_sample_rate(rate));
-}
-
 /* [re]set the sound card, and return actual sample rate */
 int
 reset_sound_card(int rate, int chan, int bits)
 {
   if (!snd) return(rate);
 
-  return(set_sound_card(rate, chan, bits));
+  return(sb_set_sample_rate(rate));
 }
 
 /* turn the sound device on */
@@ -59,7 +50,7 @@ open_sound_card(int dma)
   } else {
     printf("using soundcard at 0x%x.\n", i);
     snd = 1;
-    set_sound_card(44100, 2, 8);
+    reset_sound_card(44100, 2, 8);
   }
 }
 

@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: sc_linux.c,v 1.10 1999/08/29 01:59:10 twitham Exp $
+ * @(#)$Id: sc_linux.c,v 1.11 1999/09/02 01:24:07 twitham Exp $
  *
  * Copyright (C) 1996 - 1999 Tim Witham <twitham@quiknet.com>
  *
@@ -40,45 +40,13 @@ close_sound_card()
   snd = 0;
 }
 
-/* attempt to change sample rate and return actual sample rate set */
-int
-set_sound_card(int rate)
-{
-  int actual = rate;
-  static char junk[SAMPLESKIP];
-
-  if (!snd) return(rate);
-  check_status(ioctl(snd, SOUND_PCM_SYNC, 0), __LINE__);
-  check_status(ioctl(snd, SOUND_PCM_WRITE_RATE, &actual), __LINE__);
-  check_status(ioctl(snd, SNDCTL_DSP_RESET), __LINE__);
-  check_status(ioctl(snd, SOUND_PCM_READ_RATE, &actual), __LINE__);
-  read(snd, junk, SAMPLESKIP);
-  return(actual);
-}
-
-/* [re]set the sound card, and return actual sample rate */
-int
-reset_sound_card(int rate, int chan, int bits)
-{
-  int parm;
-
-  if (!snd) return(rate);
-
-  parm = chan;			/* set mono/stereo */
-  check_status(ioctl(snd, SOUND_PCM_WRITE_CHANNELS, &parm), __LINE__);
-
-  parm = bits;			/* set 8-bit samples */
-  check_status(ioctl(snd, SOUND_PCM_WRITE_BITS, &parm), __LINE__);
-
-  /* set sampling rate */
-  return(set_sound_card(rate));
-}
-
 /* turn the sound device on */
 void
 open_sound_card(int dma)
 {
   int parm, i = 5;
+
+  if (snd) close(snd);
 
   /* we try a few times in case someone else is using device (FvwmAudio) */
   while ((snd = open("/dev/dsp", O_RDONLY)) < 0 && i > 0) {
@@ -94,6 +62,32 @@ open_sound_card(int dma)
   }
   parm = dma;			/* set DMA buffer size */
   check_status(ioctl(snd, SOUND_PCM_SUBDIVIDE, &parm), __LINE__);
+}
+
+/* [re]set the sound card, and return actual sample rate */
+int
+reset_sound_card(int rate, int chan, int bits)
+{
+  int parm;
+  static char junk[SAMPLESKIP];
+
+  if (snd) close(snd);
+  open_sound_card(scope.dma);
+  if (!snd) return(rate);
+
+  parm = chan;			/* set mono/stereo */
+  check_status(ioctl(snd, SOUND_PCM_WRITE_CHANNELS, &parm), __LINE__);
+
+  parm = bits;			/* set 8-bit samples */
+  check_status(ioctl(snd, SOUND_PCM_WRITE_BITS, &parm), __LINE__);
+
+  parm = rate;			/* set sampling rate */
+  check_status(ioctl(snd, SOUND_PCM_WRITE_RATE, &parm), __LINE__);
+  check_status(ioctl(snd, SOUND_PCM_READ_RATE, &parm), __LINE__);
+
+  read(snd, junk, SAMPLESKIP);
+
+  return(parm);
 }
 
 /* get data from sound card, return value is whether we triggered or not */

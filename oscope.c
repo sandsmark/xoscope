@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.c,v 1.69 1999/08/27 04:00:36 twitham Rel $
+ * @(#)$Id: oscope.c,v 1.70 1999/09/02 01:24:01 twitham Exp $
  *
  * Copyright (C) 1996 - 1999 Tim Witham <twitham@quiknet.com>
  *
@@ -35,7 +35,6 @@ char *filename;			/* default file name */
 
 extern void open_sound_card();
 extern void close_sound_card();
-extern int set_sound_card();
 extern int reset_sound_card();
 
 /* display command usage on stdout or stderr and exit */
@@ -194,21 +193,12 @@ scaledown(int *num)
     *num = 1;
 }
 
-/* internal only */
-void
-setsoundcard(int rate)
-{
-  scope.rate = set_sound_card(rate);
-  mem[23].rate = mem[24].rate = scope.rate;
-  do_math();			/* propogate new rate to any math */
-}
-
 /* internal only, change rate and propogate it everywhere */
 void
-resetsoundcard()
+resetsoundcard(int rate)
 {
-  scope.rate = reset_sound_card(scope.rate, 2, 8);
-  mem[23].rate = mem[24].rate = scope.rate;
+  scope.rate = reset_sound_card(rate, 2, 8);
+  mem[23].rate = mem[24].rate = rate;
   do_math();			/* propogate new rate to any math */
   draw_text(1);
 }
@@ -226,10 +216,8 @@ loadfile(char *file)
 {
   close_sound_card();
   readfile(filename = file);
-  if (snd) {
-    open_sound_card(scope.dma);
-    resetsoundcard();
-  }
+  if (snd)
+    resetsoundcard(scope.rate);
   if (ps.found) {
     init_probescope();
     init_serial();
@@ -357,21 +345,21 @@ handle_key(unsigned char c)
   case '(':
     if (scope.run)		/* decrease sample rate */
       if (scope.rate < 16500)
-	setsoundcard(8000);
+	resetsoundcard(8000);
       else if (scope.rate < 33000)
-	setsoundcard(11025);
+	resetsoundcard(11025);
       else
-	setsoundcard(22050);
+	resetsoundcard(22050);
     clear();
     break;
   case ')':
     if (scope.run)		/* increase sample rate */
       if (scope.rate > 16500)
-	setsoundcard(44100);
+	resetsoundcard(44100);
       else if (scope.rate > 9500)
-	setsoundcard(22050);
+	resetsoundcard(22050);
       else
-	setsoundcard(11025);
+	resetsoundcard(11025);
     clear();
     break;
   case '<':
@@ -410,21 +398,16 @@ handle_key(unsigned char c)
   case '&':
     if (snd)			/* toggle sound card on/off */
       close_sound_card();
-    else {
-      open_sound_card(scope.dma);
-      resetsoundcard();
-    }
+    else
+      resetsoundcard(scope.rate);
     clear();
     break;
   case '*':
     scope.dma >>= 1;
     if (scope.dma < 1)		/* DMA */
       scope.dma = 4;
-    if (snd) {
-      close_sound_card();
-      open_sound_card(scope.dma);
-      resetsoundcard();
-    }
+    if (snd)
+      resetsoundcard(scope.rate);
     clear();
     break;
   case '!':
@@ -489,10 +472,8 @@ main(int argc, char **argv)
       filename = argv[optind];
       readfile(filename);
     }
-  if (snd) {
-    open_sound_card(scope.dma);
-    resetsoundcard();
-  }
+  if (snd)
+    resetsoundcard(scope.rate);
   if (ps.found) {
     init_probescope();
     init_serial();
