@@ -1,7 +1,7 @@
 /*
- * @(#)$Id: gr_vga.c,v 1.3 2002/06/15 21:21:53 twitham Exp $
+ * @(#)$Id: gr_vga.c,v 1.4 2003/06/17 22:52:32 baccala Exp $
  *
- * Copyright (C) 1996 - 2002 Tim Witham <twitham@pcocd2.intel.com>
+ * Copyright (C) 1996 - 2001 Tim Witham <twitham@pcocd2.intel.com>
  *
  * (see the files README and COPYING for more details)
  *
@@ -10,21 +10,21 @@
  */
 
 #include <stdio.h>
-#include <stdlib.h>
 #include <vga.h>
 #include "oscope.h"		/* program defaults */
 #ifdef HAVE_LIBVGAMISC
 #include <fontutils.h>
 #include <miscutils.h>
-char fonts[] = DATADIR "/" FONTDIR;
-#else
-char fonts[] = "";
 #endif
 #include "display.h"
 #include "func.h"
 #include "file.h"
 
+char fontname[];
+int screen_modes[];
+int color[];
 char fontname[80] = DEF_F;
+char fonts[] = "/usr/lib/kbd/consolefonts";
 int screen_modes[] = {		/* allowed modes */
   G640x480x16,
   G800x600x16,
@@ -32,15 +32,26 @@ int screen_modes[] = {		/* allowed modes */
   G1280x1024x16
 };
 int color[] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
+
 #ifdef HAVE_LIBVGAMISC
+
 font_t FONT;
 void *font = &FONT;		/* font pointer for display.c */
-#else
-int
-vga_write(char *s, short x, short y, void *f, short fg, short bg, char p)
+
+void text_write(char *str, int x, int y, int fieldsize,
+		int fgcolor, int bgcolor, int alignment)
 {
-  return 1;			/* pretend we succeeded */
+  vga_write(str, col(x), row(y), font, fgcolor, bgcolor, alignment);
 }
+
+#else
+
+void
+text_write(char *s, int x, int y, int fieldsize, int fg, int bg, int alignment)
+{
+  /* pretend we succeeded */
+}
+
 #endif
 
 /* simulate some libsx functions for display.c */
@@ -66,6 +77,26 @@ void
 SetColor(int c)
 {
   vga_setcolor(c);
+}
+
+void
+PolyPoint(int color, Point *points, int count)
+{
+  int i;
+
+  for (i=0; i<count; i++) {
+    DrawPixel(points[i].x, points[i].y);
+  }
+}
+
+void
+PolyLine(int color, Point *points, int count)
+{
+  int i;
+
+  for (i=1; i<count; i++) {
+    DrawLine(points[i-1].x, points[i-1].y, points[i].x, points[i].y);
+  }
 }
 
 /* prompt for a string */
@@ -144,12 +175,43 @@ clear_display()
   vga_clear();
 }
 
-/* loop until finished */
-void
-mainloop()
+static int inputfd = -1;
+
+void setinputfd(int fd)
 {
+  inputfd = fd;
+}
+
+static struct timeval timeout = {0,0};
+
+void settimeout(int ms)
+{
+  timeout.tv_usec = 1000 * ms;
+}
+
+void
+mainloop(void)
+{
+  fd_set input, except;
+
   draw_text(1);
-  while (!quit_key_pressed) {
+  animate(NULL);
+
+  while (1) {
+
+    FD_ZERO(&input);
+    FD_ZERO(&except);
+    if (inputfd != -1) {
+      FD_SET(inputfd, &input);
+      FD_SET(inputfd, &except);
+    }
+
+    if (timeout.tv_usec > 0) {
+      vga_waitevent(VGA_KEYEVENT, &input, NULL, &except, &timeout);
+    } else {
+      vga_waitevent(VGA_KEYEVENT, &input, NULL, &except, NULL);
+    }
+
     handle_key(vga_getkey());
     animate(NULL);
   }

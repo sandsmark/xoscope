@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: xy_gtk.c,v 1.2 1999/08/29 02:11:08 twitham Rel $
+ * @(#)$Id: xy_gtk.c,v 1.3 2003/06/17 22:52:32 baccala Exp $
  *
  * Copyright (C) 1996 - 1999 Tim Witham <twitham@quiknet.com>
  *
@@ -13,8 +13,10 @@
 #include "display.h"
 #include "com_gtk.h"
 
-extern int mode, quit_key_pressed;
+extern int mode;
 extern void handle_key();
+
+GdkPixmap *pixmap;
 
 /* clear the drawing area and reset the menu check marks */
 void

@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.h,v 1.40 2001/05/06 03:45:16 twitham Rel $
+ * @(#)$Id: oscope.h,v 1.41 2003/06/17 22:52:32 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -21,17 +21,14 @@ extern int h_points;
 extern int offset;
 extern int clip;
 extern char *filename;
-extern int snd;
 extern int in_progress;
 
 typedef struct Scope {		/* The oscilloscope */
   int mode;
   int size;
-  int dma;
   int run;
   int scale;
   int div;
-  int rate;
   int grat;
   int behind;
   int color;
@@ -43,41 +40,190 @@ typedef struct Scope {		/* The oscilloscope */
   int curs;
   int cursa;
   int cursb;
+  int min_interval;
 } Scope;
 extern Scope scope;
 
-typedef struct Signal {		/* The input/memory/math signals */
-  short data[MAXWID];
-  int rate;
-  int num;
-  int volts;
-  int color;
+/* Signal - the input/memory/math signals
+ *
+ * sc_linux.c depends on the order of these fields in a static initializer
+ */
+
+typedef struct Signal {
+  char name[16];		/* Textual name of this signal (for display) */
+  char savestr[256];		/* String used in save files */
+  int rate;			/* sampling rate in samples/sec */
+  int volts;			/* millivolts per 320 sample values */
+  int frame;			/* Current frame number, for comparisons */
+  int num;			/* number of valid entries in data[] */
+  int delay;			/* Delay, in ten-thousandths of samples */
+  int listeners;		/* Number of things 'listening' to this Sig */
+  int bits;			/* number of valid bits - 0 for analog sig */
+  short data[MAXWID];		/* the data samples */
 } Signal;
-extern Signal mem[34];
+
+extern Signal mem[26];		/* Memory channels */
+
+typedef struct DataSrc {	/* A source of data samples */
+
+  char *	name;
+
+  /* open()/close() - but not as important as their names suggest
+   *
+   * Even if open() failed, device can still be used without calling
+   * open() again, if options are set to make device usable.
+   * open()/close() are only used to indicate to the data source when
+   * it is 'active', i.e. device will never be used without calling
+   * open() first, or after a call to close().  TRUE/FALSE return
+   * value from open() is used only to skip devices when they are
+   * being cycled through.
+   */
+  int		(* open)(void);
+  void		(* close)(void);
+
+  /* returns number of data channels available.  Return value can
+   * change around pretty much at will.  Zero indicates device unavailable
+   */
+  int		(* nchans)(void);
+
+  /* returns a pointer to the Signal structure for a numbered channel */
+  Signal *	(* chan)(int chan);
+
+  /* mode is 1 (rising trigger) or 2 (falling trigger) returns TRUE if
+   * trigger could be set; otherwise (it couldn't be set) return FALSE
+   * and leave trigger cleared 'level' is a pointer to the trigger
+   * level in signed raw sample values If a trigger can be set near,
+   * but not exactly on, the requested level, the function returns
+   * TRUE, sets the trigger, and modifies 'level' to the adjusted
+   * value.  */
+  int		(* set_trigger)(int chan, int *levelp, int mode);
+  void		(* clear_trigger)(void);
+
+  /* dir is 1 for faster; -1 for slower; returns TRUE if rate changed */
+  int		(* change_rate)(int dir);
+
+  /* reset() gets called whenever we want to start a new capture sweep.
+   * It should get called after any of the above channel, trigger, or rate
+   * functions have been used to change the data source capturing
+   * parameters, or after the capturing channels have been changed.
+   * Only after reset() has been called are the rate and volts
+   * fields in the Signal structures guaranteed valid.
+   */
+  void		(* reset)(void);
+
+  /* returns a file descriptor to poll on (for read) to indicate that
+   * the data source has data available for read, via get_data() below.
+   * return -1 to indicate no active signal capturing.  Always gets
+   * called after a reset()
+   */
+  int		(* fd)(void);
+
+  /* get_data() is called when poll(2) on the file descriptor returned
+   * by fd() indicates data is available to read.  It is responsible
+   * for filling in the Signal arrays returned by the chan() function,
+   * and returns TRUE if the trigger condition was hit (currently used
+   * only in single-shot mode to stop the scope after a single trace).
+   * It also must set the global variable 'in_progress' TRUE if it
+   * returns in the middle of a trace, and FALSE at the end of a
+   * trace.  get_data() must always return at the end of every trace,
+   * as the display code assumes that a trace is completely drawn
+   * before moving on the next trace.
+   */
+  int		(* get_data)(void);
+
+  /* This function allows the data source to display various status
+   * information on the screen.  i ranges from 0 to 7, and corresponds
+   * to 8 information fields near the bottom of the display.  Fields
+   * 0 through 3 have room for about 16 chars, fields 4 and 5 have
+   * room for about 20, and fields 6 and 7 can hold about 12.
+   * Function pointer can be NULL if there's no status info to display.
+   */
+
+  char *	(* status_str)(int i);
+
+  /* These functions are called when the option1 (*) or option2 (^)
+   * keys are pressed and should return 1 to do a datasrc->reset.
+   * Their corresponding string functions should return a short string
+   * to be displayed on the screen, which can be NULL.  If the
+   * option function returns TRUE, a clear() is done.  Any of these
+   * pointers can be NULL.  If the 'str' function is NULL, no help
+   * will be displayed for that option key, but this doesn't preclude
+   * the corresponding option function from doing something!
+   */
+
+  int		(* option1)(void);
+  char *	(* option1str)(void);
+  int		(* option2)(void);
+  char *	(* option2str)(void);
+
+  /* set_option()/save_option()
+   *
+   * These functions are used to set and save data source specific
+   * options, either from the command line or from a savefile,
+   * including but not limited to the keyboard options corresponding
+   * to option1/option2.  To generate the savefile, save_option() will
+   * be called repeatedly with arguments starting at zero and
+   * increasing until it returns NULL.  Each string returned will
+   * later trigger a call to set_option() when the savefile is
+   * loaded.  Returning an empty string will skip to the next
+   * integer without outputing anything.
+   *
+   * set_option() should return TRUE if it was able to parse and
+   * process the option; FALSE otherwise.  The options can also be
+   * specified on the command line, so should be human readable.
+   *
+   * Both function pointers can be NULL.
+   */
+
+  int		(* set_option)(char *);
+  char *	(* save_option)(int);
+
+  /* This function is only used if the X Windows GTK interface is
+   * in use.  If non-NULL, it causes the "Device Options..." item
+   * on the File menu to be made sensitive, and the function itself
+   * is called whenever that item is clicked.  It should trigger
+   * a popup menu with device-specific options.
+   */
+  void		(* gtk_options)(void);
+
+} DataSrc;
+
+extern DataSrc *datasrc;
+extern DataSrc *datasrcs[];
+extern int ndatasrcs;
+
+typedef struct Point {		/* carefully defined to match X Windows' */
+  short x;			/* Point structure: 16-bit shorts */
+  short y;
+} Point;
+
+typedef struct SignalLine {
+  Point points[2048];		/* half this - 1024 - hardwired in display.c */
+  int current_line_start;	/* index of first point on current line */
+  int current_line_next;	/* index of next avail point on current line */
+  int prev_line_start;		/* index of first drawn point on prev line */
+  int prev_line_last;		/* index of last point on prev line */
+} SignalLine;
 
 typedef struct Channel {	/* The display channels */
   Signal *signal;
-  short old[MAXWID];
-  short min;
-  short max;
-  int time;
-  int freq;
-  int mult;
+  SignalLine *signalline[16];	/* 16 - could have up to 16 bits per sample,
+				 * thus, up to 16 signal lines per channel
+				 * in digital mode */
+  int old_frame;		/* last frame number plotted */
+  int mult;			/* A scaling ratio we multiply samples by */
   int div;
+  int target_mult;		/* The target scaling ratio */
+  int target_div;
   int pos;
   int color;
   int show;
-  int func;
-  char mem;
-  char command[256];
-  int pid;
   int bits;
 } Channel;
 extern Channel ch[CHANNELS];
 
 /* functions that are called by files other than oscope.c */
 void	usage();
-int	get_data();
 void	handle_key(unsigned char);
 void	cleanup();
 void	init_scope();
@@ -86,4 +232,8 @@ int	samples();
 void	loadfile();
 void	savefile();
 void	startcommand();
-void	resetsoundcard();
+
+int	datasrc_byname(char *);
+
+/* Function defined in display library specific files */
+void	setinputfd(int);

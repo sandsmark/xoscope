@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 1.68 2001/05/06 03:45:16 twitham Rel $
+ * @(#)$Id: display.c,v 1.69 2003/06/17 22:52:32 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -14,21 +14,24 @@
 #include <unistd.h>
 #include <string.h>
 #include <time.h>
+#include <math.h>
 #include "oscope.h"		/* program defaults */
 #include "display.h"
 #include "func.h"
-#include "proscope.h"
-#include "bitscope.h"
+
+#define DEBUG 0
 
 void	show_data();
-int	vga_write();
+void	text_write();
 void	init_widgets();
 void	fix_widgets();
 void	clear_display();
 
 int	triggered = 0;		/* whether we've triggered or not */
-int	erase_data = 1;		/* whether data may be "stale" or not */
 void	*font;
+int	math_warning = 0;	/* TRUE if math has a problem */
+
+struct signal_stats stats;
 
 /* how to convert text column (0-79) to graphics position */
 int
@@ -46,8 +49,10 @@ col(int x)
 int
 row(int y)
 {
-  if (y < 5)			/* top; absolute */
+  if (y < 4)			/* top; absolute */
     return (y * 16);
+  if (y == 4)
+    return 62;
   if (y > 24)			/* bottom; absolute */
     return (v_points - ((30 - y) * 16));
   /* center; spread out proportionally */
@@ -58,16 +63,24 @@ row(int y)
 void
 message(char *message, int clr)
 {
-  vga_write("                                                  ",
-	    h_points / 2, row(5),
-	    font, clr, TEXT_BG, ALIGN_CENTER);
-  vga_write(message, h_points / 2, row(5),
-	    font, clr, TEXT_BG, ALIGN_CENTER);
+  text_write("                                                  ",
+	     40, 5, 0, clr, TEXT_BG, ALIGN_CENTER);
+  text_write(message,
+	     40, 5, 0, clr, TEXT_BG, ALIGN_CENTER);
 }
 
 void
 format(char *buf, const char *fmt, float num)
 {
+  int power=0;
+
+  /* Round off num to nearest 1% */
+
+  while (num > 100) num /= 10, power ++;
+  while ((num > 0) && (num < 10)) num *= 10, power --;
+  num = rint(num);
+  num *= pow(10.0, power);
+
   sprintf(buf, fmt, num >= 1000 ? num / 1000 : num, num >= 1000 ? "" : "m");
 }
 
@@ -76,7 +89,8 @@ void
 draw_text(int all)
 {
   static char string[81];
-  static int i, j, k, rate, trige, frames = 0;
+  static char *s;
+  static int i, j, k, frames = 0;
   static time_t sec, prev;
   static Channel *p;
   static char *strings[] = {
@@ -98,57 +112,79 @@ draw_text(int all)
 
     /* above graticule */
     if (scope.verbose) {
-      vga_write("(Esc)", 0, 0, font, KEY_FG, TEXT_BG, ALIGN_LEFT);
-      vga_write("Quit", col(5), 0, font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
-      vga_write(progname,  100, 0, font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
+      text_write("(Esc)", 0, 0, 0, KEY_FG, TEXT_BG, ALIGN_LEFT);
+      text_write("Quit", 5, 0, 0, TEXT_FG, TEXT_BG, ALIGN_LEFT);
+      text_write(progname, 12, 0, 0, TEXT_FG, TEXT_BG, ALIGN_LEFT);
 
-      vga_write("(@)", col(2), row(1), font, KEY_FG, TEXT_BG, ALIGN_LEFT);
-      vga_write("Load", col(5), row(1),
-		font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
+      text_write("(@)", 2, 1, 0, KEY_FG, TEXT_BG, ALIGN_LEFT);
+      text_write("Load", 5, 1, 0, TEXT_FG, TEXT_BG, ALIGN_LEFT);
 
       sprintf(string, "ver: %s", version);
-      vga_write(string,  100, row(1), font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
+      text_write(string, 12, 1, 0, TEXT_FG, TEXT_BG, ALIGN_LEFT);
 
-      vga_write("(#)", col(2), row(2), font, KEY_FG, TEXT_BG, ALIGN_LEFT);
-      vga_write("Save", col(5), row(2), font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
+      text_write("(#)", 2, 2, 0, KEY_FG, TEXT_BG, ALIGN_LEFT);
+      text_write("Save", 5, 2, 0, TEXT_FG, TEXT_BG, ALIGN_LEFT);
 
       sprintf(string, "%d x %d", h_points, v_points);
-      vga_write(string, 100, row(2), font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
+      text_write(string, 12, 2, 0, TEXT_FG, TEXT_BG, ALIGN_LEFT);
 
-      vga_write("(&)", col(2), row(3), font, KEY_FG, TEXT_BG,ALIGN_LEFT);
-      sprintf(string, "Sound %s", snd ? "On" : "Off");
-      vga_write(string, col(5), row(3), font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
-      vga_write("(*)", col(17), row(3), font, KEY_FG, TEXT_BG,ALIGN_RIGHT);
-      sprintf(string, "DMA:%d", scope.dma);
-      vga_write(string, col(17), row(3), font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
+      text_write("(&)", 2, 3, 0, KEY_FG, TEXT_BG,ALIGN_LEFT);
 
-      vga_write("(Enter)", col(70), 0, font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
-      vga_write("Refresh", col(77), 0, font, TEXT_FG, TEXT_BG, ALIGN_RIGHT);
+      if (datasrc && datasrc->option1str != NULL) {
+	text_write("(*)", 17, 3, 0, KEY_FG, TEXT_BG,ALIGN_RIGHT);
+      }
 
-      vga_write("(,)", col(70), row(1), font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
-      vga_write("Graticule", col(79), row(1),
-		font, TEXT_FG, TEXT_BG, ALIGN_RIGHT);
+      text_write("(Enter)", 70, 0, 0, KEY_FG, TEXT_BG, ALIGN_RIGHT);
+      text_write("Refresh", 77, 0, 0, TEXT_FG, TEXT_BG, ALIGN_RIGHT);
 
-      vga_write("(_)(-)                      (=)(+)", col(40), row(2),
-		font, KEY_FG, TEXT_BG, ALIGN_CENTER);
+      text_write("(,)", 70, 1, 0, KEY_FG, TEXT_BG, ALIGN_RIGHT);
+      text_write("Graticule", 79, 1, 0, TEXT_FG, TEXT_BG, ALIGN_RIGHT);
 
-      vga_write("(.)", col(70), row(2), font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
-      vga_write(scope.behind ? "Behind   " : "In Front ", col(79), row(2),
-		font, TEXT_FG, TEXT_BG, ALIGN_RIGHT);
+      text_write("(_)(-)                      (=)(+)", 40, 2,
+		 0, KEY_FG, TEXT_BG, ALIGN_CENTER);
 
-      vga_write("(<)      (>)", col(79), row(3),
-		font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
-      vga_write("Color", col(75), row(3), font, TEXT_FG, TEXT_BG, ALIGN_RIGHT);
+      text_write("(.)", 70, 2, 0, KEY_FG, TEXT_BG, ALIGN_RIGHT);
+      text_write(scope.behind ? "Behind   " : "In Front ", 79, 2,
+		 0, TEXT_FG, TEXT_BG, ALIGN_RIGHT);
 
-      vga_write("(!)", 100, 62, font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
-      vga_write("(space)", h_points - 100 - 8 * 4, 62,
-		font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
+      text_write("(<)      (>)", 79, 3,	0, KEY_FG, TEXT_BG, ALIGN_RIGHT);
+      text_write("Color", 75, 3, 0, TEXT_FG, TEXT_BG, ALIGN_RIGHT);
+
+      text_write("(!)", 12, 4, 0, KEY_FG, TEXT_BG, ALIGN_RIGHT);
+      text_write("(space)", 61, 4, 0, KEY_FG, TEXT_BG, ALIGN_RIGHT);
 
     } else {			/* not verbose */
 
-      vga_write("(?)", col(75), 0, font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
-      vga_write("Help", col(79), 0, font, TEXT_FG, TEXT_BG, ALIGN_RIGHT);
+      text_write("(?)", 75, 0, 0, KEY_FG, TEXT_BG, ALIGN_RIGHT);
+      text_write("Help", 79, 0, 0, TEXT_FG, TEXT_BG, ALIGN_RIGHT);
     }
+
+    if (scope.trige) {
+      Signal *trigsig = datasrc->chan(scope.trigch);
+
+      if (trigsig->volts > 0) {
+	char minibuf[256];
+	format(minibuf, "%g %sV",
+	       (scope.trig) * trigsig->volts / 320);
+	sprintf(string, "%s Trigger @ %s", trigs[scope.trige], minibuf);
+      } else {
+	sprintf(string, "%s Trigger @ %d",
+		trigs[scope.trige], scope.trig);
+      }
+      text_write(string, 40, 2,	0, TEXT_FG, TEXT_BG, ALIGN_CENTER);
+      text_write(trigsig->name, 40, 3, 0, TEXT_FG, TEXT_BG, ALIGN_CENTER);
+    } else {
+      text_write("No Trigger", 40, 2, 0, TEXT_FG, TEXT_BG, ALIGN_CENTER);
+    }
+
+    text_write(datasrc ? datasrc->name : "No data source", 5, 3,
+	       0, TEXT_FG, TEXT_BG, ALIGN_LEFT);
+    text_write(strings[scope.mode], 12, 4, 0, TEXT_FG, TEXT_BG, ALIGN_LEFT);
+    if (datasrc && (datasrc->option1str != NULL)
+	&& ((s = datasrc->option1str()) != NULL)) {
+      text_write(s, 17, 3, 0, TEXT_FG, TEXT_BG, ALIGN_LEFT);
+    }
+
 
     /* sides of graticule */
     for (i = 0 ; i < CHANNELS ; i++) {
@@ -156,34 +192,27 @@ draw_text(int all)
       j = (i % 4) * 5 + 5;
       k = ch[i].color;
 
-      vga_write("Channel", col(69 * (i / 4)), row(j),
-		font, k, TEXT_BG, ALIGN_LEFT);
+      text_write("Channel", 69 * (i / 4), j, 0, k, TEXT_BG, ALIGN_LEFT);
       sprintf(string, "(%d)", i + 1);
-      vga_write(string, col(69 * (i / 4) + 7), row(j),
-		font, KEY_FG, TEXT_BG, ALIGN_LEFT);
+      text_write(string, 69 * (i / 4) + 7, j, 0, KEY_FG, TEXT_BG, ALIGN_LEFT);
 
-      if (scope.verbose || ch[i].show || scope.select == i) {
+      if ((scope.verbose || ch[i].show || scope.select == i) && ch[i].signal) {
+
+	/* XXX here and other places, need to make sure we clear the field */
 	if (!ch[i].bits && ch[i].signal->volts)
 	  format(string, "%g %sV/div",
 		 (float)ch[i].signal->volts * ch[i].div / ch[i].mult / 10);
 	else
 	  sprintf(string, "%d / %d", ch[i].mult, ch[i].div);
-	vga_write(string, col(69 * (i / 4) + 5), row(j + 1),
-		  font, k, TEXT_BG, ALIGN_CENTER);
+	text_write(string, 69 * (i / 4), j + 1, 0, k, TEXT_BG, ALIGN_LEFT);
 
 	sprintf(string, "%d @ %d", ch[i].bits, -(ch[i].pos));
-	vga_write(string, col(69 * (i / 4) + 5), row(j + 2),
-		  font, k, TEXT_BG, ALIGN_CENTER);
+	text_write(string, 69 * (i / 4) + 5, j + 2,
+		   0, k, TEXT_BG, ALIGN_CENTER);
 
-	vga_write(funcnames[ch[i].func], col(69 * (i / 4)), row(j + 3),
-		  font, ch[i].func < FUNCEXT ? ch[i].signal->color : k,
-		  TEXT_BG, ALIGN_LEFT);
+	text_write(ch[i].signal->name, 69 * (i / 4), j + 3,
+		  0, ch[i].color, TEXT_BG, ALIGN_LEFT);
 
-	if (ch[i].func == FUNCMEM) {
-	  sprintf(string, "%c", ch[i].mem);
-	  vga_write(string, col(69 * (i / 4) + 7), row(j + 3),
-		    font, ch[i].signal->color, TEXT_BG, ALIGN_LEFT);
-	}
       }
       if (scope.select == i) {
 	SetColor(k);
@@ -197,157 +226,277 @@ draw_text(int all)
 
     /* below graticule */
     if (scope.verbose) {
-      vga_write("(Tab)", 0, row(25), font, KEY_FG, TEXT_BG, ALIGN_LEFT);
-      vga_write(p->show ? "Visible" : "HIDDEN ", col(5), row(25),
-		font, p->color, TEXT_BG, ALIGN_LEFT);
+      text_write("(Tab)", 0, 25, 0, KEY_FG, TEXT_BG, ALIGN_LEFT);
+      text_write(p->show ? "Visible" : "HIDDEN ", 5, 25,
+		0, p->color, TEXT_BG, ALIGN_LEFT);
 
-      vga_write("({)     (})", 0, row(26), font,KEY_FG, TEXT_BG, ALIGN_LEFT);
-      vga_write("Scale", col(3), row(26), font, p->color, TEXT_BG, ALIGN_LEFT);
+      text_write("({)     (})", 0, 26, 0, KEY_FG, TEXT_BG, ALIGN_LEFT);
+      text_write("Scale", 3, 26, 0, p->color, TEXT_BG, ALIGN_LEFT);
 
-      vga_write("([)     (])", 0, row(27), font, KEY_FG, TEXT_BG,ALIGN_LEFT);
-      vga_write("Pos.", col(3), row(27), font, p->color,TEXT_BG,ALIGN_LEFT);
+      text_write("([)     (])", 0, 27, 0, KEY_FG, TEXT_BG,ALIGN_LEFT);
+      text_write("Pos.", 3, 27, 0, p->color,TEXT_BG,ALIGN_LEFT);
 
-      vga_write("(^)", 0, row(28), font, KEY_FG, TEXT_BG, ALIGN_LEFT);
-      sprintf(string, "Serial Scope %s", bs.found ? bs.bcid
-	      : (ps.found ? "ProbeScope" : "Off"));
-      vga_write(string, col(3), row(28),
-		font, mem[25].color, TEXT_BG, ALIGN_LEFT);
-
-      vga_write("(9)              (0)", col(40), row(25),
-		font, KEY_FG, TEXT_BG, ALIGN_CENTER);
-      vga_write("(()              ())", col(40), row(26),
-		font, KEY_FG, TEXT_BG, ALIGN_CENTER);
-
-      vga_write("(A-W)", col(73), row(27), font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
-      vga_write("Store", col(78), row(27),
-		font, p->color, TEXT_BG, ALIGN_RIGHT);
-
-      if (scope.select > 1) {
-	vga_write("($)", col(72), row(25),
-		  font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
-	vga_write("Extern", col(78), row(25),
-		  font, p->color, TEXT_BG, ALIGN_RIGHT);
-	vga_write("(:)    (;)", col(79), row(26),
-		  font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
-	vga_write("Math", col(76), row(26),
-		  font, p->color, TEXT_BG, ALIGN_RIGHT);
+      if (datasrc && datasrc->option2str != NULL) {
+	text_write("(^)", 0, 28, 0, KEY_FG, TEXT_BG, ALIGN_LEFT);
       }
 
-      vga_write("(a-z)", col(73), row(28),
-		font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
-      vga_write("Recall", col(79), row(28),
-		font, p->color, TEXT_BG, ALIGN_RIGHT);
+      text_write("(9)              (0)", 40, 25,
+		0, KEY_FG, TEXT_BG, ALIGN_CENTER);
+      text_write("(()              ())", 40, 26,
+		0, KEY_FG, TEXT_BG, ALIGN_CENTER);
 
-      vga_write("(", col(26), row(28), font, KEY_FG, TEXT_BG, ALIGN_LEFT);
-      vga_write(")", col(53), row(28), font, KEY_FG, TEXT_BG, ALIGN_LEFT);
+      text_write("(A-W)", 73, 27, 0, KEY_FG, TEXT_BG, ALIGN_RIGHT);
+      text_write("Store", 78, 27,
+		0, p->color, TEXT_BG, ALIGN_RIGHT);
+
+      if (scope.select > 1) {
+	text_write("($)", 72, 25,
+		  0, KEY_FG, TEXT_BG, ALIGN_RIGHT);
+	text_write("Extern", 78, 25,
+		  0, p->color, TEXT_BG, ALIGN_RIGHT);
+	text_write("(:)    (;)", 79, 26,
+		  0, KEY_FG, TEXT_BG, ALIGN_RIGHT);
+	text_write("Math", 76, 26,
+		  0, p->color, TEXT_BG, ALIGN_RIGHT);
+      }
+
+      /* XXX not exactly true anymore */
+      text_write("(a-z)", 73, 28,
+		0, KEY_FG, TEXT_BG, ALIGN_RIGHT);
+      text_write("Recall", 79, 28,
+		0, p->color, TEXT_BG, ALIGN_RIGHT);
+
+      text_write("(", 26, 28, 0, KEY_FG, TEXT_BG, ALIGN_LEFT);
+      text_write(")", 53, 28, 0, KEY_FG, TEXT_BG, ALIGN_LEFT);
+    }
+
+    if (datasrc && (datasrc->option2str != NULL)
+	&& ((s = datasrc->option2str()) != NULL)) {
+      text_write(s, 3, 28,
+		0, TEXT_FG, TEXT_BG, ALIGN_LEFT);
     }
 
     fix_widgets();
-    if (scope.rate != rate || scope.trige != trige)
-      erase_data = 1;		/* bogus data if user just tweaked these */
-    rate = scope.rate;
-    trige = scope.trige;
     prev = -1;
     show_data();
     return;			/* show_data will call again to do the rest */
   }
 
-  /* always draw the dynamic text */
-  sprintf(string, "  Period of %6d us = %6d Hz  ", p->time,  p->freq);
-  vga_write(string, h_points/2, row(0), font, p->color, TEXT_BG, ALIGN_CENTER);
+  /* always draw the dynamic text, if signal is analog (bits == 0) */
+  if (p->signal && (p->signal->bits == 0)) {
 
-  if (p->signal->volts)
-    sprintf(string, "   %7.5g - %7.5g = %7.5g mV   ",
-	    (float)p->max * p->signal->volts / 320,
-	    (float)p->min * p->signal->volts / 320,
-	    ((float)p->max - p->min) * p->signal->volts / 320);
-  else
-    sprintf(string, " Max:%3d - Min:%4d = %3d Pk-Pk ",
-	    p->max, p->min, p->max - p->min);
-  vga_write(string, h_points/2, row(1), font, p->color, TEXT_BG, ALIGN_CENTER);
+    sprintf(string, "  Period of %6d us = %6d Hz  ", stats.time,  stats.freq);
+    text_write(string, 40, 0,
+	      0, p->color, TEXT_BG, ALIGN_CENTER);
 
-  vga_write(triggered ? " Triggered " : "? TRIGGER ?", h_points/2, row(3),
-	    font, ch[scope.trigch].color, TEXT_BG, ALIGN_CENTER);
-
-  if (ch[0].signal->rate != ch[1].signal->rate) {
-    sprintf(string, "WARNING: math(%d,%d) is bogus!",
-	    ch[0].signal->rate, ch[1].signal->rate);
-    vga_write(string, h_points/2, 62, font, KEY_FG, TEXT_BG, ALIGN_CENTER);
+    if (p->signal->volts)
+      sprintf(string, "   %7.5g - %7.5g = %7.5g mV   ",
+	      (float)stats.max * p->signal->volts / 320,
+	      (float)stats.min * p->signal->volts / 320,
+	      ((float)stats.max - stats.min) * p->signal->volts / 320);
+    else
+      sprintf(string, " Max:%3d - Min:%4d = %3d Pk-Pk ",
+	      stats.max, stats.min, stats.max - stats.min);
+    text_write(string, 40, 1,
+	      0, p->color, TEXT_BG, ALIGN_CENTER);
   }
 
-  if (ps.found) {		/* ProbeScope on ? */
-    sprintf(string, "%s%g V %s      ", ps.flags & PS_OVERFLOW ? "/\\"
-	    : ps.flags & PS_UNDERFLOW ? "\\/ " : "",
-	    (float)ps.dvm * (float)ps.volts / 100,
-	    ps.coupling ? ps.coupling : "?");
-    vga_write(string, 100, row(27), font, mem[25].color, TEXT_BG, ALIGN_LEFT);
+  if (math_warning) {
+#if 0
+    sprintf(string, "WARNING: math(%d,%d) is bogus!",
+	    ch[0].signal->rate, ch[1].signal->rate);
+    text_write(string, 40, 4, 0, KEY_FG, TEXT_BG, ALIGN_CENTER);
+#else
+    text_write("WARNING: math is bogus!", 40, 4,
+	       0, KEY_FG, TEXT_BG, ALIGN_CENTER);
+#endif
+  }
+
+  if (datasrc && datasrc->status_str != NULL) {
+    for (i=0; i<8; i++) {
+      int fieldsize[] = {16,16,16,16,20,20,12,12};
+      if ((s = datasrc->status_str(i)) != NULL) {
+	if (i%2 == 0)
+	  text_write(s, 12, 25 + i/2, fieldsize[i],
+		     TEXT_FG, TEXT_BG, ALIGN_LEFT);
+	else
+	  text_write(s, 66, 25 + i/2, fieldsize[i],
+		     TEXT_FG, TEXT_BG, ALIGN_RIGHT);
+      }
+    }
   }
 
   time(&sec);
   if (sec != prev) {		/* fix "scribbled" text once a second */
 
-    sprintf(string, "%s Trigger @ %d", trigs[scope.trige], scope.trig - 128);
-    vga_write(string, col(40), row(2),
-	      font, ch[scope.trigch].color, TEXT_BG, ALIGN_CENTER);
-    vga_write(strings[scope.mode], 100, 62, font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
-    vga_write(scope.run ? (scope.run > 1 ? "WAIT" : " RUN") : "STOP",
-	      h_points - 100, 62, font, TEXT_FG, TEXT_BG, ALIGN_RIGHT);
+    text_write(scope.run ? (scope.run > 1 ? "WAIT" : " RUN") : "STOP", 68, 4,
+	       0, TEXT_FG, TEXT_BG, ALIGN_RIGHT);
     sprintf(string, "fps:%3d", frames);
-    vga_write(string, h_points - 100, row(2), font,
-	      TEXT_FG, TEXT_BG, ALIGN_RIGHT);
+    text_write(string, 66, 2, 0, TEXT_FG, TEXT_BG, ALIGN_RIGHT);
 
     i = 1000 * scope.div / scope.scale;
     sprintf(string, "%d %cs/div", i > 999 ? i / 1000: i, i > 999 ? 'm' : 'u');
-    vga_write(string, col(40), row(25), font, TEXT_FG, TEXT_BG, ALIGN_CENTER);
+    text_write(string, 40, 25, 0, TEXT_FG, TEXT_BG, ALIGN_CENTER);
 
-    sprintf(string, "%d S/s", p->signal->rate);
-    vga_write(string, col(40), row(26), font, p->color, TEXT_BG, ALIGN_CENTER);
+    if (p->signal) {
 
-/*      sprintf(string, "%d Hz/div FFT", scope.div * p->signal->rate / 1000 */
-/*  	    * p->signal->rate / 880 / scope.scale); */
-    sprintf(string, "%d Samples", samples(p->signal->rate) - 2);
-    vga_write(string, col(40), row(27), font, p->color, TEXT_BG, ALIGN_CENTER);
+      /* XXX what do we want here - frame samples, samples per screen? */
+
+      /* I cut and changed this line a half dozen times trying to decide
+       * what number I wanted displayed as the "Samples" - p->signal->num
+       * would give us the actual number of samples in the signal, but
+       * that changes during the course of a sweep.  Now I've got the
+       * number of samples per sweep, which isn't quite acceptable if
+       * there's no data on the screen, or if we're displaying a memory
+       * channel with a fixed number of sample
+       */
+
+      /* sprintf(string, "%d Samples", p->signal->num); */
+      sprintf(string, "%d Samples", samples(p->signal->rate));
+      text_write(string, 40, 27, 14, p->color, TEXT_BG, ALIGN_CENTER);
+
+      if (p->signal->rate > 0) {
+
+	sprintf(string, "%d S/s", p->signal->rate);
+	text_write(string, 40, 26, 0, p->color, TEXT_BG, ALIGN_CENTER);
+
+      } else if (p->signal->rate < 0) {
+
+	/* Special case for a Fourier Transform.  p->signal->rate is
+	 * the negative of the frequency step for each point in the
+	 * transform, times 10.  Since there are 44 x-coordinates in a
+	 * division, after applying the scope's current time base
+	 * multiplier (scope.div / scope.scale), we multiply by 44/10
+	 * to get the number of Hz in a division.
+	 */
+
+	sprintf(string, "%d Hz/div FFT",
+		(- p->signal->rate) * 44 * scope.div / scope.scale / 10);
+	text_write(string, 40, 26, 0, p->color, TEXT_BG, ALIGN_CENTER);
+
+      }
+    }
 
     for (i = 0 ; i < 26 ; i++) {
       sprintf(string, "%c", i + 'a');
-      vga_write(string, col(27 + i), row(28),
-		font, mem[i].color, TEXT_BG, ALIGN_LEFT);
-    }
-
-    if (ps.found) {		/* ProbeScope on ? */
-      j = mem[25].color;
-
-      sprintf(string, "%d Volt Range", ps.volts);
-      vga_write(string, 100, row(25), font, j, TEXT_BG, ALIGN_LEFT);
-
-      vga_write(ps.trigger & PS_SINGLE ? "SINGLE" : "   RUN",
-		h_points - 100, row(25), font, j, TEXT_BG, ALIGN_RIGHT);
-
-      sprintf(string, "%s ~ %g V", ps.trigger & PS_PINT ? "+INTERN"
-	      : ps.trigger & PS_MINT ? "-INTERN"
-	      : ps.trigger & PS_PEXT ? "+EXTERN"
-	      : ps.trigger & PS_MEXT ? "-EXTERN" : "AUTO",
-	      (float)ps.level * (ps.trigger & PS_PEXT || ps.trigger & PS_MEXT
-				 ? 1.0 : (float)ps.volts) / 10);
-      vga_write(string, h_points - 100, row(27), font, j, TEXT_BG, ALIGN_RIGHT);
-
-      if (ps.wait)
-	vga_write("WAITING!", h_points - 100, row(28),
-		  font, j, TEXT_BG, ALIGN_RIGHT);
+      if (datasrc && i < datasrc->nchans()) {
+	/* XXX Maybe here we should show color by channel if sig displayed */
+#if 0
+	text_write(string, 27 + i, 28,
+		  0, chan[i].color, TEXT_BG, ALIGN_LEFT);
+#else
+	text_write(string, 27 + i, 28,
+		  0, TEXT_FG, TEXT_BG, ALIGN_LEFT);
+#endif
+      } else if (mem[i].num > 0) {
+	/* XXX different color here for memory? */
+	text_write(string, 27 + i, 28,
+		  0, TEXT_FG, TEXT_BG, ALIGN_LEFT);
+      }
     }
 
     frames = 0;
     prev = sec;
   }
-  if (frames++ > 20)		/* fps over 20 is overkill, so try to be nice */
-    usleep((frames - 20) * 100000);
+  frames++;
 }
 
-/* clear the display and redraw all text */
+/* roundoff_multipliers() - set mult/div, based on target mult/div if
+ * channel is displaying a signal with a voltage scale, then round
+ * the multipliers to something conventional (i.e, 10 mV/div instead
+ * of 9.7 mV/div), otherwise leave them alone.
+ *
+ * The rounding is done by computing the base ten logarithm of what
+ * the mV-per-division value would be if we just used the target
+ * mult/div ratio.  Then we throw away the integer part, leaving
+ * a number between 0 and 1 corresponding to a leading digit between
+ * 1 and 10.  By comparing this to the logarithms of 7.5 (.875),
+ * 3.5 (.544), and 1.5 (.176), we pick a target of 10 (1.0),
+ * 5 (0.7), 2 (0.3), or 1 (0.0), and subtract out the corresponding
+ * logarithm.  The difference is the power of ten we need to multiply
+ * mult/div by to get to our target.  At this point, we'd like a nice
+ * algorithm to find the closest rational fraction to a given real
+ * number, but I don't know of one.  Instead, we just multiply
+ * mult/div by 1000, then multiply the logarithm's power into
+ * the largest of either mult or div.  It works within 1%, which
+ * is the accuracy we display the voltage scale with.
+ */
+
+void
+roundoff_multipliers(Channel *p)
+{
+
+  if (p->signal && p->signal->volts && !p->bits) {
+
+    double mV_per_div;
+    double logmV;
+
+    mV_per_div = (double)p->signal->volts
+      * p->target_div / p->target_mult / 10;
+
+    logmV = log10(mV_per_div);
+    logmV -= floor(logmV);
+
+    if (logmV > .875) logmV = logmV - 1.0;
+    else if (logmV > .544) logmV = logmV - 0.7;
+    else if (logmV > .176) logmV = logmV - 0.3;
+
+    p->mult = p->target_mult * 1000;
+    p->div = p->target_div * 1000;
+ 
+    if (p->mult > p->div) {
+      p->mult *= pow(10.0, logmV);
+    } else {
+      p->div *= pow(10.0, -logmV);
+    }
+
+#if 0
+    printf("roundoff_multipliers() %d/%d -> %d/%d\n",
+	   p->target_mult, p->target_div, p->mult, p->div);
+#endif
+
+  } else {
+
+    p->mult = p->target_mult;
+    p->div = p->target_div;
+
+  }
+
+}
+
+/* clear() - one of the most important functions in the program,
+ * called whenever something 'changes'
+ *
+ * Clear the display, clear data history on all display
+ * channels, and redraw all text.  Since this clears data history
+ * (both on the screen and in memory), it should only be called when
+ * needed.
+ */
+
 void
 clear()
 {
+  int i;
+
   clear_display();
+  if (datasrc) {
+    datasrc->reset();
+    setinputfd(datasrc->fd());
+  }
+
+  /* This also updates the 'volts' and 'rate' fields in the math
+   * signals
+   */
+
+  math_warning = update_math_signals();
+
+  for (i = 0; i < CHANNELS; i++) {
+    ch[i].old_frame = 0;
+
+    roundoff_multipliers(&ch[i]);
+  }
+
+  show_data();
   draw_text(1);
 }
 
@@ -360,29 +509,26 @@ draw_graticule()
     0, -10, 10
   };
 
-  /* marks where the physical ProbeScope display ends */
-  if (ps.found) {
-    i = 31 * 44000 * scope.scale / (mem[25].rate * scope.div) + 100;
-    if (i > h_points - 100) i = h_points - 100;
-    SetColor(mem[25].color);
-    DrawLine(i, 70, i, 80);
-    DrawLine(i, v_points - 70, i, v_points - 80);
-  }
-
   /* a mark where the trigger level is, if the triggered channel is shown */
-  i = -1;
-  for (j = 7 ; j >= 0 ; j--) {
-    if (ch[j].show && ch[j].func == scope.trigch)
-      i = j;
-  }
-  if (i > -1) {
-    j = offset + ch[i].pos + (128 - scope.trig) * ch[i].mult / ch[i].div;
-    SetColor(mem[scope.trigch + 23].color);
-    DrawLine(90, j + tilt[scope.trige], 110, j - tilt[scope.trige]);
+  if (scope.trige) {
+    i = -1;
+    for (j = 7 ; j >= 0 ; j--) {
+      if (ch[j].show && ch[j].signal == datasrc->chan(scope.trigch))
+	i = j;
+    }
+    if (i > -1) {
+      j = offset + ch[i].pos - scope.trig * ch[i].mult / ch[i].div;
+      SetColor(ch[i].color);
+      DrawLine(90, j + tilt[scope.trige], 110, j - tilt[scope.trige]);
+    }
   }
 
   /* the frame */
+#if 0
   SetColor(clip ? mem[clip + 22].color : color[scope.color]);
+#else
+  SetColor(color[scope.color]);
+#endif
   DrawLine(100, 80, h_points - 100, 80);
   DrawLine(100, v_points - 80, h_points - 100, v_points - 80);
   DrawLine(100, 80, 100, v_points - 80);
@@ -417,42 +563,126 @@ draw_graticule()
   }
 }
 
-/* graph the data on the display */
+/* draw_data()
+ *
+ * graph the data on the display, possibly erasing old data to make
+ * room for the new.  To do this, we keep an array of data points,
+ * half of which is the previous sweep that we're erasing as we go,
+ * the other half of which is the new sweep that we're drawing as we
+ * go.  At the end of a sweep, we flip pointers to the two halves.  If
+ * we're in an accumulate mode, don't have to erase anything, because
+ * we're just letting the traces accumulate on the screen.  Also draw
+ * cursors here, and, near the end of the function, draw tick marks to
+ * show zero levels.
+ */
+
 void
 draw_data()
 {
-  static int i, j, k, l, x, y, X, Y, mult, div, off, bit, start, end;
-  static int time, prev, delay, bitoff;
+  static int i, j, l, x, y, X, Y, mult, div, off, bit, start, end;
+  static int time, prev, bitoff;
   static long int num;
-  static int old = 100, preva = 100, prevb = 100;
+  static int preva = 100, prevb = 100;	/* previous cursor locations */
   static Channel *p;
+  static SignalLine *sl;
   static short *samp;
-
-  /* interpolate a line between the sample just before and after trigger */
-  if (scope.trige) {		/* to place time zero at trigger */
-    samp = mem[k = scope.trigch + 23].data;
-    if ((i = samp[0]) != (j = samp[1])) /* avoid divide by zero: */
-      delay = 100 + abs(j - scope.trig + 128) * 44000 * scope.scale
-	/ (abs(j - i) * mem[k].rate); /* y=mx+b  so  x=(y-b)/m */
-    if (delay < 100 || delay > h_points - 200)
-      delay = old;
-  } else			/* no trigger, leave delay as it was */
-    delay = old;
-
-  if (scope.curs) {		/* erase previous cursors */
-    SetColor(color[0]);
-    DrawLine(preva, 70, preva, v_points - 70);
-    DrawLine(prevb, 70, prevb, v_points - 70);
-  }
 
   for (j = 0 ; j < CHANNELS ; j++) { /* plot each visible channel */
     p = &ch[j];
 
-    if (p->show) {
+    if (p->show && p->signal) {
+
       mult = p->mult;
       div = p->div;
       off = offset + p->pos;
-      num = 10 * p->signal->rate * scope.div / scope.scale / 44;
+
+      samp = p->signal->data;
+
+      /* Compute num, the number of samples per x-coordinate, times
+       * 10000, based on the signal's rate (in samples/sec), the
+       * scope's time base multiplier (scope.scale / scope.div), the
+       * 44 x-coords ((640-200)/10) in each division, and a base rate
+       * of 1 ms per div.  For example, if the signal rate is 44000 Hz,
+       * and the time base multiplier is 1, num will be 10000 (or
+       * 1, since it's times 10000), for one sample for x-coord, 44
+       * samples per division, 1 ms per div.  If the signal rate
+       * is zero (unspecified) or negative (a special case for
+       * Fourier Transforms, meaning the x scale is in Hz), we
+       * use a base rate of one sample per x-coord.
+       */
+
+      if (p->signal->rate > 0) {
+	num = 10 * p->signal->rate * scope.div / scope.scale / 44;
+      } else {
+	num = 10000 * scope.div / scope.scale;
+      }
+
+      /* Compute left offset: 100 pixels to the side of the display
+       * area, plus any additional delay specified by the signal.
+       */
+
+      l = 100 + p->signal->delay / num;
+
+      /* Erase and redraw the cursors, if they've moved.
+       *
+       * We always draw them, for much the same reason as we always
+       * draw signal lines - because we've never quite sure if
+       * a signal that coincides with them might have been erased,
+       * and part of the cursor along with it.
+       *
+       * There's several things I don't like about the cursors.
+       * First, the cursor positions are stored as offsets into the
+       * data arrays, which means that if we change to a different
+       * signal with a different sampling rate, the cursors move
+       * around on the screen!  We'd have to worry about that in this
+       * code, except that handle_key() always does a clear() when it
+       * changes channels - not that I think a clear() is necessary
+       * when we change channels, but at least it makes sure that we
+       * don't get doubly drawn cursors if we move to a channel with a
+       * different sampling rate.
+       *
+       * Also, this math might be a bit flakey, I'm not sure (I didn't
+       * write it).  Multiplication and division with computer
+       * integers is always a lot of trouble, and 'num' was designed
+       * to convert from time to x-coords, not the other way around.
+       *
+       * And, of course, we're doing all this in one of the program's
+       * most critical code sections, from a performance standpoint.
+       * These cursors get redrawn every single time we refresh the
+       * screen.  It really could be somewhat smarter.
+       */
+
+      if (scope.curs && j == scope.select) {
+	X = (scope.cursa - 1) * 10000 / num + l + 1;
+	if (X != preva) {
+	  SetColor(color[0]);
+	  DrawLine(preva, 70, preva, v_points - 70);
+	  preva = X;
+	}
+	if (X < h_points - 100) {
+	  SetColor(p->color);
+	  DrawLine(X, 70, X, v_points - 70);
+	}
+
+	X = (scope.cursb - 1) * 10000 / num + l + 1;
+	if (X != prevb) {
+	  SetColor(color[0]);
+	  DrawLine(prevb, 70, prevb, v_points - 70);
+	  prevb = X;
+	}
+	if (X < h_points - 100) {
+	  SetColor(p->color);
+	  DrawLine(X, 70, X, v_points - 70);
+	}
+      }
+
+      /* XXX make sure that if we're displaying a digital signal,
+       * we go into digital display mode.  Should be elsewhere.
+       */
+
+      if (p->bits == 0 && p->signal->bits != 0) {
+	p->bits = p->signal->bits;
+      }
 
       if (!p->bits)		/* analog display mode: draw one line */
 	start = end = -1;
@@ -461,74 +691,195 @@ draw_data()
 	end = p->bits - 1;
       }
 
-      for (k = !(scope.mode % 2) ; k >= 0 ; k--) { /* once=accum, twice=erase */
+      for (bit = start ; bit <= end ; bit++) {
 
-	if (k) {		/* erase previous samples */
-	  SetColor(color[0]);
-	  samp = p->old + 1;
-	  l = old;
-	} else {		/* plot new samples */
-	  SetColor(erase_data ? color[0] : p->color);
-	  samp = p->signal->data + 1;
-	  l = delay;
+	/* Hardwired: 16 y-coords between bits in digital mode */
+	bitoff = bit * 16 - end * 8 + 4;
+
+	/* SignalLine structures contain all the stored information
+	 * about the (x,y) coordinates we've drawn already and may
+	 * need to erase
+	 */
+	sl = p->signalline[bit < 0 ? 0 : bit];
+
+	if (sl == NULL) {
+	  sl = (SignalLine *) malloc(sizeof(SignalLine));
+	  if (sl == NULL) {
+	    perror("xoscope: malloc(SignalLine)");
+	    break;
+	  }
+	  p->signalline[bit < 0 ? 0 : bit] = sl;
 	}
 
-	if (!(p->func <= FUNCRIGHT /* use the delay? */
-	    || (p->func >= FUNCEXT /* yes only if we're L or R or their math */
-		&& (ch[0].func <= FUNCRIGHT || ch[1].func <= FUNCRIGHT))))
-	  l = 100;		/* no if we're memory or ProbeScope */
+	if ((p->signal->frame != p->old_frame) || (p->old_frame == 0)) {
 
-	if (scope.curs && j == scope.select && !k) { /* draw new cursors */
-	  if ((time = (scope.cursa - 1) * 10000 / num + l + 1) < h_points - 100)
-	    DrawLine(time, 70, time, v_points - 70);
-	  preva = time;
-	  if ((time = (scope.cursb - 1) * 10000 / num + l + 1) < h_points - 100)
-	    DrawLine(time, 70, time, v_points - 70);
-	  prevb = time;
-	}
+	  /* New frame.  Start all the way at the left side. */
 
-	for (bit = start ; bit <= end ; bit++) {
 	  prev = -1;
 	  X = 0;
-	  bitoff = bit * 16 - end * 8 + 4;
-	  for (i = 0 ; i < h_points - 100 - l ; i++) {
-	    if ((time = i * num / 10000) > prev && time < MAXWID) {
-	      if ((x = i + l) > h_points - 100)
-		break;
-	      y = off - (bit < 0 ? samp[time]
-			 : (bitoff - (samp[time] & (1 << bit) ? 0 : 8)))
-		* mult / div;
-	      if (scope.mode < 2)
-		DrawPixel(x, y);
-	      else if (X) {
-		if (scope.mode < 4)
-		  DrawLine(X, Y, x, y);
-		else {
-		  DrawLine(X, Y, x, Y);
-		  DrawLine(x, Y, x, y);
-		}
-	      }
-	      X = x; Y = y;
-	    }
-	    if (time > prev) prev = time;
+	    
+	  /* If we're not in an accumulate mode, erase anything
+           * lingering on the old line
+	   */
+
+	  if (!(scope.mode % 2) && (sl->prev_line_last > sl->prev_line_start)){
+	    if (scope.mode < 2)
+	      PolyPoint(color[0], sl->points + sl->prev_line_start,
+			  sl->prev_line_last - sl->prev_line_start + 1);
+	    else
+	      PolyLine(color[0], sl->points + sl->prev_line_start,
+			 sl->prev_line_last - sl->prev_line_start + 1);
 	  }
+
+	  /* Now swap the current line into the previous line
+	   * and start a new current line.
+	   */
+
+	  sl->prev_line_start = sl->current_line_start;
+	  sl->prev_line_last = sl->current_line_next - 1;
+
+	  if (sl->current_line_start == 0) sl->current_line_start = 1024;
+	  else sl->current_line_start = 0;
+
+	  sl->current_line_next = sl->current_line_start;
+
+	} else {
+
+	  /* Continuation of a frame we've seen before.  Pick up where
+	   * we left off.  We assume here that 'l' hasn't changed from
+	   * one pass to next
+	   */
+
+	  if (sl->current_line_next > sl->current_line_start) {
+	    X = sl->points[sl->current_line_next - 1].x - l;
+	    Y = sl->points[sl->current_line_next - 1].y;
+	  } else {
+	    X = 0;
+	    Y = 0;
+	  }
+
+	  prev = X * num / 10000;
+
 	}
+
+	/* Compute the points we want to draw on the current line and
+	 * write them into the sl->points[] array.  'time' is an index
+	 * into samp[] array, computed from the current x-coord.
+	 * 'prev', the last 'time' we actually used to draw a point,
+	 * is here to make sure that if a single sample is spread over
+	 * several x-coords, we skip coords to draw one line across
+	 * them all.
+	 */
+
+	/* XXX we'd really like to draw one point extra, so we're
+	 * never left with a signal line that stops before the end of
+	 * the screen.
+	 */
+
+	/* for (x = X; x <= h_points - 100 - l ; x++) { */
+	for (x = X; 1; x++) {
+
+	  time = x * num / 10000;
+
+	  if ((time > prev) && (time <= p->signal->num - 1)) {
+
+	    /* Hardwired: 8 y-coords is height of digital line */
+
+	    y = off - (bit < 0 ? samp[time]
+		       : (bitoff - (samp[time] & (1 << bit) ? 0 : 8)))
+	      * mult / div;
+
+	    if (scope.mode >= 4 && X) {
+
+	      /* Step mode.  Draw a horizontal line segment,
+	       * then a vertical one (instead of a single line)
+	       */
+
+	      sl->points[sl->current_line_next].x = l + x;
+	      sl->points[sl->current_line_next].y = Y;
+	      sl->current_line_next ++;
+	    }
+
+	    sl->points[sl->current_line_next].x = l + x;
+	    sl->points[sl->current_line_next].y = y;
+	    sl->current_line_next ++;
+
+	    X = x; Y = y; prev = time;
+
+	    if (x > h_points - 100 - l) break;
+
+	  }
+
+	  /* XXX this is here if we try to display a signal with no
+	   * plotable data points (i.e, p->signal->num is zero,
+	   * or we've started the draw past its last point)
+	   */
+
+	  if (time > p->signal->num + 1) break;
+
+	}
+
+	/* If we're not in an accumulate mode, erase everything on the
+	 * previous line up to the last X coordinate we're going to
+	 * draw on the current line.
+	 */
+
+	if (!(scope.mode % 2) && (sl->prev_line_last > sl->prev_line_start)) {
+	  for (i = sl->prev_line_start; i < sl->prev_line_last; i ++) {
+	    if (sl->points[i].x >= l + X) break;
+	  }
+	  if (scope.mode < 2)
+	    PolyPoint(color[0], sl->points + sl->prev_line_start,
+			i - sl->prev_line_start + 1);
+	  else
+	    PolyLine(color[0], sl->points + sl->prev_line_start,
+		       i - sl->prev_line_start + 1);
+	  sl->prev_line_start = i;
+	}
+
+	/* Draw the points on the current line
+	 *
+	 * Even if nothing changed on this line, another signal might
+	 * have erased an overlapping portion, so we always draw
+	 * the entire signal, not just the newly added part.
+	 */
+
+	if (sl->current_line_next > sl->current_line_start) {
+	  if (scope.mode < 2)
+	    PolyPoint(p->color, sl->points + sl->current_line_start,
+			sl->current_line_next - sl->current_line_start);
+	  else
+	    PolyLine(p->color, sl->points + sl->current_line_start,
+		       sl->current_line_next - sl->current_line_start);
+	}
+
       }
-      memcpy(p->old, p->signal->data, sizeof(short) * samples(p->signal->rate));
+
+      p->old_frame = p->signal->frame;
+
+      /* Draw tick marks on left and right sides of display showing zero pos */
+      SetColor(p->color);
       DrawLine(90, off, 100, off);
       DrawLine(h_points - 100, off, h_points - 90, off);
     }
   }
-  erase_data = 0;
-  old = delay;
 }
 
 /* calculate any math and plot the results and the graticule */
 void
-show_data()
+show_data(void)
 {
+
+  /* Run any math functions, then measure statistics to be displayed,
+   * like min, max, frequency.  If the timebase is fast enough (less
+   * than 100 ms/div) do this only at the end of a frame.
+   */
+
   do_math();
-  measure_data(&ch[scope.select]);
+
+  if ((scope.scale >= 100) || !in_progress)
+    measure_data(&ch[scope.select], &stats);
+
   draw_text(0);
   if (scope.behind) {
     draw_graticule();		/* plot data on top of graticule */
@@ -540,28 +891,55 @@ show_data()
   SyncDisplay();
 }
 
-/* get and plot some data */
+/* animate() - get and plot some data
+ *
+ */
+
 int
 animate(void *data)
 {
-  clip = 0;
-  if (ps.found) probescope();
-  if (scope.run) {
-    triggered = bs.found ? bs_getdata(bs.fd) : get_data();
-    if (triggered && scope.run > 1) { /* auto-stop single-shot wait */
-      scope.run = 0;
-      draw_text(1);
-    }
-  } else if (in_progress)
-    bs.found ? bs_getdata(bs.fd) : get_data();
-  else
-    usleep(100000);		/* no need to suck all CPU cycles */
-  show_data();
-  if (quit_key_pressed) {
-    cleanup();
-    exit(0);
+  static struct timeval current_time, prev_time;
+
+  /* To avoid hammering the X server, don't do anything if it's been
+   * less than scope.min_interval milliseconds (default 50) since the
+   * last time we ran this function.  If we do skip processing, then
+   * set a timeout to make sure we run again scope.min_interval
+   * milliseconds from now.
+   */
+
+  gettimeofday(&current_time, NULL);
+
+  if ((prev_time.tv_sec <= current_time.tv_sec)
+      && (prev_time.tv_sec + 10 > current_time.tv_sec)
+      && (1000000 * (current_time.tv_sec - prev_time.tv_sec)
+	  + current_time.tv_usec - prev_time.tv_usec
+	  < 1000 * scope.min_interval)) {
+    settimeout(scope.min_interval);
+    setinputfd(-1);
+    return;
   }
-  AddTimeOut(MSECREFRESH, animate, NULL);
+
+  prev_time = current_time;
+  if (datasrc) setinputfd(datasrc->fd());
+  settimeout(0);
+
+  clip = 0;
+  if (datasrc) {
+    if (scope.run) {
+      triggered = datasrc->get_data();
+      if (triggered && scope.run > 1) { /* auto-stop single-shot wait */
+	scope.run = 0;
+	draw_text(1);
+      }
+    } else if (in_progress) {
+      datasrc->get_data();
+    } else {
+      //usleep(100000);		/* no need to suck all CPU cycles */
+      setinputfd(-1);		/* scope not running, so why listen? */
+    }
+  }
+  show_data();
+
   return TRUE;
 }
 
@@ -572,7 +950,7 @@ init_screen()
   int i, channelcolor[] = CHANNELCOLOR;
 
   for (i = 0 ; i < CHANNELS ; i++) {
-    ch[i].color = mem[i + 23].color = color[channelcolor[i]];
+    ch[i].color = color[channelcolor[i]];
   }
   fix_widgets();
   offset = v_points / 2;

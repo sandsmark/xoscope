@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: xy.c,v 1.4 1999/08/29 02:09:17 twitham Rel $
+ * @(#)$Id: xy.c,v 1.5 2003/06/17 22:52:32 baccala Exp $
  *
  * Copyright (C) 1996 - 1999 Tim Witham <twitham@quiknet.com>
  *
@@ -29,7 +29,7 @@
 #include "config.h"
 #include "display.h"
 
-int mode = 2, quit_key_pressed = 0, h_points = 640;
+int mode = 2, h_points = 640;
 
 /* handle single key commands */
 void
@@ -37,7 +37,7 @@ handle_key(char c)
 {
   switch (c) {
   case '\e':			/* Esc */
-    quit_key_pressed = 1;
+    exit(0);
     break;
   case '\r':			/* Enter */
   case '\n':
@@ -58,9 +58,6 @@ animate(void *data)
 {
   static short x, y, z = 0, X, Y, buff[sizeof(short)];
   static int i, j;
-
-  if (quit_key_pressed)
-    exit(0);
 
   if (!(mode % 2))
     clear();

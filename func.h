@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: func.h,v 1.12 1997/05/27 03:25:30 twitham Rel $
+ * @(#)$Id: func.h,v 1.13 2003/06/17 22:52:32 baccala Exp $
  *
  * Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -20,30 +20,32 @@
 #define EXTSTART 1
 #define EXTRUN   2
 
-extern int funccount;
+struct signal_stats {
+  short min;			/* Minimum signal value */
+  short max;			/* Maximum signal value */
+  int time;
+  int freq;
+};
 
-extern char *funcnames[];
+void save(char);
+void recall_on_channel(Signal *, Channel *);
+void recall(Signal *);
 
-void
-save(char);
+void next_func(void);
+void prev_func(void);
+int function_bynum_on_channel(int, Channel *);
 
-void
-recall(char);
+void start_command_on_channel(char *, Channel *);
+void startcommand(char *);
 
-void
-init_math();
+void init_math();
 
-void
-do_math();
+void do_math();
 
-void
-cleanup_math();
+void cleanup_math();
 
-void
-measure_data(Channel *);
+void measure_data(Channel *, struct signal_stats *);
 
-void
-init_fft();			/* in fft.c */
+void init_fft();			/* in fft.c */
 
-void
-fft();				/* in fft.c */
+void fft();				/* in fft.c */

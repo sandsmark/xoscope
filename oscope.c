@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.c,v 1.90 2002/06/15 21:21:53 twitham Exp $
+ * @(#)$Id: oscope.c,v 1.91 2003/06/17 22:52:32 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -13,32 +13,49 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <math.h>
 #include "oscope.h"		/* program defaults */
 #include "display.h"		/* display routines */
 #include "func.h"		/* signal math functions */
 #include "file.h"		/* file I/O functions */
-#include "proscope.h"		/* ProbeScope (serial) functions */
-#include "bitscope.h"		/* BitScope (serial) functions */
 
 /* global program structures */
 Scope scope;
+
+extern DataSrc datasrc_esd, datasrc_sc, datasrc_ps, datasrc_bs;
+#if HAVE_LIBCOMEDI
+extern DataSrc datasrc_comedi;
+#endif
+
+DataSrc *datasrcs[] = {
+#if HAVE_LIBCOMEDI
+  &datasrc_comedi,
+#endif
+  &datasrc_esd,
+  &datasrc_sc,
+  &datasrc_ps,
+  &datasrc_bs
+};
+
+int ndatasrcs = sizeof(datasrcs)/sizeof(DataSrc *);
+int datasrci = -1;
+DataSrc *datasrc = NULL;
+
 Channel ch[CHANNELS];
 
 /* extra global variable definitions */
 char *progname;			/* the program's name, autoset via argv[0] */
 char version[] = VERSION;	/* version of the program, from Makefile */
 char error[256];		/* buffer for "one-line" error messages */
-int quit_key_pressed = 0;	/* set by handle_key() */
 int v_points;			/* pixels in vertical axis */
 int h_points;			/* pixels in horizontal axis */
 int offset;			/* vertical pixel offset to zero line */
 int clip = 0;			/* whether we're maxed out or not */
 char *filename;			/* default file name */
-int in_progress = 0;		/* parallel data collection in progress? */
-
-extern void open_sound_card();
-extern void close_sound_card();
-extern int reset_sound_card();
+int frames = 0;			/* # of frames (full or partial) captured */
+int in_progress = 0;		/* frame collection in progress?
+				 *   if so, this is index of next sample
+				 */
 
 /* display command usage on stdout or stderr and exit */
 void
@@ -53,31 +70,30 @@ usage(int error)
 
 Startup Options  Description (defaults)               version %s
 -h               this Help message and exit
+-D <datasrc>     select named data source (COMEDI/Soundcard/ESD/Bitscope/etc)
+-o <option>      specify data source specific options
 -# <code>        #=1-%d, code=pos[.bits][:scale[:func#, mem a-z or cmd]] (0:1/1)
 -a <channel>     set the Active channel: 1-%d                  (%d)
--r <rate>        sampling Rate in Hz: 8000,11025,22050,44100  (%d)
 -s <scale>       time Scale: 1/2000-1000/1 where 1=1ms/div    (%d/1)
 -t <trigger>     Trigger level[:type[:channel]]               (%s)
 -l <cursors>     cursor Line positions: first[:second[:on?]]  (%s)
 -c <color>       graticule Color: 0-15                        (%d)
--d <dma divisor> sound card DMA buffer size divisor: 1,2,4    (%d)
 -m <mode>        video Mode (size): 0,1,2,3                   (%d)
--f <font name>   the Font name as-in %s (%s)
+-f <font name>   the Font name as-in %s
 -p <type>        Plot mode: 0/1=point, 2/3=line, 4/5=step     (%d)
 -g <style>       Graticule: 0=none,  1=minor, 2=major         (%d)
+-i <min interv>  Minimum display update interval (ms)         (50)
 -b               %s Behind instead of in front of %s
 -v               turn Verbose key help display %s
--x               turn sound card (XY) input device %s
--z               turn SerialScope (Z) input device %s
 file             %s file to load to restore settings and memory
 ",
 	  progname, version, CHANNELS, CHANNELS, DEF_A,
-	  DEF_R, DEF_S, DEF_T, DEF_L,
-	  DEF_C, scope.dma, scope.size,
-	  fonts, fontname,
+	  DEF_S, DEF_T, DEF_L,
+	  DEF_C, scope.size,
+	  fonts,		/* the font method for the display */
 	  scope.mode,
 	  scope.grat, def[DEF_B], def[!DEF_B],
-	  onoff[DEF_V], onoff[!DEF_X], onoff[!DEF_Z], progname);
+	  onoff[DEF_V], progname);
   exit(error);
 }
 
@@ -87,8 +103,8 @@ parse_args(int argc, char **argv)
 {
   const char     *flags = "Hh"
     "1:2:3:4:5:6:7:8:"
-    "a:r:s:t:l:c:m:d:f:p:g:bvxyz"
-    "A:R:S:T:L:C:M:D:F:P:G:BVXYZ";
+    "a:r:s:t:l:c:m:d:f:p:g:o:i:bvxyz"
+    "A:R:S:T:L:C:M:D:F:P:G:o:I:BVXYZ";
   int c;
 
   while ((c = getopt(argc, argv, flags)) != EOF) {
@@ -102,22 +118,17 @@ cleanup()
 {
   cleanup_math();
   cleanup_display();
-  close_sound_card();
-  cleanup_serial();
+  if (datasrc) datasrc->close();
 }
 
 /* initialize the scope */
 void
 init_scope()
 {
-  int i;
-
   scope.size = DEF_M;
-  scope.dma = DEF_D;
   scope.mode = DEF_P;
   scope.scale = DEF_S;
   scope.div = 1;
-  scope.rate = DEF_R;
   handle_opt('t', DEF_T);
   handle_opt('l', DEF_L);
   scope.grat = DEF_G;
@@ -126,38 +137,26 @@ init_scope()
   scope.color = DEF_C;
   scope.select = DEF_A - 1;
   scope.verbose = DEF_V;
-  snd = DEF_X ? 0 : -1;
-  ps.found = bs.found = !DEF_Z;
-  for (i = 0; i < sizeof(bs.R) / sizeof(bs.R[0]); i++) {
-    bs.R[i] = -1;
-  }
+  scope.min_interval = 50;
 }
 
 /* initialize the signals */
 void
 init_channels()
 {
-  int i, j[] = {23, 24, 25, 0, 0, 0, 0, 0};
+  int i;
   static int first = 1;
 
-  for (i = 0 ; i < CHANNELS ; i++) {
-    if (ch[i].pid)
-      ch[i].mem = EXTSTOP;
-  }
   if (!first)
-    do_math();			/* halt currently running commands */
+    do_math();			/* XXX halt currently running commands */
   first = 0;
   for (i = 0 ; i < CHANNELS ; i++) {
-    ch[i].signal = &mem[j[i]];
-    memset(ch[i].old, 0, MAXWID * sizeof(short));
-    ch[i].mult = 1;
-    ch[i].div = 1;
+    bzero(&ch[i], sizeof(Channel));
+    ch[i].signal = NULL;
+    ch[i].target_mult = 1;
+    ch[i].target_div = 1;
     ch[i].pos = 0;
-    ch[i].show = (i < FUNCMEM);
-    ch[i].func = i < FUNCMEM ? i : FUNCMEM;
-    ch[i].mem = i < FUNCMEM ? 'x' + i : 0;
-    strcpy(ch[i].command, COMMAND);
-    ch[i].pid = 0;
+    ch[i].show = 0;
     ch[i].bits = 0;
   }
 }
@@ -204,14 +203,172 @@ scaledown(int num)
   return(num);
 }
 
-/* internal only, change rate and propogate it everywhere */
+/* Close the current data source */
+
 void
-resetsoundcard(int rate)
+datasrc_close(void)
 {
-  scope.rate = mem[23].rate = mem[24].rate = reset_sound_card(rate, 2, 8);
-  mem[23].volts = mem[24].volts = 0;
-  do_math();			/* propogate new rate to any math */
-  draw_text(1);
+  int j,k;
+
+  if (datasrc) {
+
+    if (datasrc->clear_trigger) datasrc->clear_trigger();
+    scope.trige = 0;
+
+    /* clear listeners on our signal channels prior to close */
+    for (j=0; j<datasrc->nchans(); j++) {
+      Signal *sig = datasrc->chan(j);
+      if (sig->listeners) {
+	for (k=0; k<CHANNELS; k++) {
+	  if (ch[k].signal == sig) {
+	    recall_on_channel(NULL, &ch[k]);
+	  }
+	}
+      }
+    }
+    datasrc->close();
+  }
+
+  datasrc = NULL;
+  datasrci = -1;
+}
+
+int
+datasrc_open(DataSrc *new_datasrc)
+{
+  int i;
+  int limit = sizeof(datasrcs)/sizeof(DataSrc *);
+
+  if (new_datasrc->open()) {
+
+    datasrc_close();
+
+    datasrc = new_datasrc;
+
+    for (i=0; i<limit; i++) {
+      if (datasrc == datasrcs[i]) datasrci = i;
+    }
+
+    /* All data sources have at least one channel.  Show it. */
+
+    if (ch[0].signal == NULL) {
+      ch[0].show = 1;
+      recall_on_channel(datasrc->chan(0), &ch[0]);
+    }
+
+    /* If data sources has a second channel, show it.  Older versions did. */
+
+    if ((ch[1].signal == NULL) && (datasrc->nchans() > 1)) {
+      ch[1].show = 1;
+      recall_on_channel(datasrc->chan(1), &ch[1]);
+    }
+
+    return 1;
+
+  }
+
+  return 0;
+
+}
+
+/* Open a data source even if it's open function returns 0 */
+
+void
+datasrc_force_open(DataSrc *new_datasrc)
+{
+  int i;
+  int limit = sizeof(datasrcs)/sizeof(DataSrc *);
+
+  datasrc_close();
+
+  datasrc = new_datasrc;
+
+  datasrc->open();
+
+  for (i=0; i<limit; i++) {
+    if (datasrc == datasrcs[i]) datasrci = i;
+  }
+
+  /* If data sources has a channel, show it. */
+
+  /* XXX problem here - if data source requires options to
+   * be set before it can open properly, nchans() won't
+   * return anything valid yet
+   */
+
+  if ((ch[0].signal == NULL) && (datasrc->nchans() > 0)) {
+    ch[0].show = 1;
+    recall_on_channel(datasrc->chan(0), &ch[0]);
+  }
+
+  /* If data sources has a second channel, show it.  Older versions did. */
+
+  if ((ch[1].signal == NULL) && (datasrc->nchans() > 1)) {
+    ch[1].show = 1;
+    recall_on_channel(datasrc->chan(1), &ch[1]);
+  }
+
+}
+
+/* Find the first valid datasrc; should only be called once
+ * return TRUE if successful; FALSE if no valid datasrcs were found
+ */
+
+int
+datasrc_first(void)
+{
+  int i;
+  int limit = sizeof(datasrcs)/sizeof(DataSrc *);
+
+  for (i=0; i<limit; i++) {
+    if (datasrc_open(datasrcs[i])) {
+      return 1;
+    }
+  }
+  return 0;
+}
+
+/* Advance to next datasrc
+ * return TRUE if successful; FALSE if no other valid datasrcs were found
+ */
+
+int
+datasrc_next(void)
+{
+  int i;
+  int limit = sizeof(datasrcs)/sizeof(DataSrc *);
+
+  if (datasrci < 0) return datasrc_first();
+
+  for (i=(datasrci+1)%limit; (i=i%limit) != datasrci; i++) {
+    if (datasrc_open(datasrcs[i])) {
+      return 1;
+    }
+  }
+  return 0;
+}
+
+/* Select the named datasrc (case insensitive match)
+ * return TRUE if successful; FALSE if it wasn't found or couldn't be opened
+ */
+
+int
+datasrc_byname(char *name)
+{
+  int i;
+  int limit = sizeof(datasrcs)/sizeof(DataSrc *);
+
+  /* Don't do anything if we're selecting the data source we've got */
+  if (datasrc && strcasecmp(name, datasrc->name) == 0) return 1;
+
+  for (i=0; i<limit; i++) {
+    if (strcasecmp(name, datasrcs[i]->name) == 0) {
+      datasrc_force_open(datasrcs[i]);
+      return 1;
+    }
+  }
+
+  return 0;
 }
 
 /* gr_* UIs call this after selecting file and confirming overwrite */
@@ -225,26 +382,7 @@ savefile(char *file)
 void
 loadfile(char *file)
 {
-  close_sound_card();
   readfile(filename = file);
-  if (snd)
-    resetsoundcard(scope.rate);
-  if (ps.found || bs.found) {
-    init_probescope();
-    init_serial();
-  }
-}
-
-/* gr_* UIs call this after prompting for command to run */
-void
-startcommand(char *command)
-{
-  if (scope.select > 1) {
-    strcpy(ch[scope.select].command, command);
-    ch[scope.select].func = FUNCEXT;
-    ch[scope.select].mem = EXTSTART;
-    clear();
-  }
 }
 
 /* handle single key commands */
@@ -255,18 +393,27 @@ handle_key(unsigned char c)
   static int s;
 
   p = &ch[scope.select];
-  s = samples(p->signal->rate);
+  s = p->signal ? samples(p->signal->rate) : 0;	/* needed for cursors */
+
   if (c >= 'A' && c <= 'Z') {
-    save(c);			/* store channel */
-    draw_text(1);
+    if (p->signal) {
+      save(c);			/* store channel */
+      clear();			/* need this in case other chan displays mem */
+      draw_text(1);
+    }
     return;
   } else if (c >= 'a' && c <= 'z') {
-    recall(c);			/* recall signal */
+    if (datasrc && (c - 'a' < datasrc->nchans())) {
+      recall(datasrc->chan(c - 'a'));	/* recall data channel */
+    } else if (mem[c - 'a'].num > 0) {
+      recall(&mem[c - 'a']);	/* recall memory location if something there */
+    }
+    p->show = 1;		/* always display newly recalled channel */
     clear();
     return;
   } else if (c >= '1' && c <= '0' + CHANNELS) {
     scope.select = (c - '1');	/* select channel */
-    clear();
+    clear();			/* do this in case cursors move; see comments in display.c:drawdata() */
     return;
   }
   switch (c) {
@@ -286,7 +433,7 @@ handle_key(unsigned char c)
       scope.cursa = s - 1;
     break;
   case 'w' - 96:
-    if ((scope.cursa += s / 20) >= s)
+    if ((scope.cursa += 2 / 20) >= s)
       scope.cursa = 1;
     break;
   case 'e' - 96:
@@ -314,7 +461,11 @@ handle_key(unsigned char c)
       scope.cursb = 1;
     break;
   case '\t':
-    p->show = !p->show;		/* show / hide channel */
+    if (p->show) {		/* show / hide channel */
+      p->show = 0;
+    } else {
+      p->show = 1;
+    }
     clear();
     break;
   case '~':
@@ -328,17 +479,17 @@ handle_key(unsigned char c)
     clear();
     break;
   case '}':
-    if (p->div > 1)		/* increase scale */
-      p->div = scaledown(p->div);
+    if (p->target_div > 1)		/* increase scale */
+      p->target_div = scaledown(p->target_div);
     else
-      p->mult = scaleup(p->mult, 50);
+      p->target_mult = scaleup(p->target_mult, 100);
     clear();
     break;
   case '{':
-    if (p->mult > 1)		/* decrease scale */
-      p->mult = scaledown(p->mult);
+    if (p->target_mult > 1)		/* decrease scale */
+      p->target_mult = scaledown(p->target_mult);
     else
-      p->div = scaleup(p->div, 50);
+      p->target_div = scaleup(p->target_div, 100);
     clear();
     break;
   case ']':
@@ -355,18 +506,16 @@ handle_key(unsigned char c)
     break;
   case ';':
     if (scope.select > 1) {	/* next math function */
-      p->func++;
-      if (p->func >= funccount || p->func < FUNC0)
-	p->func = FUNC0;
+      next_func();
+      p->show = 1;
       clear();
     } else
       message("Math can not run on Channel 1 or 2", KEY_FG);
     break;
   case ':':
     if (scope.select > 1) {	/* previous math function */
-      p->func--;
-      if (p->func < FUNC0)
-	p->func = funccount - 1;
+      prev_func();
+      p->show = 1;
       clear();
     } else
       message("Math can not run on Channel 1 or 2", KEY_FG);
@@ -386,54 +535,54 @@ handle_key(unsigned char c)
     clear();
     break;
   case '=':
-    scope.trig += 8;		/* increase trigger */
-    if (scope.trig > 255)
-      scope.trig = 0;
-    clear();
+    if (datasrc->set_trigger) {	/* increase trigger */
+      scope.trig += 8;
+      datasrc->set_trigger(scope.trigch, &scope.trig, scope.trige);
+      clear();
+    }
     break;
   case '-':
-    scope.trig -= 8;		/* decrease trigger */
-    if (scope.trig < 0)
-      scope.trig = 248;
-    clear();
+    if (datasrc->set_trigger) {	/* decrease trigger */
+      scope.trig -= 8;
+      datasrc->set_trigger(scope.trigch, &scope.trig, scope.trige);
+      clear();
+    }
     break;
   case '_':			/* change trigger channel */
-    scope.trigch = !scope.trigch;
-    clear();
+    if (scope.trige != 0 && datasrc->set_trigger) {
+      do {
+	scope.trigch ++;
+	if (scope.trigch >= datasrc->nchans()) scope.trigch = 0;
+      } while (datasrc->set_trigger(scope.trigch,
+				    &scope.trig, scope.trige) == 0);
+      clear();
+    }
     break;
   case '+':
-    scope.trige++;		/* change trigger type */
-    if (scope.trige > 2)
-      scope.trige = 0;
-    clear();
+    if (datasrc->set_trigger) {	/* change trigger type */
+      do {
+	scope.trige++;
+	if (scope.trige > 2)
+	  scope.trige = 0;
+	if (scope.trige == 0 && datasrc->clear_trigger)
+	  datasrc->clear_trigger();
+      } while ((scope.trige != 0) &&
+	       (datasrc->set_trigger(scope.trigch,
+				     &scope.trig, scope.trige) == 0));
+      clear();
+    }
     break;
   case '(':
-    if (bs.found)
-      bs_changerate(bs.fd, -1);
-    else if (scope.run) {	/* decrease sample rate */
-      if (scope.rate < 16500)
-	resetsoundcard(8000);
-      else if (scope.rate < 33000)
-	resetsoundcard(11025);
-      else
-	resetsoundcard(22050);
+    if (datasrc && datasrc->change_rate(-1)) {
+      in_progress = 0;
+      clear();
     }
-    in_progress = 0;
-    clear();
     break;
   case ')':
-    if (bs.found)
-      bs_changerate(bs.fd, 1);
-    else if (scope.run) {	/* increase sample rate */
-      if (scope.rate > 16500)
-	resetsoundcard(44100);
-      else if (scope.rate > 9500)
-	resetsoundcard(22050);
-      else
-	resetsoundcard(11025);
+    if (datasrc && datasrc->change_rate(1)) {
+      in_progress = 0;
+      clear();
     }
-    in_progress = 0;
-    clear();
     break;
   case '<':
     if (--scope.color < 0)	/* decrease color */
@@ -457,32 +606,20 @@ handle_key(unsigned char c)
     else
       message("External commands can not run on Channel 1 or 2", KEY_FG);
     break;
-  case '^':
-    if (ps.found || bs.found) {	/* toggle Serial Scope on/off */
-      ps.found = bs.found = 0;
-      funcnames[0] = "Left  Mix";
-      funcnames[1] = "Right Mix";
-      funcnames[2] = "ProbeScope";
-    } else {
-      init_probescope();
-      init_serial();
+  case '&':			/* toggle between various data sources */
+    if (datasrc_next()) {
+      clear();
     }
-    clear();
-    break;
-  case '&':
-    if (snd)			/* toggle sound card on/off */
-      close_sound_card();
-    else
-      resetsoundcard(scope.rate);
-    clear();
     break;
   case '*':
-    scope.dma >>= 1;
-    if (scope.dma < 1)		/* DMA */
-      scope.dma = 4;
-    if (snd)
-      resetsoundcard(scope.rate);
-    clear();
+    if (datasrc && (datasrc->option1 != NULL) && datasrc->option1()) {
+      clear();
+    }
+    break;
+  case '^':
+    if (datasrc && (datasrc->option2 != NULL) && datasrc->option2()) {
+      clear();
+    }
     break;
   case '!':
     scope.mode++;		/* point, point accumulate, line, line acc. */
@@ -503,20 +640,28 @@ handle_key(unsigned char c)
   case '?':
   case '/':
     scope.verbose = !scope.verbose; /* on-screen help */
-    clear();
+    clear();	/* XXX this is done to clear the help messages */
     break;
   case ' ':
     scope.run++;		/* run / wait / stop */
     if (scope.run > 2)
       scope.run = 0;
+    if ((scope.run == 1) && datasrc)
+      setinputfd(datasrc->fd());	/* were stopped, so now start */
     draw_text(1);
     break;
   case '\r':
   case '\n':
     clear();			/* refresh screen */
     break;
+  case '\b':
+  case 127:
+    recall(NULL);		/* backspace/DEL - clear channel */
+    clear();			/* otherwise chan freezes instead of clear */
+    break;
   case '\e':
-    quit_key_pressed = 1;	/* quit */
+    cleanup();			/* quit */
+    exit(0);
     break;
   default:
     c = 0;			/* ignore unknown keys */
@@ -540,20 +685,24 @@ main(int argc, char **argv)
   parse_args(argc, argv);
   init_widgets();
   init_screen();
+  /* clear(); */
+
   filename = FILENAME;
-  if (optind < argc)
-    if (argv[optind] != NULL) {
-      filename = argv[optind];
-      readfile(filename);
-    }
-  if (snd)
-    resetsoundcard(scope.rate);
-  if (ps.found || bs.found) {
-    init_probescope();
-    init_serial();
+  if ((optind < argc) && (argv[optind] != NULL)) {
+    filename = argv[optind];
+    readfile(filename);
+  } else if (!datasrc && ! datasrc_first()) {
+    fprintf(stderr, "No valid data sources found... exiting\n");
+#if 0
+    exit(1);
+#endif
   }
+#if 0
+  init_widgets();
+  init_screen();
+#endif
   clear();
-  mainloop();			/* to display.c */
+  mainloop();
   cleanup();
   exit(0);
 }

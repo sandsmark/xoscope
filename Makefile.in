@@ -1,6 +1,6 @@
-# Makefile.in generated automatically by automake 1.4-p5 from Makefile.am
+# Makefile.in generated automatically by automake 1.4 from Makefile.am
 
-# Copyright (C) 1994, 1995-8, 1999, 2001 Free Software Foundation, Inc.
+# Copyright (C) 1994, 1995-8, 1999 Free Software Foundation, Inc.
 # This Makefile.in is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
 # with or without modifications, as long as this notice is preserved.
@@ -10,9 +10,9 @@
 # even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 # PARTICULAR PURPOSE.
 
-# @(#)$Id: Makefile.in,v 1.7 2002/06/15 21:21:53 twitham Exp $
+# @(#)$Id: Makefile.in,v 1.8 2003/06/17 22:52:32 baccala Exp $
 
-# Copyright (C) 1996 - 2002 Tim Witham <twitham@quiknet.com>
+# Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
 
 # (see the files README and COPYING for more details)
 
@@ -84,8 +84,7 @@ x_libraries = @x_libraries@
 
 man_MANS = oscope.1 xoscope.1
 
-noinst_HEADERS = com_gtk.h display.h file.h oscope.h sb.h bitscope.h	\
-config.h fft.h func.h proscope.h svasync.h
+noinst_HEADERS = com_gtk.h display.h file.h oscope.h sb.h bitscope.h	config.h fft.h func.h proscope.h svasync.h
 
 
 bin_PROGRAMS = @XOSCOPE@ @OSCOPE@
@@ -93,41 +92,40 @@ EXTRA_PROGRAMS = xoscope oscope
 
 pkglibexecdir = $(libexecdir)/@PACKAGE@
 pkglibexec_PROGRAMS = offt xy
-pkglibexec_SCRIPTS = operl
-pkglibexec_DATA = ofreq.ini
+pkglibexec_SCRIPTS = operl ofreq.ini
 
-pkgdocdir = $(prefix)/share/doc/@PACKAGE@
-pkgdoc_DATA = xy.c offt.c operl ofreq.ini README HARDWARE TODO		\
-audio.dat bitscope.dat buff.fig buff.ps buff2.fig buff2.ps count.dat	\
-oscope.dat oscope.lsm README.f51 patch.f51 pcb.fig pcb.ps proscope.dat
+EXTRA_DIST = $(man_MANS) $(noinst_HEADERS) HARDWARE Makefile.dos	README.f51 TODO TODO.old audio.dat bitscope.dat buff.fig buff.ps	buff2.fig buff2.ps count.dat isr.s ofreq.ini oscope.dat oscope.lsm	patch.f51 pcb.fig pcb.ps proscope.dat sb.c sb.doc sc_sb.c ser_dos.c	svasync.c svasync.doc
 
 
-EXTRA_DIST = $(man_MANS) $(noinst_HEADERS) HARDWARE Makefile.dos	\
-README.f51 TODO TODO.old audio.dat bitscope.dat buff.fig buff.ps	\
-buff2.fig buff2.ps count.dat isr.s ofreq.ini oscope.dat oscope.lsm	\
-patch.f51 pcb.fig pcb.ps proscope.dat sb.c sb.doc sc_sb.c ser_dos.c	\
-svasync.c svasync.doc
+src = oscope.c file.c func.c fft.c realfft.c display.c proscope.c	bitscope.c sc_linux.c ser_unix.c
 
+@COMEDI_TRUE@comedisrc = comedi.c
+@COMEDI_FALSE@comedisrc = 
+@COMEDI_TRUE@@GTK_TRUE@COMEDI_GUI_SUBDIR = comedi-glade-src
+@COMEDI_TRUE@@GTK_TRUE@COMEDI_GUI_LIB = comedi-glade-src/interface.o comedi-glade-src/callbacks.o
 
-src = oscope.c file.c func.c fft.c realfft.c display.c proscope.c	\
-bitscope.c sc_linux.c ser_unix.c
+# Some bit of explaination is needed here for GUI_LIB.  automake won't
+# let us include source files in a subdirectory on a _SOURCES line,
+# and we do want all the auto-magically generated glade stuff confined
+# to a subdirectory, so we're reduced to using the _LDADD line.
+# However, we don't want the files included as a library, even though
+# they get built as one, because then the weak attribute override
+# trick used in things like comedi.c (see comments there) won't work
+# for a library.  So we put .o files in.
 
+@GTK_TRUE@SUBDIRS = bitscope-glade-src $(COMEDI_GUI_SUBDIR)
+@GTK_TRUE@INCLUDES = @GTK_CFLAGS@
+@GTK_TRUE@GUI_LIB = bitscope-glade-src/support.o bitscope-glade-src/interface.o 	bitscope-glade-src/callbacks.o $(COMEDI_GUI_LIB)
 
-oscope_SOURCES = $(src) gr_com.c gr_vga.c
-oscope_LDADD = -lvga
+xoscope_SOURCES = $(src) $(comedisrc) com_gtk.c gr_gtk.c sc_linux_gtk.c
+xoscope_LDADD = $(GUI_LIB) @GTK_LIBS@
+
+oscope_SOURCES = $(src) $(comedisrc) gr_com.c gr_vga.c
 
 offt_SOURCES = offt.c fft.c realfft.c
 
-@GTK_TRUE@SUBDIRS = @GTK_TRUE@src
-@GTK_TRUE@INCLUDES = @GTK_TRUE@@GTK_CFLAGS@
-@GTK_TRUE@xoscope_SOURCES = @GTK_TRUE@$(src) com_gtk.c gr_gtk.c
-@GTK_FALSE@@LIBSX_TRUE@xoscope_SOURCES = @GTK_FALSE@@LIBSX_TRUE@$(src) gr_sx.c gr_com.c
-@GTK_TRUE@xoscope_LDADD = @GTK_TRUE@@GTK_LIBS@ -Lsrc -lbitscope
-@GTK_FALSE@@LIBSX_TRUE@xoscope_LDADD = @GTK_FALSE@@LIBSX_TRUE@@X_LIBS@ @X_PRE_LIBS@ -lsx -lXaw -lXt -lX11
-@GTK_TRUE@xy_SOURCES = @GTK_TRUE@com_gtk.c xy_gtk.c xy.c
-@GTK_FALSE@@LIBSX_TRUE@xy_SOURCES = @GTK_FALSE@@LIBSX_TRUE@xy_sx.c xy.c
-@GTK_TRUE@xy_LDADD = @GTK_TRUE@@GTK_LIBS@
-@GTK_FALSE@@LIBSX_TRUE@xy_LDADD = @GTK_FALSE@@LIBSX_TRUE@@X_LIBS@ @X_PRE_LIBS@ -lsx -lXaw -lXt -lX11
+xy_SOURCES = com_gtk.c xy_gtk.c xy.c
+xy_LDADD = @GTK_LIBS@
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_HEADER = config.h
@@ -139,27 +137,40 @@ DEFS = @DEFS@ -I. -I$(srcdir) -I.
 CPPFLAGS = @CPPFLAGS@
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
-@GTK_TRUE@xoscope_OBJECTS =  oscope.o file.o func.o fft.o realfft.o \
-@GTK_TRUE@display.o proscope.o bitscope.o sc_linux.o ser_unix.o \
-@GTK_TRUE@com_gtk.o gr_gtk.o
-@GTK_FALSE@@LIBSX_TRUE@xoscope_OBJECTS =  oscope.o file.o func.o fft.o \
-@GTK_FALSE@@LIBSX_TRUE@realfft.o display.o proscope.o bitscope.o \
-@GTK_FALSE@@LIBSX_TRUE@sc_linux.o ser_unix.o gr_sx.o gr_com.o
-@GTK_TRUE@xoscope_DEPENDENCIES = 
-@GTK_FALSE@@LIBSX_TRUE@xoscope_DEPENDENCIES = 
+@COMEDI_TRUE@xoscope_OBJECTS =  oscope.o file.o func.o fft.o realfft.o \
+@COMEDI_TRUE@display.o proscope.o bitscope.o sc_linux.o ser_unix.o \
+@COMEDI_TRUE@comedi.o com_gtk.o gr_gtk.o sc_linux_gtk.o
+@COMEDI_FALSE@xoscope_OBJECTS =  oscope.o file.o func.o fft.o realfft.o \
+@COMEDI_FALSE@display.o proscope.o bitscope.o sc_linux.o ser_unix.o \
+@COMEDI_FALSE@com_gtk.o gr_gtk.o sc_linux_gtk.o
+@COMEDI_TRUE@@GTK_FALSE@xoscope_DEPENDENCIES = 
+@COMEDI_FALSE@@GTK_TRUE@xoscope_DEPENDENCIES =  \
+@COMEDI_FALSE@@GTK_TRUE@bitscope-glade-src/support.o \
+@COMEDI_FALSE@@GTK_TRUE@bitscope-glade-src/interface.o \
+@COMEDI_FALSE@@GTK_TRUE@bitscope-glade-src/callbacks.o
+@COMEDI_FALSE@@GTK_FALSE@xoscope_DEPENDENCIES = 
+@COMEDI_TRUE@@GTK_TRUE@xoscope_DEPENDENCIES =  \
+@COMEDI_TRUE@@GTK_TRUE@bitscope-glade-src/support.o \
+@COMEDI_TRUE@@GTK_TRUE@bitscope-glade-src/interface.o \
+@COMEDI_TRUE@@GTK_TRUE@bitscope-glade-src/callbacks.o \
+@COMEDI_TRUE@@GTK_TRUE@comedi-glade-src/interface.o \
+@COMEDI_TRUE@@GTK_TRUE@comedi-glade-src/callbacks.o
 xoscope_LDFLAGS = 
-oscope_OBJECTS =  oscope.o file.o func.o fft.o realfft.o display.o \
-proscope.o bitscope.o sc_linux.o ser_unix.o gr_com.o gr_vga.o
+@COMEDI_TRUE@oscope_OBJECTS =  oscope.o file.o func.o fft.o realfft.o \
+@COMEDI_TRUE@display.o proscope.o bitscope.o sc_linux.o ser_unix.o \
+@COMEDI_TRUE@comedi.o gr_com.o gr_vga.o
+@COMEDI_FALSE@oscope_OBJECTS =  oscope.o file.o func.o fft.o realfft.o \
+@COMEDI_FALSE@display.o proscope.o bitscope.o sc_linux.o ser_unix.o \
+@COMEDI_FALSE@gr_com.o gr_vga.o
+oscope_LDADD = $(LDADD)
 oscope_DEPENDENCIES = 
 oscope_LDFLAGS = 
 offt_OBJECTS =  offt.o fft.o realfft.o
 offt_LDADD = $(LDADD)
 offt_DEPENDENCIES = 
 offt_LDFLAGS = 
-@GTK_TRUE@xy_OBJECTS =  com_gtk.o xy_gtk.o xy.o
-@GTK_FALSE@@LIBSX_TRUE@xy_OBJECTS =  xy_sx.o xy.o
-@GTK_TRUE@xy_DEPENDENCIES = 
-@GTK_FALSE@@LIBSX_TRUE@xy_DEPENDENCIES = 
+xy_OBJECTS =  com_gtk.o xy_gtk.o xy.o
+xy_DEPENDENCIES = 
 xy_LDFLAGS = 
 SCRIPTS =  $(pkglibexec_SCRIPTS)
 
@@ -171,8 +182,6 @@ man1dir = $(mandir)/man1
 MANS = $(man_MANS)
 
 NROFF = nroff
-DATA =  $(pkgdoc_DATA) $(pkglibexec_DATA)
-
 HEADERS =  $(noinst_HEADERS)
 
 DIST_COMMON =  README ./stamp-h.in AUTHORS COPYING ChangeLog INSTALL \
@@ -184,12 +193,12 @@ DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
 
 TAR = gtar
 GZIP_ENV = --best
-DIST_SUBDIRS =  src
-DEP_FILES =  .deps/bitscope.P .deps/com_gtk.P .deps/display.P \
-.deps/fft.P .deps/file.P .deps/func.P .deps/gr_com.P .deps/gr_gtk.P \
-.deps/gr_sx.P .deps/gr_vga.P .deps/offt.P .deps/oscope.P \
-.deps/proscope.P .deps/realfft.P .deps/sc_linux.P .deps/ser_unix.P \
-.deps/xy.P .deps/xy_gtk.P .deps/xy_sx.P
+DIST_SUBDIRS =  bitscope-glade-src comedi-glade-src
+DEP_FILES =  .deps/bitscope.P .deps/com_gtk.P .deps/comedi.P \
+.deps/display.P .deps/fft.P .deps/file.P .deps/func.P .deps/gr_com.P \
+.deps/gr_gtk.P .deps/gr_vga.P .deps/offt.P .deps/oscope.P \
+.deps/proscope.P .deps/realfft.P .deps/sc_linux.P .deps/sc_linux_gtk.P \
+.deps/ser_unix.P .deps/xy.P .deps/xy_gtk.P
 SOURCES = $(xoscope_SOURCES) $(oscope_SOURCES) $(offt_SOURCES) $(xy_SOURCES)
 OBJECTS = $(xoscope_OBJECTS) $(oscope_OBJECTS) $(offt_OBJECTS) $(xy_OBJECTS)
 
@@ -381,44 +390,6 @@ uninstall-man:
 	@$(NORMAL_UNINSTALL)
 	$(MAKE) $(AM_MAKEFLAGS) uninstall-man1
 
-install-pkgdocDATA: $(pkgdoc_DATA)
-	@$(NORMAL_INSTALL)
-	$(mkinstalldirs) $(DESTDIR)$(pkgdocdir)
-	@list='$(pkgdoc_DATA)'; for p in $$list; do \
-	  if test -f $(srcdir)/$$p; then \
-	    echo " $(INSTALL_DATA) $(srcdir)/$$p $(DESTDIR)$(pkgdocdir)/$$p"; \
-	    $(INSTALL_DATA) $(srcdir)/$$p $(DESTDIR)$(pkgdocdir)/$$p; \
-	  else if test -f $$p; then \
-	    echo " $(INSTALL_DATA) $$p $(DESTDIR)$(pkgdocdir)/$$p"; \
-	    $(INSTALL_DATA) $$p $(DESTDIR)$(pkgdocdir)/$$p; \
-	  fi; fi; \
-	done
-
-uninstall-pkgdocDATA:
-	@$(NORMAL_UNINSTALL)
-	list='$(pkgdoc_DATA)'; for p in $$list; do \
-	  rm -f $(DESTDIR)$(pkgdocdir)/$$p; \
-	done
-
-install-pkglibexecDATA: $(pkglibexec_DATA)
-	@$(NORMAL_INSTALL)
-	$(mkinstalldirs) $(DESTDIR)$(pkglibexecdir)
-	@list='$(pkglibexec_DATA)'; for p in $$list; do \
-	  if test -f $(srcdir)/$$p; then \
-	    echo " $(INSTALL_DATA) $(srcdir)/$$p $(DESTDIR)$(pkglibexecdir)/$$p"; \
-	    $(INSTALL_DATA) $(srcdir)/$$p $(DESTDIR)$(pkglibexecdir)/$$p; \
-	  else if test -f $$p; then \
-	    echo " $(INSTALL_DATA) $$p $(DESTDIR)$(pkglibexecdir)/$$p"; \
-	    $(INSTALL_DATA) $$p $(DESTDIR)$(pkglibexecdir)/$$p; \
-	  fi; fi; \
-	done
-
-uninstall-pkglibexecDATA:
-	@$(NORMAL_UNINSTALL)
-	list='$(pkglibexec_DATA)'; for p in $$list; do \
-	  rm -f $(DESTDIR)$(pkglibexecdir)/$$p; \
-	done
-
 # This directory's subdirectories are mostly independent; you can cd
 # into them and run `make' without going through this Makefile.
 # To change the values of `make' variables: instead of editing Makefiles,
@@ -455,7 +426,7 @@ maintainer-clean-recursive:
 	dot_seen=no; \
 	rev=''; list='$(SUBDIRS)'; for subdir in $$list; do \
 	  rev="$$subdir $$rev"; \
-	  test "$$subdir" != "." || dot_seen=yes; \
+	  test "$$subdir" = "." && dot_seen=yes; \
 	done; \
 	test "$$dot_seen" = "no" && rev=". $$rev"; \
 	target=`echo $@ | sed s/-recursive//`; \
@@ -616,30 +587,26 @@ all-recursive-am: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
 
 install-exec-am: install-binPROGRAMS install-pkglibexecPROGRAMS \
-		install-pkglibexecSCRIPTS install-pkglibexecDATA \
-		install-exec-local
+		install-pkglibexecSCRIPTS
 install-exec: install-exec-recursive
 
-install-data-am: install-man install-pkgdocDATA install-data-local
+install-data-am: install-man install-data-local
 install-data: install-data-recursive
 
 install-am: all-am
 	@$(MAKE) $(AM_MAKEFLAGS) install-exec-am install-data-am
 install: install-recursive
 uninstall-am: uninstall-binPROGRAMS uninstall-pkglibexecPROGRAMS \
-		uninstall-pkglibexecSCRIPTS uninstall-man \
-		uninstall-pkgdocDATA uninstall-pkglibexecDATA
+		uninstall-pkglibexecSCRIPTS uninstall-man
 uninstall: uninstall-recursive
-all-am: Makefile $(PROGRAMS) $(SCRIPTS) $(MANS) $(DATA) $(HEADERS) \
-		config.h
+all-am: Makefile $(PROGRAMS) $(SCRIPTS) $(MANS) $(HEADERS) config.h
 all-redirect: all-recursive-am
 install-strip:
 	$(MAKE) $(AM_MAKEFLAGS) AM_INSTALL_PROGRAM_FLAGS=-s install
 installdirs: installdirs-recursive
 installdirs-am:
 	$(mkinstalldirs)  $(DESTDIR)$(bindir) $(DESTDIR)$(pkglibexecdir) \
-		$(DESTDIR)$(pkglibexecdir) $(DESTDIR)$(mandir)/man1 \
-		$(DESTDIR)$(pkgdocdir) $(DESTDIR)$(pkglibexecdir)
+		$(DESTDIR)$(pkglibexecdir) $(DESTDIR)$(mandir)/man1
 
 
 mostlyclean-generic:
@@ -691,27 +658,21 @@ uninstall-pkglibexecPROGRAMS install-pkglibexecPROGRAMS \
 mostlyclean-compile distclean-compile clean-compile \
 maintainer-clean-compile uninstall-pkglibexecSCRIPTS \
 install-pkglibexecSCRIPTS install-man1 uninstall-man1 install-man \
-uninstall-man uninstall-pkgdocDATA install-pkgdocDATA \
-uninstall-pkglibexecDATA install-pkglibexecDATA install-data-recursive \
-uninstall-data-recursive install-exec-recursive \
-uninstall-exec-recursive installdirs-recursive uninstalldirs-recursive \
-all-recursive check-recursive installcheck-recursive info-recursive \
-dvi-recursive mostlyclean-recursive distclean-recursive clean-recursive \
+uninstall-man install-data-recursive uninstall-data-recursive \
+install-exec-recursive uninstall-exec-recursive installdirs-recursive \
+uninstalldirs-recursive all-recursive check-recursive \
+installcheck-recursive info-recursive dvi-recursive \
+mostlyclean-recursive distclean-recursive clean-recursive \
 maintainer-clean-recursive tags tags-recursive mostlyclean-tags \
 distclean-tags clean-tags maintainer-clean-tags distdir \
 mostlyclean-depend distclean-depend clean-depend \
 maintainer-clean-depend info-am info dvi-am dvi check check-am \
-installcheck-am installcheck all-recursive-am install-exec-local \
-install-exec-am install-exec install-data-local install-data-am \
-install-data install-am install uninstall-am uninstall all-redirect \
-all-am all installdirs-am installdirs mostlyclean-generic \
-distclean-generic clean-generic maintainer-clean-generic clean \
-mostlyclean distclean maintainer-clean
+installcheck-am installcheck all-recursive-am install-exec-am \
+install-exec install-data-local install-data-am install-data install-am \
+install uninstall-am uninstall all-redirect all-am all installdirs-am \
+installdirs mostlyclean-generic distclean-generic clean-generic \
+maintainer-clean-generic clean mostlyclean distclean maintainer-clean
 
-
-install-exec-local:
-	@$(NORMAL_INSTALL)
-	-cd $(bindir) && chmod go-w oscope && chmod u+s oscope
 
 install-data-local:
 	@$(NORMAL_INSTALL)

@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: gr_com.c,v 1.2 2001/05/06 03:45:16 twitham Rel $
+ * @(#)$Id: gr_com.c,v 1.3 2003/06/17 22:52:32 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -39,7 +39,8 @@ ExternCommand()
 {
   char *s;
 
+  /* XXX recall previous command that was set */
   if ((s = GetString("External command and args:",
-		     ch[scope.select].command)) != NULL)
+		     COMMAND)) != NULL)
     startcommand(s);
 }

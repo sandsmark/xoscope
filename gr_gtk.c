@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: gr_gtk.c,v 1.25 2001/05/22 05:11:02 twitham Exp $
+ * @(#)$Id: gr_gtk.c,v 1.26 2003/06/17 22:52:32 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -11,6 +11,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <assert.h>
 #include <sys/stat.h>
 #include <gtk/gtk.h>
 #include <string.h>
@@ -18,10 +19,7 @@
 #include "display.h"
 #include "func.h"
 #include "file.h"
-#include "proscope.h"
-#include "bitscope.h"
 #include "com_gtk.h"
-#include "src/callbacks.h"
 
 int XX[] = {640,800,1024,1280};
 int XY[] = {480,600, 768,1024};
@@ -30,29 +28,26 @@ GdkFont *font;
 char fontname[80] = DEF_FX;
 char fonts[] = "xlsfonts";
 
+GtkWidget *menubar;
+
 GtkItemFactory *factory;
 extern int fixing_widgets;	/* in com_gtk.c */
 
-void
-clear_display()
-{
-  ClearDrawArea();
-}
-
-/* Create a new backing pixmap of the appropriate size */
 static gint
 configure_event (GtkWidget *widget, GdkEventConfigure *event)
 {
   static int h, v, once = 0;
 
+#if USE_PIXMAP
   if (pixmap)
     gdk_pixmap_unref(pixmap);
 
   pixmap = gdk_pixmap_new(widget->window,
-			  widget->allocation.width,
-			  widget->allocation.height,
-			  -1);
+                          widget->allocation.width,
+                          widget->allocation.height,
+                          -1);
   ClearDrawArea();
+#endif
 
   h = h_points;
   v = v_points;
@@ -185,8 +180,15 @@ ExternCommand()
 		     TRUE, TRUE, 0);
   command = gtk_combo_new();
   gtk_combo_set_popdown_strings(GTK_COMBO(command), glist);
+
+  /* XXX recall previous command that was set here */
+#if 0
   gtk_entry_set_text(GTK_ENTRY(GTK_COMBO(command)->entry),
 		     ch[scope.select].command);
+#else
+  gtk_entry_set_text(GTK_ENTRY(GTK_COMBO(command)->entry),
+		     "operl '$x + $y'");
+#endif
   gtk_combo_set_value_in_list(GTK_COMBO(command), FALSE, FALSE);
   gtk_box_pack_start(GTK_BOX(GTK_DIALOG(window)->vbox), command,
 		     TRUE, TRUE, 0);
@@ -212,7 +214,34 @@ ExternCommand()
   /*    gtk_grab_add(window); */
 }
 
-/* a GTK text writer similar to libvgamisc's vga_write */
+/* text_write() and its friends are really a big pain.  I expect them
+ * to go away when we release xoscope 2.0 with a completely GTK-based
+ * GUI.  In the meantime, I'm not going to bother putting much work
+ * into them.
+ *
+ * text_write(str, x, y, fieldsize, fgcolor, bgcolor, alignment)
+ *
+ * draws str at (x,y) (in row/col coordinates, not pixels), using
+ * fgcolor.  bgcolor is ignored (always black background).  alignment
+ * is ALIGN_LEFT, ALIGN_RIGHT, or ALIGN_CENTER.  fieldsize is the size
+ * of the text field (in characters).  The idea is that text_write
+ * remembers (via textarea[][]) what characters have been drawn
+ * already and doesn't redraw things if they haven't changed (this is
+ * to avoid pounding the X server with unnecessary traffic, and to
+ * simplify the code in display.c).  If the text has changed, the field
+ * (of size fieldsize) is blacked out, then the new text is drawn.  If
+ * fieldsize is zero, then it's just assumed to be the size of the
+ * text string we're trying to write.  vga_write() is a helper
+ * function.
+ *
+ * The biggest problem is not so much here, but in the code that calls
+ * here, figuring out the sizes of the several dozen fields, getting
+ * their coordinates and fieldsizes right, making sure the stuff being
+ * drawn into them doesn't overflow their borders... the usual GUI
+ * nonsense.  This is what we have a GUI library for - so we don't
+ * have to do all this!  Like it said, I want it to go away...
+ */
+
 int
 vga_write(char *s, short x, short y, void *f, short fg, short bg, char p)
 {
@@ -224,13 +253,146 @@ vga_write(char *s, short x, short y, void *f, short fg, short bg, char p)
     x -= w / 2;
   else if (p == ALIGN_RIGHT)
     x -= w;
-  gdk_draw_rectangle(pixmap,
+
+  gdk_draw_rectangle(drawing_area->window,
 		     drawing_area->style->black_gc,
 		     TRUE,
 		     x, y + 2, w, 16);
 
-  gdk_draw_string(pixmap, font, gc, x, y + 16, s);
+  gdk_draw_string(drawing_area->window, font, gc, x, y + 16, s);
   return(1);
+}
+
+static char textarea[30][80];
+int row(int);
+int col(int);
+
+void text_write(char *str, int x, int y, int fieldsize,
+		int fgcolor, int bgcolor, int alignment)
+{
+  char buf[80];
+  int len = strlen(str);
+  int start_x = 0;
+  int w;
+
+  if (fieldsize == 0) {
+    fieldsize = len;
+    strcpy(buf, str);
+    if (alignment == ALIGN_LEFT)
+      start_x = x;
+    else if (alignment == ALIGN_CENTER)
+      start_x = x - len / 2;
+    else if (alignment == ALIGN_RIGHT)
+      start_x = x - len;
+  } else {
+    memset(buf, ' ', fieldsize);
+    if (alignment == ALIGN_LEFT) {
+      strncpy(buf, str, fieldsize);
+      start_x = x;
+    } else if (alignment == ALIGN_RIGHT) {
+      strcpy(buf + fieldsize - len, str);
+      start_x = x - fieldsize;
+    } else if (alignment == ALIGN_CENTER) {
+      strcpy(buf + (fieldsize - len) / 2, str);
+      start_x = x - fieldsize / 2;
+    }
+  }
+
+  if ((y < 0) || (y >= 30) || (x < 0) || (start_x+fieldsize >= 80)) {
+    printf("Text overflow in text_write()!\n");
+    return;
+  }
+
+  if (strncmp(&textarea[y][start_x], str, fieldsize) == 0) return;
+
+  strcpy(&textarea[y][start_x], str);
+
+  SetColor(fgcolor);
+  x = col(x);
+  w = gdk_string_width(font, str);
+  if (alignment == ALIGN_CENTER)
+    x -= w / 2;
+  else if (alignment == ALIGN_RIGHT)
+    x -= w;
+
+  gdk_draw_rectangle(drawing_area->window,
+		     drawing_area->style->black_gc,
+		     TRUE,
+		     col(start_x), row(y) + 2, fieldsize*8, 16);
+
+  gdk_draw_string(drawing_area->window, font, gc, x, row(y) + 16, str);
+
+}
+
+void
+clear_text_memory()
+{
+  memset(textarea, ' ', sizeof(textarea));
+}
+
+
+void
+clear_display()
+{
+  ClearDrawArea();
+  clear_text_memory();
+}
+
+/* PolyPoint() and PolyLine()
+ *
+ * These functions are a bit special.  There are only used by code
+ * drawing into the 'scope data display area (not the status area
+ * surrounding it).  Therefore, we use special GCs that clip at the
+ * edge of the data display area, because the code in draw_data() that
+ * calls us here doesn't care about clipping, and we don't want our
+ * signal lines scribbled all over our text.  We also write in an
+ * off-screen pixmap (the only code that doesn this), in case we need
+ * to redraw the screen after an expose event.
+ */
+
+/* XXX need to reset clipping rectangles on a configure_event */
+
+static GdkGC *data_gc[16];		/* initialized NULL by compiler */
+
+static void verify_data_gc(int color)
+{
+  if (data_gc[color] == NULL) {
+    GdkRectangle cliprect = {100, 80, h_points - 200, v_points - 160};
+
+    /* XXX should we check for error return here? */
+    data_gc[color] = gdk_gc_new(drawing_area->window);
+
+    gdk_gc_copy(data_gc[color], gc);
+    gdk_gc_set_foreground(data_gc[color], &gdkcolor[color]);
+    gdk_gc_set_clip_rectangle(data_gc[color], &cliprect);
+  }
+}
+
+void
+PolyPoint(int color, Point *points, int count)
+{
+  /* This is just here to make sure future changes to GDK don't break
+   * this assumption - that we can just cast Point to GdkPoint
+   */
+  assert(sizeof(Point) == sizeof(GdkPoint));
+
+  verify_data_gc(color);
+
+  if (pixmap) gdk_draw_points(pixmap, data_gc[color],
+			      (GdkPoint *) points, count);
+  gdk_draw_points(drawing_area->window, data_gc[color],
+		  (GdkPoint *) points, count);
+}
+
+void
+PolyLine(int color, Point *points, int count)
+{
+  verify_data_gc(color);
+
+  if (pixmap) gdk_draw_lines(pixmap, data_gc[color],
+			     (GdkPoint *) points, count);
+  gdk_draw_lines(drawing_area->window, data_gc[color],
+		 (GdkPoint *) points, count);
 }
 
 /* callback to redisplay the drawing area; snap to a graticule division */
@@ -240,21 +402,28 @@ redisplay(GtkWidget w, int new_width, int new_height, void *data)
 }
 
 /* menu option callbacks */
+
+void
+datasource(GtkWidget *w, gpointer data)
+{
+  if (fixing_widgets) return;
+  if (datasrc_byname(data)) {
+    clear();
+  }
+}
+
+void
+option_dialog(GtkWidget *w, gpointer data)
+{
+  if (fixing_widgets) return;
+  if (datasrc && datasrc->gtk_options) datasrc->gtk_options();
+}
+
 void
 plotmode(GtkWidget *w, gpointer data)
 {
   if (fixing_widgets) return;
   scope.mode = ((char *)data)[0] - '0';
-  clear();
-}
-
-void
-dma(GtkWidget *w, gpointer data)
-{
-  if (fixing_widgets) return;
-  scope.dma = ((char *)data)[0] - '0';
-  if (snd)
-    resetsoundcard(scope.rate);
   clear();
 }
 
@@ -287,15 +456,43 @@ setcolor(GtkWidget *w, gpointer data)
 }
 
 void
+change_trigger(int trigch, int trig, int trige)
+{
+  /* Triggering change.  Try the new trigger, and if it doesn't work,
+   * try the old one settings again, if they don't work (!) leave
+   * the trigger off.
+   */
+
+  if (trige == 0) {
+    if (datasrc && datasrc->clear_trigger) datasrc->clear_trigger();
+    scope.trige = 0;
+  } else if (datasrc && datasrc->set_trigger
+	     && datasrc->set_trigger(trigch, &trig, trige)) {
+    scope.trigch = trigch;
+    scope.trig = trig;
+    scope.trige = trige;
+  } else if (datasrc && datasrc->set_trigger && datasrc->clear_trigger
+	     && !datasrc->set_trigger(scope.trigch, &scope.trig, scope.trige)){
+    datasrc->clear_trigger();
+    scope.trige = 0;
+  }
+}
+
+void
 trigger(GtkWidget *w, gpointer data)
 {
-  int i;
+  char c = ((char *)data)[0];
 
   if (fixing_widgets) return;
-  if ((i = ((char *)data)[0] - '0') > 2)
-    scope.trigch = i - 3;
-  else
-    scope.trige = i;
+
+  if (c >= 'a' && c <= 'c') {
+    change_trigger(scope.trigch, scope.trig, c - 'a');
+  }
+
+  if (c >= '1' && c <= '8') {
+    change_trigger(c - '1', scope.trig, scope.trige);
+  }
+
   clear();
 }
 
@@ -312,8 +509,10 @@ mathselect(GtkWidget *w, gpointer data)
 /*  	 (gtk_item_factory_get_item */
 /*  	  (factory, "/Channel/Math/External Command..."))->active) */
 	handle_key('$');
-    } else
-      ch[scope.select].func = ((char *)data)[0] - '0' + FUNC0;
+    } else {
+      function_bynum_on_channel(((char *)data)[0] - '0', &ch[scope.select]);
+      ch[scope.select].show = 1;
+    }
     clear();
   }
 }
@@ -331,18 +530,21 @@ setscale(GtkWidget *w, gpointer data)
 {
   int scale[] = {0, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000};
 
-  ch[scope.select].mult = scale[((char *)data)[0] - '0'];
-  ch[scope.select].div = scale[((char *)data)[1] - '0'];
+  ch[scope.select].target_mult = scale[((char *)data)[0] - '0'];
+  ch[scope.select].target_div = scale[((char *)data)[1] - '0'];
   clear();
 }
 
 void
 setposition(GtkWidget *w, gpointer data)
 {
-  if (((char *)data)[0] == 'T') {
-    scope.trig = 256 - (((char *)data)[1] - 'a') * 8;
-  } else if (((char *)data)[0] == 't') {
-    scope.trig = (((char *)data)[1] - 'a') * 8;
+  char c0 = ((char *)data)[0];
+  char c1 = ((char *)data)[1];
+
+  if (c0 == 'T') {
+    change_trigger(scope.trigch, 256 - (c1 - 'a') * 8, scope.trige);
+  } else if (c0 == 't') {
+    change_trigger(scope.trigch, (c1 - 'a') * 8, scope.trige);
   } else {
     ch[scope.select].pos = (((char *)data)[0] == '-' ? 1 : -1)
       * (((char *)data)[1] - 'a') * 16;
@@ -468,6 +670,8 @@ static GtkItemFactoryEntry menu_items[] =
   {"/File/Open...", NULL, hit_key, (int)"@", NULL},
   {"/File/Save...", NULL, hit_key, (int)"#", NULL},
   /*     {"/File/Save as", NULL, NULL, 0, NULL}, */
+  {"/File/Device/tear", NULL, NULL, 0, "<Tearoff>"},
+  {"/File/Device Options...", NULL, option_dialog, 0, NULL},
   {"/File/sep", NULL, NULL, 0, "<Separator>"},
   {"/File/Quit", NULL, hit_key, (int)"\e", NULL},
 
@@ -584,9 +788,13 @@ static GtkItemFactoryEntry menu_items[] =
   {"/Channel/Store/Mem U", "U", hit_key, (int)"U", "<CheckItem>"},
   {"/Channel/Store/Mem V", "V", hit_key, (int)"V", "<CheckItem>"},
   {"/Channel/Store/Mem W", "W", hit_key, (int)"W", "<CheckItem>"},
+  {"/Channel/Store/Mem X", "W", hit_key, (int)"X", "<CheckItem>"},
+  {"/Channel/Store/Mem Y", "W", hit_key, (int)"Y", "<CheckItem>"},
+  {"/Channel/Store/Mem Z", "W", hit_key, (int)"Z", "<CheckItem>"},
 
   {"/Channel/Recall", NULL, NULL, 0, "<Branch>"},
   {"/Channel/Recall/tear", NULL, NULL, 0, "<Tearoff>"},
+  //  {"/Channel/Recall/sep", NULL, NULL, 0, "<Separator>"},
   {"/Channel/Recall/Mem A", "a", hit_key, (int)"a", NULL},
   {"/Channel/Recall/Mem B", "b", hit_key, (int)"b", NULL},
   {"/Channel/Recall/Mem C", "c", hit_key, (int)"c", NULL},
@@ -610,22 +818,28 @@ static GtkItemFactoryEntry menu_items[] =
   {"/Channel/Recall/Mem U", "u", hit_key, (int)"u", NULL},
   {"/Channel/Recall/Mem V", "v", hit_key, (int)"v", NULL},
   {"/Channel/Recall/Mem W", "w", hit_key, (int)"w", NULL},
-  {"/Channel/Recall/sep", NULL, NULL, 0, "<Separator>"},
-  {"/Channel/Recall/Left Mix", "x", hit_key, (int)"x", NULL},
-  {"/Channel/Recall/Right Mix", "y", hit_key, (int)"y", NULL},
-  {"/Channel/Recall/Serial Scope", "z", hit_key, (int)"z", NULL},
+  {"/Channel/Recall/Mem X", "x", hit_key, (int)"x", NULL},
+  {"/Channel/Recall/Mem Y", "y", hit_key, (int)"y", NULL},
+  {"/Channel/Recall/Mem Z", "z", hit_key, (int)"z", NULL},
 
   {"/Trigger", NULL, NULL, 0, "<Branch>"},
   {"/Trigger/tear", NULL, NULL, 0, "<Tearoff>"},
-  {"/Trigger/Channel 1", NULL, trigger, (int)"3", "<RadioItem>"},
-  {"/Trigger/Channel 2", NULL, trigger, (int)"4", "/Trigger/Channel 1"},
+  {"/Trigger/Off", NULL, trigger, (int)"a", "<RadioItem>"},
+  {"/Trigger/Rising", NULL, trigger, (int)"b", "/Trigger/Off"},
+  {"/Trigger/Falling", NULL, trigger, (int)"c", "/Trigger/Rising"},
   {"/Trigger/sep", NULL, NULL, 0, "<Separator>"},
-  {"/Trigger/Auto", NULL, trigger, (int)"0", "<RadioItem>"},
-  {"/Trigger/Rising", NULL, trigger, (int)"1", "/Trigger/Auto"},
-  {"/Trigger/Falling", NULL, trigger, (int)"2", "/Trigger/Rising"},
+  {"/Trigger/Channel 1", NULL, trigger, (int)"1", "<RadioItem>"},
+  {"/Trigger/Channel 2", NULL, trigger, (int)"2", "/Trigger/Channel 1"},
+  {"/Trigger/Channel 3", NULL, trigger, (int)"3", "/Trigger/Channel 1"},
+  {"/Trigger/Channel 4", NULL, trigger, (int)"4", "/Trigger/Channel 1"},
+  {"/Trigger/Channel 5", NULL, trigger, (int)"5", "/Trigger/Channel 1"},
+  {"/Trigger/Channel 6", NULL, trigger, (int)"6", "/Trigger/Channel 1"},
+  {"/Trigger/Channel 7", NULL, trigger, (int)"7", "/Trigger/Channel 1"},
+  {"/Trigger/Channel 8", NULL, trigger, (int)"8", "/Trigger/Channel 1"},
   {"/Trigger/sep", NULL, NULL, 0, "<Separator>"},
   {"/Trigger/Position up", "=", hit_key, (int)"=", NULL},
   {"/Trigger/Position down", "-", hit_key, (int)"-", NULL},
+  {"/Trigger/Position Positive", NULL, NULL, 0, "<Branch>"},
   {"/Trigger/Position Positive/120", NULL, setposition, (int)"Tb", NULL},
   {"/Trigger/Position Positive/112", NULL, setposition, (int)"Tc", NULL},
   {"/Trigger/Position Positive/104", NULL, setposition, (int)"Td", NULL},
@@ -642,6 +856,7 @@ static GtkItemFactoryEntry menu_items[] =
   {"/Trigger/Position Positive/16", NULL, setposition, (int)"To", NULL},
   {"/Trigger/Position Positive/8", NULL, setposition, (int)"Tp", NULL},
   {"/Trigger/Position Positive/0", NULL, setposition, (int)"Tq", NULL},
+  {"/Trigger/Position Negative", NULL, NULL, 0, "<Branch>"},
   {"/Trigger/Position Negative/0", NULL, setposition, (int)"tq", NULL},
   {"/Trigger/Position Negative/-8", NULL, setposition, (int)"tp", NULL},
   {"/Trigger/Position Negative/-16", NULL, setposition, (int)"to", NULL},
@@ -696,17 +911,6 @@ static GtkItemFactoryEntry menu_items[] =
   {"/Scope/Graticule/Minor Divisions", NULL, graticule, (int)"3", "/Scope/Graticule/None"},
   {"/Scope/Graticule/Minor & Major", NULL, graticule, (int)"4", "/Scope/Graticule/Minor Divisions"},
   {"/Scope/Cursors", NULL, hit_key, (int)"'", "<CheckItem>"},
-  {"/Scope/sep", NULL, NULL, 0, "<Separator>"},
-  {"/Scope/Serial Scope", NULL, hit_key, (int)"^", "<CheckItem>"},
-  {"/Scope/SoundCard", NULL, hit_key, (int)"&", "<CheckItem>"},
-
-  {"/Scope/DMA", NULL, NULL, 0, "<Branch>"},
-  {"/Scope/DMA/tear", NULL, NULL, 0, "<Tearoff>"},
-  {"/Scope/DMA/4 (block)", NULL, dma, (int)"4", "<RadioItem>"},
-  {"/Scope/DMA/2 (nonblock)", NULL, dma, (int)"2", "/Scope/DMA/4 (block)"},
-  {"/Scope/DMA/1 (nonblock)", NULL, dma, (int)"1", "/Scope/DMA/2 (nonblock)"},
-
-  {"/Bitscope...", NULL, bitscope_dialog, 0, NULL},
 
   {"/<<", NULL, hit_key, (int)"9", NULL},
   {"/<", NULL, hit_key, (int)"(", NULL},
@@ -762,16 +966,91 @@ fix_widgets()
      (gtk_item_factory_get_item(factory, "/Channel/Show")),
      ch[scope.select].show);
 
-  if ((p = finditem("/Trigger/Channel 1"))) {
-    q = p + scope.trigch;
-    gtk_check_menu_item_set_active
-      (GTK_CHECK_MENU_ITEM
-       (gtk_item_factory_get_item(factory, q->path)), TRUE);
-    q = p + scope.trige + 3;
+  if ((p = finditem("/File/Device Options..."))) {
+    gtk_widget_set_sensitive
+      (GTK_WIDGET
+       (gtk_item_factory_get_item(factory, p->path)),
+       datasrc && datasrc->gtk_options != NULL);
+  }
+
+  if ((p = finditem("/Trigger/Off"))) {
+    q = p + scope.trige;
     gtk_check_menu_item_set_active
       (GTK_CHECK_MENU_ITEM
        (gtk_item_factory_get_item(factory, q->path)), TRUE);
   }
+
+  /* The trigger channels.  There are eight of them defined, but we
+   * only show as many as datasrc->nchans() indicate are available.
+   * (We assume datasrc->nchans() is <= 8).  Set their labels to the
+   * names in the Signal arrays; make them all insensitive if
+   * triggering is turned off, and select the one corresponding to the
+   * triggered channel.
+   */
+
+  if ((p = finditem("/Trigger/Channel 1"))) {
+    for (i=0; i<8; i++) {
+      GtkWidget *widget;
+      GtkLabel *label;
+
+      q = p + i;
+      widget = GTK_WIDGET(gtk_item_factory_get_item(factory, q->path));
+
+      if (!datasrc || i >= datasrc->nchans()) {
+	gtk_widget_hide(widget);
+      } else {
+	gtk_widget_show(widget);
+	label = GTK_LABEL (GTK_BIN (widget)->child);
+	gtk_label_set_text(label, datasrc->chan(i)->name);
+	gtk_widget_set_sensitive(widget, scope.trige != 0);
+      }
+    }
+    q = p + scope.trigch;
+    gtk_check_menu_item_set_active
+      (GTK_CHECK_MENU_ITEM
+       (gtk_item_factory_get_item(factory, q->path)), TRUE);
+  }
+
+  /* The triggering options should only be sensitive if we have a
+   * data source and it defines a set_trigger function.
+   */
+
+  if ((p = finditem("/Trigger/Rising"))) {
+    gtk_widget_set_sensitive
+      (GTK_WIDGET(gtk_item_factory_get_item(factory, p->path)),
+       datasrc && datasrc->set_trigger != NULL);
+  }
+  if ((p = finditem("/Trigger/Falling"))) {
+    gtk_widget_set_sensitive
+      (GTK_WIDGET(gtk_item_factory_get_item(factory, p->path)),
+       datasrc && datasrc->set_trigger != NULL);
+  }
+
+  /* The remaining items on the trigger menu should only be
+   * sensitive if triggering is turned on
+   */
+
+  if ((p = finditem("/Trigger/Position up"))) {
+    gtk_widget_set_sensitive
+      (GTK_WIDGET(gtk_item_factory_get_item(factory, p->path)),
+       scope.trige != 0);
+  }
+  if ((p = finditem("/Trigger/Position down"))) {
+    gtk_widget_set_sensitive
+      (GTK_WIDGET(gtk_item_factory_get_item(factory, p->path)),
+       scope.trige != 0);
+  }
+  if ((p = finditem("/Trigger/Position Positive"))) {
+    gtk_widget_set_sensitive
+      (GTK_WIDGET(gtk_item_factory_get_item(factory, p->path)),
+       scope.trige != 0);
+  }
+  if ((p = finditem("/Trigger/Position Negative"))) {
+    gtk_widget_set_sensitive
+      (GTK_WIDGET(gtk_item_factory_get_item(factory, p->path)),
+       scope.trige != 0);
+  }
+
   if ((p = finditem("/Scope/Plot Mode/Point"))) {
     p += scope.mode;
     gtk_check_menu_item_set_active
@@ -791,21 +1070,6 @@ fix_widgets()
   gtk_check_menu_item_set_active
     (GTK_CHECK_MENU_ITEM
      (gtk_item_factory_get_item(factory, "/Scope/Cursors")), scope.curs);
-  gtk_check_menu_item_set_active
-    (GTK_CHECK_MENU_ITEM
-     (gtk_item_factory_get_item(factory, "/Scope/SoundCard")), snd);
-  gtk_check_menu_item_set_active
-    (GTK_CHECK_MENU_ITEM
-     (gtk_item_factory_get_item(factory, "/Scope/Serial Scope")),
-     ps.found || bs.found);
-  if ((p = finditem("/Scope/DMA"))) {
-    p += 2;
-    if (scope.dma < 4) p++;
-    if (scope.dma < 2) p++;
-    gtk_check_menu_item_set_active
-      (GTK_CHECK_MENU_ITEM
-       (gtk_item_factory_get_item(factory, p->path)), TRUE);
-  }
 
   gtk_check_menu_item_set_active
     (GTK_CHECK_MENU_ITEM
@@ -814,37 +1078,106 @@ fix_widgets()
   if ((p = finditem("/Channel/Math")) &&
       (q = finditem("/Channel/Math/FFT. 2"))) {
     for (r = p; r <= q; r++) {
+      /* XXX add a check to the function's isvalid() test and a better
+       * way to figure out which (if any) function is active
+       */
       gtk_widget_set_sensitive
 	(GTK_WIDGET(gtk_item_factory_get_item(factory, r->path)),
 	 scope.select > 1);
+
+      /* Set 'other function' active when we hit it... */
+      if (r == p + 5)
+	gtk_check_menu_item_set_active
+	  (GTK_CHECK_MENU_ITEM(gtk_item_factory_get_item(factory, r->path)),
+	   TRUE);
+
+      /* ...then look for function that actually is active (if it exists) */
+      if (ch[scope.select].signal && (r > p + 5))
+	gtk_check_menu_item_set_active
+	  (GTK_CHECK_MENU_ITEM(gtk_item_factory_get_item(factory, r->path)),
+	   ch[scope.select].signal->savestr[0] == '0' + r - p - 7);
     }
-    r = p + 5;
-    gtk_widget_set_sensitive
-      (GTK_WIDGET(gtk_item_factory_get_item(factory, r->path)), FALSE);
-    r = scope.select < 2 ? p + 5 : p + 5 + ch[scope.select].func - FUNCMEM;
-    if (r < p + 5) r = p + 5;
-    gtk_check_menu_item_set_active
-      (GTK_CHECK_MENU_ITEM(gtk_item_factory_get_item(factory, r->path)), TRUE);
   }
+
+  /* Now the store and recall channels - set the names for memory or
+   * data source, and mark the channels active/sensitive if memory
+   * is stored there.  Store meny only displays options for the memory
+   * channels that are actually 'visible', i.e, not obscured by
+   * data source channels.
+   */
+
   if ((p = finditem("/Channel/Store/Mem A")) &&
       (q = finditem("/Channel/Recall/Mem A")))
-    for (i = 0; i < 23; i++) {
+    for (i = 0; i < 26; i++) {
+      GtkWidget *widget;
+      GtkLabel *label;
+      char buf[32];
+
       r = p + i;
-      gtk_check_menu_item_set_active
-	(GTK_CHECK_MENU_ITEM
-	 (gtk_item_factory_get_item(factory, r->path)),
-	 mem[i].color);
+      if (datasrc && i < datasrc->nchans()) {
+	gtk_widget_hide(GTK_WIDGET(gtk_item_factory_get_item(factory,
+							     r->path)));
+      } else {
+	gtk_widget_show(GTK_WIDGET(gtk_item_factory_get_item(factory,
+							     r->path)));
+	gtk_check_menu_item_set_active
+	  (GTK_CHECK_MENU_ITEM
+	   (gtk_item_factory_get_item(factory, r->path)),
+	   mem[i].num > 0);
+      }
       r += (q - p);
-      gtk_widget_set_sensitive
-	(GTK_WIDGET(gtk_item_factory_get_item(factory, r->path)),
-	 mem[i].color);
+
+      widget = GTK_WIDGET(gtk_item_factory_get_item(factory, r->path));
+      label = GTK_LABEL (GTK_BIN (widget)->child);
+      if (datasrc && i < datasrc->nchans()) {
+	gtk_label_set_text(label, datasrc->chan(i)->name);
+	gtk_widget_set_sensitive(widget, TRUE);
+      } else {
+	sprintf(buf, "Mem %c", 'A' + i);
+	gtk_label_set_text(label, buf);
+	gtk_widget_set_sensitive(widget, mem[i].num > 0);
+      }
     }
+
+#if 0
+  if ((p = finditem("/Channel/Recall")) &&
+      (q = finditem("/Channel/Recall/sep"))) {
+    GtkWidget *widget;
+    widget = gtk_hseparator_new();
+    gtk_menu_append(GTK_MENU(gtk_item_factory_get_widget(factory,
+							 p->path)),
+		    widget);
+    gtk_widget_show(widget);
+
+  }
+#endif
+
+#if 0
+  {
+    GtkWidget *widget;
+    GtkWidget *radioitem;
+    GSList *group;
+
+    radioitem = GTK_WIDGET(gtk_item_factory_get_item(factory, "/Trigger/Channel 1"));
+    group = gtk_radio_menu_item_group(GTK_RADIO_MENU_ITEM(radioitem));
+
+    widget = gtk_radio_menu_item_new_with_label(group, "Hi!");
+    gtk_menu_insert(GTK_MENU(gtk_item_factory_get_widget(factory,
+						       "/Trigger")),
+		    widget, 3);
+    gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(widget), FALSE);
+    gtk_widget_show(widget);
+  }
+#endif
+
   fixing_widgets = 0;
 }
 
 void
 get_main_menu(GtkWidget *window, GtkWidget ** menubar)
 {
+
+  GtkWidget *menu;
 
 /*    GtkAccelGroup *accel_group; */
 
@@ -854,6 +1187,34 @@ get_main_menu(GtkWidget *window, GtkWidget ** menubar)
   gtk_item_factory_create_items(factory, nmenu_items, menu_items, NULL);
 
 /*        gtk_accel_group_attach (accel_group, GTK_OBJECT (window)); */
+
+  /* Dynamically add the device list to the File/Device menu item */
+
+  menu = gtk_item_factory_get_widget(factory, "/File/Device");
+  if (menu) {
+    GtkWidget *p;
+    int i;
+
+    for (i = 0; i < ndatasrcs; i++) {
+      p = gtk_menu_item_new_with_label (datasrcs[i]->name);
+      gtk_menu_append (GTK_MENU (menu), p);
+      gtk_signal_connect (GTK_OBJECT (p), "activate",
+			  GTK_SIGNAL_FUNC (datasource),
+			  (gpointer) (datasrcs[i]->name));
+      gtk_widget_show (p);
+    }
+  }
+
+#if 0
+  menu = gtk_item_factory_get_widget(factory, "/Trigger");
+  if (menu) {
+    GtkWidget *p;
+
+    p = gtk_menu_item_new_with_label("Mem Brent");
+    gtk_menu_append (GTK_MENU (menu), p);
+    gtk_widget_show(p);
+  }
+#endif
 
   if (menubar)
     *menubar = gtk_item_factory_get_widget(factory, "<main>");
@@ -885,7 +1246,8 @@ positioncursor(int x, int y, int b)
 {
   static int z;
 
-  if (x > 100 && x < h_points - 100 && y > 80 && y < v_points - 80) {
+  if (x > 100 && x < h_points - 100 && y > 80 && y < v_points - 80
+      && ch[scope.select].signal != NULL) {
     z = ((float)x - 100) * 100 * ch[scope.select].signal->rate * scope.div
       / scope.scale / 440 / 10000 + 1;
     if (b == 1) {
@@ -994,7 +1356,6 @@ void
 init_widgets()
 {
   int i;
-  GtkWidget *menubar;
 
   h_points = XX[scope.size];
   v_points = XY[scope.size];
@@ -1045,6 +1406,63 @@ init_widgets()
   SetColor(15);
   font = gdk_font_load(fontname);
   ClearDrawArea();
+}
+
+void inputCallback(gpointer data, gint source, GdkInputCondition condition)
+{
+  animate(NULL);
+}
+
+static int input_fd = -1;
+static int input_tag_valid = 0;
+static gint input_tag;
+
+static int timeout_tag_valid = 0;
+static gint timeout_tag;
+
+/* GTK documentation says to return 0 if you don't want your timeout
+ * function to be called again, or 1 if you do.  In our case,
+ * animate() will call show_data(), which will call settimeout(),
+ * which will remove the old timeout and possibly set a new one, and
+ * all before the callback returns.  It's a little unclear to me what
+ * the return value should be in this case (or if it matters)...
+ */
+
+gint timeout_callback(gpointer data)
+{
+  animate(NULL);
+  return 0;
+}
+
+void settimeout(int ms)
+{
+  if (timeout_tag_valid) {
+    gtk_timeout_remove(timeout_tag);
+    timeout_tag_valid = 0;
+  }
+
+  if (ms == 0) return;
+
+  timeout_tag = gtk_timeout_add(ms, timeout_callback, 0);
+  timeout_tag_valid = 1;
+}
+
+void setinputfd(int fd)
+{
+  if (input_fd != fd) {
+
+    if (input_tag_valid) {
+      gdk_input_remove(input_tag);
+      input_tag_valid = 0;
+    }
+
+    if (fd != -1) {
+      input_tag = gdk_input_add(fd, GDK_INPUT_READ, inputCallback, NULL);
+      input_tag_valid = 1;
+    }
+
+    input_fd = fd;
+  }
 }
 
 /* loop until finished */

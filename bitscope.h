@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: bitscope.h,v 1.8 2000/08/31 18:37:57 twitham Rel $
+ * @(#)$Id: bitscope.h,v 1.9 2003/06/17 22:52:32 baccala Exp $
  *
  * Copyright (C) 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -70,8 +70,4 @@ typedef struct BitScope {	/* The state of the BitScope */
 } BitScope;
 extern BitScope bs;
 
-extern int idscope();
-extern int bs_getdata();
-extern void bs_changerate();
-extern void bs_option();
-extern void bs_writeoptions();
+int idbitscope(int fd);

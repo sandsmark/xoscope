@@ -1,7 +1,7 @@
 /*
- * @(#)$Id: bitscope.c,v 1.19 2002/06/15 21:21:53 twitham Exp $
+ * @(#)$Id: bitscope.c,v 1.20 2003/06/17 22:52:32 baccala Exp $
  *
- * Copyright (C) 2000 - 2002 Tim Witham <twitham@quiknet.com>
+ * Copyright (C) 2000 - 2001 Tim Witham <twitham@quiknet.com>
  *
  * (see the files README and COPYING for more details)
  *
@@ -18,9 +18,10 @@
 #include "oscope.h"
 #include "proscope.h"		/* for PSDEBUG macro */
 #include "bitscope.h"
-#include "func.h"		/* to modify funcnames */
 
 BitScope bs;			/* the BitScope structure */
+
+static Signal analogA_signal, analogB_signal, digital_signal;
 
 /* use real read and write except on DOS where they are emulated */
 #ifndef GO32
@@ -28,14 +29,27 @@ BitScope bs;			/* the BitScope structure */
 #define serial_write(a, b, c)	write(a, b, c)
 #endif
 
+/* This function is defined as do-nothing and weak, meaning it can be
+ * overridden by the linker without error.  It's used to start the X
+ * Windows GTK options dialog for Bitscope, and is defined in this way
+ * so that this object file can be used either with or without GTK.
+ * If this causes compiler problems, just comment out the attribute
+ * line and leave the do-nothing function.  You will then need to
+ * comment out both lines to generate an object file that can be used
+ * with GTK.
+ */
+
+void bitscope_dialog() __attribute__ ((weak));
+void bitscope_dialog() {}
+
 /* run CMD command string on bitscope FD or return 0 if unsuccessful */
-int
+static int
 bs_cmd(int fd, char *cmd)
 {
   int i, j, k;
   char c;
 
-  if (fd < 3) return(0);
+/*    if (fd < 3) return(0); */
   in_progress = 0;
   j = strlen(cmd);
   PSDEBUG("bs_cmd: %s\n", cmd);
@@ -58,7 +72,7 @@ bs_cmd(int fd, char *cmd)
 }
 
 /* read N bytes from bitscope FD into BUF, or return 0 if unsuccessful */
-int
+static int
 bs_read(int fd, char *buf, int n)
 {
   int i = 0, j, k = n + 10;
@@ -80,7 +94,7 @@ bs_read(int fd, char *buf, int n)
 }
 
 /* asynchronously read N bytes from bitscope FD into BUF, return N when done */
-int
+static int
 bs_read_async(int fd, char *buf, int n, char c)
 {
   static char *pos, *end;
@@ -106,7 +120,7 @@ bs_read_async(int fd, char *buf, int n, char c)
 
 /* Run IN on bitscope FD and store results in OUT (not including echo) */
 /* Only the last command in IN should produce output; else this won't work */
-int
+static int
 bs_io(int fd, char *in, char *out)
 {
   char c;
@@ -147,7 +161,7 @@ bs_io(int fd, char *in, char *out)
   return(1);
 }
 
-int
+static int
 bs_getreg(int fd, int reg)
 {
   unsigned char i[8], o[8];
@@ -157,7 +171,7 @@ bs_getreg(int fd, int reg)
   return strtol(o, NULL, 16);
 }
 
-int
+static int
 bs_getregs(int fd, unsigned char *reg)
 {
   unsigned char buf[8];
@@ -176,7 +190,7 @@ bs_getregs(int fd, unsigned char *reg)
   return(1);
 }
 
-int
+static int
 bs_putregs(int fd, unsigned char *reg)
 {
   unsigned char buf[8];
@@ -195,7 +209,7 @@ bs_putregs(int fd, unsigned char *reg)
   return(1);
 }
 
-void
+static void
 bs_flush_serial()
 {
   int c, byte = 0;
@@ -208,19 +222,23 @@ bs_flush_serial()
 }
 
 
-void
-bs_writeoptions(FILE *file)
+static char *
+save_option(int i)
 {
-  int i, regs[] = {0, 5, 6, 7, 14}; /* regs to save */
+  int regs[] = {0, 5, 6, 7, 14}; /* regs to save */
+  static char buf[32];
 
-  for (i = 0; i < sizeof(regs) / sizeof(regs[0]); i++) {
-    fprintf(file, "# -o %d:0x%02x\n", regs[i], bs.r[regs[i]]);
+  if (i < sizeof(regs) / sizeof(regs[0])) {
+    sprintf(buf, "%d:0x%02x\n", regs[i], bs.r[regs[i]]);
+    return buf;
+  } else {
+    return NULL;
   }
 }
 
 
-void
-bs_option(char *optarg)
+static int
+parse_option(char *optarg)
 {
   char *p;
   int reg = 0, val = 0;
@@ -231,12 +249,14 @@ bs_option(char *optarg)
       val = strtol(++p, NULL, 0);
       bs.R[reg] = val;
 //      printf("bs_option: %s b[%d] = %d\n", optarg, reg, val);
+      return 1;
     }
   }
+  return 0;
 }
 
 
-void
+static int
 bs_changerate(int fd, int dir)
 {
   unsigned char buf[10];
@@ -246,13 +266,20 @@ bs_changerate(int fd, int dir)
     bs.r[13] = bs.r[13] ? bs.r[13] / 2 : 128; /* TB	time base */
   else if (dir < 0)
     bs.r[13] = bs.r[13] ? bs.r[13] * 2 : 1;
+  /* XXX need to set rate in Signal structures here - is this formula right? */
 //  mem[23].rate = mem[24].rate = mem[25].rate = 1250000 / (19 + 3 * (R13 + 1));
   sprintf(buf, "[d]@[%x]s", bs.r[13]);
   bs_cmd(fd, buf);
+  return 1;
+}
+
+static int changerate(int dir)
+{
+  return bs_changerate(bs.fd, dir);
 }
 
 
-void
+static void
 bs_fixregs(int fd)
 {
   int i;
@@ -288,7 +315,7 @@ bs_fixregs(int fd)
 }
 
 /* initialize previously identified BitScope FD */
-void
+static void
 bs_init(int fd)
 {
   static int volts[] = {
@@ -304,11 +331,12 @@ bs_init(int fd)
   };
 
   if (fd < 3) return;
-  if (snd) handle_key('&');	/* turn off sound card and probescope */
   bs.found = 1;
   in_progress = 0;
   bs.version = strtol(bs.bcid + 2, NULL, 10);
-  mem[23].rate = mem[24].rate = mem[25].rate = 25000000;
+  analogA_signal.rate = 25000000;
+  analogB_signal.rate = 25000000;
+  digital_signal.rate = 25000000;
 //  mem[23].rate = mem[24].rate = mem[25].rate = 12500000;
 
 //  printf("bs_init\n");
@@ -316,63 +344,93 @@ bs_init(int fd)
   bs_fixregs(fd);
   bs_putregs(fd, bs.r);
 
-  funcnames[2] = labels[6];
+  strcpy(digital_signal.name, labels[6]);
+
   if (bs.r[7] & UPPER16POD) {
-    mem[23].volts = volts[(bs.r[14] & RANGE3160) + 8];
-    mem[24].volts = volts[((bs.r[14] >> 4) & RANGE3160) + 8];
-    funcnames[0] = labels[4];
-    funcnames[1] = labels[5];
+    analogA_signal.volts = volts[(bs.r[14] & RANGE3160) + 8];
+    analogB_signal.volts = volts[((bs.r[14] >> 4) & RANGE3160) + 8];
+    strcpy(analogA_signal.name, labels[4]);
+    strcpy(analogB_signal.name, labels[5]);
   } else {
-    mem[23].volts = volts[(bs.r[14] & RANGE3160)
-			 + (bs.r[0] & 0x01 ? 4 : 0)];
-    mem[24].volts = volts[((bs.r[14] >> 4) & RANGE3160)
-			 + (bs.r[0] & 0x10 ? 4 : 0)];
-    funcnames[0] = labels[((bs.r[14] & PRIMARY(CHANNELA)) ? 1 : 0)
-			 + ((bs.r[0] & 0x01) ? 2 : 0)];
-    funcnames[1] = labels[((bs.r[14] & SECONDARY(CHANNELA)) ? 1 : 0)
-			 + ((bs.r[0] & 0x10) ? 2 : 0)];
+    analogA_signal.volts = volts[(bs.r[14] & RANGE3160)
+				+ (bs.r[0] & 0x01 ? 4 : 0)];
+    analogB_signal.volts = volts[((bs.r[14] >> 4) & RANGE3160)
+				+ (bs.r[0] & 0x10 ? 4 : 0)];
+    strcpy(analogA_signal.name,
+	   labels[((bs.r[14] & PRIMARY(CHANNELA)) ? 1 : 0)
+		 + ((bs.r[0] & 0x01) ? 2 : 0)]);
+    strcpy(analogB_signal.name,
+	   labels[((bs.r[14] & SECONDARY(CHANNELA)) ? 1 : 0)
+		 + ((bs.r[0] & 0x10) ? 2 : 0)]);
   }
 }
 
-/* identify a BitScope (2), ProbeScope (1) or none (0) */
+/* identify a BitScope; called from ser_*.c files */
 int
-idscope(int probescope)
+idbitscope(int fd)
 {
-  int c, byte = 0, try = 0;
+  bs.fd = fd;
 
-  flush_serial();
-  ps.found = bs.found = 0;
-  if (probescope) {
-    while (byte < 300 && try < 75) { /* give up in 7.5ms */
-      if ((c = getonebyte()) < 0) {
-	usleep(100);		/* try again in 0.1ms */
-	try++;
-      } else if (c > 0x7b) {
-	ps.found = 1;
-	return(1);		/* ProbeScope found! */
-      } else
-	byte++;
-      PSDEBUG("%d\t", try);
-      PSDEBUG("%d\n", byte);
-    }
-  } else {			/* identify bitscope */
-    bs_flush_serial();
-    if (bs_io(bs.fd, "?", bs.buf) && bs.buf[1] == 'B' && bs.buf[2] == 'C') {
-      strncpy(bs.bcid, bs.buf + 1, sizeof(bs.bcid));
-      bs.bcid[8] = '\0';
-      bs_init(bs.fd);
-      return(2);		/* BitScope found! */
-    }
+  flush_serial(bs.fd);
+
+  bs_flush_serial();
+  if (bs_io(bs.fd, "?", bs.buf) && bs.buf[1] == 'B' && bs.buf[2] == 'C') {
+    strncpy(bs.bcid, bs.buf + 1, sizeof(bs.bcid));
+    bs.bcid[8] = '\0';
+    bs_init(bs.fd);
+    return(1);		/* BitScope found! */
   }
   return(0);
 }
 
+static int open_bitscope(void)
+{
+  int i;
+
+  for (i = 0; i < sizeof(bs.R) / sizeof(bs.R[0]); i++) {
+    bs.R[i] = -1;
+  }
+
+  return init_serial_bitscope();
+}
+
+static void close_bitscope(void)
+{}
+
+static int nchans(void)
+{
+  return bs.found ? 3 : 0;
+}
+
+static int
+serial_fd(void)
+{
+  return bs.found ? bs.fd : -1;
+}
+
+static Signal * bs_chan(int chan)
+{
+  switch (chan) {
+  case 0:
+    return &analogA_signal;
+  case 1:
+    return &analogB_signal;
+  case 2:
+    return &digital_signal;
+  default:
+    return NULL;
+  }
+}
+
+static void reset(void)
+{}
+
 /* get pending available data from FD, or initiate new data collection */
-int
-bs_getdata(int fd)
+static int bs_getdata(void)
 {
   static unsigned char *buff;
   static int alt = 0, k, n;
+  int fd = bs.fd;
 
   if (!fd) return(0);		/* device open? */
   if (in_progress == 'M') {	/* finish a get */
@@ -384,13 +442,13 @@ bs_getdata(int fd)
 	    break;
 	  if (k > 8192)
 	    alt = 1;
-	  mem[25].data[k] = *buff++ - 128;
-//	  mem[23 + alt].data[k++ - alt * 8193] = *buff++ - 128;
-	  mem[23 + alt].data[k++] = *buff++ - 128;
+	  digital_signal.data[k] = *buff++ - 128;
+	  if (alt == 0) analogA_signal.data[k++] = *buff++ - 128;
+	  else analogB_signal.data[k++] = *buff++ - 128;
 	}
-	mem[23].num = k > 8192 ? 8192 : k;
-	if (k > 8192) mem[24].num = k - 8192;
-	mem[25].num = k;
+	analogA_signal.num = k > 8192 ? 8192 : k;
+	if (k > 8192) analogB_signal.num = k - 8192;
+	digital_signal.num = k;
       } else {			/* S mode, hex ASCII */
 	while (*buff != '\0') {
 	  if (k >= MAXWID)
@@ -399,16 +457,20 @@ bs_getdata(int fd)
 	    buff++;
 	  else {
 	    n = strtol(buff, NULL, 16);
-	    mem[23 + alt].data[k] = (n & 0xff) - 128;
-	    mem[25].data[k] = ((n & 0xff00) >> 8) - 128;
+	    if (alt == 0) analogA_signal.data[k] = (n & 0xff) - 128;
+	    else analogB_signal.data[k] = (n & 0xff) - 128;
+	    digital_signal.data[k] = ((n & 0xff00) >> 8) - 128;
 	    buff += 5;
 	    if (alt) k++;
 	    alt = !alt;
 	  }
 	}
+	/* XXX this code is different from 'M', shouldn't it be the same? */
+	analogA_signal.num = k;
+	analogB_signal.num = k;
+	digital_signal.num = k;
       }
-//      mem[23].num = mem[24].num = mem[25].num = k < MAXWID ? k : MAXWID;
-      if (k >= samples(mem[23].rate) || k >= 16 * 1024) { /* all done */
+      if (k >= samples(analogA_signal.rate) || k >= 16 * 1024) { /* all done */
 //      if (k >= 8192 + samples(mem[23].rate) || k >= 16 * 1024) {
 	k = 0;
 	alt = 0;
@@ -421,6 +483,12 @@ bs_getdata(int fd)
     if (bs_io(fd, "T", bs.buf)) {
       fprintf(stderr, "%s", bs.buf);
       bs_io(fd, "M", bs.buf);	/* start a get */
+      analogA_signal.num = 0;
+      analogA_signal.frame ++;
+      analogB_signal.num = 0;
+      analogB_signal.frame ++;
+      digital_signal.num = 0;
+      digital_signal.frame ++;
       k = 0;
     } else
       return(0);
@@ -429,3 +497,35 @@ bs_getdata(int fd)
   }
   return(1);
 }
+
+static char * status_str(int i)
+{
+  switch (i) {
+  case 0:
+    return bs.bcid;
+  default:
+    return NULL;
+  }
+}
+
+DataSrc datasrc_bs = {
+  "BitScope",
+  open_bitscope,
+  close_bitscope,
+  nchans,
+  bs_chan,
+  NULL, /* set_trigger, */
+  NULL, /* clear_trigger, */
+  changerate,
+  reset,
+  serial_fd,
+  bs_getdata,
+  status_str,
+  NULL, /* option1, */
+  NULL, /* option1str, */
+  NULL, /* option2, */
+  NULL, /* option2str, */
+  parse_option,
+  save_option,
+  bitscope_dialog,
+};

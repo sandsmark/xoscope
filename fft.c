@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: fft.c,v 1.4 1998/09/24 00:59:07 twitham Rel $
+ * @(#)$Id: fft.c,v 1.5 2003/06/17 22:52:32 baccala Exp $
  *
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -61,7 +61,10 @@ fft(short *in, short *out)
       register long re=fftdata[*bri];
       register long im=fftdata[(*bri)+1];
       if((a2=re*re+im*im)<0) a2=0; /* Watch for possible overflow */
-      *pDisplayval=sqrt(a2)*16;
+      if (a2 >= (1<<22))		/* avoid overflowing the short */
+	*pDisplayval  = (1<<15)-1;	/* max short = 2^15 = sqrt(2^22)*16 */
+      else
+	*pDisplayval = sqrt(a2)*16;
       bri++;
       pDisplayval++;
     }

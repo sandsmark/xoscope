@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: com_gtk.c,v 1.3 2000/03/03 23:30:40 twitham Rel $
+ * @(#)$Id: com_gtk.c,v 1.4 2003/06/17 22:52:32 baccala Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -9,18 +9,15 @@
  *
  */
 
+#include <stdio.h>
+#include <stdlib.h>
 #include <gtk/gtk.h>
 #include "oscope.h"
+#include "display.h"
+#include "com_gtk.h"
 
-GdkRectangle update_rect;
-GtkWidget *window;
-GtkWidget *drawing_area;
 GdkPixmap *pixmap = NULL;
-GdkGC *gc;
-GtkWidget *menubar;
-GtkWidget *vbox;
-GdkColor gdkcolor[16];
-int color[16], fixing_widgets = 0;
+int fixing_widgets = 0;
 char *colors[] = {		/* X colors similar to 16 console colors */
   "black",			/* 0 */
   "blue",
@@ -51,7 +48,15 @@ OpenDisplay(int argc, char *argv[])
 void
 ClearDrawArea()
 {
-  gdk_draw_rectangle(pixmap,
+  if (pixmap)
+    gdk_draw_rectangle(pixmap,
+		       drawing_area->style->black_gc,
+		       TRUE,
+		       0, 0,
+		       drawing_area->allocation.width,
+		       drawing_area->allocation.height);
+
+  gdk_draw_rectangle(drawing_area->window,
 		     drawing_area->style->black_gc,
 		     TRUE,
 		     0, 0,
@@ -68,22 +73,36 @@ SetColor(int c)
 void
 DrawPixel(int x, int y)
 {
-  gdk_draw_point(pixmap, gc, x, y);
+  gdk_draw_point(drawing_area->window, gc, x, y);
 }
 
 void
 DrawLine(int x1, int y1, int x2, int y2)
 {
-  gdk_draw_line(pixmap, gc, x1, y1, x2, y2);
+  gdk_draw_line(drawing_area->window, gc, x1, y1, x2, y2);
 }
 
 void
 SyncDisplay()
 {
+
+#if 0
+#if USE_PIXMAP
+
+  /* This code is called at the end of show_data(), after the pixmap
+   * has been changed around, and generates an extra expose event for
+   * the entire drawing_area, which pushes us into expose_event()
+   * below, and that actually copies the pixmap to the screen.
+   */
+
   update_rect.x  = update_rect.y = 0;
   update_rect.width = drawing_area->allocation.width;
   update_rect.height = drawing_area->allocation.height;
   gtk_widget_draw(drawing_area, &update_rect);
+
+#endif
+#endif
+
 }
 
 void
@@ -95,17 +114,34 @@ AddTimeOut(unsigned long interval, int (*func)(), void *data) {
   done = 1;
 }
 
+/* XXX this is really a hack, because these functions aren't defined
+ * for 'xy'
+ */
+
+void clear_text_memory() __attribute__ ((weak));
+void clear_text_memory() {}
+void draw_text() __attribute__ ((weak));
+void draw_text() {}
+
 /* set up some common event handlers */
 gint
 expose_event(GtkWidget *widget, GdkEventExpose *event)
 {
+#if USE_PIXMAP
   gdk_draw_pixmap(widget->window,
-		  widget->style->fg_gc[GTK_WIDGET_STATE(widget)],
-		  pixmap,
-		  event->area.x, event->area.y,
-		  event->area.x, event->area.y,
-		  event->area.width, event->area.height);
-
+                  widget->style->fg_gc[GTK_WIDGET_STATE(widget)],
+                  pixmap,
+                  event->area.x, event->area.y,
+                  event->area.x, event->area.y,
+                  event->area.width, event->area.height);
+  clear_text_memory();
+  draw_text(1);
+#else
+  /* This will trigger a redisplay of the entire screen, including whatever
+   * happened to be exposed in the expose event
+   */
+  clear();
+#endif
   return FALSE;
 }
 

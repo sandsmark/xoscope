@@ -1,0 +1,7 @@
+
+Most of the files in this directory are automatically generated
+by glade.  Only callbacks.c contains functions to be edited by
+the programmer.  To modify the GUI, you must have Glade installed,
+then run it on the .glade file in the parent directory.  After
+using Glade's GUI-editing GUI, you can click "Build" to re-create
+the files in this directory to match the new GUI layout.

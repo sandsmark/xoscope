@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: ser_unix.c,v 1.6 2001/05/06 03:45:16 twitham Rel $
+ * @(#)$Id: ser_unix.c,v 1.7 2003/06/17 22:52:32 baccala Exp $
  *
  * Copyright (C) 1997 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -22,31 +22,30 @@
 #include "bitscope.h"
 
 char device[512] = "";		/* Serial device */
-int psfd = 0;			/* file descriptor */
-int sflags[2];
-struct termio stbuf[2], svbuf; /* termios: svbuf=saved, stbuf=set */
+int sflags;
+struct termio stbuf, svbuf;	/* termios: svbuf=saved, stbuf=set */
 
 /* return a single byte from the serial device or return -1 if none avail. */
 int
-getonebyte()
+getonebyte(int fd)
 {
   static unsigned char ch;
 
-  if (read(psfd, &ch, 1) == 1)
+  if (read(fd, &ch, 1) == 1)
     return(ch);
   return(-1);
 }
 
 /* return a single byte from the serial device or return -1 if none avail. */
 int
-GETONEBYTE()			/* we buffer here just to be safe */
+GETONEBYTE(int fd)			/* we buffer here just to be safe */
 {
   static unsigned char buff[256];
   static int count = 0, pos = 0;
 
   if (pos >= count) {
-    if (psfd)
-      if ((count = read(psfd, buff, 256 * sizeof(unsigned char))) < 1)
+    if (fd)
+      if ((count = read(fd, buff, 256 * sizeof(unsigned char))) < 1)
 	return(-1);
     pos = 0;
   }
@@ -55,92 +54,110 @@ GETONEBYTE()			/* we buffer here just to be safe */
 
 /* discard all input, clearing the serial FIFO queue to catch up */
 void
-flush_serial()
+flush_serial(int fd)
 {
-  while (getonebyte() > -1) {
+  while (getonebyte(fd) > -1) {
   }
 }
 
 /* serial cleanup routine called as the program exits: restore settings */
 void
-cleanup_serial()
+cleanup_serial(int fd)
 {
-  if (psfd > 0) {
-    if (ioctl(psfd, TCSETA, &svbuf) < 0) {
+  if (fd > 0) {
+    if (ioctl(fd, TCSETA, &svbuf) < 0) {
       sprintf(error, "%s: can't ioctl set device %s", progname, device);
       perror(error);
     }
-    close(psfd);
+    close(fd);
   }
 }
 
-/* check given serial device for BitScope (2), ProbeScope (1) or nothing (0) */
+/* check given serial device for BitScope (0) or ProbeScope (1) */
 int
-findscope(char *dev)
+findscope(char *dev, int i)
 {
-  int i, r;
+  int fd;
 
-  for (i = 0; i < 2; i++) {	/* look for BitScope or ProbeScope */
-    if ((psfd = bs.fd = open(dev, sflags[i])) < 0) {
-      sprintf(error, "%s: can't open device %s", progname, dev);
-      perror(error);
-      return(0);
-    }
-    if (ioctl(psfd, TCGETA, &svbuf) < 0) { /* save settings */
-      sprintf(error, "%s: can't ioctl get device %s", progname, dev);
-      perror(error);
-      close(psfd);
-      return(0);
-    }
-    if (ioctl(psfd, TCSETA, &stbuf[i]) < 0) {
-      sprintf(error, "%s: can't ioctl set device %s", progname, dev);
-      perror(error);
-      close(psfd);
-      return(0);
-    }
-    if ((r = idscope(i)))	/* serial port scope found! */
-      return(r);
-    if (ioctl(psfd, TCSETA, &svbuf) < 0) { /* restore settings */
-      sprintf(error, "%s: can't ioctl set device %s", progname, dev);
-      perror(error);
-      close(psfd);
-      return(0);		/* nothing found. */
-    }
+  if ((fd = open(dev, sflags)) < 0) {
+    sprintf(error, "%s: can't open device %s", progname, dev);
+    perror(error);
+    return(0);
   }
-  return(0);			/* no scope found. */
+  if (ioctl(fd, TCGETA, &svbuf) < 0) { /* save settings */
+    sprintf(error, "%s: can't ioctl get device %s", progname, dev);
+    perror(error);
+    close(fd);
+    return(0);
+  }
+  if (ioctl(fd, TCSETA, &stbuf) < 0) {
+    sprintf(error, "%s: can't ioctl set device %s", progname, dev);
+    perror(error);
+    close(fd);
+    return(0);
+  }
+
+  if ((i && idprobescope(fd)) || (!i && idbitscope(fd))) {
+    return (1);		/* serial port scope found! */
+  }
+
+  if (ioctl(fd, TCSETA, &svbuf) < 0) { /* restore settings */
+    sprintf(error, "%s: can't ioctl set device %s", progname, dev);
+    perror(error);
+    close(fd);
+    return(0);		/* nothing found. */
+  }
+
+  fprintf(stderr, "%s: no serial scope found on %s\n", progname, dev);
+  return(0);
 }
 
 /* set [scope].found to non-zero if we find a scope on a serial port */
-void
-init_serial()			/* prefer BitScope over ProbeScope */
+int
+init_serial_bitscope(void)
 {
   char *dev[] = PSDEVS, *p;
   int i, j = 0, num = sizeof(dev) / sizeof(char *);
 
   /* BitScope serial port settings */
-  sflags[0] = O_RDWR | O_NDELAY | O_NOCTTY;
-  memset(&stbuf[0], 0, sizeof(stbuf[0]));
-  stbuf[0].c_cflag = B57600 | CS8 | CLOCAL | CREAD;
-  stbuf[0].c_iflag = IGNPAR;	/* | ICRNL; (this would hose binary dumps) */
+  sflags = O_RDWR | O_NDELAY | O_NOCTTY;
+  memset(&stbuf, 0, sizeof(stbuf));
+  stbuf.c_cflag = B57600 | CS8 | CLOCAL | CREAD;
+  stbuf.c_iflag = IGNPAR;	/* | ICRNL; (this would hose binary dumps) */
 
-  /* ProbeScope serial port settings */
-  sflags[1] = O_RDONLY | O_NDELAY;
-  memset(&stbuf[1], 0, sizeof(stbuf[1]));
-  stbuf[1].c_cflag = B19200 | CS7 | CLOCAL | CREAD;
-  stbuf[1].c_iflag = ISTRIP;
-
-  cleanup_serial();		/* close current device first, if any */
   if ((p = getenv("BITSCOPE")) == NULL) /* first place to look */
     p = BITSCOPE;		/* -D default defined in Makefile */
   dev[0] = p;
-  if ((p = getenv("PROBESCOPE")) == NULL) /* second place to look */
-    p = PROBESCOPE;		/* -D default defined in Makefile */
-  dev[1] = p;
   for (i = 0; i < num; i++) {	/* look in all places specified in config.h */
-    if ((j = findscope(dev[i]))) {
+    if ((j = findscope(dev[i], 0))) {
       strcpy(device, dev[i]);
-      i = num;			/* done; exit the loop */
+      break;
     }
   }
-  if (!j) psfd = 0;
+  return j;
+}
+
+/* set [scope].found to non-zero if we find a scope on a serial port */
+int
+init_serial_probescope(void)
+{
+  char *dev[] = PSDEVS, *p;
+  int i, j = 0, num = sizeof(dev) / sizeof(char *);
+
+  /* ProbeScope serial port settings */
+  sflags = O_RDONLY | O_NDELAY;
+  memset(&stbuf, 0, sizeof(stbuf));
+  stbuf.c_cflag = B19200 | CS7 | CLOCAL | CREAD;
+  stbuf.c_iflag = ISTRIP;
+
+  if ((p = getenv("PROBESCOPE")) == NULL) /* second place to look */
+    p = PROBESCOPE;		/* -D default defined in Makefile */
+  dev[0] = p;
+  for (i = 0; i < num; i++) {	/* look in all places specified in config.h */
+    if ((j = findscope(dev[i], 1))) {
+      strcpy(device, dev[i]);
+      break;
+    }
+  }
+  return j;
 }

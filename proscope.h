@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: proscope.h,v 1.5 2000/07/11 23:01:25 twitham Rel $
+ * @(#)$Id: proscope.h,v 1.6 2003/06/17 22:52:32 baccala Exp $
  *
  * Copyright (C) 1997 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -56,9 +56,10 @@ typedef struct ProbeScope {	/* The state of the ProbeScope */
 } ProbeScope;
 extern ProbeScope ps;
 
-extern void init_probescope();
-extern void probescope();
-extern void init_serial();
-extern void flush_serial();
-extern void cleanup_serial();
-extern int getonebyte();
+extern int init_serial_probescope(void);
+extern int init_serial_bitscope(void);
+extern void flush_serial(int fd);
+extern void cleanup_serial(int fd);
+extern int getonebyte(int fd);
+
+extern int idprobescope(int fd);

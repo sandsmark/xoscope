@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: proscope.c,v 1.7 2000/07/11 23:01:25 twitham Rel $
+ * @(#)$Id: proscope.c,v 1.8 2003/06/17 22:52:32 baccala Exp $
  *
  * Copyright (C) 1997 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -21,22 +21,86 @@ unsigned int ps_rate[] = {20000000, 10000000, 2000000, 1000000,
 
 ProbeScope ps;
 
-/* initialize the probescope structure */
-void
-init_probescope()
+Signal ps_signal;
+
+int psfd;
+
+/* identify a ProbeScope; called from ser_*.c files */
+int
+idprobescope(int fd)
 {
-  ps.found = ps.wait = ps.volts = ps.trigger = ps.level = ps.dvm = ps.flags = 0;
+  int c, byte = 0, try = 0;
+
+  flush_serial(fd);
+
+  while (byte < 300 && try < 75) { /* give up in 7.5ms */
+    if ((c = getonebyte(fd)) < 0) {
+      usleep(100);		/* try again in 0.1ms */
+      try++;
+    } else if (c > 0x7b) {
+      psfd = fd;
+      return(1);		/* ProbeScope found! */
+    } else
+      byte++;
+    PSDEBUG("%d\t", try);
+    PSDEBUG("%d\n", byte);
+  }
+
+  return(0);
+}
+
+/* initialize the probescope structure */
+int
+open_probescope(void)
+{
+
+  ps.found = ps.wait = ps.volts = 0;
+  ps.trigger = ps.level = ps.dvm = ps.flags = 0;
   ps.coupling = "?";
+
+  return init_serial_probescope();
+}
+
+void
+close_probescope(void)
+{
+}
+
+static int
+serial_fd(void)
+{
+  return psfd;
+}
+
+static int nchans(void)
+{
+  return 1;
+}
+
+static Signal *ps_chan(int chan)
+{
+  return &ps_signal;
+}
+
+/* No rate change support for Probescope */
+
+static int change_rate(int dir)
+{
+  return 0;
+}
+
+static void reset(void)
+{
 }
 
 /* get one set of bytes from the ProbeScope, if possible */
-void
-probescope()
+int
+get_data(void)
 {
   int c, maybe, byte = -1, try = 0, cls = 0, dvm = 0, gotdvm = 0, flush = 1;
 
   while (byte < 138 && try < 280) { /* allow max 2 cycles to find sync byte */
-    c = getonebyte();
+    c = getonebyte(psfd);
     if (c < 0) {		/* byte available? no: */
       if (++try > 10 && byte <= 1) {
 	PSDEBUG("%s\n", "!");
@@ -56,7 +120,7 @@ probescope()
 	  ps.wait = maybe;
 	  cls = 1;
 	}
-	while ((c = getonebyte()) > 0x7b && ++try < 280) {
+	while ((c = getonebyte(psfd)) > 0x7b && ++try < 280) {
 	}			/* suck all available sync/wait bytes */
 	if (ps.wait || try >= 280) {
 	  byte = -1;		/* return now if we're waiting or timed out */
@@ -68,7 +132,7 @@ probescope()
 	}
       }
       if (byte >= 5 && byte <= 132) { /* Signal Bytes from 0 to 3F Hex */
-	mem[25].data[byte - 4] = (c - 32) * 5;
+	ps_signal.data[byte - 4] = (c - 32) * 5;
       } else if (byte >= 134 && byte <= 136) { /* DVM Values, 100, 10, 1 */
 	PSDEBUG("%d,", c);
 	dvm += c * (byte == 134 ? 100 : byte == 135 ? 10 : 1);
@@ -77,14 +141,14 @@ probescope()
 	PSDEBUG("1sw=%02x  ", c);
 	if ((maybe = c & PS_100V ? 100 : c & PS_10V ? 10 : 1) != ps.volts) {
 	  ps.volts = maybe;
-	  mem[25].volts = maybe * 1000;
+	  ps_signal.volts = maybe * 1000;
 	  cls = 1;
 	}
 	ps.coupling = c & PS_AC ? "AC" : c & PS_DC ? "DC" : "GND";
       } else if (byte == 2) {	/* Timebase Definition Byte */
 	PSDEBUG("2tb=%02x  ", c);
-	if (c < 10 && (maybe = ps_rate[c]) != mem[25].rate) {
-	  mem[25].rate = maybe;
+	if (c < 10 && (maybe = ps_rate[c]) != ps_signal.rate) {
+	  ps_signal.rate = maybe;
 	  cls = 1;
 	}
       } else if (byte == 3) {	/* Trigger Definition Byte, true if set */
@@ -114,9 +178,62 @@ probescope()
       try++;
     }
   }
-  mem[25].data[0] = mem[25].data[1];
-  mem[25].num = 128;
+  ps_signal.data[0] = ps_signal.data[1];
+  ps_signal.frame ++;
+  ps_signal.num = 128;
   if (gotdvm) ps.dvm = dvm;
   if (cls) clear();		/* non-DVM text need changed? */
-  if (flush) flush_serial();	/* catch up if we're getting behind */
+  if (flush) flush_serial(psfd);	/* catch up if we're getting behind */
+  return 1;		/* XXX not sure about this */
 }
+
+static char * status_str(int i)
+{
+  static char string[81];
+
+  switch(i) {
+
+  case 0:
+    sprintf(string, "%d Volt Range", ps.volts);
+    return string;
+
+  case 1:
+    return (ps.trigger & PS_SINGLE ? "SINGLE" : "   RUN");
+
+  case 4:
+    sprintf(string, "%s ~ %g V", ps.trigger & PS_PINT ? "+INTERN"
+	    : ps.trigger & PS_MINT ? "-INTERN"
+	    : ps.trigger & PS_PEXT ? "+EXTERN"
+	    : ps.trigger & PS_MEXT ? "-EXTERN" : "AUTO",
+	    (float)ps.level * (ps.trigger & PS_PEXT || ps.trigger & PS_MEXT
+			       ? 1.0 : (float)ps.volts) / 10);
+    return string;
+
+  case 7:
+    return (ps.wait ? "WAITING!" : NULL);
+  }
+
+  return NULL;
+}
+
+DataSrc datasrc_ps = {
+  "ProbeScope",
+  open_probescope,
+  close_probescope,
+  nchans,
+  ps_chan,
+  NULL, /* set_trigger, */
+  NULL, /* clear_trigger, */
+  change_rate,
+  reset,
+  serial_fd,
+  get_data,
+  status_str,
+  NULL, /* option1, */
+  NULL, /* option1str, */
+  NULL, /* option2, */
+  NULL, /* option2str, */
+  NULL,
+  NULL,
+  NULL,	/* gtk_options */
+};

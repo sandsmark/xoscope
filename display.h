@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.h,v 1.10 1999/08/27 04:08:45 twitham Rel $
+ * @(#)$Id: display.h,v 1.11 2003/06/17 22:52:32 baccala Exp $
  *
  * Copyright (C) 1996 - 1999 Tim Witham <twitham@quiknet.com>
  *
@@ -36,6 +36,8 @@ int	col();
 void	DrawPixel();		/* these are defined in */
 void	DrawLine();		/* a display-specific file */
 void	SetColor();		/* like gr_vga.c or gr_sx.c */
+void	PolyPoint();
+void	PolyLine();
 void	SyncDisplay();
 void	AddTimeOut();
 void	LoadSaveFile();

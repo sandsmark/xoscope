@@ -1,14 +1,12 @@
 /*
- * @(#)$Id: acconfig.h,v 1.3 2002/06/15 21:21:53 twitham Exp $
+ * @(#)$Id: acconfig.h,v 1.4 2003/06/17 22:52:32 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
  * (see the files README and COPYING for more details)
  *
- * This file sets the program's compile-time options.
- * configure-determined values are listed first, followed by the
- * program-specific options where original shipped values are shown in
- * (parentheses).
+ * This file simply sets the program's compile-time options.
+ * Original shipped values are in (parentheses).
  *
  */
 
@@ -28,8 +26,6 @@
 #undef PACKAGE_LIBEXEC_DIR
 				/* @BOTTOM@ */
 
-/* ------------------------------ xoscope-specific options follow ------ */
-
 /* program defaults for the command-line options (original values) */
 #define DEF_A	1		/* 1-8 (1) */
 #define DEF_R	44100		/* 8000,11025,22050,44100 (44100) */
@@ -39,7 +35,7 @@
 #define DEF_C	4		/* 0-16 (4) */
 #define DEF_M	0		/* 0,1,2 (0) */
 #define DEF_D	4		/* 1,2,4 (4) */
-#define DEF_F	"880"		/* console font, "" = default ("880") */
+#define DEF_F	""		/* console font, "" = default ("") */
 #define DEF_FX	"8x16"		/* X11 font ("8x16") */
 #define DEF_P	2		/* 0,1,2 (2) */
 #define DEF_G	2		/* 0,1,2 (2) */
@@ -90,15 +86,12 @@
 /* FFT length, shorter than minimum screen width and multiple of 2 (512) */
 #define FFTLEN	512
 
-/* preferred path to audio device if no EsounD ("/dev/dsp") */
-#define SOUNDDEVICE "/dev/dsp"
-
 /* preferred path to probescope serial device ("/dev/probescope") */
 #define PROBESCOPE "/dev/probescope"
 
 /* preferred path to bitscope serial device ("/dev/bitscope") */
 #define BITSCOPE "/dev/bitscope"
 
-/* extra places to look for serial scopes (set to {"", ""} to not search) */
-/* ({"", "", "/dev/ttyS0", "/dev/ttyS1", "/dev/ttyS2", "/dev/ttyS3"}) */
-#define PSDEVS {"", "", "/dev/ttyS0", "/dev/ttyS1", "/dev/ttyS2", "/dev/ttyS3"}
+/* extra places to look for serial scopes (set to {""} to not search) */
+/* ({"", "/dev/ttyS0", "/dev/ttyS1", "/dev/ttyS2", "/dev/ttyS3"}) */
+#define PSDEVS {"", "/dev/ttyS0", "/dev/ttyS1", "/dev/ttyS2", "/dev/ttyS3"}

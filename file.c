@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: file.c,v 1.24 2000/08/31 18:37:57 twitham Rel $
+ * @(#)$Id: file.c,v 1.25 2003/06/17 22:52:32 baccala Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -15,8 +15,8 @@
 #include "oscope.h"		/* program defaults */
 #include "display.h"		/* display routines */
 #include "func.h"		/* signal math functions */
-#include "proscope.h"		/* probescope */
-#include "bitscope.h"		/* bitscope */
+
+int backwards_compat = 0;	/* TRUE if parsing a pre-1.10 save file */
 
 /* force num to stay within the range lo - hi */
 int
@@ -29,21 +29,48 @@ limit(int num, int lo, int hi)
   return(num);
 }
 
-/* parse command-line or file opt character, using given optarg string */
+/* parse command-line or file opt character, using given optarg string
+ *
+ * optarg can have a trailing newline, if we're reading from a file
+ */
+
 void
 handle_opt(int opt, char *optarg)
 {
   char *p, *q;
+  char buf[16];
   Channel *s;
 
   switch (opt) {
-  case 'o':			/* bitscope option */
-  case 'O':
-    bs_option(optarg);
+  case 'D':			/* data source selection */
+    if ((p = index(optarg, '\n')) != NULL) *p = '\0';
+    if (!datasrc_byname(optarg)) {
+      fprintf(stderr, "Couldn't find data source %s\n\n", optarg);
+      usage(1);
+    }
     break;
-  case 'r':			/* sample rate */
+  case 'o':			/* data source specific option */
+  case 'O':
+    /* Older data file format used -o for BitScope only, and printed
+     * BitScope options even if BitScope wasn't enabled, so if we're
+     * reading an older file, only process -o if data source is BitScope
+     */
+    if ((datasrc != NULL) &&
+	(!backwards_compat || !strcasecmp(datasrc->name, "BitScope"))) {
+      if ((datasrc->set_option == NULL)
+	  || (datasrc->set_option(optarg) == 0)) {
+	fprintf(stderr, "Couldn't set option %s\n\n", optarg);
+	usage(1);
+      }
+    }
+    break;
+  case 'r':			/* soundcard sample rate - deprecated */
   case 'R':
-    scope.rate = limit(strtol(optarg, NULL, 0), 8000, 44100);
+    if ((datasrc != NULL) && !strcasecmp(datasrc->name, "Soundcard")
+	&& (datasrc->set_option != NULL)) {
+      snprintf(buf, sizeof(buf), "rate=%s", optarg);
+      datasrc->set_option(buf);
+    }
     break;
   case 's':			/* scale (zoom) */
   case 'S':
@@ -53,7 +80,7 @@ handle_opt(int opt, char *optarg)
     break;
   case 't':			/* trigger */
   case 'T':
-      scope.trig = limit(strtol(p = optarg, NULL, 0) + 128, 0, 255);
+      scope.trig = limit(strtol(p = optarg, NULL, 0), 0, 255);
       if ((q = strchr(p, ':')) != NULL) {
 	scope.trige = limit(strtol(++q, NULL, 0), 0, 2);
 	p = q;
@@ -64,7 +91,14 @@ handle_opt(int opt, char *optarg)
 	else if (*q == 'y' || *q == 'Y')
 	  scope.trigch = 1;
 	else
-	  scope.trigch = limit(strtol(q, NULL, 0) - 1, 0, 1);
+	  scope.trigch = strtol(q, NULL, 0);
+      }
+      if (datasrc && datasrc->set_trigger
+	  && datasrc->set_trigger(scope.trigch,
+				  &scope.trig, scope.trige) == 0) {
+	/* Unable to set trigger, so clear it */
+	if (datasrc && datasrc->clear_trigger) datasrc->clear_trigger();
+	scope.trige = 0;
       }
     break;
   case 'l':			/* cursor lines */
@@ -86,9 +120,11 @@ handle_opt(int opt, char *optarg)
   case 'M':
     scope.size = limit(strtol(optarg, NULL, 0), 0, 3);
     break;
-  case 'd':			/* dma divisor */
-  case 'D':
-    scope.dma = limit(strtol(optarg, NULL, 0), 1, 4);
+  case 'd':			/* dma divisor (backwards compatibility) */
+    if (datasrc && !strcasecmp(datasrc->name, "Soundcard")) {
+      snprintf(buf, sizeof(buf), "dma=%s", optarg);
+      handle_opt('o', buf);
+    }
     break;
   case 'f':			/* font name */
   case 'F':
@@ -110,15 +146,17 @@ handle_opt(int opt, char *optarg)
   case 'V':
     scope.verbose = !DEF_V;
     break;
-  case 'x':			/* sound card */
+  case 'i':			/* minimum update interval */
+  case 'I':
+    scope.min_interval = strtol(optarg, NULL, 0);
+    break;
+  case 'x':			/* sound card (backwards compatibility) */
   case 'X':
   case 'y':
   case 'Y':
-    snd = DEF_X;
     break;
-  case 'z':			/* ProbeScope */
+  case 'z':			/* serial scope (backwards compatibility) */
   case 'Z':
-    ps.found = bs.found = DEF_Z;
     break;
   case 'a':			/* Active (selected) channel */
   case 'A':
@@ -147,31 +185,45 @@ handle_opt(int opt, char *optarg)
 	p = q;
       }
       if ((q = strchr(p, ':')) != NULL) {
-	s->mult = limit(strtol(++q, NULL, 0), 1, 100);
+	s->target_mult = limit(strtol(++q, NULL, 0), 1, 100);
 	p = q;
       }
       if ((q = strchr(p, '/')) != NULL) {
-	s->div = limit(strtol(++q, NULL, 0), 1, 100);
+	s->target_div = limit(strtol(++q, NULL, 0), 1, 100);
 	p = q;
       }
       if ((q = strchr(p, ':')) != NULL) {
 	if (*++q >= '0' && *q <= '9') {
 	  if (*q > '0') {
-	    s->func = limit(strtol(q, NULL, 0) - 1 + FUNC0,
-			    FUNC0, funccount - 1);
-	    s->mem = 0;
+	    function_bynum_on_channel(strtol(q, NULL, 0), s);
 	  }
 	} else if (*q >= 'a' && *q <= 'z'
 		   && (*(q + 1) == '\0' || *(q + 1) == '\n')) {
-	  s->signal = &mem[*q - 'a'];
-	  s->func = *q >= 'x' ? *q - 'x' : FUNCMEM;
-	  s->mem = *q;
+
+	  /* Older versions used x, y, z for data channels, now we
+	   * use a, b, c, etc.  Probescope used z exclusively
+	   */
+
+	  if (datasrc && !backwards_compat
+	      && ((*q - 'a') <= datasrc->nchans())) {
+	    recall_on_channel(datasrc->chan(*q - 'a'), s);
+	  } else if (datasrc && backwards_compat && (*q == 'z')
+		     && !strcasecmp(datasrc->name, "ProbeScope")) {
+	    recall_on_channel(datasrc->chan(0), s);
+	  } else if (datasrc && backwards_compat && (*q >= 'x')) {
+	    recall_on_channel(datasrc->chan(*q - 'x'), s);
+	  } else {
+	    /* Might have a (slight) problem here if we're
+	     * reading an older format file that has a data source
+	     * and memory saved on 'a', for example.  Then we'll
+	     * end up recalling mem 'a' here, even though 'a'
+	     * is now used as a data channel.
+	     */
+	    recall_on_channel(&mem[*q - 'a'], s);
+	  }
+
 	} else {
-	  s->func = FUNCEXT;
-	  strcpy(s->command, q);
-	  if ((p = strchr(s->command, '\n')) != NULL)
-	    *p = '\0';
-	  s->mem = EXTSTART;
+	  start_command_on_channel(q, s);
 	}
       }
     }
@@ -185,6 +237,7 @@ writefile(char *filename)
 {
   FILE *file;
   int i, j, k = 0, l = 0, chan[26], roloc[256];
+  char *s;
   Channel *p;
 
   if ((file = fopen(filename, "w")) == NULL) {
@@ -195,47 +248,44 @@ writefile(char *filename)
   }
   fprintf(file, "# %s, version %s, %dx%d
 #
-# -a %d
-# -r %d
+# -D %s\n", progname, version, h_points, v_points, datasrc->name);
+
+  if (datasrc->save_option != NULL) {
+    for (i=0; (s = datasrc->save_option(i)) != NULL; i++) {
+      if (s[0] != '\0') fprintf(file, "# -o %s\n", s);
+    }
+  }
+
+  fprintf(file, "# -a %d
 # -s %d/%d
-# -t %d:%d:%c
+# -t %d:%d:%d
 # -l %d:%d:%d
 # -c %d
-# -d %d
 # -m %d
 # -p %d
 # -g %d
-%s%s%s%s",
-	  progname, version, h_points, v_points,
+%s%s",
 	  scope.select + 1,
-	  scope.rate,
 	  scope.scale, scope.div,
-	  scope.trig - 128, scope.trige, scope.trigch + 'x',
+	  scope.trig - 128, scope.trige, scope.trigch,
 	  scope.cursa, scope.cursb, scope.curs,
 	  scope.color,
-	  scope.dma,
 	  scope.size,
 	  scope.mode,
 	  scope.grat,
 	  scope.behind ? "# -b\n" : "",
-	  scope.verbose ? "# -v\n" : "",
-	  snd ? "" : "# -x\n",
-	  ps.found || bs.found ? "" : "# -z\n");
+	  scope.verbose ? "# -v\n" : "");
   for (i = 0 ; i < CHANNELS ; i++) {
     p = &ch[i];
-    fprintf(file, "# -%d %s%d.%d:%d/%d:", i + 1, p->show ? "" : "+",
-	    -p->pos, p->bits, p->mult, p->div);
-    if (p->func <= FUNCMEM)
-      fprintf(file, "%c", (p->mem >= 'a' && p->mem <= 'z') ? p->mem : '0');
-    else if (p->func == FUNCEXT)
-      fprintf(file, "%s", p->command);
-    else
-      fprintf(file, "%d", i > 1 ? (p->func - FUNC0 + 1) : 0);
-    fprintf(file, "\n");
+    if (p->signal) {
+      fprintf(file, "# -%d %s%d.%d:%d/%d:%s\n", i + 1, p->show ? "" : "+",
+	      -p->pos, p->bits, p->target_mult, p->target_div,
+	      p->signal->savestr);
+    }
   }
-  bs_writeoptions(file);
-  for (i = 0 ; i < 23 ; i++) {
-    if (mem[i].color != 0)
+  /* XXX code need to be carefully checked out */
+  for (i = 0 ; i < 26 ; i++) {
+    if (mem[i].num >  0)
       chan[k++] = i;
     if (mem[i].num > l)
       l = mem[i].num;
@@ -245,8 +295,14 @@ writefile(char *filename)
       roloc[color[i]] = i;
     }
     for (i = 0 ; i < k ; i++) {
+      /* XXX color written is channel color (it can't be changed) */
+#if 0
       fprintf(file, "%s%c(%02d)", i ? "\t" : "# ",
 	      chan[i] + 'a', roloc[mem[chan[i]].color]);
+#else
+      fprintf(file, "%s%c(%02d)", i ? "\t" : "# ",
+	      chan[i] + 'a', 15);
+#endif
     }
     for (i = 0 ; i < k ; i++) {
       fprintf(file, "%s%d", i ? "\t" : "\n#:", mem[chan[i]].rate);
@@ -267,12 +323,63 @@ writefile(char *filename)
   message(error, TEXT_FG);
 }
 
+/* Backwards compatibility with older file format that didn't
+ * explicitly specify a data source, so we make another pass over the
+ * entire file to try and figure out / guess our source before
+ * continuing to parse the file.  Basically, an "-x" suggests
+ * either BitScope or ProbeScope, and a "-z" suggests either
+ * soundcard or ESD.  Neither suggests Soundcard and ProbeScope
+ * together.  Both suggest no input device at all.
+ */
+
+void
+backwards_compat_pre_1_10(char *filename)
+{
+  FILE *file;
+  char buff[256];
+  int xseen=0, zseen=0;
+
+  if ((file = fopen(filename, "r")) == NULL) {
+    sprintf(error, "%s: can't read %s", progname, filename);
+    message(error, KEY_FG);
+    perror(error);
+    return;
+  }
+
+  while (fgets(buff, sizeof(buff), file)) {
+    if (!strncmp("# -x", buff, 4)) xseen=1;
+    else if (!strncmp("# -z", buff, 4)) zseen=1;
+  }
+
+  if (!zseen && xseen) {
+    /* BitScope or ProbeScope */
+    if (!datasrc_byname("Bitscope") && !datasrc_byname("Probescope")) {
+      fprintf(stderr, "Couldn't find either a Bitscope or Probescope\n");
+    }
+  } else if (!zseen && !xseen) {
+    if (!datasrc_byname("Probescope")
+	&& !datasrc_byname("ESD")
+	&& !datasrc_byname("Soundcard")) {
+      fprintf(stderr, "Couldn't find either a Probescope or sound device\n");
+    }
+    /* ESD/Soundcard/ProbeScope */
+  } else if (zseen && !xseen) {
+    /* ESD/Soundcard */
+    if (!datasrc_byname("ESD") && !datasrc_byname("Soundcard")) {
+      fprintf(stderr, "Couldn't find a sound device\n");
+    }
+  } else {
+    /* None - don't have a NULL input device (maybe we should) */
+  }
+}
+
 /* read scope settings and memory buffers from given filename */
 void
 readfile(char *filename)
 {
   FILE *file;
   char c, *p, *q, buff[256];
+  int version[2];
   int i = 0, j = 0, k, valid = 0, chan[26] =
   {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
@@ -289,8 +396,14 @@ readfile(char *filename)
   init_screen();
   while (fgets(buff, 256, file)) {
     if (buff[0] == '#') {
-      if (!strncmp("# -", buff, 3)) {
+      if (sscanf(buff, "# %*s version %d.%d", &version[0], &version[1]) == 2) {
+	if ((version[0] <= 1) && (version[1] < 10)) {
+	  backwards_compat_pre_1_10(filename);
+	  backwards_compat = 1;
+	}
 	valid = 1;
+      } else if (!strncmp("# -", buff, 3)) {
+	/* valid = 1; */
 	handle_opt(buff[3], &buff[5]);
       } else if (valid && buff[3] == '(' && buff[6] == ')') {
 	j = 0;
@@ -298,7 +411,9 @@ readfile(char *filename)
 	while (j < 26 && (sscanf(q, "%c(%d) ", &c, &k) == 2)) {
 	  if (c >= 'a' && c <= 'z' && k >= 0 && k <= 255) {
 	    chan[j++] = c - 'a';
-	    mem[c - 'a'].color = color[k];
+	    //XXX 'k' is color and it is ignored
+	    //mem[c - 'a'].color = color[k];
+	    mem[c - 'a'].frame ++;
 	  }
 	  q += 6;
 	}
@@ -335,16 +450,9 @@ readfile(char *filename)
     }
   }
   fclose(file);
-  if (valid) {			/* recall any memories to channels */
-    j = scope.select;
-    for (i = 0 ; i < CHANNELS ; i++) {
-      c = ch[i].mem;
-      scope.select = i;
-      if (c >= 'a' && c <= 'z')
-	recall(c);
-    }
-    scope.select = j;
-    clear();
+  backwards_compat = 0;		/* in case we set this during the parse */
+  if (valid) {
+    clear();		/* XXX not sure if we need this */
     sprintf(error, "loaded %s", filename);
     message(error, TEXT_FG);
   } else {

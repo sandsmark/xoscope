@@ -1,8 +1,8 @@
 ## Process this file with automake to produce Makefile.in
 
-# @(#)$Id: Makefile.am,v 1.6 2003/06/17 21:44:11 baccala Exp $
+# @(#)$Id: Makefile.am,v 1.7 2003/06/17 22:52:31 baccala Exp $
 
-# Copyright (C) 1996 - 2002 Tim Witham <twitham@quiknet.com>
+# Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
 
 # (see the files README and COPYING for more details)
 
@@ -18,13 +18,7 @@ EXTRA_PROGRAMS = xoscope oscope
 
 pkglibexecdir = $(libexecdir)/@PACKAGE@
 pkglibexec_PROGRAMS = offt xy
-pkglibexec_SCRIPTS = operl
-pkglibexec_DATA = ofreq.ini
-
-pkgdocdir = $(prefix)/share/doc/@PACKAGE@
-pkgdoc_DATA = xy.c offt.c operl ofreq.ini README HARDWARE TODO		\
-audio.dat bitscope.dat buff.fig buff.ps buff2.fig buff2.ps count.dat	\
-oscope.dat oscope.lsm README.f51 patch.f51 pcb.fig pcb.ps proscope.dat
+pkglibexec_SCRIPTS = operl ofreq.ini
 
 EXTRA_DIST = $(man_MANS) $(noinst_HEADERS) HARDWARE Makefile.dos	\
 README.f51 TODO TODO.old audio.dat bitscope.dat buff.fig buff.ps	\
@@ -35,30 +29,41 @@ svasync.c svasync.doc
 src = oscope.c file.c func.c fft.c realfft.c display.c proscope.c	\
 bitscope.c sc_linux.c ser_unix.c
 
-oscope_SOURCES = $(src) gr_com.c gr_vga.c
-oscope_LDADD = -lvga
+if COMEDI
+comedisrc = comedi.c
+if GTK
+COMEDI_GUI_SUBDIR = comedi-glade-src
+COMEDI_GUI_LIB = comedi-glade-src/interface.o comedi-glade-src/callbacks.o
+endif
+else
+comedisrc =
+endif
+
+# Some bit of explaination is needed here for GUI_LIB.  automake won't
+# let us include source files in a subdirectory on a _SOURCES line,
+# and we do want all the auto-magically generated glade stuff confined
+# to a subdirectory, so we're reduced to using the _LDADD line.
+# However, we don't want the files included as a library, even though
+# they get built as one, because then the weak attribute override
+# trick used in things like comedi.c (see comments there) won't work
+# for a library.  So we put .o files in.
+
+if GTK
+SUBDIRS = bitscope-glade-src $(COMEDI_GUI_SUBDIR)
+INCLUDES = @GTK_CFLAGS@
+GUI_LIB = bitscope-glade-src/support.o bitscope-glade-src/interface.o \
+	bitscope-glade-src/callbacks.o $(COMEDI_GUI_LIB)
+endif
+
+xoscope_SOURCES = $(src) $(comedisrc) com_gtk.c gr_gtk.c sc_linux_gtk.c
+xoscope_LDADD = $(GUI_LIB) @GTK_LIBS@
+
+oscope_SOURCES = $(src) $(comedisrc) gr_com.c gr_vga.c
 
 offt_SOURCES = offt.c fft.c realfft.c
 
-if GTK
-SUBDIRS = bitscope-glade-src
-INCLUDES = @GTK_CFLAGS@
-xoscope_SOURCES = $(src) com_gtk.c gr_gtk.c
-xoscope_LDADD = @GTK_LIBS@ -Lsrc -lbitscope
 xy_SOURCES = com_gtk.c xy_gtk.c xy.c
 xy_LDADD = @GTK_LIBS@
-else
-if LIBSX
-xoscope_SOURCES = $(src) gr_sx.c gr_com.c
-xoscope_LDADD = @X_LIBS@ @X_PRE_LIBS@ -lsx -lXaw -lXt -lX11
-xy_SOURCES = xy_sx.c xy.c
-xy_LDADD = @X_LIBS@ @X_PRE_LIBS@ -lsx -lXaw -lXt -lX11
-endif
-endif
-
-install-exec-local:
-	@$(NORMAL_INSTALL)
-	-cd $(bindir) && chmod go-w oscope && chmod u+s oscope
 
 install-data-local:
 	@$(NORMAL_INSTALL)
