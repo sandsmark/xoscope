@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: func.c,v 1.10 1996/04/21 02:31:20 twitham Rel1_0 $
+ * @(#)$Id: func.c,v 1.11 1996/08/03 22:26:31 twitham Rel1_1 $
  *
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -29,11 +29,13 @@ char *funcnames[] =
   "Right Mix",
   "External",
   "Memory  ",
-  "FFT. 1  ",
-  "FFT. 2  ",
+  "Inv. 1  ",
+  "Inv. 2  ",
   "Sum  1+2",
   "Diff 1-2",
   "Avg. 1,2",
+  "FFT. 1  ",
+  "FFT. 2  ",
 };
 
 /* the total number of "functions" */
@@ -100,6 +102,7 @@ pipeto(int num)
   static short *a, *b, *c;
   static int i, j;
   static int to[CHANNELS][2], from[CHANNELS][2]; /* pipes to/from the child */
+  static char *path, *oscopepath;
 
   if (ch[num].mem == EXTSTART) {
     if (pid[num] > 0) {		/* close previous command pipes */
@@ -108,7 +111,7 @@ pipeto(int num)
       waitpid(pid[num], NULL, 0);
     }
     if (pipe(to[num]) || pipe(from[num])) { /* get a set of pipes */
-      sprintf(error, "%s: Can't create pipes", progname);
+      sprintf(error, "%s: can't create pipes", progname);
       perror(error);
       return;
     }
@@ -125,13 +128,21 @@ pipeto(int num)
       dup2(from[num][1], 1);
       close(to[num][0]);
       close(from[num][1]);
+
+      if ((oscopepath = getenv("OSCOPEPATH")) == NULL)
+	oscopepath = LIBPATH;	/* -D defined in Makefile */
+      if ((path = malloc(strlen(oscopepath) + 6)) != NULL) {
+	sprintf(path,"PATH=%s", oscopepath);
+	putenv(path);
+      }
+
       execlp("/bin/sh", "sh", "-c", command[num], NULL);
       sprintf(error, "%s: child can't exec /bin/sh -c \"%s\"",
 	      progname, command[num]);
       perror(error);
       exit(1);
     } else {			/* fork error */
-      sprintf(error, "%s: Can't fork", progname);
+      sprintf(error, "%s: can't fork", progname);
       perror(error);
       return;
     }
@@ -152,7 +163,8 @@ pipeto(int num)
 	j++;
     }
     if (j) {
-      sprintf(error, "%d pipe read/write errors from \"%s\"", i, command[num]);
+      sprintf(error, "%s: %d pipe r/w errors from \"%s\"",
+	      progname, i, command[num]);
       perror(error);
       ch[num].mem = EXTSTOP;
     }
@@ -161,17 +173,30 @@ pipeto(int num)
 
 /* !!! The functions; they take one arg: the channel # to store results in */
 
-/* Fast Fourier Transform of channel sig */
+/* Invert */
 void
-fft1(int num)
+inv(int num, int chan)
 {
-  fft(ch[0].data, ch[num].data);
+  static int i;
+  static short *a, *b;
+
+  a = ch[chan].data;
+  b = ch[num].data;
+  for (i = 0 ; i < h_points ; i++) {
+    *b++ = -1 * *a++;
+  }
 }
 
 void
-fft2(int num)
+inv1(int num)
 {
-  fft(ch[1].data, ch[num].data);
+  inv(num, 0);
+}
+
+void
+inv2(int num)
+{
+  inv(num, 1);
 }
 
 /* The sum of the two channels */
@@ -219,18 +244,33 @@ avg(int num)
   }
 }
 
-/* !!! Array of the functions, the first three should be NULL */
+/* Fast Fourier Transform of channel sig */
+void
+fft1(int num)
+{
+  fft(ch[0].data, ch[num].data);
+}
+
+void
+fft2(int num)
+{
+  fft(ch[1].data, ch[num].data);
+}
+
+/* !!! Array of the functions, the first four shouldn't be changed */
 void (*funcarray[])(int) =
 {
   NULL,				/* left */
   NULL,				/* right */
   pipeto,			/* external math commands */
   NULL,				/* memory */
-  fft1,
-  fft2,
+  inv1,
+  inv2,
   sum,
   diff,
   avg,
+  fft1,
+  fft2,
 };
 
 /* Initialize math, called once by main at startup */
@@ -252,8 +292,7 @@ do_math()
   static int i;
 
   for (i = 2 ; i < CHANNELS ; i++) {
-    if ((ch[i].show || scope.select == i)
-	&& (ch[i].func > FUNCMEM || ch[i].func == FUNCEXT))
+    if ((ch[i].show || scope.select == i) && *funcarray[ch[i].func] != NULL)
       funcarray[ch[i].func](i);
   }
 }
@@ -295,8 +334,8 @@ measure_data(Signal *sig) {
     }
     prev = j;
   }
-  if (sig->func == FUNCFFT1 || sig->func == FUNCFFT2) { /* freq from peak FFT */
-    if ((sig->freq = actual * max / 880) > 0)
+  if (funcarray[sig->func] == fft1 || funcarray[sig->func] == fft2) {
+    if ((sig->freq = actual * max / 880) > 0) /* freq from peak FFT */
       sig->time = 1000000 / sig->freq;
     else
       sig->time = 0;

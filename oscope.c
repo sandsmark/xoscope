@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.c,v 1.50 1996/07/12 03:02:27 twitham Exp $
+ * @(#)$Id: oscope.c,v 1.51 1996/08/03 22:27:55 twitham Rel1_1 $
  *
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -264,15 +264,15 @@ handle_key(unsigned char c)
   case ';':
     if (scope.select > 1) {	/* next math function */
       p->func++;
-      if (p->func >= funccount || p->func < FUNCFFT1)
-	p->func = FUNCFFT1;
+      if (p->func >= funccount || p->func < FUNC0)
+	p->func = FUNC0;
       clear();
     }
     break;
   case ':':
     if (scope.select > 1) {	/* previous math function */
       p->func--;
-      if (p->func < FUNCFFT1)
+      if (p->func < FUNC0)
 	p->func = funccount - 1;
       clear();
     }
@@ -465,7 +465,7 @@ main(int argc, char **argv)
 {
   progname = strrchr(argv[0], '/');
   if (progname == NULL)
-    progname = argv[0];
+    progname = argv[0];		/* global for error messages, usage */
   else
     progname++;
   init_scope();
