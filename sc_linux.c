@@ -1,47 +1,30 @@
 /*
- * @(#)$Id: sc_linux.c,v 1.12 2000/02/26 08:19:10 twitham Exp $
+ * @(#)$Id: sc_linux.c,v 1.13 2000/02/26 16:58:42 twitham Exp $
  *
- * Copyright (C) 1996 - 1999 Tim Witham <twitham@quiknet.com>
+ * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
  * (see the files README and COPYING for more details)
  *
- * This file implements the Linux /dev/dsp or ESD sound card interface
+ * This file implements the Linux ESD & /dev/dsp sound card interface
  *
  */
 
 #include <stdio.h>
 #include <unistd.h>
 #include <fcntl.h>
-
 #ifdef ESD
-#define SOUNDDEVICE "ESounD"
 #include <esd.h>
-#else
-#define SOUNDDEVICE "/dev/dsp"
 #endif
-
 #include <sys/ioctl.h>
 #include <sys/soundcard.h>
 #include "oscope.h"		/* program defaults */
 #include "func.h"
 
-int snd = 0;			/* file descriptor for sound device */
+#define ESDDEVICE "ESounD"
+#define SOUNDDEVICE "/dev/dsp"
 
-#ifdef ESD
-#define check_status(status, line) {}
-#else
-				/* quick macro */
-/* show system error and close sound device if given ioctl status is bad */
-#define check_status(status, line) \
-{ \
-  if (status < 0) { \
-    sprintf(error, "%s: error from sound device ioctl at line %d", \
-	    progname, line); \
-    perror(error); \
-    close_sound_card(); \
-  } \
-}
-#endif
+int snd = 0;			/* file descriptor for sound device */
+int esd = 0;			/* using esd (1) or /dev/dsp (0) */
 
 /* close the sound device */
 void
@@ -52,32 +35,50 @@ close_sound_card()
   snd = 0;
 }
 
-/* turn the sound device on */
+/* show system error and close sound device if given ioctl status is bad */
+void
+check_status(status, line)
+{
+  if (!esd && status < 0) {
+    sprintf(error, "%s: error from sound device ioctl at line %d",
+	    progname, line);
+    perror(error);
+    close_sound_card();
+  }
+}
+
+/* turn the sound device (esd or /dev/dsp) on */
 void
 open_sound_card(int dma)
 {
   int parm;
-  char device[] = SOUNDDEVICE;
   int i = 3;
 
   if (snd) close(snd);
+  esd = 0;
 
 #ifdef ESD
-  snd = esd_monitor_stream(ESD_BITS8|ESD_STEREO|ESD_STREAM|ESD_MONITOR,
-			   ESD, NULL, progname);
-  fcntl(snd, F_SETFL, O_NONBLOCK);
-  i = 0;
-#else
-  /* we try a few times in case someone else is using device (FvwmAudio) */
-  while ((snd = open(device, O_RDONLY)) < 0 && i > 0) {
-    sprintf(error, "%s: can't open %s, retrying %d", progname, device, i--);
+  if ((snd = esd_monitor_stream(ESD_BITS8|ESD_STEREO|ESD_STREAM|ESD_MONITOR,
+				ESD, NULL, progname)) <= 0) {
+    sprintf(error, "%s: can't open %s", progname, ESDDEVICE);
     perror(error);
-    sleep(1);
+  } else {			/* we have esd connection! non-block it */
+    fcntl(snd, F_SETFL, O_NONBLOCK);
+    esd = 1;
   }
 #endif
 
-  if (snd < 0) {		/* open DSP device for read */
-    sprintf(error, "%s: can't open %s", progname, device);
+  /* we try a few times in case someone else is using device (FvwmAudio) */
+  while (!esd && (snd = open(SOUNDDEVICE, O_RDONLY)) < 0 && i > 0) {
+    sprintf(error, "%s: can't open %s, retrying %d",
+	    progname, SOUNDDEVICE, i--);
+    perror(error);
+    sleep(1);
+  }
+
+  if (snd < 0) {
+    sprintf(error, "%s: can't open %s", progname,
+	    esd ? ESDDEVICE : SOUNDDEVICE);
     perror(error);
     snd = 0;
     return;
@@ -109,11 +110,7 @@ reset_sound_card(int rate, int chan, int bits)
 
   read(snd, junk, SAMPLESKIP);
 
-#ifdef ESD
-  return(ESD);
-#else
-  return(parm);
-#endif
+  return(esd ? ESD : parm);
 }
 
 /* get data from sound card, return value is whether we triggered or not */
