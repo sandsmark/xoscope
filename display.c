@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 1.44 1997/05/28 05:55:52 twitham Exp $
+ * @(#)$Id: display.c,v 1.45 1997/05/30 01:21:03 twitham Exp $
  *
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -376,8 +376,8 @@ draw_graticule()
 void
 draw_data()
 {
-  static int i, j, k, x, y, X, Y, mult, div, off, delay, old = 100;
-  static unsigned int l, m, mode, prev;
+  static int i, j, k, l, x, y, X, Y, mult, div, off;
+  static int mode, time, prev, delay, old = 100;
   static Channel *p;
   static short *samples;
 
@@ -409,30 +409,31 @@ draw_data()
 	  samples = p->signal->data + 1;
 	  l = delay;
 	}
-	if (p->func <= FUNCRIGHT /* use the offset? */
+	if (p->func <= FUNCRIGHT /* use the delay? */
 	    || (p->func >= FUNCEXT
 		&& (ch[0].func <= FUNCRIGHT || ch[1].func <= FUNCRIGHT)))
 	  l = l;		/* yes only if we're L or R or their math */
 	else
 	  l = 100;		/* no if we're memory or ProbeScope */
-	prev = X = Y = 0;
+	X = Y = 0;
+	prev = -1;
 	if (mode < 2)		/* point / point accumulate */
 	  for (i = 0 ; i < h_points - 100 - l ; i++) {
-	    if ((m = i * (p->signal->rate / 100) * scope.div
-		 / scope.scale / 440) > prev && m < h_points)
-	      DrawPixel(i + l, off - samples[m] * mult / div);
-	    if (m > prev) prev = m;
+	    if ((time = i * (p->signal->rate / 100) * scope.div
+		 / scope.scale / 440) > prev && time < h_points)
+	      DrawPixel(i + l, off - samples[time] * mult / div);
+	    if (time > prev) prev = time;
 	  }
 	else			/* line / line accumulate */
 	  for (i = 0 ; i < h_points - 100 - l ; i++) {
-	    if ((m = i * (p->signal->rate / 100) * scope.div
-		 / scope.scale / 440) > prev && m < h_points) {
-	      x = i + l; y = off - samples[m] * mult / div;
+	    if ((time = i * (p->signal->rate / 100) * scope.div
+		 / scope.scale / 440) > prev && time < h_points) {
+	      x = i + l; y = off - samples[time] * mult / div;
 	      if (X) DrawLine(X, Y, x, y);
 	      else DrawPixel(x, y);
 	      X = x; Y = y;
 	    }
-	    if (m > prev) prev = m;
+	    if (time > prev) prev = time;
 	  }
       }
       memcpy(p->old, p->signal->data,
