@@ -1,4 +1,102 @@
-Wed Jun 11 02:45:25 1997  Tim Witham  <twitham@pcocd2.intel.com>
+1999-08-26  Tim Witham  <twitham@quiknet.com>
+
+	* proscope.dat, audio.dat, oscope.dat, com_gtk.h: New file.
+
+	* oscope.lsm, README, Makefile, oscope.1, config.h, TODO, TODO.old, file.c, display.h, oscope.h, ofreq.ini:
+	For 1.5.
+
+	* oscope.c:
+	Changed file load/save and external command calls to support UIs like
+	GTK+.  Moving signals off the screen now wraps them around to the
+	other side so you don't accidentally lose them.
+
+	* gr_gtk.c:
+	Moved SoundCard and ProbeScope switches into the Scope menu.
+
+	* display.c:
+	Fixed bug: SyncDisplay() call was being done out of order such that
+	Graticule In Front didn't work.  Corrected the order so it does.
+
+	* sc_linux.c:
+	Bruce Jerrick <bjerrick@easystreet.com> reported the DSP_RESET was
+	causing nearly a 4 second block on newer hardware and drivers.  Its
+	purpose was to flush excess samples to keep the display in real-time.
+	Upon looking at the sound driver source, I discovered a smarter way:
+	use DSP_GETISPACE to find out how many bytes are available.  Then read
+	and discard just the right amount of excess so we display the latest
+	snapshot of time.  This results in a much better screen refresh rate
+	and less sound recording overruns.  Excellent!  Thanks Bruce!
+
+1999-08-25  Tim Witham  <twitham@quiknet.com>
+
+	* display.c: Added frames per second refresh rate display.
+
+1999-08-24  Tim Witham  <twitham@quiknet.com>
+
+	* xy_sx.c, xy_gtk.c, com_gtk.c: New file.
+
+	* gr_gtk.c, xy.c:
+	Major rearranging so xy can be built under GTK+ or libsx.
+
+	* gr_com.c: New file.
+
+1999-08-23  Tim Witham  <twitham@quiknet.com>
+
+	* gr_gtk.c: Added man page in a window to the help menubar button.
+
+1999-08-21  Tim Witham  <twitham@quiknet.com>
+
+	* gr_gtk.c:
+	Commented out the libsx-like interface and moved everything into the
+	menubar.  This is because the buttons steal keyboard focus and I can't
+	figure out how to color code them to make them useful like in libsx.
+	The menubar-only interface looks cleaner too.
+
+1999-08-21  Tim Witham  <twitham@quiknet.com>
+
+	* gr_gtk.c:
+	Commented out the libsx-like interface and moved everything into the
+	menubar.  This is because the buttons steal keyboard focus and I can't
+	figure out how to color code them to make them useful like in libsx.
+	The menubar-only interface looks cleaner too.
+
+1999-08-20  Tim Witham  <twitham@quiknet.com>
+
+	* gr_gtk.c:
+	Added ExternCommand which replaces GetString as the new UI-independent
+	way to ask for and launch an external command.
+
+1999-08-19  Tim Witham  <twitham@quiknet.com>
+
+	* gr_gtk.c:
+	Moved file overwrite confirmation from file.c to here since it is UI
+	dependent.  This replaces GetYesNo which was used only for this.
+
+	* gr_gtk.c: Added LoadSaveFile.
+
+1998-09-23  Tim Witham  <twitham@quiknet.com>
+
+	* sc_sb.c, func.c, fft.c: Fixed sample rate.
+
+1998-08-22  Tim Witham  <twitham@quiknet.com>
+
+	* gr_gtk.c: Added button table to the right side of the screen.
+
+	* gr_gtk.c: Added button table at the bottom of the screen.
+
+	* gr_gtk.c: Added basic menubar.
+
+1998-08-21  Tim Witham  <twitham@quiknet.com>
+
+	* gr_gtk.c: New file.
+
+Fri Aug 29 04:57:48 1997  Tim Witham  <twitham@pcocd2.intel.com>
+
+	* oscope.c, file.c: Changed to more "standard" sound card sample rates.
+
+Wed Jun 11 02:46:05 1997  Tim Witham  <twitham@pcocd2.intel.com>
+
+	* ChangeLog: 1.4 released.
 
 	* oscope.lsm, oscope.1, README: For 1.4.
 
@@ -136,8 +234,6 @@ Sun May  4 21:34:37 1997  Tim Witham  <twitham@pcocd2.intel.com>
 
 	* ChangeLog: 1.3 released.
 
-Sun May  4 21:31:56 1997  Tim Witham  <twitham@pcocd2.intel.com>
-
 	* sc_linux.c: Fixed bug that caused sound to fail to open.
 
 	* TODO, oscope.lsm, README, config.h, sc_sb.c: For 1.3.
@@ -235,8 +331,6 @@ Sun Nov 17 22:34:21 1996  Tim Witham  <twitham@pcocd2.intel.com>
 Sat Oct 12 16:12:05 1996  Tim Witham  <twitham@pcocd2.intel.com>
 
 	* ChangeLog: 1.2 released.
-
-Sat Oct 12 16:08:24 1996  Tim Witham  <twitham@pcocd2.intel.com>
 
 	* oscope.lsm, README, README.freq51, Makefile: For 1.2.
 
