@@ -5,7 +5,7 @@
  *
  * [x]oscope --- Use Linux's /dev/dsp (a sound card) as an oscilloscope
  *
- * @(#)$Id: oscope.c,v 1.35 1996/01/31 07:40:37 twitham Exp $
+ * @(#)$Id: oscope.c,v 1.36 1996/02/02 03:04:31 twitham Exp $
  *
  * Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
@@ -364,7 +364,7 @@ handle_key(unsigned char c)
     scope.scale  = *pscaler;
     clear();
     break;
-  case 'l':
+  case 'o':
     if (scope.trig < 0)		/* enable the trigger at half scale */
       scope.trig = 120;
     scope.trig += 8;		/* increase trigger */
@@ -372,7 +372,7 @@ handle_key(unsigned char c)
       scope.trig = -1;		/* disable trigger when it leaves the scale */
     clear();
     break;
-  case 'o':
+  case 'l':
     if (scope.trig < 0)		/* enable the trigger at half scale */
       scope.trig = 136;
     scope.trig -= 8;		/* decrease trigger */
@@ -412,11 +412,11 @@ handle_key(unsigned char c)
     break;
   case ']':
     scope.behind = !scope.behind; /* graticule behind/in front of signal */
-    draw_text();
+    draw_text(1);
     break;
   case ' ':
     scope.run = !scope.run;
-    draw_text();
+    draw_text(1);
     c = 0;			/* suppress verbose log */
     break;
   case '\e':		
@@ -435,6 +435,34 @@ handle_key(unsigned char c)
 
   if (c > 0)
     show_info(c);		/* show keypress and result on stdout */
+}
+
+/* auto-measurements */
+static inline void
+measure_data(Signal *sig) {
+  static int i, j, prev;
+  int first = 0, last = 0, count = 0;
+
+  sig->min = 0;
+  sig->max = 0;
+  sig->time = -1;
+  prev = 0;
+  for (i = 0 ; i < h_points ; i++) {
+    j = sig->data[i];
+    if (j < sig->min)
+      sig->min = j;
+    if (j > sig->max)
+      sig->max = j;
+    if ((j > 0 && prev <= 0) || (j < 0 && prev >= 0)) {
+      if (!first)
+	first = i;
+      last = i;
+      count++;
+    }
+    prev = j;
+  }
+  if (count > 2)
+    sig->time = (last - first) / (count - 2) * 2;
 }
 
 /* get data from sound card */
@@ -477,6 +505,7 @@ get_data()
     ch[2].data[c] = ch[0].data[c] + ch[1].data[c];
     ch[3].data[c] = ch[0].data[c] - ch[1].data[c];
   }
+  measure_data(&ch[0]);
 }
 
 /* main program */
