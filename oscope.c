@@ -59,19 +59,21 @@ int v_points;               /* points in vertical axis */
 int h_points;               /* points in horizontal axis */
 int trigger = -1;           /* trigger level (-1 = disabled) */
 int graticule = 0;          /* show graticule */
+int scale = 1;		    /* time scale, pixels per sample (1,2,4,8,16,32) */
 
 /* display command usage on standard error and exit */
 void usage()
 {
   fprintf(stderr,
 	  "usage: scope -r<rate> -m<mode> -c<colour> -d<dma divisor>\n"
-	  "             -d<trigger> -p -l -g -v\n"
+	  "             -t<trigger> -s<scale> -p -l -g -v\n"
 	  "Options:\n"
 	  "-r <rate>        sampling rate in Hz\n"
 	  "-m <mode>        graphics mode\n"
 	  "-c <colour>      trace colour\n"
 	  "-d <dma divide>  DMA buffer size divisor (1,2,4)\n"
 	  "-t <trigger>     trigger level (0 - 255)\n"
+	  "-s <scale>       time scale, or zoom (1,2,4,8,16,32)\n"
 	  "-p               point mode (faster)\n"
 	  "-l               line segment mode (slower)\n"
 	  "-g               draw graticule\n"
@@ -100,13 +102,14 @@ inline void show_info() {
       printf("trigger level: %d\n", trigger);
     printf("sampling rate: %d\n", sampling);
     printf("  actual rate: %d\n", actual);
+    printf(" scale (zoom): %d\n", scale);
   }
 }
 
 /* handle command line options */
 void parse_args(int argc, char **argv)
 {
-  const char     *flags = "r:m:c:d:t:plgv";
+  const char     *flags = "r:m:c:d:t:s:plgv";
   int             c;
 
   while ((c = getopt(argc, argv, flags)) != EOF) {
@@ -125,6 +128,9 @@ void parse_args(int argc, char **argv)
       break;
     case 't':
       trigger = strtol(optarg, NULL, 0);
+      break;
+    case 's':
+      scale = strtol(optarg, NULL, 0);
       break;
     case 'p':
       point_mode = 1;
@@ -160,7 +166,7 @@ void init_data()
 /* draw graticule */
 inline void draw_graticule()
 {
-  register int i,k;
+  register int i, j;
 
   vga_clear();
 
@@ -173,13 +179,13 @@ inline void draw_graticule()
 
   if (actual) {
     /* draw tick marks at 1 msec intervals */
-    for (i = 0; (k = i / 1000) < h_points-1  ; i += actual) {
-      vga_drawline(k, offset, k, offset+5);
-      vga_drawline(k, offset+251, k, offset+256);
+    for (i = 0 ; (j = i / 1000) < h_points ; i += (actual * scale)) {
+      vga_drawline(j, offset, j, offset+5);
+      vga_drawline(j, offset+251, j, offset+256);
     }
     /* draw vertical lines at 10 msec intervals */
-    for (i = 0; (k = i / 100) < h_points-1  ; i += actual) {
-      vga_drawline(k, offset, k, offset+256);
+    for (i = 0 ; (j = i / 100) < h_points ; i += (actual * scale)) {
+      vga_drawline(j, offset, j, offset+256);
     }
   }
 
@@ -290,6 +296,22 @@ inline void handle_key()
     if (graticule)
       draw_graticule();
     break;
+  case 'S':
+    scale *= 2;
+    if (scale > 32)
+      scale = 32;
+    vga_clear();
+    if (graticule)
+      draw_graticule();
+    break;
+  case 's':
+    scale /= 2;
+    if (scale < 1)
+      scale = 1;
+    vga_clear();
+    if (graticule)
+      draw_graticule();
+    break;
   case 'T':
     if (trigger != -1) {
       trigger += 10;
@@ -379,7 +401,7 @@ inline void get_data()
   }
   
   /* now get the real data */  
-  read(snd, buffer, h_points-2);
+  read(snd, buffer + 1, (h_points / scale - 2));
   
 }
 
@@ -389,24 +411,26 @@ inline void graph_data()
   register int i;
 
   if (point_mode) {
-    for (i = 1; i < h_points-1  ; i++) {
+    for (i = 1 ; i < (h_points / scale - 1) ; i++) {
       /* erase previous point */
       vga_setcolor(0);
-      vga_drawpixel(i, old[i] + offset);
+      vga_drawpixel(i * scale, old[i] + offset);
       /* draw new point */
       vga_setcolor(colour);
-      vga_drawpixel(i, buffer[i] + offset);
+      vga_drawpixel(i * scale, buffer[i] + offset);
       /* this becomes the old point next time */
       old[i] = buffer[i];
     }
   } else { /* line mode */
-    for (i = 1; i < h_points-2  ; i++) {
+    for (i = 1 ; i < (h_points / scale - 2) ; i++) {
       /* erase previous point */
       vga_setcolor(0);
-      vga_drawline(i, old[i] + offset, i+1, old[i+1] + offset);
+      vga_drawline(i*scale, old[i] + offset,
+		   i*scale+scale, old[i+1] + offset);
       /* draw new point */
       vga_setcolor(colour);
-      vga_drawline(i, buffer[i] + offset, i+1, buffer[i+1] + offset);
+      vga_drawline(i*scale, buffer[i] + offset,
+		   i*scale+scale, buffer[i+1] + offset);
       old[i] = buffer[i];
     }
     /* this becomes the old point next time */
