@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: config.h,v 1.4 1996/04/21 02:36:18 twitham Rel1_0 $
+ * @(#)$Id: config.h,v 1.5 1996/08/03 22:29:12 twitham Rel1_1 $
  *
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -56,8 +56,8 @@
 /* default file name ("oscope.dat") */
 #define FILENAME	"oscope.dat"
 
-/* default external command pipe to run ("oscope.perl '$x + $y'") */
-#define COMMAND		"oscope.perl '$x + $y'"
+/* default external command pipe to run ("operl '$x + $y'") */
+#define COMMAND		"operl '$x + $y'"
 
 /* FFT length, shorter than minimum screen width and multiple of 2 (512) */
 #define FFTLEN	512
