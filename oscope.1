@@ -1,12 +1,12 @@
-.\" @(#)$Id: oscope.1,v 1.19 2000/05/20 23:44:08 twitham Rel $
+.\" @(#)$Id: oscope.1,v 1.20 2001/05/09 04:45:52 twitham Rel $
 .\"
 .\" Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
 .\"
 .\" (see the files README and COPYING for more details)
 
-.TH OSCOPE 1 "June  1  2000" "Linux" "User Commands"
+.TH OSCOPE 1 "May  6  2001" "Linux" "User Commands"
 .SH NAME
-oscope xoscope \- Digital Oscilloscope via Sound Card and/or ProbeScope/osziFOX
+oscope xoscope \- Digital Oscilloscope via Sound Card or Other Hardware
 .SH SYNOPSIS
 oscope [oscope options] [file]
 .br
@@ -16,25 +16,59 @@ xoscope [toolkit options] [oscope options] [file]
 
 .B Oscope
 is a digital real-time oscilloscope. It graphically displays signal
-amplitude as a function of time. The input is via a sound card and/or
-a serial port connected to a Radio Shack ProbeScope, Cat. No. 22-310.
-This device is also known as an osziFOX.  Either or both input devices
-may be used at the same time.  Signals may be displayed, saved,
-recalled, and manipulated by math functions.
+amplitude or bit logic as a function of time.  Signals may be
+displayed, saved, recalled, and manipulated by math functions.  Signal
+input devices currently include:
 .P
 
+.TP 0.5i
+.B /dev/dsp
+Audio sound recording via /dev/dsp.  Two 8-bit analog channels at 8000
+S/s to 44100 S/s.  Left and right audio is connected to X and Y inputs
+respectively.  Use an external mixer program to select which sound
+inputs to record.  AC coupled, voltages unknown, 256K sample memory.
+
+.TP 0.5i
+.B EsounD
+Shared audio sound via the Enlightened Sound Daemon.  This is great
+for watching music but support for it is an option at compile-time.
+EsounD is auto-detected and preferred over /dev/dsp.
+
+.TP 0.5i
+.B ProbeScope / OsziFOX
+Radio Shack ProbeScope, Cat. No. 22-310 is also known as an osziFOX.
+This handheld probe sends its data through a serial port.  It samples
+one channel at 6-bits up to 20 MS/s with 128 samples of memory.  Real
+voltages are labeled in sample ranges from 1 volt to 100 volts.  If a
+ProbeScope is detected, it is connected to the Z input.
+
+.TP 0.5i
+.B Bitscope
+Bitscope (www.bitscope.com) is a mixed-signal capture engine which is
+accessed through a serial port.  It simultaneously samples a digital
+8-bit port and two analog channels at 8 bit resolution at up to 25
+MS/s or more.  If detected, Channel A and B are connected to X and Y
+while the Logic Analyzer is connected to Z, disabling all sound input.
+Bitscope support is currently under development and not yet fully
+functional.
+.P
+
+See the
+.B -x
+and
+.B -z
+options and the
+.B ENVIRONMENT
+section below for more details on how the above devices are detected.
 Some of the controls below apply only to the sound card and are
 labeled as such.
 .B Oscope
 has no physical control over the ProbeScope/osziFOX which is
 controlled by its own switches and built-in menus.  Please refer to
 your ProbeScope or osziFOX Owner's Manual for operating instructions.
+Bitscope will eventually be controlled through a separate dialog
+window.
 .P
-.B Oscope
-can be built with EsounD (Enlightened Sound Daemon) support for
-sharing a sound device among programs or over the network.  See the
-.B ENVIRONMENT
-section below for more details.
 
 .PP
 .SH "RUN\-TIME KEYBOARD CONTROLS"
@@ -69,9 +103,9 @@ Clear and refresh the entire screen.
 
 .TP 0.5i
 .B ^
-Toggle the ProbeScope input device on/off.  The ProbeScope is turned
-on only if it is found active on a serial port.  This may be useful if
-the ProbeScope wasn't detected at startup.  See the
+Toggle the serial input device on/off.  A serial device is turned on
+only if it is found active on a serial port.  This may be useful if
+the device was not detected at startup.  See the
 .B ENVIRONMENT
 section below for more details.
 
@@ -174,13 +208,12 @@ respectively.
 Select the corresponding display channel.  Measurements are displayed
 for the channel.  Channel 1 and 2 are used as input to the math
 functions so they can't be used to do math.  By default, they are
-connected to the Left (X) and Right (Y) sound channels, as controlled
-by an external mixer program.  Channel 1 and 2 can also be used to
-display memory buffers or ProbeScope (Z) input for doing math on
-memory or ProbeScope signals respectively.  Channel 3 through 8 are
-not restricted and can be used for any purpose.  By default, the
-ProbeScope (Z) input is connected to Channel 3.  The remaining single
-key commands operate on the currently selected channel:
+connected to the X and Y input channels.  Channel 1 and 2 can also be
+used to display memory buffers or ) input for doing math on memory or
+the alternate input.  Channel 3 through 8 are not restricted and can
+be used for any purpose.  By default, the Z input is connected to
+Channel 3.  The remaining single key commands operate on the currently
+selected channel:
 
 .TP 0.5i
 .B Tab
@@ -217,15 +250,17 @@ filter commands.  Not available on channel 1 & 2.
 .TP 0.5i
 .B A-W
 Store the currently selected channel into the corresponding memory
-buffer.  Buffer X, Y and Z can't be used because they're reserved as
-the Left (X) and Right (Y) sound inputs and ProbeScope (Z) input.
+buffer.  Buffer X, Y and Z can not be used because they're reserved as
+the signal inputs.  Memories are stored from time zero to the current
+display update position.  So it is best to STOP the display before
+storing to a memory buffer.
 
 .TP 0.5i
 .B a-z
 Recall the corresponding memory buffer or input device to the
-currently selected channel.  Buffer X is the Left sound input, Y is
-the Right sound input, and Z is ProbeScope input.  The rest of the
-buffers are available for signal memory.
+currently selected channel.  Buffer X is the Left or A input, Y is the
+Right or B input, and Z is ProbeScope or Logic Analyzer input.  The
+rest of the buffers are available for signal memory.
 
 .PP
 .SH "MOUSE CONTROLS"
@@ -233,9 +268,11 @@ buffers are available for signal memory.
 adds mouse controls to menus or around the edges of the scope area.
 These should be nearly self-explanatory.  They perform the same
 functions as the equivalent keyboard commands above.  If built with
-GTK+, context-sensitive pop-up menus are available to select channels,
-change scale and position, recall and store signals and so on.  The
-manual measurement cursors can also be positioned with the mouse.
+GTK+, a context-sensitive pop-up menu is available with right-click to
+select channels, change scale and position, recall and store signals
+and so on.  Left click decreases a variable while right click
+increases.  The manual measurement cursors can also be positioned with
+the mouse.
 
 .PP
 .SH "COMMAND\-LINE OPTIONS"
@@ -243,7 +280,9 @@ manual measurement cursors can also be positioned with the mouse.
 The command-line options define the startup state of
 .B oscope
 and have reasonable defaults.  All options may be capitalized in case
-they conflict with an X toolkit option.
+they conflict with an X toolkit option.  These options are also
+recorded in text files saved by
+.B oscope.
 
 .TP 0.5i
 .B -h
@@ -326,7 +365,7 @@ they're the output of xlsfonts.  The default should work best.
 .TP 0.5i
 .B -p <type>
 Plot type.  0 = point, 1 = point accumulate, 2 = line, 3 = line
-accumulate.
+accumulate, 4 = step, 5 = step accumulate.
 
 .TP 0.5i
 .B -g <style>
@@ -343,11 +382,13 @@ Whether the Verbose key help is displayed.
 
 .TP 0.5i
 .B -x
-Whether the sound card input device (XY) is turned on.
+Whether the sound card input device (XY) is turned on.  This can be
+used to skip the attempt to connect to Esound or /dev/dsp.
 
 .TP 0.5i
 .B -z
-Whether the ProbeScope input device (Z) is turned on.
+Whether the serial input device (Z) is turned on.  This can be used to
+suppress the search for a serial scope device.
 
 .TP 0.5i
 .B file
@@ -408,8 +449,15 @@ the built-in default is used.
 .B PROBESCOPE
 The serial device your ProbeScope or osziFOX is connected to.  If no
 ProbeScope is found here, some known serial devices are checked.  If
-unset, "/dev/probescope" is used.  /dev/probescope could be a symbolic
+unset, /dev/probescope is used.  /dev/probescope could be a symbolic
 link to the real device such as /dev/ttyS1.
+
+.TP 0.5i
+.B BITSCOPE
+The serial device your Bitscope is connected to.  If no Bitscope is
+found here, some known serial devices are checked.  If unset,
+/dev/bitscope is used.  /dev/bitscope could be a symbolic link to the
+real device such as /dev/ttyS1.
 
 .TP 0.5i
 .B ESPEAKER
@@ -426,8 +474,8 @@ drivers.  You must use an external mixer program to select the input
 source device, level, etc.  Since these unknowns affect the amplitude,
 there is no reference to voltage on the Y axis; it is in fact,
 unknown.  Instead you're given the scale in pixels per sample unit.
-Note that the ProbeScope/osziFOX doesn't have this limitation.
-ProbeScope signals have a real voltage label on the Y axis.
+Note that the serial oscilloscope devices don't have this limitation.
+They have real voltage labels on the Y axis.
 .P
 
 Signal math is only valid if Channel 1 and 2 contain signals of the
@@ -447,7 +495,7 @@ measurements.
 
 Your sound card is most-likely AC coupled so you will never see any DC
 offset.  You probably can't get DC coupling by just shorting the input
-capacitors on your sound card.  Use ProbeScope to see DC offsets.
+capacitors on your sound card.  Use serial hardware to see DC offsets.
 .P
 
 The display may not be able to keep up if you give it too much to

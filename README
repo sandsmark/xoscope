@@ -1,20 +1,21 @@
+
 oscope - Digital Oscilloscope via Sound Card and/or ProbeScope/osziFOX
 
-Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
+Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2 of the License, or (at
-your option) any later version.
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
 
-This program is distributed in the hope that it will be useful, but
-WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-General Public License for more details.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
-Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 	(see the file COPYING for more details)
 
@@ -29,107 +30,32 @@ x*oscope is a digital oscilloscope that uses a sound card (via
 /dev/dsp or EsounD) and/or Radio Shack ProbeScope (Cat. No. 220-0310)
 a.k.a osziFOX as the signal input.  Either or both devices may be used
 simultaneously.  You may find the manual for Radio Shack's ProbeScope
-device at:
-
-	http://support.tandy.com/support_meters/33352.htm
+device at: http://support.tandy.com/support_meters/33352.htm
 
 This device is also known as osziFOX and you may be able to get more
-information on and pictures of it at:
+information on and pictures of it at: http://www.wtt-germany.com/
 
-	http://www.wtt-germany.com/
+Bitscope support is currently under development and is included here
+only on an as-is basis.  Basic data capture may work at a fixed rate.
+Advanced features such as control and subsampling are not yet
+included.  For the latest bitscope development code, please check it
+out from CVS on sourceforge.  Bitscope is: http://www.bitscope.com
 
 
-	NEW for 1.7 (see also the files ChangeLog and TODO):
+	NEWS
 
-* Logic Analyzer display mode.  Instead of drawing one analog line,
-  multiple digital bit lines are drawn.  Hit ` or ~ to decrease or
-  increase the number of bits shown.
-
-* Manually-positioned measurement cursors.  Hit ' to turn them on, "
-  to reset them, and Ctrl-d/f/e/r to move them.  Under GTK+, left
-  click positions one cursor and middle click sets the other.  Right
-  click always brings up the context-sensitive menu.
-
-	WHAT YOU NEED:
-
-LINUX:
-
-All things mentioned here can be obtained by anonymous ftp or the WWW.
-A recent version should be available at the site listed.
-
-* You will need a mixer program to select input source and levels.
-  Examples are "gmix", "xfmix", "xmix", and "aumix".
-
-	ftp://sunsite.unc.edu/pub/Linux/apps/sound/mixers/
-
-* You will need "GTK+" to build the X client (highly recommended).
-
-	http://www.gtk.org/
-
-* (outdated) OR you can use "libsx" to build an X client if you don't
-  have GTK+.  You only need to make src/libsx.a then move it to
-  somewhere like /usr/local/lib or /usr/lib.
-
-	ftp://sunsite.unc.edu/pub/Linux/X11/devel/libraries/clibs/
-
-* You will need "libvga" from the "svgalib" package to build the
-  SVGA console version.  You may already have this in /usr/lib.
-
-	ftp://sunsite.unc.edu/pub/Linux/libs/graphics/
-
-* You will need "libvgamisc" from the "g3vga" kit to get text on the
-  console version (recommended if you use the console version).  You
-  only need to make misc/libvgamisc.a then move it to somewhere like
-  /usr/local/lib or /usr/lib.
-
-	ftp://sunsite.unc.edu/pub/Linux/apps/graphics/viewers/svga/
-
-If you don't have these libraries, or if they're in strange places,
-you will need to tweak the Makefile.  See the Makefile and config.h
-for configuration options.  If you don't have GTK+, libsx or
-libvgamisc, you will have to read the manual page and memorize the
-controls since they can't be displayed on your screen (bummer!).  If I
-were you, I'd get the libraries instead. :-)
-
-If you have X11 and would like to do simultaneous Spectrum Analysis,
-see the file README.f51 for extra optional instructions.
-
-DOS:
-
-I never use DOS, so I've only confirmed that it will build by cross
-compiling from Linux.  I know that version 1.4 ran on DOS, so there's
-no reason why this one shouldn't either.
-
-* You will need a mixer program to select input source and levels.
-  Your sound card maker probably supplied one.
-
-* You will need DJGPP V2 and GRX20 to build from source.  Newer
-  versions should work but I haven't tried them.  You will also need
-  CWSDPMI or some other DPMI host.
-
-	http://www.delorie.com/djgpp/
-	ftp://ftp.simtel.net/pub/simtelnet/gnu/djgpp/
-	ftp://ftp.simtel.net/pub/simtelnet/gnu/djgpp/v2/readme.1st
-	ftp://ftp.simtel.net/pub/simtelnet/gnu/djgpp/v2tk/grx20.zip
-	ftp://ftp.simtel.net/pub/simtelnet/gnu/djgpp/v2misc/csdpmi3b.zip
-
-* If you'd like the original source of the sb02.zip and svasync.zip:
-
-	http://oak.oakland.edu/pub/simtelnet/msdos/sound/sb02.zip
-	ftp://ftp.delorie.com/pub/djgpp/contrib/svasync.zip
+Has moved to the NEWS file, complete with version history!
 
 
 	INSTALLATION:
 
-LINUX:
-
-* edit Makefile and config.h if necessary
+* ./configure
 
 * make
 
 * make install
 
-If you don't install as root, you will need to become root and:
+If you want to run oscope on the console, you will need to become root and:
 
 * chown root oscope
 
@@ -140,15 +66,40 @@ If you don't install as root, you will need to become root and:
 since the svgalib can only be started by root.  xoscope doesn't
 require any special permissions.
 
+
+	WHAT YOU NEED:
+
+LINUX:
+
+A modern Linux distribution should be able to build xoscope from
+source as shown above.  If not, all things mentioned here can be found
+by a search on http://www.freshmeat.net.
+
+* You will need an audio mixer program to select input source and
+  levels.  Examples are "gmix", "xfmix", "xmix", and "aumix".
+
+* You will need "GTK+" to build the X client (highly recommended).
+
+* OR (outdated) you can use "libsx" to build an X client if you don't
+  have GTK+.  Last tried with version 2.03.
+
+* You will need "libvga" from the "svgalib" package to build the
+  SVGA console version.  You may already have this in /usr/lib.
+
+* You will need "libvgamisc" from the "g3vga" kit to get text on the
+  console version (recommended if you use the console version).  You
+  only need to make misc/libvgamisc.a then move it to somewhere like
+  /usr/local/lib or /usr/lib.
+
+If you have X11 and would like to do simultaneous Spectrum Analysis,
+see the file README.f51 for extra optional instructions.  WARNING: I
+haven't tried this lately.
+
 DOS:
 
-* uncomment some of the DOS sections of Makefile
-
-* make
-
-* copy OSCOPE.EXE onto your PATH
-
-* make sure you have CWSDPMI.EXE on your PATH
+I never use DOS, so I can't really support it.  But it worked in
+version 1.4 and should still work in theory.  Please see Makefile.dos
+for more information.
 
 
 	USAGE:
@@ -167,22 +118,14 @@ LINUX:
 
 x*oscope was developed specifically for Linux on:
 
- - Linux kernel 1.2.10	and later on:	2.2.12
- - gcc 2.6.3				egcs 2.91.66
- - svgalib 1.2.9			1.4.0
- - libsx 1.1				GTK+ 1.2.5
+ - Linux kernel 1.2.10	and later on:	2.2.16
+ - gcc 2.6.3				gcc 2.96
+ - svgalib 1.2.9			1.4.2
+ - libsx 1.1				GTK+ 1.2.8
  - SoundBlaster 16
  - ATI Win Turbo 2MB VRAM
  - 32MB RAM				96MB RAM
  - 100 MHz Intel Pentium(R) Processor	Celeron 300A
-
-DOS:
-
-sound blaster compatible card & Radio Shack ProbeScope optional
-
-Oscope runs on DOS but with only mono (one channel) sound card
-sampling, so X = Y.  ProbeScope support works on DOS.  It should also
-work from Windows 3.1 or Windows 95, but may not be as stable.
 
 x*oscope can be ported to other platforms by simply writing display
 (gr_*.c) sound card (sc_*.c) and serial port (ser_*.c) connections.
@@ -195,36 +138,7 @@ If you like to build things, check out the HARDWARE file.
 
 	CREDITS:
 
-Thanks to:
-
-Jeff Tranter <Jeff_Tranter@Mitel.com> for writing the original
-scope-0.1 that inspired all this.
-
-Philip VanBaren <phillipv@eecs.umich.edu> for the realfft.c code from
-his freq program.  If you want a Spectrum Analyzer, you should get
-Philip's freq program and read README.f51.
-
-The many folks working on the way cool GTK+.
-
-The Cthugha-L program (Torps Productions, Harald Deischinger
-<k3096e5@c210.edvz.uni-linz.ac.at>) for inspiring the X11 client and
-some coding ideas.
-
-Dominic Giamapolo <dbg@sgi.com> for libsx which made the original X11
-client possible.  Also, freq.c and dirlist.c are from libsx.
-
-Mitch D'Souza <Mitch@Dubai.Sun.COM> for libvgamisc which makes the
-16-color console text possible (from his "g3vga").
-
-For the DOS port, DJ Delorie (dj@delorie.com) for DJGPP and to Charles
-W Sandmann (sandmann@clio.rice.edu) for CWSDPMI which together allow
-the 32 bit code to work on DOS.  To Gerhard Kordmann
-(kordmann@ldv01.Uni-Trier.de) for sb02.zip which made the sound card
-work.  And to Sam Vincent (svincent@cs.sonoma.edu) for svasync.zip
-which made the serial connection to ProbeScope possible.
-
-Dave J. Andruczyk <dave@techdev.buffalostate.edu> for the initial
-tweaks to make a connection to EsounD.
+Have moved to the AUTHORS file.
 
 
 	DISCLAIMER:

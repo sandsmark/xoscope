@@ -1,4 +1,4 @@
-# @(#)$Id: Makefile.dos,v 1.1 2001/05/06 03:45:16 twitham Exp $
+# @(#)$Id: Makefile.dos,v 1.2 2001/05/09 04:45:52 twitham Rel $
 
 # Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
 
@@ -6,9 +6,38 @@
 
 # This file is to, in theory, build OSCOPE.EXE for DOS via DJGPP/GRX.
 # I have no idea whether this still works or not as I never use DOS.
-# This DOS stuff is pretty much unsupported; you're on your own.
+# I know that version 1.4 ran on DOS, so there's no reason why this
+# one shouldn't either.
 
 # To build for Linux or others, run `./configure ; make' instead.
+
+
+# DOS (unsupported):
+
+# sound blaster compatible card & ProbeScope / OsziFOX / BitScope optional
+
+# Oscope runs on DOS but with only mono (one channel) sound card
+# sampling, so X = Y.  ProbeScope support works on DOS.  It should also
+# work from Windows 3.1 or Windows 95, but may not be as stable.
+
+# * You will need an audio mixer program to select input source and
+#   levels.  Your sound card maker probably supplied one.
+
+# * You will need DJGPP V2 and GRX20 to build from source.  Newer
+#   versions should work but I haven't tried them.  You will also need
+#   CWSDPMI or some other DPMI host (Windows?)
+
+# 	http://www.delorie.com/djgpp/
+# 	ftp://ftp.simtel.net/pub/simtelnet/gnu/djgpp/
+# 	ftp://ftp.simtel.net/pub/simtelnet/gnu/djgpp/v2/readme.1st
+# 	ftp://ftp.simtel.net/pub/simtelnet/gnu/djgpp/v2tk/grx20.zip
+# 	ftp://ftp.simtel.net/pub/simtelnet/gnu/djgpp/v2misc/csdpmi3b.zip
+
+# * If you'd like the original source of the sb02.zip and svasync.zip:
+
+# 	http://oak.oakland.edu/pub/simtelnet/msdos/sound/sb02.zip
+# 	ftp://ftp.delorie.com/pub/djgpp/contrib/svasync.zip
+
 
 # !! UNCOMMENT AND EDIT one of the following two sections:
 

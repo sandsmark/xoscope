@@ -10,7 +10,7 @@
 # even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 # PARTICULAR PURPOSE.
 
-# @(#)$Id: Makefile.in,v 1.1 2001/05/06 03:45:16 twitham Exp $
+# @(#)$Id: Makefile.in,v 1.2 2001/05/09 04:45:52 twitham Exp $
 
 # Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
 
@@ -100,7 +100,6 @@ src = oscope.c file.c func.c fft.c realfft.c display.c proscope.c	bitscope.c sc_
 
 
 oscope_SOURCES = $(src) gr_com.c gr_vga.c
-oscope_LDADD = -lvga
 
 offt_SOURCES = offt.c fft.c realfft.c
 
@@ -136,6 +135,7 @@ LIBS = @LIBS@
 xoscope_LDFLAGS = 
 oscope_OBJECTS =  oscope.o file.o func.o fft.o realfft.o display.o \
 proscope.o bitscope.o sc_linux.o ser_unix.o gr_com.o gr_vga.o
+oscope_LDADD = $(LDADD)
 oscope_DEPENDENCIES = 
 oscope_LDFLAGS = 
 offt_OBJECTS =  offt.o fft.o realfft.o

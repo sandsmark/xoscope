@@ -1,3 +1,78 @@
+2001-05-06  Timothy D. Witham  <twitham@quiknet.com>
+
+	* INSTALL, install-sh, missing, mkinstalldirs, acconfig.h, aclocal.m4, audio.dat, AUTHORS, bitscope.c, bitscope.dat, config.h, config.h.in, configure, configure.in, COPYING, dirlist.c, display.c, freq.c, func.c, gr_com.c, gr_grx.c, gr_gtk.c, gr_sx.c, gr_vga.c, Makefile, Makefile.am, Makefile.dos, Makefile.in, NEWS, operl, operl.in, oscope.c, oscope.h, sc_linux.c, ser_unix.c, stamp-h.in, xy_sx.c:
+	Used autoconf and automake to switch to a GNU-style fully-automated
+	`./configure; make' build and distribution process.
+
+2000-12-06  Timothy D. Witham  <twitham@quiknet.com>
+
+	* sc_linux.c:
+	ESD was wrapping and overwriting the samples before we could get them
+	read, causing discontinuities in the display.  So now we flush all
+	samples before looking for trigger to start with a free buffer that we
+	can read before it wraps.
+
+2000-08-31  Timothy D. Witham  <twitham@quiknet.com>
+
+	* bitscope.c, bitscope.dat, bitscope.h, file.c, oscope.c:
+	Added -o for saving bitscope registers in the file.  Now using mode 1
+	alt which refreshes slower because it always has to read at least half
+	the sample memory to get to the second channel.
+
+2000-07-18  Timothy D. Witham  <twitham@quiknet.com>
+
+	* gr_gtk.c:
+	Left mouse button now decreases scale, position, bits, mode while
+	middle button increases.  Right button still pops-up the menu.
+
+	* gr_gtk.c:
+	Mouse cursors are now draggable which simplifies usage.
+
+	* bitscope.c, bitscope.h:
+	Generalized bs_read_async so it can be used for triggering in addition
+	to sample gathering.  Now neither block the interface!
+
+	* bitscope.c, bitscope.h, oscope.c:
+	Can now interactively change mode 4 sample rate: 1582 - 50000 S/s.
+
+2000-07-17  Timothy D. Witham  <twitham@quiknet.com>
+
+	* bitscope.c:
+	Mode 4 support that pretty much works.
+
+2000-07-14  Timothy D. Witham  <twitham@quiknet.com>
+
+	* bitscope.c:
+	Added M command support for BC > 110.  This is much faster than S.
+
+	* bitscope.c, bitscope.dat, bitscope.h, display.c, oscope.c:
+	Added x1/x10 probe support and corresponding channel labels.
+
+2000-07-11  Timothy D. Witham  <twitham@quiknet.com>
+
+	* bitscope.c, bitscope.h, display.c, file.c, func.c, oscope.c, oscope.h, proscope.c, proscope.h:
+	Added voltages to the signals in units of millivolts per +/- 160
+	(default screen height and max deflection of any scope (ProbeScope)).
+	Added real voltage labels to the channels and measurements.
+
+2000-07-10  Timothy D. Witham  <twitham@quiknet.com>
+
+	* display.c, file.c, func.c, gr_gtk.c, gr_sx.c, oscope.c:
+	Added step display modes.  Speed up display by remembering only the
+	samples currently displayed, for erasing next time.
+
+2000-07-07  Timothy D. Witham  <twitham@quiknet.com>
+
+	* bitscope.c, oscope.c:
+	Switch to free-running don't care trigger.  Better BitScope
+	recognition by making sure the serial read queue is clear before
+	sending ?.  Faster cursor movements from the keyboard.
+
+	* bitscope.c, bitscope.dat, ChangeLog, display.c, oscope.c, proscope.c, ser_dos.c:
+	Give the ser_dos.c a hope of working by actually implementing read
+	*and* write.  Lacking a DOS machine, I have no idea if it works or
+	not.  But it cross-compiles OK under Linux.
+
 2000-07-06  Tim Witham  <twitham@quiknet.com>
 
 	* bitscope.c, config.h, display.c, file.c, func.c, oscope.c, oscope.h, sc_linux.c:

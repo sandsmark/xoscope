@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 
-# @(#)$Id: Makefile.am,v 1.1 2001/05/06 03:45:16 twitham Exp $
+# @(#)$Id: Makefile.am,v 1.2 2001/05/09 04:45:52 twitham Rel $
 
 # Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
 
@@ -26,13 +26,10 @@ buff2.fig buff2.ps count.dat isr.s ofreq.ini oscope.dat oscope.lsm	\
 patch.f51 pcb.fig pcb.ps proscope.dat sb.c sb.doc sc_sb.c ser_dos.c	\
 svasync.c svasync.doc
 
-
-
 src = oscope.c file.c func.c fft.c realfft.c display.c proscope.c	\
 bitscope.c sc_linux.c ser_unix.c
 
 oscope_SOURCES = $(src) gr_com.c gr_vga.c
-oscope_LDADD = -lvga
 
 offt_SOURCES = offt.c fft.c realfft.c
 
@@ -72,4 +69,3 @@ dist-hook:
 	    fi \
 	  done \
 	fi
-

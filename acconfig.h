@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: acconfig.h,v 1.1 2001/05/06 03:45:16 twitham Exp $
+ * @(#)$Id: acconfig.h,v 1.2 2001/05/09 04:45:52 twitham Rel $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -24,10 +24,6 @@
 #undef PACKAGE_SOURCE_DIR
 /* for xoscope external math commands */
 #undef PACKAGE_LIBEXEC_DIR
-/* path to probescope serial device */
-#undef PROBESCOPE
-/* path to bitscope serial device */
-#undef BITSCOPE
 				/* @BOTTOM@ */
 
 /* program defaults for the command-line options (original values) */
@@ -89,6 +85,12 @@
 
 /* FFT length, shorter than minimum screen width and multiple of 2 (512) */
 #define FFTLEN	512
+
+/* preferred path to probescope serial device ("/dev/probescope") */
+#define PROBESCOPE "/dev/probescope"
+
+/* preferred path to bitscope serial device ("/dev/bitscope") */
+#define BITSCOPE "/dev/bitscope"
 
 /* extra places to look for serial scopes (set to {"", ""} to not search) */
 /* ({"", "", "/dev/ttyS0", "/dev/ttyS1", "/dev/ttyS2", "/dev/ttyS3"}) */

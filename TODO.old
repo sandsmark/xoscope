@@ -174,6 +174,23 @@ v1.4: Shifting also doesn't apply to ProbeScope since we don't get
 the necessary sample before trigger.
 
 
+22	increase time/div range		(twitham@pcocd2.intel.com)
+
+	Currently, the slowest sweep speed is 1 sample per pixel for
+	one screen full.  Slower sweeps could be done by skipping
+	samples, averaging, etc.  Will need to plot a fraction of the
+	screen then sample and plot more beyond the first, instead of
+	the current gather all, plot all loop.
+
+v1.3: Oscope can now skip samples but nothing fancier.
+
+v1.4: If we don't have enough sample depth for the screen, then only
+part of the screen is plotted.  This feature would never be useful for
+ProbeScope since we'll never have more than 128 samples past trigger.
+
+v1.8: DONE.
+
+
 24	port to other OSs		(twitham@pcocd2.intel.com)
 
 	Yack!  Might already work on other unixes.  I need to pull the
@@ -225,6 +242,16 @@ xoscope is monitoring the sound.
 
 v1.7: DONE.  Even with mouse support under GTK+!  They're positioned
 with Ctrl-keys, and ' turns them on/off, " resets them.
+
+
+28	Fix voltage measurements for ProbeScope	(twitham@pcocd2.intel.com)
+
+	Since I don't know the GND level of ProbeScope input, I didn't
+	bother to turn amplitude measurements into voltages.  The
+	peaks could be referenced to a level other than the center.
+	But, at least the peak-to-peak could read in literal volts.
+
+v1.8: DONE.
 
 
 29	Port to the GTK+ user interface on X.	(twitham@quiknet.com)
