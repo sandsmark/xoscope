@@ -118,7 +118,7 @@ void sb_fill_buffer(register unsigned n);
 void sb_play_buffer(register unsigned n);
 void sb_play(unsigned char *data, unsigned long length);
 
-void sb_set_sample_rate(unsigned int rate);
+int sb_set_sample_rate(unsigned int rate);
 void sb_voice(int state);
 void sb_getparams();
 int sb_initcard();
