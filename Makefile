@@ -1,9 +1,10 @@
-# @(#)$Id: Makefile,v 1.11 1996/02/17 21:23:21 twitham Exp $
+# @(#)$Id: Makefile,v 1.12 1996/03/02 07:13:21 twitham Exp $
 
 # Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
 # Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
 
-# (see oscope.c and the file COPYING for more details)
+# (see the files README and COPYING for more details)
+
 
 # we'll assume you want both console-based oscope and X11-based xoscope
 TARGET	= oscope xoscope
@@ -28,7 +29,6 @@ PREFIX	= /usr/local
 CC	= gcc
 
 # compiler flags
-#CFLAGS	= $(DFLAGS) -Wall -O4 -fomit-frame-pointer -funroll-loops -m486
 CFLAGS	= $(DFLAGS) -Wall -O3 -m486
 
 # loader
@@ -40,10 +40,10 @@ LDFLAGS	= -s
 # nothing should need changed below here
 ############################################################
 
-VER	= 0.4
+VER	= 0.5
 ALLSRC	= oscope.c func.c realfft.c
 SRC	= display.c $(ALLSRC)
-X11_SRC	= xdisplay.c $(ALLSRC)
+X11_SRC	= xdisplay.c x11.c $(ALLSRC)
 
 OBJ	= $(SRC:.c=.o)
 X11_OBJ	= $(X11_SRC:.c=.o)
@@ -58,7 +58,7 @@ xoscope:	$(X11_OBJ)
 	$(CC) $(X11_OBJ) $(LDFLAGS) -o xoscope \
 		-lm -lsx -lXaw -lXt -lX11 -L/usr/X11/lib
 
-install: all
+install:	all
 	cp -p *oscope $(PREFIX)/bin
 	chmod u+s $(PREFIX)/bin/oscope
 	chmod go-w $(PREFIX)/bin/oscope
@@ -73,4 +73,4 @@ dist:	clean
 
 # x*.c files depend on their non-x versions like this:
 x%.o:	%.c
-	$(CC) -c $(CFLAGS) $(CPPFLAGS) x$< -o $@
+	$(CC) $(CFLAGS) $(CPPFLAGS) -c x$< -o $@
