@@ -1,7 +1,7 @@
 /*
- * @(#)$Id: bitscope.c,v 1.18 2001/05/19 17:24:32 twitham Rel $
+ * @(#)$Id: bitscope.c,v 1.19 2002/06/15 21:21:53 twitham Exp $
  *
- * Copyright (C) 2000 - 2001 Tim Witham <twitham@quiknet.com>
+ * Copyright (C) 2000 - 2002 Tim Witham <twitham@quiknet.com>
  *
  * (see the files README and COPYING for more details)
  *
@@ -35,7 +35,7 @@ bs_cmd(int fd, char *cmd)
   int i, j, k;
   char c;
 
-/*    if (fd < 3) return(0); */
+  if (fd < 3) return(0);
   in_progress = 0;
   j = strlen(cmd);
   PSDEBUG("bs_cmd: %s\n", cmd);

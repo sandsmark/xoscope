@@ -1,8 +1,8 @@
 ## Process this file with automake to produce Makefile.in
 
-# @(#)$Id: Makefile.am,v 1.4 2001/05/22 05:11:02 twitham Exp $
+# @(#)$Id: Makefile.am,v 1.5 2002/06/15 21:21:53 twitham Exp $
 
-# Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
+# Copyright (C) 1996 - 2002 Tim Witham <twitham@quiknet.com>
 
 # (see the files README and COPYING for more details)
 
@@ -18,7 +18,13 @@ EXTRA_PROGRAMS = xoscope oscope
 
 pkglibexecdir = $(libexecdir)/@PACKAGE@
 pkglibexec_PROGRAMS = offt xy
-pkglibexec_SCRIPTS = operl ofreq.ini
+pkglibexec_SCRIPTS = operl
+pkglibexec_DATA = ofreq.ini
+
+pkgdocdir = $(prefix)/share/doc/@PACKAGE@
+pkgdoc_DATA = xy.c offt.c operl ofreq.ini README HARDWARE TODO		\
+audio.dat bitscope.dat buff.fig buff.ps buff2.fig buff2.ps count.dat	\
+oscope.dat oscope.lsm README.f51 patch.f51 pcb.fig pcb.ps proscope.dat
 
 EXTRA_DIST = $(man_MANS) $(noinst_HEADERS) HARDWARE Makefile.dos	\
 README.f51 TODO TODO.old audio.dat bitscope.dat buff.fig buff.ps	\
@@ -30,6 +36,7 @@ src = oscope.c file.c func.c fft.c realfft.c display.c proscope.c	\
 bitscope.c sc_linux.c ser_unix.c
 
 oscope_SOURCES = $(src) gr_com.c gr_vga.c
+oscope_LDADD = -lvga
 
 offt_SOURCES = offt.c fft.c realfft.c
 
@@ -48,6 +55,10 @@ xy_SOURCES = xy_sx.c xy.c
 xy_LDADD = @X_LIBS@ @X_PRE_LIBS@ -lsx -lXaw -lXt -lX11
 endif
 endif
+
+install-exec-local:
+	@$(NORMAL_INSTALL)
+	-cd $(bindir) && chmod go-w oscope && chmod u+s oscope
 
 install-data-local:
 	@$(NORMAL_INSTALL)

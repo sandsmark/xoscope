@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.c,v 1.89 2001/05/20 03:59:33 twitham Exp $
+ * @(#)$Id: oscope.c,v 1.90 2002/06/15 21:21:53 twitham Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -62,7 +62,7 @@ Startup Options  Description (defaults)               version %s
 -c <color>       graticule Color: 0-15                        (%d)
 -d <dma divisor> sound card DMA buffer size divisor: 1,2,4    (%d)
 -m <mode>        video Mode (size): 0,1,2,3                   (%d)
--f <font name>   the Font name as-in %s
+-f <font name>   the Font name as-in %s (%s)
 -p <type>        Plot mode: 0/1=point, 2/3=line, 4/5=step     (%d)
 -g <style>       Graticule: 0=none,  1=minor, 2=major         (%d)
 -b               %s Behind instead of in front of %s
@@ -74,7 +74,7 @@ file             %s file to load to restore settings and memory
 	  progname, version, CHANNELS, CHANNELS, DEF_A,
 	  DEF_R, DEF_S, DEF_T, DEF_L,
 	  DEF_C, scope.dma, scope.size,
-	  fonts,		/* the font method for the display */
+	  fonts, fontname,
 	  scope.mode,
 	  scope.grat, def[DEF_B], def[!DEF_B],
 	  onoff[DEF_V], onoff[!DEF_X], onoff[!DEF_Z], progname);

@@ -1,7 +1,7 @@
 
-oscope - Digital Oscilloscope via Sound Card and/or ProbeScope/osziFOX
+oscope - Digital Oscilloscope via Sound Card/ProbeScope/osziFOX/bitscope
 
-Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
+Copyright (C) 1996 - 2002 Tim Witham <twitham@quiknet.com>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -54,17 +54,6 @@ Has moved to the NEWS file, complete with version history!
 * make
 
 * make install
-
-If you want to run oscope on the console, you will need to become root and:
-
-* chown root oscope
-
-* chmod go-w oscope
-
-* chmod u+s oscope
-
-since the svgalib can only be started by root.  xoscope doesn't
-require any special permissions.
 
 
 	WHAT YOU NEED:

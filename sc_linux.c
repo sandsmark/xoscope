@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: sc_linux.c,v 1.21 2001/05/06 03:45:16 twitham Rel $
+ * @(#)$Id: sc_linux.c,v 1.22 2002/06/15 21:21:53 twitham Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -20,9 +20,11 @@
 #if HAVE_LIBESD
 #include <esd.h>
 #endif
+#ifndef ESD_DEFAULT_RATE
+#define ESD_DEFAULT_RATE 44100
+#endif
 
 #define ESDDEVICE "ESounD"
-#define SOUNDDEVICE "/dev/dsp"
 
 int snd = 0;			/* file descriptor for sound device */
 int esd = 0;			/* using esd (1) or /dev/dsp (0) */

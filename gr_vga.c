@@ -1,7 +1,7 @@
 /*
- * @(#)$Id: gr_vga.c,v 1.2 2001/05/06 03:45:16 twitham Rel $
+ * @(#)$Id: gr_vga.c,v 1.3 2002/06/15 21:21:53 twitham Exp $
  *
- * Copyright (C) 1996 - 2001 Tim Witham <twitham@pcocd2.intel.com>
+ * Copyright (C) 1996 - 2002 Tim Witham <twitham@pcocd2.intel.com>
  *
  * (see the files README and COPYING for more details)
  *
@@ -9,21 +9,22 @@
  *
  */
 
+#include <stdio.h>
+#include <stdlib.h>
 #include <vga.h>
 #include "oscope.h"		/* program defaults */
 #ifdef HAVE_LIBVGAMISC
 #include <fontutils.h>
 #include <miscutils.h>
+char fonts[] = DATADIR "/" FONTDIR;
+#else
+char fonts[] = "";
 #endif
 #include "display.h"
 #include "func.h"
 #include "file.h"
 
-char fontname[];
-int screen_modes[];
-int color[];
 char fontname[80] = DEF_F;
-char fonts[] = "/usr/lib/kbd/consolefonts";
 int screen_modes[] = {		/* allowed modes */
   G640x480x16,
   G800x600x16,
