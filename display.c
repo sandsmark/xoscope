@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 1.36 1996/10/12 07:48:53 twitham Rel1_2 $
+ * @(#)$Id: display.c,v 1.37 1997/04/26 01:55:03 twitham Exp $
  *
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -219,14 +219,14 @@ draw_text(int all)
       vga_write("(", col(26), row(28), font, KEY_FG, TEXT_BG, ALIGN_LEFT);
       vga_write(")", col(53), row(28), font, KEY_FG, TEXT_BG, ALIGN_LEFT);
     }
-    i = 44000000 / actual / scope.scale;
+    i = 1000 / scope.scale;
     sprintf(string, "%d %cs/div", i > 999 ? i / 1000 : i, i > 999 ? 'm' : 'u');
     vga_write(string, col(40), row(25), font, TEXT_FG, TEXT_BG, ALIGN_CENTER);
 
-    sprintf(string, "%d S/s * %d", actual, scope.scale);
+    sprintf(string, "%d S/s * %d", actual, scope.scale * 44000 / actual);
     vga_write(string, col(40), row(26), font, TEXT_FG, TEXT_BG, ALIGN_CENTER);
 
-    i = actual / 20 / scope.scale;
+    i = actual / 20 * actual / 44000 / scope.scale;
     sprintf(string, "%d Hz/div FFT", i);
     vga_write(string, col(40), row(27), font, TEXT_FG, TEXT_BG, ALIGN_CENTER);
 
@@ -320,7 +320,8 @@ draw_graticule()
 void
 draw_data()
 {
-  static int i, j, k, l, off, delay, old = 100, mult, div, mode;
+  static int i, j, k, l, m, off, delay, old = 100, mult, div, mode, prev;
+  static int x, y, X, Y;
   static Signal *p;
   static short *samples;
 
@@ -330,10 +331,9 @@ draw_data()
   if (scope.trige) {		/* to place time zero at trigger */
     p = &ch[scope.trigch];
     if ((i = p->data[0]) != (j = p->data[1])) /* avoid divide by zero */
-      delay = 100 - ((scope.trig - 128 - i) * scope.scale / (j - i));
-    if (delay < off)
-      delay = old;		/* may be out of range if user just tweaked */
-    if (delay > 100)		/* trigger but we're using old data */
+      delay = 100 + (j - scope.trig + 128) * 44000 * scope.scale
+	/ ((j - i) * actual);	/* y=mx+b  so  x=(y-b)/m */
+    if ((delay < 100) || (delay > (100 + 44000 / actual * scope.scale)))
       delay = old;
   } else			/* no trigger, leave delay as it was */
     delay = old;
@@ -353,23 +353,29 @@ draw_data()
 	  samples = p->data + 1;
 	  l = delay;
 	}
+	prev = 1;
+	X = Y = 0;
 	if (mode < 2)		/* point / point accumulate */
-	  for (i = 1 ; i <= (h_points - 200) / scope.scale ; i++) {
-	    DrawPixel(i * scope.scale + l,
-			  off - *samples * mult / div);
-	    samples++;
+	  for (i = 0 ; i < h_points - 100 - l ; i++) {
+	    if ((m = i * actual / scope.scale / 44000 ) != prev)
+	      DrawPixel(i + l, off - samples[m] * mult / div);
+	    prev = m;
 	  }
 	else			/* line / line accumulate */
-	  for (i = 1 ; i < (h_points - 200) / scope.scale ; i++) {
-	    DrawLine(i * scope.scale + l,
-			 off - *samples * mult / div,
-			 i * scope.scale + l + scope.scale,
-			 off - *(samples + 1) * mult / div);
-	    samples++;
+	  for (i = 0 ; i < h_points - 100 - l ; i++) {
+	    if ((m = i * actual / scope.scale / 44000) != prev) {
+	      x = i + l; y = off - samples[m] * mult / div;
+	      if (X)
+		DrawLine(X, Y, x, y);
+	      else
+		DrawPixel(x, y);
+	      X = x; Y = y;
+	    }
+	    prev = m;
 	  }
       }
       memcpy(p->old, p->data,
-	     sizeof(short) * (h_points - 200) / scope.scale + sizeof(short));
+	     sizeof(short) * (h_points - 200) + sizeof(short));
       DrawLine(90, off, 100, off);
       DrawLine(h_points - 100, off, h_points - 90, off);
     }
