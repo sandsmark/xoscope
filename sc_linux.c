@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: sc_linux.c,v 1.6 1997/05/04 21:31:56 twitham Rel1_3 $
+ * @(#)$Id: sc_linux.c,v 1.7 1997/05/27 05:55:54 twitham Exp $
  *
  * Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -122,7 +122,6 @@ get_data()
   if (i > h_points)		/* haven't triggered within the screen */
     return(0);			/* give up and keep previous samples */
 
-  clip = 0;
   memcpy(buffer, prev, 2);	/* now get the post-trigger data */
   memcpy(buffer + 2, datum, 2);
   read(snd, buffer + (scope.trige ? 4 : 0),

@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: sc_sb.c,v 1.4 1997/05/04 20:58:34 twitham Rel1_3 $
+ * @(#)$Id: sc_sb.c,v 1.5 1997/05/27 05:56:00 twitham Exp $
  *
  * Copyright (C) 1997 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -97,7 +97,6 @@ get_data()
   if (i > h_points)		/* haven't triggered within the screen */
     return(0);			/* give up and keep previous samples */
 
-  clip = 0;
   buff = scope.trige ? prev : buffer;
   for(i=0; i < h_points; i++) {	/* move it into channel 1 and 2 */
     if (*buff == 0 || *buff == 255)
