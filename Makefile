@@ -1,6 +1,6 @@
-# @(#)$Id: Makefile,v 1.18 1996/10/12 08:09:19 twitham Rel1_2 $
+# @(#)$Id: Makefile,v 1.19 1997/05/01 04:32:53 twitham Rel1_3 $
 
-# Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
+# Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
 
 # (see the files README and COPYING for more details)
 
@@ -40,43 +40,61 @@ EXTERN	= offt operl ofreq.ini xy
 CC	= gcc
 
 # compiler flags; -DLIBPATH sets default value of OSCOPEPATH env variable
-CFLAGS	= '-DLIBPATH="$(LIBPATH)"' $(DFLAGS) -Wall -O3 -m486
+CFLAGS	= '-DLIBPATH="$(LIBPATH)"' '-DVER="$(VER)"' $(DFLAGS) -Wall -O3 -m486
 
-# load flags
+# load flags, add -L/extra/lib/path if necessary
 LDFLAGS	= -s
+
+# load flags to find the needed X libraries
+XFLAGS	= -L/usr/X11/lib -lsx -lXaw -lXt -lX11
+
+# try some of this for building on DOS (via DJGPP/GRX); doesn't yet work:
+#SCOPES	= OSCOPE
+#EXTERN	= 
+## CC	= dos-gcc
+#CFLAGS	= '-DLIBPATH=""' '-DVER="$(VER)"' \
+#	-I/usr/local/src/djgpp/contrib/grx20/include -Wall -O3 -m486
+#LDFLAGS	= -L/usr/local/src/djgpp/contrib/grx20/lib
+#CFLAGS	= '-DLIBPATH=""' '-DVER="$(VER)"' \
+#	-I/0/djgpp/contrib/grx20/include -I/0/djgpp/contrib/sb -Wall -O3 -m486
+#LDFLAGS	= -L/0/djgpp/contrib/grx20/lib -L/0/djgpp/contrib/sb
 
 # nothing should need changed below here
 ############################################################
 
-VER	= 1.2
+VER	= 1.3
 SRC	= oscope.c file.c func.c fft.c realfft.c display.c
-VGA_SRC = $(SRC) vga.o
-X11_SRC	= $(SRC) x11.c freq.c dirlist.c
-XFLAGS	= -L/usr/X11/lib -lsx -lXaw -lXt -lX11
+VGA_SRC = $(SRC) sc_linux.c gr_vga.c
+X11_SRC	= $(SRC) sc_linux.c gr_sx.c freq.c dirlist.c
+DOS_SRC = $(SRC) sc_sb.c gr_grx.c
 
 REL	= $(patsubst %,Rel%,$(subst .,_,$(VER)))
 
 VGA_OBJ	= $(VGA_SRC:.c=.o)
 X11_OBJ	= $(X11_SRC:.c=.o)
+DOS_OBJ	= $(DOS_SRC:.c=.o)
 
 all:	$(SCOPES) $(EXTERN)
 
 install:	all
 	-mkdir -p $(BINPATH)
-	cp -p $(SCOPES) $(BINPATH)
+	cp $(SCOPES) $(BINPATH)
 	-chmod u+s $(BINPATH)/oscope
 	-chmod go-w $(BINPATH)/oscope
 	-mkdir -p $(MANPATH)
 	cp *.1 $(MANPATH)
 	-mkdir -p $(LIBPATH)
-	cp -p $(EXTERN) $(LIBPATH)
+	cp $(EXTERN) $(LIBPATH)
 
 clean:
-	$(RM) *oscope offt xy *.o core *~
+	$(RM) *oscope offt xy *.o core *~ *.exe
 
 oscope:	$(VGA_OBJ)
 	$(CC) $^ $(LDFLAGS) -o $@ $(MISC) -lm -lvga
 	chmod u+s oscope
+
+OSCOPE:	$(DOS_OBJ)
+	$(CC) $^ $(LDFLAGS) -o $@ -lgrx20 -lsb
 
 xoscope:	$(X11_OBJ)
 	$(CC) $^ $(LDFLAGS) -o $@ -lm $(XFLAGS)
