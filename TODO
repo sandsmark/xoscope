@@ -133,3 +133,20 @@ v1.4: The display now works with rates up to 20,000,000 S/s.
 	the filesystem.  It can already sort of be done through the
 	external command interface.  A command could just disregard
 	the input and send a new signal in to one of Channel 3 - 8.
+
+
+27	time/frequency and amplitude cursors	(twitham@pcocd2.intel.com)
+
+	Cursors similar to Radio Shack's ProbeScope software would be
+	useful.  A key could toggle them on/off like freq does, then
+	the keyboard would have an alternate layout to move them.  Of
+	course mouse support, #4, would be nicest.  The display could
+	replace the auto-measurements in this mode.
+
+
+28	Fix voltage measurements for ProbeScope	(twitham@pcocd2.intel.com)
+
+	Since I don't know the GND level of ProbeScope input, I didn't
+	bother to turn amplitude measurements into voltages.  The
+	peaks could be referenced to a level other than the center.
+	But, at least the peak-to-peak could read in literal volts.
