@@ -5,9 +5,9 @@
  *
  * Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
  *
- * Enhanced by Tim Witham <twitham@pcocd2.intel.com>, Jan. 1996
+ * Enhanced by Tim Witham <twitham@pcocd2.intel.com>
  *
- * @(#)$Id: oscope.c,v 1.10 1995/12/29 08:07:32 twitham Exp $
+ * @(#)$Id: oscope.c,v 1.11 1995/12/29 08:42:14 twitham Exp $
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -66,7 +66,8 @@ int graticule = 0;		/* show graticule */
 int scale = 1;			/* time scale or zoom factor */
 
 /* display command usage on standard error and exit */
-void usage()
+void
+usage()
 {
   fprintf(stderr,
 	  "usage: scope -r<rate> -m<mode> -c<colour> -d<dma divisor>\n"
@@ -87,10 +88,11 @@ void usage()
 }
 
 /* if verbose mode, show current parameter settings on standard out */
-inline void show_info() {
+inline void
+show_info(unsigned char c) {
   if (verbose) {
-    printf(" -m %2d  -d %1d  -c %2d ",
-	   mode, dma, colour);
+    printf("%1c: -m %2d  -d %1d  -c %2d ",
+	   c, mode, dma, colour);
     if (point_mode)
       printf(" -p");
     else
@@ -105,7 +107,8 @@ inline void show_info() {
 }
 
 /* handle command line options */
-void parse_args(int argc, char **argv)
+void
+parse_args(int argc, char **argv)
 {
   const char     *flags = "r:m:c:d:t:s:plgv";
   int             c;
@@ -150,19 +153,28 @@ void parse_args(int argc, char **argv)
   }
 }
 
-/* initialize screen data to zero level */
-void init_data()
+/* cleanup: restore text mode and close sound device */
+void
+cleanup()
 {
-  int i;
+  vga_setmode(TEXT);		/* restore text screen */
+  close(snd);			/* close sound device */
+}
 
-  for (i = 0 ; i < 1024 ; i++) {
-    buffer[i] = 128;
-    old[i] = 128;
+/* abort and show system error if given ioctl status is bad */
+void
+check_status(int status)
+{
+  if (status < 0) {
+    perror("error from sound device ioctl");
+    cleanup();
+    exit(1);
   }
 }
 
 /* draw graticule */
-inline void draw_graticule()
+inline void
+draw_graticule()
 {
   register int i, j;
 
@@ -197,66 +209,13 @@ inline void draw_graticule()
   }
 }
 
-/* initialize graphics screen */
-void init_screen()
-{
-  vga_disabledriverreport();
-  vga_init();
-  vga_setmode(mode);
-  v_points = vga_getydim();
-  h_points = vga_getxdim();
-  offset = v_points / 2 - 127;
-  if (graticule)
-    draw_graticule();
-}
-
-/* cleanup: restore text mode and close sound device */
-void cleanup()
-{
-  vga_setmode(TEXT);		/* restore text screen */
-  close(snd);			/* close sound device */
-}
-
-/* abort and show system error if given ioctl status is bad */
-void check_status(int status)
-{
-  if (status < 0) {
-    perror("error from sound device ioctl");
-    cleanup();
-    exit(1);
-  }
-}
-
-/* initialize /dev/dsp */
-void init_sound_card()
-{
-  int parm;
-				/* open DSP device for read */
-  snd = open("/dev/dsp", O_RDONLY);
-  if (snd < 0) {
-    perror("cannot open /dev/dsp");
-    cleanup();
-    exit(1);
-  }
-
-  parm = 1;			/* set mono */
-  check_status(ioctl(snd, SOUND_PCM_WRITE_CHANNELS, &parm));
-
-  parm = 8;			/* set 8-bit samples */
-  check_status(ioctl(snd, SOUND_PCM_WRITE_BITS, &parm));
-
-				/* set DMA buffer size */
-  check_status(ioctl(snd, SOUND_PCM_SUBDIVIDE, &dma));
-
-				/* set sampling rate */
-  check_status(ioctl(snd, SOUND_PCM_WRITE_RATE, &sampling));
-  check_status(ioctl(snd, SOUND_PCM_READ_RATE, &actual));
-}
-
 /* handle single key commands */
-inline void handle_key()
+inline void
+handle_key()
 {
-  switch (vga_getkey()) {
+  unsigned char c;
+
+  switch (c = vga_getkey()) {
   case 0:
   case -1:			/* no key pressed */
     return;
@@ -362,11 +321,12 @@ inline void handle_key()
   default:
     break;
   }
-  show_info();
+  show_info(c);
 }
 
 /* get data from sound card */
-inline void get_data()
+inline void
+get_data()
 {
   unsigned char datum, datem;
 
@@ -398,7 +358,8 @@ inline void get_data()
 }
 
 /* graph the data */
-inline void graph_data()
+inline void
+graph_data()
 {
   register int i;
 
@@ -408,7 +369,7 @@ inline void graph_data()
       vga_drawpixel(i * scale, old[i] + offset);
       vga_setcolor(colour);	/* draw new point */
       vga_drawpixel(i * scale, buffer[i] + offset);
-      old[i] = buffer[i];	/* this becomes the old point next time */
+      old[i] = buffer[i];	/* this becomes the point to erase next time */
     }
   } else {			/* line mode */
     for (i = 1 ; i < (h_points / scale - 2) ; i++) {
@@ -418,10 +379,63 @@ inline void graph_data()
       vga_setcolor(colour);	/* draw new line */
       vga_drawline(i*scale, buffer[i] + offset,
 		   i*scale+scale, buffer[i+1] + offset);
-      old[i] = buffer[i];	/* end point becomes the start point */
+      old[i] = buffer[i];	/* this becomes the point to erase next time */
     }
     old[i] = buffer[i];
   }
+}
+
+/* initialize screen data to zero level */
+void
+init_data()
+{
+  int i;
+
+  for (i = 0 ; i < 1024 ; i++) {
+    buffer[i] = 128;
+    old[i] = 128;
+  }
+}
+
+/* initialize /dev/dsp */
+void
+init_sound_card()
+{
+  int parm;
+				/* open DSP device for read */
+  snd = open("/dev/dsp", O_RDONLY);
+  if (snd < 0) {
+    perror("cannot open /dev/dsp");
+    cleanup();
+    exit(1);
+  }
+
+  parm = 1;			/* set mono */
+  check_status(ioctl(snd, SOUND_PCM_WRITE_CHANNELS, &parm));
+
+  parm = 8;			/* set 8-bit samples */
+  check_status(ioctl(snd, SOUND_PCM_WRITE_BITS, &parm));
+
+				/* set DMA buffer size */
+  check_status(ioctl(snd, SOUND_PCM_SUBDIVIDE, &dma));
+
+				/* set sampling rate */
+  check_status(ioctl(snd, SOUND_PCM_WRITE_RATE, &sampling));
+  check_status(ioctl(snd, SOUND_PCM_READ_RATE, &actual));
+}
+
+/* initialize graphics screen */
+void
+init_screen()
+{
+  vga_disabledriverreport();
+  vga_init();
+  vga_setmode(mode);
+  v_points = vga_getydim();
+  h_points = vga_getxdim();
+  offset = v_points / 2 - 127;
+  if (graticule)
+    draw_graticule();
 }
 
 /* main program */
@@ -432,7 +446,7 @@ main(int argc, char **argv)
   init_data();
   init_sound_card();
   init_screen();
-  show_info();
+  show_info(' ');
 
   while (!quit_key_pressed) {
     handle_key();
