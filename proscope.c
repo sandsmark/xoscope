@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: proscope.c,v 1.2 1997/05/28 05:48:01 twitham Exp $
+ * @(#)$Id: proscope.c,v 1.3 1997/05/30 04:23:19 twitham Exp $
  *
  * Copyright (C) 1997 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -50,16 +50,17 @@ init_probescope()
 void
 probescope()
 {
-  int c, maybe, byte = -1, try = 0, cls = 0, dvm = 0, gotdvm = 0;
+  int c, maybe, byte = -1, try = 0, cls = 0, dvm = 0, gotdvm = 0, flush = 1;
 
   while (byte < 138 && try < 280) { /* allow max 2 cycles to find sync byte */
     c = getonebyte();
     if (c < 0) {		/* byte available? no: */
-      if (byte <= 1 && ++try > 10) {
-	PSDEBUG("%s", "!");
+      if (++try > 10 && byte <= 1) {
+	PSDEBUG("%s\n", "!");
 	try = 999;		/* give up if we've retried ~ 4ms */
       } else {
 	PSDEBUG("%s", ".");
+	flush = 0;		/* we've caught up with the serial FIFO! */
 	microsleep(400);	/* next arrive ~ 8bits/19200bits/s = .4167ms */
       }
     } else {			/* byte available? yes: */
@@ -128,7 +129,8 @@ probescope()
       try++;
     }
   }
-  if (gotdvm) ps.dvm = dvm;
-  if (cls) clear();
   mem[25].data[0] = mem[25].data[1];
+  if (gotdvm) ps.dvm = dvm;
+  if (cls) clear();		/* non-DVM text need changed? */
+  if (flush) flush_serial();	/* catch up if we're getting behind */
 }
