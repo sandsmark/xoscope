@@ -5,7 +5,7 @@
  *
  * [x]scope --- Use Linux's /dev/dsp (a sound card) as an oscilloscope
  *
- * @(#)$Id: oscope.c,v 1.25 1996/01/23 07:56:32 twitham Exp $
+ * @(#)$Id: oscope.c,v 1.26 1996/01/25 05:28:56 twitham Exp $
  *
  * Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
@@ -365,6 +365,8 @@ handle_key(unsigned char c)
   case 'Q':			/* quit */
     quit_key_pressed = 1;
     break;
+  default:
+    c = 0;			/* ignore unknown keys */
   }
 
   if (c > 0)
@@ -409,21 +411,19 @@ get_data()
 int
 main(int argc, char **argv)
 {
-  argc = opendisplay(argc, argv);
-
   progname = strrchr(argv[0], '/');
   if (progname == NULL)		/* who are we? */
     progname = argv[0];
   else
     progname++;
 
+  argc = opendisplay(argc, argv);
   parse_args(argc, argv);	/* what do you want? */
   init_data();
   init_sound_card(1);		/* get ready */
   init_screen(1);
   show_info(' ');
-
-  mainloop();			/* display.c */
+  mainloop();			/* from display.h */
   cleanup();			/* close sound, back to text mode */
   exit(0);
 }
