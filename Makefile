@@ -17,6 +17,6 @@ install: scope
 clean:
 	$(RM) scope scope.o core *~
 
-dist:	scope.c Makefile scope.1 COPYING README
-	$(RM) scope scope.o core scope-0.1.tar.gz *~
-	tar -C.. -czvf scope-0.1.tar.gz scope-0.1
+dist:	scope.c scope.h Makefile scope.1 COPYING README
+	$(RM) scope scope.o core scope-1.0.tar.gz *~
+	tar -C.. -czvf scope-1.0.tar.gz scope-1.0
