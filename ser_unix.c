@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: ser_unix.c,v 1.1 1997/05/26 16:27:21 twitham Exp $
+ * @(#)$Id: ser_unix.c,v 1.2 1997/05/28 05:35:07 twitham Exp $
  *
  * Copyright (C) 1997 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -84,28 +84,29 @@ findscope(char *dev)
   return(0);			/* no ProbeScope found. */
 }
 
-/* find and open the serial port that ProbeScope is on */
+/* set ps.found to non-zero if we find ProbeScope on a serial port */
 void
 init_serial()
 {
   char *dev[] = PSDEVS, *p;
-  int i, found = 0, num = sizeof(dev) / sizeof(char *);
+  int i, num = sizeof(dev) / sizeof(char *);
 
-  if ((p = getenv("PROBESCOPE")) == NULL)
-    p = PROBESCOPE;		/* -D defined in Makefile */
+  cleanup_serial();		/* close current device first, if any */
+  if ((p = getenv("PROBESCOPE")) == NULL) /* first place to look */
+    p = PROBESCOPE;		/* -D default defined in Makefile */
   dev[0] = p;
-  for (i = 0; i < num; i++) {
+  for (i = 0; i < num; i++) {	/* look in all places specified in config.h */
     if (findscope(dev[i])) {
       strcpy(device, dev[i]);
-      i = found = num;		/* done; exit the loop */
+      i = ps.found = num;	/* done; exit the loop */
     }
   }
-  if (!found) psfd = 0;
+  if (!ps.found) psfd = 0;
 }
 
 /* return a single byte from the serial device or return -1 if none avail. */
 int
-GETONEBYTE()
+getonebyte()
 {
   static unsigned char ch;
 
@@ -116,7 +117,7 @@ GETONEBYTE()
 
 /* return a single byte from the serial device or return -1 if none avail. */
 int
-getonebyte()			/* we buffer here just to be safe */
+GETONEBYTE()			/* we buffer here just to be safe */
 {
   static unsigned char buff[256];
   static int count = 0, pos = 0;
