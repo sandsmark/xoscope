@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.c,v 1.74 2000/04/09 04:29:12 twitham Exp $
+ * @(#)$Id: oscope.c,v 1.75 2000/05/20 23:44:04 twitham Rel $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -55,6 +55,7 @@ Startup Options  Description (defaults)               version %s
 -r <rate>        sampling Rate in Hz: 8000,11025,22050,44100  (%d)
 -s <scale>       time Scale: 1/20-1000 where 1=1ms/div        (%d/1)
 -t <trigger>     Trigger level[:type[:channel]]               (%s)
+-l <cursors>     cursor Line positions: first[:second[:on?]]  (%s)
 -c <color>       graticule Color: 0-15                        (%d)
 -d <dma divisor> sound card DMA buffer size divisor: 1,2,4    (%d)
 -m <mode>        video Mode (size): 0,1,2,3                   (%d)
@@ -68,7 +69,7 @@ Startup Options  Description (defaults)               version %s
 file             %s file to load to restore settings and memory
 ",
 	  progname, version, CHANNELS, CHANNELS, DEF_A,
-	  DEF_R, DEF_S, DEF_T,
+	  DEF_R, DEF_S, DEF_T, DEF_L,
 	  DEF_C, scope.dma, scope.size,
 	  fonts,		/* the font method for the display */
 	  scope.mode,
@@ -83,8 +84,8 @@ parse_args(int argc, char **argv)
 {
   const char     *flags = "Hh"
     "1:2:3:4:5:6:7:8:"
-    "a:r:s:t:c:m:d:f:p:g:bvxyz"
-    "A:R:S:T:C:M:D:F:P:G:BVXYZ";
+    "a:r:s:t:l:c:m:d:f:p:g:bvxyz"
+    "A:R:S:T:L:C:M:D:F:P:G:BVXYZ";
   int c;
 
   while ((c = getopt(argc, argv, flags)) != EOF) {
@@ -113,6 +114,7 @@ init_scope()
   scope.div = 1;
   scope.rate = DEF_R;
   handle_opt('t', DEF_T);
+  handle_opt('l', DEF_L);
   scope.grat = DEF_G;
   scope.behind = DEF_B;
   scope.run = 1;
@@ -264,6 +266,46 @@ handle_key(unsigned char c)
   switch (c) {
   case 0:
   case -1:			/* no key pressed */
+    break;
+  case '\'':			/* toggle manual cursors */
+    scope.curs = ! scope.curs;
+    clear();
+    break;
+  case '"':			/* reset cursors to first sample */
+    scope.cursa = scope.cursb = 1;
+    clear();
+    break;
+  case 'q' - 96:		/* -96 is CTRL keys */
+    if ((scope.cursa -= 10) < 1)
+      scope.cursa = h_points - 1;
+    break;
+  case 'w' - 96:
+    if ((scope.cursa += 10) >= h_points)
+      scope.cursa = 1;
+    break;
+  case 'e' - 96:
+    if (--scope.cursa < 1)
+      scope.cursa = h_points - 1;
+    break;
+  case 'r' - 96:
+    if (++scope.cursa >= h_points)
+      scope.cursa = 1;
+    break;
+  case 'a' - 96:
+    if ((scope.cursb -= 10) < 1)
+      scope.cursb = h_points - 1;
+    break;
+  case 's' - 96:
+    if ((scope.cursb += 10) >= h_points)
+      scope.cursb = 1;
+    break;
+  case 'd' - 96:
+    if (--scope.cursb < 1)
+      scope.cursb = h_points - 1;
+    break;
+  case 'f' - 96:
+    if (++scope.cursb >= h_points)
+      scope.cursb = 1;
     break;
   case '\t':
     p->show = !p->show;		/* show / hide channel */

@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.h,v 1.33 2000/04/09 04:30:07 twitham Exp $
+ * @(#)$Id: oscope.h,v 1.34 2000/05/20 23:43:22 twitham Rel $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -43,7 +43,10 @@ typedef struct Scope {		/* The oscilloscope */
   int trigch;
   int trige;
   int verbose;
-  short trig;
+  int trig;
+  int curs;
+  int cursa;
+  int cursb;
 } Scope;
 extern Scope scope;
 

@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: file.c,v 1.17 2000/04/09 04:30:14 twitham Exp $
+ * @(#)$Id: file.c,v 1.18 2000/05/20 23:43:57 twitham Rel $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -61,6 +61,17 @@ handle_opt(int opt, char *optarg)
 	else
 	  scope.trigch = limit(strtol(q, NULL, 0) - 1, 0, 1);
       }
+    break;
+  case 'l':			/* cursor lines */
+  case 'L':
+    scope.curs = 1;
+    scope.cursa = limit(strtol(p = optarg, NULL, 0), 1, MAXWID);
+    if ((q = strchr(p, ':')) != NULL) {
+      scope.cursb = limit(strtol(++q, NULL, 0), 1, MAXWID);
+      p = q;
+    }
+    if ((q = strchr(p, ':')) != NULL)
+      scope.curs = limit(strtol(++q, NULL, 0), 0, 1);
     break;
   case 'c':			/* graticule color */
   case 'C':
@@ -183,6 +194,7 @@ writefile(char *filename)
 # -r %d
 # -s %d/%d
 # -t %d:%d:%c
+# -l %d:%d:%d
 # -c %d
 # -d %d
 # -m %d
@@ -194,6 +206,7 @@ writefile(char *filename)
 	  scope.rate,
 	  scope.scale, scope.div,
 	  scope.trig - 128, scope.trige, scope.trigch + 'x',
+	  scope.cursa, scope.cursb, scope.curs,
 	  scope.color,
 	  scope.dma,
 	  scope.size,

@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: func.c,v 1.20 2000/03/05 22:54:42 twitham Rel $
+ * @(#)$Id: func.c,v 1.21 2000/05/20 23:43:28 twitham Rel $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -300,7 +300,7 @@ cleanup_math()
   EndFFT();
 }
 
-/* auto-measure the given channel */
+/* measure the given channel */
 void
 measure_data(Channel *sig) {
   static int i, j, prev;
@@ -309,21 +309,37 @@ measure_data(Channel *sig) {
   sig->min = 0;
   sig->max = 0;
   prev = 1;
-  for (i = 0 ; i < h_points ; i++) {
-    j = sig->signal->data[i];
-    if (j < sig->min)		/* minimum */
+  if (scope.curs) {		/* manual cursor measurements */
+    if (scope.cursa < scope.cursb) {
+      first = scope.cursa;
+      last = scope.cursb;
+    } else {
+      first = scope.cursb;
+      last = scope.cursa;
+    }
+    sig->min = sig->max = sig->signal->data[first];
+    if ((j = sig->signal->data[last]) < sig->min)
       sig->min = j;
-    if (j > sig->max) {		/* maximum */
+    if ((j = sig->signal->data[last]) > sig->max)
       sig->max = j;
-      max = i;
+    count = 2;
+  } else {			/* automatic period measurements */
+    for (i = 0 ; i < h_points ; i++) {
+      j = sig->signal->data[i];
+      if (j < sig->min)		/* minimum */
+	sig->min = j;
+      if (j > sig->max) {	/* maximum */
+	sig->max = j;
+	max = i;
+      }
+      if (j > 0 && prev <= 0) {	/* locate and count rising edges */
+	if (!first)
+	  first = i;
+	last = i;
+	count++;
+      }
+      prev = j;
     }
-    if (j > 0 && prev <= 0) {	/* locate and count rising edges */
-      if (!first)
-	first = i;
-      last = i;
-      count++;
-    }
-    prev = j;
   }
   if (funcarray[sig->func] == fft1 || funcarray[sig->func] == fft2) {
     if ((sig->freq = sig->signal->rate * max / 880) > 0) /* freq from peak FFT */

@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: gr_gtk.c,v 1.17 2000/04/09 04:33:43 twitham Exp $
+ * @(#)$Id: gr_gtk.c,v 1.18 2000/05/20 23:43:39 twitham Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -405,7 +405,7 @@ help(GtkWidget *w, void *data)
   gtk_widget_show (vscrollbar);
 
   /* Load a fixed font */
-  fixed_font = gdk_font_load ("-misc-fixed-medium-r-*-*-*-140-*-*-*-*-*-*");
+  fixed_font = gdk_font_load ("-misc-fixed-medium-r-*-*-*-120-*-*-*-*-*-*");
 
   /* Realizing a widget creates a window for it, ready to insert some text */
   gtk_widget_realize (text);
@@ -691,6 +691,7 @@ static GtkItemFactoryEntry menu_items[] =
   {"/Scope/Graticule/None", NULL, graticule, (int)"2", "<RadioItem>"},
   {"/Scope/Graticule/Minor Divisions", NULL, graticule, (int)"3", "/Scope/Graticule/None"},
   {"/Scope/Graticule/Minor & Major", NULL, graticule, (int)"4", "/Scope/Graticule/Minor Divisions"},
+  {"/Scope/Cursors", NULL, hit_key, (int)"'", "<CheckItem>"},
   {"/Scope/sep", NULL, NULL, 0, "<Separator>"},
   {"/Scope/ProbeScope", NULL, hit_key, (int)"^", "<CheckItem>"},
   {"/Scope/SoundCard", NULL, hit_key, (int)"&", "<CheckItem>"},
@@ -783,6 +784,9 @@ fix_widgets()
   }
   gtk_check_menu_item_set_active
     (GTK_CHECK_MENU_ITEM
+     (gtk_item_factory_get_item(factory, "/Scope/Cursors")), scope.curs);
+  gtk_check_menu_item_set_active
+    (GTK_CHECK_MENU_ITEM
      (gtk_item_factory_get_item(factory, "/Scope/SoundCard")), snd);
   gtk_check_menu_item_set_active
     (GTK_CHECK_MENU_ITEM
@@ -873,12 +877,26 @@ buttonrow(int y)
 gint
 button_event(GtkWidget *widget, GdkEventButton *event, gpointer data)
 {
-  static int x, y, b;
+  static int x, y, z, b;
 
+  x = event->x;
+  y = event->y;
+  b = event->button;
+  if (x > 100 && x < h_points - 100 && y > 80 && y < v_points - 80) {
+    z = (event->x - 100) * 100 * ch[scope.select].signal->rate * scope.div
+      / scope.scale / 440 / 10000 + 1;
+    if (b == 1) {
+      scope.cursa = z;
+      return TRUE;
+    }
+    if (b == 2) {
+      scope.cursb = z;
+      return TRUE;
+    }
+  }
   x = buttoncol(event->x);	/* convert graphic to text position */
   y = buttonrow(event->y);
-  b = event->button;
-/*    printf("button: %d @ %f,%f -> %d,%d\n", b, event->x, event->y, x, y); */
+  /*    printf("button: %d @ %f,%f -> %d,%d\n", b, event->x, event->y, x, y); */
   if (!y && x > 70)
     handle_key('?');
   else if (y == 28 && x >= 27 && x <= 53) {

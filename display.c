@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 1.55 2000/04/22 01:59:16 twitham Exp $
+ * @(#)$Id: display.c,v 1.56 2000/05/20 23:43:33 twitham Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -400,7 +400,8 @@ void
 draw_data()
 {
   static int i, j, k, l, x, y, X, Y, mult, div, off, bit, start, end;
-  static int num, time, prev, delay, old = 100, bitoff;
+  static int num, time, prev, delay, bitoff;
+  static int old = 100, preva = 100, prevb = 100;
   static Channel *p;
   static short *samples;
 
@@ -414,20 +415,31 @@ draw_data()
       delay = old;
   } else			/* no trigger, leave delay as it was */
     delay = old;
-  for (j = 0 ; j < CHANNELS ; j++) {
+
+  if (scope.curs) {		/* erase previous cursors */
+    SetColor(color[0]);
+    DrawLine(preva, 70, preva, v_points - 70);
+    DrawLine(prevb, 70, prevb, v_points - 70);
+  }
+
+  for (j = 0 ; j < CHANNELS ; j++) { /* plot each visible channel */
     p = &ch[j];
-    if (p->show) {		/* plot each visible channel */
+
+    if (p->show) {
       mult = p->mult;
       div = p->div;
       off = offset + p->pos;
       num = 100 * p->signal->rate * scope.div / scope.scale / 440;
-      if (!p->bits)
+
+      if (!p->bits)		/* analog display mode: draw one line */
 	start = end = -1;
-      else {
+      else {			/* logic analyzer mode: draw bits lines */
 	start = 0;
 	end = p->bits - 1;
       }
+
       for (k = !(scope.mode % 2) ; k >= 0 ; k--) { /* once=accum, twice=erase */
+
 	if (k) {		/* erase previous samples */
 	  SetColor(color[0]);
 	  samples = p->old + 1;
@@ -437,10 +449,21 @@ draw_data()
 	  samples = p->signal->data + 1;
 	  l = delay;
 	}
+
 	if (!(p->func <= FUNCRIGHT /* use the delay? */
 	    || (p->func >= FUNCEXT /* yes only if we're L or R or their math */
 		&& (ch[0].func <= FUNCRIGHT || ch[1].func <= FUNCRIGHT))))
 	  l = 100;		/* no if we're memory or ProbeScope */
+
+	if (scope.curs && j == scope.select && !k) { /* draw new cursors */
+	  if ((time = (scope.cursa - 1) * 10000 / num + l + 1) < h_points - 100)
+	    DrawLine(time, 70, time, v_points - 70);
+	  preva = time;
+	  if ((time = (scope.cursb - 1) * 10000 / num + l + 1) < h_points - 100)
+	    DrawLine(time, 70, time, v_points - 70);
+	  prevb = time;
+	}
+
 	if (scope.mode < 2)	/* point / point accumulate */
 	  for (bit = start ; bit <= end ; bit++) {
 	    prev = -1;
@@ -454,6 +477,7 @@ draw_data()
 	      if (time > prev) prev = time;
 	    }
 	  }
+
 	else			/* line / line accumulate */
 	  for (bit = start ; bit <= end ; bit++) {
 	    prev = -1;
