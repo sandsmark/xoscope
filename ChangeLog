@@ -1,0 +1,387 @@
+Sun Apr 21 03:11:51 1996  Tim Witham  <twitham@eng.fm.intel.com>
+
+	* oscopefft.c: Fixed bug in the documentation.
+
+	* oscope.lsm: For 1.0.
+
+	* oscope.1: Fixed date.
+
+	* Makefile: Added external command examples, version bump to 1.0.
+
+	* config.h: Added COMMAND and FFTLEN.
+
+	* file.c: Rearranged to support new external math commands.
+
+	* x11.c: Rearranged, got widgets to disable themselves appropriately.
+
+	* func.h, func.c:
+	Moved FFT out to fft.c so it can also be used externally by
+	oscopefft.c.  Cleaned up.
+
+	* oscope.h, oscope.c:
+	Added new external math command interface ($ key).
+
+	* oscope.1:
+	Updated for 1.0, documenting new external command interface ($).
+
+	* fft.c:
+	Removed main() and tweaked so this one file can be used for both
+	internal (func.c) and external (oscopefft.c) FFT functions.
+
+	* README: For 1.0.
+
+	* display.c: Rearranged.  Fixed an off-by-one error in col().
+
+	* oscope.perl:
+	Error checking so it will exit when the pipe closes.  Better docs.
+
+	* oscopefft.c: Initial revision
+
+Tue Apr 16 04:16:51 1996  Tim Witham  <twitham@eng.fm.intel.com>
+
+	* func.c: Added external command pipe, optimized some others.
+
+	* fft.c: Initial revision
+
+Tue Apr  9 07:13:51 1996  Tim Witham  <twitham@eng.fm.intel.com>
+
+	* oscope.perl: Initial revision
+
+Sun Mar 10 03:22:07 1996  Tim Witham  <twitham@eng.fm.intel.com>
+
+	* file.c: Fixed bug in the trigger limiter.
+
+	* Makefile: Added new file.c, freq.c, dirlist.c for file load/save.
+
+	* oscope.1: Updated to document the new file load/save features.
+
+	* README: Updated credits.
+
+	* config.h: Added new config options for new file I/O features.
+
+	* x11.h, x11.c: Load and Save now call GetFile of freq.c.
+
+	* freq.c, dirlist.c:
+	Added some #includes to suppress compiler warnings.
+
+	* func.c:
+	Channels displaying a memory buffer are now automatically updated
+	(recalled) when a new save happens to that buffer.  This is less
+	confusing.  Also fixed some malloc problems.
+
+	* display.h, display.c:
+	Added GetFile, message, and file Load/Save key text.
+
+	* oscope.h, oscope.c:
+	Moved handle_opt to new file.c, added -a and file save/load keys.
+
+	* file.h, file.c: Initial revision
+
+Sat Mar  9 21:47:14 1996  Tim Witham  <twitham@eng.fm.intel.com>
+
+	* dirlist.c, freq.c: Initial revision
+
+Sat Mar  2 07:24:04 1996  Tim Witham  <twitham@eng.fm.intel.com>
+
+	* oscope.lsm: For 0.5.
+
+Sat Mar  2 07:13:21 1996  Tim Witham  <twitham@eng.fm.intel.com>
+
+	* Makefile: Added x11.c
+
+	* xdisplay.c: Fixed comments.
+
+	* func.h, func.c:
+	Only do math on visible and selected channels for max speed.
+
+	* oscope.1: Massive changes to document all the new features.
+
+	* config.h: Added (default) to the comments for documentation.
+
+	* x11.h: Initial revision
+
+	* oscope.c, oscope.h:
+	Added memory controls and improved usage to match new features.
+
+	* display.c, display.h: Many X11 specifics moved to x11.c.
+
+	* x11.c: Added memory buttons, optimized many things.
+
+Fri Mar  1 04:27:08 1996  Tim Witham  <twitham@eng.fm.intel.com>
+
+	* x11.c: Turned math button into a menu with current function checked.
+
+Wed Feb 28 06:09:06 1996  Tim Witham  <twitham@eng.fm.intel.com>
+
+	* x11.c: Initial revision
+
+Sat Feb 24 04:30:11 1996  Tim Witham  <twitham@eng.fm.intel.com>
+
+	* func.h, func.c: Improved measurements.
+
+Thu Feb 22 06:25:53 1996  Tim Witham  <twitham@eng.fm.intel.com>
+
+	* display.h, display.c:
+	Added clip detection (flash graticule in color of clipped channel).
+
+	* oscope.h, oscope.c:
+	Removed -v, added -1 through -8, simplified triggering scaling code.
+
+	* config.h: Initial revision
+
+Sat Feb 17 21:24:02 1996  Tim Witham  <twitham@eng.fm.intel.com>
+
+	* fft.h, realfft.c: Initial revision
+
+	* Makefile, oscope.h, func.h, func.c, display.c, oscope.c:
+	Added Fast Fourier Transform.
+
+Sun Feb  4 22:11:19 1996  Tim Witham  <twitham@eng.fm.intel.com>
+
+	* COPYING: Initial revision
+
+	* oscope.lsm: For 0.3.
+
+	* Makefile: Added func.c, fixed some bugs.
+
+	* README: Added installation instructions, updated for 0.3.
+
+	* oscope.c: Improved signal scaling, more like real scope.
+
+	* display.c: Improved text positioning.
+
+	* oscope.c, display.c, oscope.h:
+	Improved triggering: channel 1 or 2, rising or falling.
+
+Sat Feb  3 21:37:31 1996  Tim Witham  <twitham@eng.fm.intel.com>
+
+	* oscope.lsm: Initial revision
+
+	* oscope.c, func.h, func.c, oscope.h, display.c:
+	Added 4 more channels to display on right side of graticule.
+
+	* func.h, func.c, oscope.h, display.c:
+	Memory indicators now have color of recorded signal.
+
+	* func.h, func.c, oscope.c, display.c:
+	Added 26 signal memory buffers, one for each letter of the alphabet!
+
+	* display.c, oscope.c, oscope.h:
+	Time scaling a STOP'd display is now only allowed at 44000 Hz sampling
+	since anything else would need a new acquire.
+
+	* oscope.h, oscope.c, display.c:
+	Fixed the vertical scaling bug, moved more globals in to Scope struct.
+
+Fri Feb  2 07:11:15 1996  Tim Witham  <twitham@eng.fm.intel.com>
+
+	* oscope.c, oscope.h, display.c:
+	Moved signal math to new func.c so it can be easily extended.
+
+	* func.h, func.c: Initial revision
+
+	* oscope.h, oscope.c, display.c:
+	Added way cool channel selector to greatly improve the interface.
+	Removed channels; sampling is now always in stereo mode for simplicity.
+
+	* oscope.c: Added auto-measurements.
+
+	* display.c: Added min/max, period/frequency readout.
+
+Wed Jan 31 07:55:06 1996  Tim Witham  <twitham@eng.fm.intel.com>
+
+	* Makefile: Added xoscope man page.
+
+	* xoscope.1: Initial revision
+
+	* Makefile, README, display.c, display.h, oscope.1, oscope.c, oscope.h, xdisplay.c:
+	changed filenames from scope to oscope
+
+	* README: Added enhancement blurbs.
+
+	* README: Initial revision
+
+	* display.c, scope.c, Makefile, scope.h: Code cleanup.
+
+	* scope.c:
+	Signals now scalable.  Keyboard control rearranged to support this.
+
+	* display.c:
+	Added much text to the display, including keyboard key descriptors.
+
+Tue Jan 30 06:45:42 1996  Tim Witham  <twitham@eng.fm.intel.com>
+
+	* scope.h, display.c, scope.c:
+	Moved some globals in to the scope structure.
+
+	* display.c: Graticule now resizes vertically.
+
+Mon Jan 29 04:38:17 1996  Tim Witham  <twitham@eng.fm.intel.com>
+
+	* scope.c, display.c:
+	Added text channel displays to right side of screen.
+
+Sun Jan 28 23:41:31 1996  Tim Witham  <twitham@eng.fm.intel.com>
+
+	* scope.h, display.c, scope.c:
+	Converted to signed data to simplify math and positioning.
+
+	* display.c, display.h:
+	Improved text positioning; X VGA_WRITE now honors alignments like vgalib.
+
+	* scope.h, display.c, display.h, scope.c:
+	Added display-independent color; X uses 16 colors similar to console.
+	640x480 is now minumum supported size.  X display is resizable.
+
+	* scope.c, display.c:
+	Channels are now defined in a structure so we can easily extend.
+
+Fri Jan 26 07:52:45 1996  Tim Witham  <twitham@eng.fm.intel.com>
+
+	* display.c, scope.c:
+	Converted to more realistic 1/2/5 scaling with fixed graticule.
+
+Thu Jan 25 05:28:56 1996  Tim Witham  <twitham@eng.fm.intel.com>
+
+	* scope.c: Ignore unknown keypresses.
+
+	* display.c: Rearranged to eliminate forward reference.
+
+Tue Jan 23 08:00:10 1996  Tim Witham  <twitham@eng.fm.intel.com>
+
+	* Makefile: Major changes to support new multi-file source.
+
+	* display.h: Initial revision
+
+	* scope.h: Moved all display-specific code to new "display.h" file.
+
+	* scope.c:
+	Moved all display-specific code to new "display.c" file.  This greatly
+	modularizes the program for easier simultaneous console / X11 support.
+
+	* display.c, xdisplay.c: Initial revision
+
+	* Makefile: Added rules to make new xscope X client.
+
+Mon Jan 22 07:00:19 1996  Tim Witham  <twitham@eng.fm.intel.com>
+
+	* scope.c:
+	Now available as an X client via libsx!  Just #define XSCOPE.
+
+Sat Jan 20 08:31:03 1996  Tim Witham  <twitham@eng.fm.intel.com>
+
+	* scope.h: Added many #defines.
+
+	* scope.c:
+	Added optional (#define in scope.h) screen text via libvgamisc from g3fax.
+
+	* scope.c: Tiny tweaks for more stable display around keypresses.
+
+Fri Jan 19 07:12:34 1996  Tim Witham  <twitham@eng.fm.intel.com>
+
+	* scope.c:
+	Reset the sound card after each read.  This greatly improves response
+	time since only the first "screenful" of the FIFO is read.  The rest
+	is discarded and we start over from zero for the next screen.  This
+	prevents the samples from getting backed up and overflowing the FIFO.
+
+Wed Jan  3 06:18:57 1996  Tim Witham  <twitham@eng.fm.intel.com>
+
+	* Makefile: Added PREFIX (for install) and VER (for dist) variables.
+
+	* scope.1: Grammatical tweaks.
+
+	* scope.c: Minor tweaks to improve readibility.
+
+	* scope.1: Updated to reflect my changes (I hope).
+
+	* scope.1: Initial revision
+
+Tue Jan  2 07:25:28 1996  Tim Witham  <twitham@eng.fm.intel.com>
+
+	* scope.c: Converted R/r to use integer math like everything else.
+
+	* scope.h:
+	Changed default scale to 4, the middle of the 5 possible values.
+
+	* scope.c: Fixed some off-by-one errors in dual channel mode.
+	Tweaked graph_data loop for efficiency (added k).
+	Cleaned up usage.
+
+	* scope.h: Added DEF_12 for new dual channel mode.
+
+	* scope.c:
+	First working stereo (dual channel) mode!  Added -1/-2 options, 1/2 keys.
+
+	* Makefile: Bumped dist version from 0.1 to 1.0.
+
+	* Makefile: Added new scope.h dependency.
+
+	* Makefile, scope.h: Initial revision
+
+	* scope.c:
+	Added M/m and D/d for completeness, moved defaults to new scope.h.
+
+Mon Jan  1 20:45:12 1996  Tim Witham  <twitham@eng.fm.intel.com>
+
+	* scope.c:
+	Improved triggering by forcing it to be at the trigger point.
+	Converted several keys to toggles, added V/v verbose toggle.
+	Rearranged usage to display interactive runtime keys.
+
+Sat Dec 30 10:30:39 1995  Tim Witham  <twitham@eng.fm.intel.com>
+
+	* scope.c:
+	Added -b and B/b keys to swap the signal and graticle front/back.
+
+	* scope.c:
+	Keys are now handled during trigger wait.  The key forces a trigger.
+	Also added a horizontal time scale to the center of the graticule.
+
+	* scope.c: T and t keys now turn disabled trigger on at 128.
+	Using the keys to push trigger off scale disables it again.
+	Changed functions in the loop to static inline.
+	Added range forcing to -s since 0 was a fatal error.
+
+Fri Dec 29 08:42:14 1995  Tim Witham  <twitham@eng.fm.intel.com>
+
+	* scope.c:
+	Enhanced -v to show each keypress; rearranged for readibility.
+
+	* scope.c:
+	Added new check_status function to eliminate some redundant code.
+
+	* scope.c:
+	Rearranged initialization so graticule is correct on startup.
+
+Thu Dec 28 06:50:33 1995  Tim Witham  <twitham@eng.fm.intel.com>
+
+	* scope.c:
+	Keys are now handled while waiting on trigger.  Most won't have much
+	effect until trigger is actually detected, but at least you can hit
+	t/T to get the trigger back into range instead of locking up!
+
+Wed Dec 27 08:52:01 1995  Tim Witham  <twitham@eng.fm.intel.com>
+
+	* scope.c:
+	Switched time scale to 5msec major divisions, added 0.5msec mini-ticks.
+
+	* scope.c: Simplified verbose output to fit all parameters on one line.
+
+	* scope.c:
+	Improved triggering to see only the rising or the falling edge, not both.
+
+	* scope.c:
+	Added -s time axis Scaling (1,2,4,8,16,32) so you can zoom in/out.
+	'S' key doubles it (zoom in) while the 's' key halves it (zoom out).
+
+Tue Dec 26 13:59:25 1995  Tim Witham  <twitham@eng.fm.intel.com>
+
+	* scope.c:
+	Converted time scale to use integer math instead of floating point.
+
+	* scope.c:
+	Added time scale: 1 msec tick marks and 10 msec vertical lines.
+
+	* scope.c: Initial revision
+
