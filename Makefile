@@ -1,4 +1,4 @@
-# @(#)$Id: Makefile,v 1.10 1996/02/04 22:01:23 twitham Exp $
+# @(#)$Id: Makefile,v 1.11 1996/02/17 21:23:21 twitham Exp $
 
 # Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
 # Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
@@ -28,7 +28,8 @@ PREFIX	= /usr/local
 CC	= gcc
 
 # compiler flags
-CFLAGS	= $(DFLAGS) -Wall -O4 -fomit-frame-pointer -funroll-loops -m486
+#CFLAGS	= $(DFLAGS) -Wall -O4 -fomit-frame-pointer -funroll-loops -m486
+CFLAGS	= $(DFLAGS) -Wall -O3 -m486
 
 # loader
 LD	= gcc
@@ -39,9 +40,10 @@ LDFLAGS	= -s
 # nothing should need changed below here
 ############################################################
 
-VER	= 0.3
-SRC	= display.c oscope.c func.c
-X11_SRC	= xdisplay.c oscope.c func.c
+VER	= 0.4
+ALLSRC	= oscope.c func.c realfft.c
+SRC	= display.c $(ALLSRC)
+X11_SRC	= xdisplay.c $(ALLSRC)
 
 OBJ	= $(SRC:.c=.o)
 X11_OBJ	= $(X11_SRC:.c=.o)
@@ -49,12 +51,12 @@ X11_OBJ	= $(X11_SRC:.c=.o)
 all:	$(TARGET)
 
 oscope:	$(OBJ)
-	$(CC) $(OBJ) $(LDFLAGS) -o oscope $(MISC) -lvga
+	$(CC) $(OBJ) $(LDFLAGS) -o oscope $(MISC) -lm -lvga
 	chmod u+s oscope
 
 xoscope:	$(X11_OBJ)
 	$(CC) $(X11_OBJ) $(LDFLAGS) -o xoscope \
-		-lsx -lXaw -lXt -lX11 -L/usr/X11/lib
+		-lm -lsx -lXaw -lXt -lX11 -L/usr/X11/lib
 
 install: all
 	cp -p *oscope $(PREFIX)/bin

@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.h,v 1.17 1996/02/04 08:50:10 twitham Exp $
+ * @(#)$Id: oscope.h,v 1.18 1996/02/17 21:20:33 twitham Exp $
  *
  * Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
@@ -27,7 +27,7 @@
 #define DEF_F ""
 #define DEF_FX "8x16"
 #define DEF_P 2
-#define DEF_G 1
+#define DEF_G 2
 #define DEF_B 0
 #define DEF_V 0
 
@@ -93,6 +93,7 @@ typedef struct Signal {		/* The signals (channels) */
   short min;
   short max;
   int time;
+  int freq;
   int mult;
   int div;
   int pos;
@@ -106,9 +107,6 @@ extern Signal ch[CHANNELS];
 /* functions that are called by files other than oscope.c */
 int
 get_data();
-
-void
-measure_data(Signal *);
 
 void
 handle_key(unsigned char);

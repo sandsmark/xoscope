@@ -5,7 +5,7 @@
  *
  * [x]oscope --- Use Linux's /dev/dsp (a sound card) as an oscilloscope
  *
- * @(#)$Id: oscope.c,v 1.44 1996/02/04 08:49:15 twitham Exp $
+ * @(#)$Id: oscope.c,v 1.45 1996/02/17 21:19:51 twitham Exp $
  *
  * Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
@@ -90,18 +90,18 @@ usage()
 
   fprintf(stderr, "usage: %s "
 	  "[-r<rate>] [-s<scale>] [-t<trigger>] [-c<colour>]
-[-m<mode>] [-d<dma divisor>] [-f font] [-p] [-g] [-b] [-v]
+[-m<mode>] [-d<dma divisor>] [-f font] [-p<type>] [-g<style>] [-b] [-v]
 
 Startup Options  Description (defaults)
--r <rate>        sampling Rate in Hz             (%d)
--s <scale>       time Scale: 1,2,5,10,20,100,200 (%d)
--t <trigger>     Trigger level:0-255,-1=disabled (%d)
--c <colour>      graticule Color                 (%d)
--m <mode>        video mode (size): 0,1,2,3      (%d)
--d <dma divisor> DMA buffer size divisor: 1,2,4  (%d)
+-r <rate>        sampling Rate in Hz              (%d)
+-s <scale>       time Scale: 1,2,5,10,20,100,200  (%d)
+-t <trigger>     Trigger level:0-255,-1=disabled  (%d)
+-c <colour>      graticule Color                  (%d)
+-m <mode>        video mode (size): 0,1,2,3       (%d)
+-d <dma divisor> DMA buffer size divisor: 1,2,4   (%d)
 -f <font name>   The font name as-in %s
--p               Plot mode, 0,1,2,3              (%d)
--g               turn %s Graticule
+-p               Plot mode, 0,1,2,3               (%d)
+-g               Graticule,0=none,1=minor,2=major (%d)
 -b               %s Behind instead of in front of %s
 -v               turn %s Verbose keypress option log to stdout
 ",
@@ -110,7 +110,7 @@ Startup Options  Description (defaults)
 	  DEF_C, scope.size, scope.dma,
 	  fonts(),		/* the font method for the display */
 	  scope.mode,
-	  def[scope.grat], def[scope.behind + 2], def[!scope.behind + 2],
+	  scope.grat, def[scope.behind + 2], def[!scope.behind + 2],
 	  def[verbose]);
   exit(1);
 }
@@ -159,7 +159,7 @@ parse_args(int argc, char **argv)
       scope.mode = strtol(optarg, NULL, 0);
       break;
     case 'g':			/* graticule on/off */
-      scope.grat = !scope.grat;
+      scope.grat = strtol(optarg, NULL, 0);
       break;
     case 'b':			/* behind/front */
       scope.behind = !scope.behind;
@@ -317,11 +317,18 @@ handle_key(unsigned char c)
     clear();
     break;
   case ';':
-  case ':':
-    if (scope.select > 1) {	/* cycle math function */
+    if (scope.select > 1) {	/* next math function */
       p->func++;
       if (p->func >= funccount)
 	p->func = 3;
+      clear();
+    }
+    break;
+  case ':':
+    if (scope.select > 1) {	/* previous math function */
+      p->func--;
+      if (p->func <3)
+	p->func = funccount - 1;
       clear();
     }
     break;
@@ -403,12 +410,14 @@ handle_key(unsigned char c)
     if (scope.dma < 3) {	/* double dma */
       scope.dma <<= 1;
       init_sound_card(0);
+      draw_text(1);
     }
     break;
   case ',':
     if (scope.dma > 1) {	/* half dma */
       scope.dma >>= 1;
       init_sound_card(0);
+      draw_text(1);
     }
     break;
   case '!':
@@ -418,7 +427,9 @@ handle_key(unsigned char c)
     clear();
     break;
   case '&':
-    scope.grat = !scope.grat;	/* graticule on/off */
+    scope.grat++;		/* graticule off/on/more */
+    if (scope.grat > 2)
+      scope.grat = 0;
     clear();
     break;
   case '*':
@@ -446,34 +457,6 @@ handle_key(unsigned char c)
 
   if (c > 0)
     show_info(c);		/* show keypress and result on stdout */
-}
-
-/* auto-measurements */
-void
-measure_data(Signal *sig) {
-  static int i, j, prev;
-  int first = 0, last = 0, count = 0;
-
-  sig->min = 0;
-  sig->max = 0;
-  sig->time = -1;
-  prev = 0;
-  for (i = 0 ; i < h_points ; i++) {
-    j = sig->data[i];
-    if (j < sig->min)
-      sig->min = j;
-    if (j > sig->max)
-      sig->max = j;
-    if ((j > 0 && prev <= 0) || (j < 0 && prev >= 0)) {
-      if (!first)
-	first = i;
-      last = i;
-      count++;
-    }
-    prev = j;
-  }
-  if (count > 2)
-    sig->time = (last - first) / (count - 2) * 2;
 }
 
 /* get data from sound card, return value is whether we triggered or not */
@@ -530,6 +513,7 @@ main(int argc, char **argv)
   init_screen(1);
   init_sound_card(1);
   init_channels();
+  init_math();
   show_info(' ');
   mainloop();			/* to display.c */
   cleanup();
