@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: file.c,v 1.10 1997/05/04 20:07:57 twitham Rel1_3 $
+ * @(#)$Id: file.c,v 1.11 1997/05/27 04:36:42 twitham Exp $
  *
  * Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -125,13 +125,14 @@ handle_opt(int opt, char *optarg)
       if ((q = strchr(p, ':')) != NULL) {
 	if (*++q >= '0' && *q <= '9') {
 	  if (*q > '0') {
-	    s->func = limit(strtol(q, NULL, 0) + 3, 3, funccount - 1);
+	    s->func = limit(strtol(q, NULL, 0) - 1 + FUNC0,
+			    FUNC0, funccount - 1);
 	    s->mem = 0;
 	  }
 	} else if (*q >= 'a' && *q <= 'z'
 		   && (*(q + 1) == '\0' || *(q + 1) == '\n')) {
 	  s->signal = &mem[*q - 'a'];
-	  s->func = *q == 'x' ? FUNCLEFT : *q == 'y' ? FUNCRIGHT : FUNCMEM;
+	  s->func = *q >= 'x' ? *q - 'x' : FUNCMEM;
 	  s->mem = *q;
 	} else {
 	  s->func = FUNCEXT;
@@ -193,12 +194,12 @@ writefile(char *filename)
     p = &ch[i];
     fprintf(file, "# -%d %s%d:%d/%d:", i + 1, p->show ? "" : "+",
 	    -p->pos, p->mult, p->div);
-    if (p->func == FUNCMEM || p->func == FUNCLEFT || p->func == FUNCRIGHT)
+    if (p->func <= FUNCMEM)
       fprintf(file, "%c", (p->mem >= 'a' && p->mem <= 'z') ? p->mem : '0');
     else if (p->func == FUNCEXT)
       fprintf(file, "%s", p->command);
     else
-      fprintf(file, "%d", i > 1 ? (p->func - 3) : 0);
+      fprintf(file, "%d", i > 1 ? (p->func - FUNC0 + 1) : 0);
     fprintf(file, "\n");
   }
   for (i = 0 ; i < 23 ; i++) {
