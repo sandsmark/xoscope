@@ -1,7 +1,7 @@
 /*
- * @(#)$Id: gr_gtk.c,v 1.8 1999/08/21 21:33:50 twitham Exp $
+ * @(#)$Id: gr_gtk.c,v 1.9 1999/08/24 03:03:22 twitham Exp $
  *
- * Copyright (C) 1996 - 1998 Tim Witham <twitham@pcocd2.intel.com>
+ * Copyright (C) 1996 - 1999 Tim Witham <twitham@quiknet.com>
  *
  * (see the files README and COPYING for more details)
  *
@@ -41,7 +41,7 @@ GtkWidget *vbox;
 /*  int **intarray; */
 int XX[] = {640,800,1024,1280};
 int XY[] = {480,600, 768,1024};
-char my_filename[FILENAME_MAX];
+char my_filename[FILENAME_MAX] = "";
 GdkFont *font;
 char fontname[80] = DEF_FX;
 char fonts[] = "xlsfonts";
@@ -102,7 +102,6 @@ delete_event(GtkWidget *widget, GdkEvent *event, gpointer data)
 static gint
 configure_event (GtkWidget *widget, GdkEventConfigure *event)
 {
-/*   static int i = 2; */
   static int h, v, once = 0;
 
   if (pixmap)
@@ -249,9 +248,9 @@ LoadSaveFile(int save)
 				       ->cancel_button), "clicked",
 			    GTK_SIGNAL_FUNC(gtk_widget_destroy),
 			    GTK_OBJECT(filew));
-/*   if (path) */
-/*     gtk_file_selection_set_filename(GTK_FILE_SELECTION(filew), */
-/* 				    (gchar *)path); */
+ if (my_filename[0] != '\0')
+   gtk_file_selection_set_filename(GTK_FILE_SELECTION(filew),
+				   (gchar *)my_filename);
   gtk_widget_show(filew);
 }
 
@@ -307,16 +306,6 @@ void SyncDisplay() {
   gtk_widget_draw(drawing_area, &update_rect);
 }
 
-/* die on malloc error */
-void
-nomalloc(char *file, int line)
-{
-  sprintf(error, "%s: out of memory at %s line %d", progname, file, line);
-  perror(error);
-  cleanup();
-  exit(1);
-}
-
 /* a GTK text writer similar to libvgamisc's vga_write */
 int
 vga_write(char *s, short x, short y, void *f, short fg, short bg, char p)
@@ -329,7 +318,6 @@ vga_write(char *s, short x, short y, void *f, short fg, short bg, char p)
     x -= w / 2;
   else if (p == ALIGN_RIGHT)
     x -= w;
-  /*   DrawText(s, x, y + FontHeight(f)); */
   /* there's probably a better way to blank the area with GC attribs? */
   gdk_draw_rectangle(pixmap,
 		     drawing_area->style->black_gc,
@@ -433,37 +421,104 @@ runextern(GtkWidget *w, gpointer data)
 
 /* slurp the manual page into a window */
 void
-help(GtkWidget w, void *data)
+help(GtkWidget *w, void *data)
 {
-/*   GtkWidget x[2]; */
-/*   char c, prev = '\0', pprev = '\0', *tmp, *s = NULL; */
-/*   FILE *p; */
-/*   int i = 0; */
+  char c, prev = '\0', pprev = '\0';
+  FILE *p;
+  int i;
 
-/*   if ((p = popen(HELPCOMMAND, "r")) != NULL) { */
-/*     while ((c = fgetc(p)) != EOF) { */
-/*       if (c == '\b') */
-/* 	fgetc(p); */
-/*       else if (!(c == '\n' && prev == '\n' && pprev == '\n')) { */
-/* 	tmp = realloc(s, i + 1); */
-/* 	s = tmp; */
-/* 	s[i] = c; */
-/* 	i++; */
-/*       } */
-/*       pprev = prev; */
-/*       prev = c; */
-/*     } */
-/*     tmp = realloc(s, i + 1); */
-/*     s = tmp; */
-/*     s[i] = '\0'; */
-/*     pclose(p); */
-/*     MakeWindow("Help", SAME_DISPLAY, NONEXCLUSIVE_WINDOW); */
-/*     x[0] = MakeButton("Dismiss", dismiss, NULL); */
-/*     x[1] = MakeTextWidget(s, FALSE, FALSE, 500, 500); */
-/*     free(s); */
-/*     SetWidgetPos(x[1], PLACE_UNDER, x[0], NO_CARE, NULL); */
-/*     ShowDisplay(); */
-/*   } */
+  GtkWidget *window;
+  GtkWidget *box1;
+  GtkWidget *box2;
+  GtkWidget *button;
+  GtkWidget *table;
+  GtkWidget *vscrollbar;
+  GtkWidget *text;
+  GdkFont *fixed_font;
+
+  window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
+  gtk_widget_set_usize (window, 640, 480);
+  gtk_window_set_policy (GTK_WINDOW(window), TRUE, TRUE, FALSE);
+  gtk_signal_connect_object(GTK_OBJECT (window), "destroy",
+			    GTK_SIGNAL_FUNC(gtk_widget_destroy),
+			    GTK_OBJECT(window));
+  gtk_window_set_title (GTK_WINDOW (window), "xoscope(1) man page");
+  gtk_container_border_width (GTK_CONTAINER (window), 0);
+
+  box1 = gtk_vbox_new (FALSE, 0);
+  gtk_container_add (GTK_CONTAINER (window), box1);
+  gtk_widget_show (box1);
+
+  box2 = gtk_vbox_new (FALSE, 10);
+  gtk_container_border_width (GTK_CONTAINER (box2), 10);
+  gtk_box_pack_start (GTK_BOX (box1), box2, TRUE, TRUE, 0);
+  gtk_widget_show (box2);
+
+  table = gtk_table_new (2, 2, FALSE);
+  gtk_table_set_row_spacing (GTK_TABLE (table), 0, 2);
+  gtk_table_set_col_spacing (GTK_TABLE (table), 0, 2);
+  gtk_box_pack_start (GTK_BOX (box2), table, TRUE, TRUE, 0);
+  gtk_widget_show (table);
+
+  /* Create the GtkText widget */
+  text = gtk_text_new(NULL, NULL);
+  gtk_text_set_editable(GTK_TEXT(text), FALSE);
+  gtk_text_set_word_wrap(GTK_TEXT(text), TRUE);
+  gtk_table_attach(GTK_TABLE(table), text, 0, 1, 0, 1,
+		   GTK_EXPAND | GTK_SHRINK | GTK_FILL,
+		   GTK_EXPAND | GTK_SHRINK | GTK_FILL, 0, 0);
+  gtk_widget_show(text);
+
+  /* Add a vertical scrollbar to the GtkText widget */
+  vscrollbar = gtk_vscrollbar_new (GTK_TEXT (text)->vadj);
+  gtk_table_attach (GTK_TABLE (table), vscrollbar, 1, 2, 0, 1,
+		    GTK_FILL, GTK_EXPAND | GTK_SHRINK | GTK_FILL, 0, 0);
+  gtk_widget_show (vscrollbar);
+
+  /* Load a fixed font */
+  fixed_font = gdk_font_load ("-misc-fixed-medium-r-*-*-*-140-*-*-*-*-*-*");
+
+  /* Realizing a widget creates a window for it, ready to insert some text */
+  gtk_widget_realize (text);
+
+  /* Freeze the text widget, ready for multiple updates */
+  gtk_text_freeze (GTK_TEXT (text));
+
+  if ((p = popen(HELPCOMMAND, "r")) != NULL) {
+    while ((c = fgetc(p)) != EOF) {
+      i = 0;
+      if (c == '\b') {
+	c = fgetc(p);
+	i = prev == '_' ? 1 : 4;
+	gtk_text_backward_delete(GTK_TEXT(text), 1);
+      }
+      if (!(c == '\n' && prev == '\n' && pprev == '\n'))
+	gtk_text_insert(GTK_TEXT(text), fixed_font, &gdkcolor[i],
+			NULL, &c, 1);
+      pprev = prev;
+      prev = c;
+    }
+    pclose(p);
+  }
+
+  /* Thaw the text widget, allowing the updates to become visible */
+  gtk_text_thaw (GTK_TEXT (text));
+
+  box2 = gtk_vbox_new (FALSE, 10);
+  gtk_container_border_width (GTK_CONTAINER (box2), 10);
+  gtk_box_pack_start (GTK_BOX (box1), box2, FALSE, TRUE, 0);
+  gtk_widget_show (box2);
+
+  button = gtk_button_new_with_label ("close");
+  gtk_signal_connect_object(GTK_OBJECT (button), "clicked",
+			    GTK_SIGNAL_FUNC(gtk_widget_destroy),
+			    GTK_OBJECT(window));
+  gtk_box_pack_start (GTK_BOX (box2), button, TRUE, TRUE, 0);
+  GTK_WIDGET_SET_FLAGS (button, GTK_CAN_DEFAULT);
+  gtk_widget_grab_default (button);
+  gtk_widget_show (button);
+
+  gtk_widget_show (window);
 }
 
 /* simple button callback that just hits the given key */
@@ -482,6 +537,7 @@ cleanup_display()
 void
 fix_widgets()
 {
+/* I suppose someday I could figure out how to check mark the menus */
 }
 
 void
@@ -562,7 +618,7 @@ get_main_menu(GtkWidget *window, GtkWidget ** menubar)
     {"<Main>/Channel/Math/FFT. 1", NULL, mathselect, "5"},
     {"<Main>/Channel/Math/FFT. 2", NULL, mathselect, "6"},
 
-    {"<Main>/Channel/External Command", "$", hit_key, "$"},
+    {"<Main>/Channel/External Command...", "$", hit_key, "$"},
     {"<Main>/Channel/<separator>", NULL, NULL, NULL},
 
     {"<Main>/Channel/Store/Mem A", "A", hit_key, "A"},
@@ -696,7 +752,7 @@ get_main_menu(GtkWidget *window, GtkWidget ** menubar)
     {"<Main>/Stop", NULL, runmode, "0"},
 
     {"<Main>/?", NULL, hit_key, "?"},
-    {"<Main>/Help", NULL, hit_key, "?"},
+    {"<Main>/Help", NULL, help, NULL},
   };
   int nmenu_items = sizeof(menu_items) / sizeof(menu_items[0]);
 
