@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: gr_gtk.c,v 1.11 1999/08/27 03:57:44 twitham Rel $
+ * @(#)$Id: gr_gtk.c,v 1.12 1999/08/29 02:10:47 twitham Exp $
  *
  * Copyright (C) 1996 - 1999 Tim Witham <twitham@quiknet.com>
  *
@@ -300,13 +300,6 @@ setposition(GtkWidget *w, gpointer data)
   clear();
 }
 
-/* close the window */
-void
-dismiss(GtkWidget *w, gpointer data)
-{
-/*   CloseWindow(); */
-}
-
 /* run an external command */
 void
 runextern(GtkWidget *w, gpointer data)
@@ -434,236 +427,251 @@ fix_widgets()
 void
 get_main_menu(GtkWidget *window, GtkWidget ** menubar)
 {
-  static GtkMenuEntry menu_items[] =
+  static GtkItemFactoryEntry menu_items[] =
   {
-/*     {"<Main>/File/New", "<control>N", print_hello, NULL}, */
-    {"<Main>/File/Open...", "@", hit_key, "@"},
-    {"<Main>/File/Save...", "#", hit_key, "#"},
-/*     {"<Main>/File/Save as", NULL, NULL, NULL}, */
-    {"<Main>/File/<separator>", NULL, NULL, NULL},
-    {"<Main>/File/Quit", NULL, hit_key, "\e"},
+    {"/File", NULL, NULL, 0, "<Branch>"},
+    {"/File/tear", NULL, NULL, 0, "<Tearoff>"},
+/*     {"/File/New", "<control>N", print_hello, NULL, NULL}, */
+    {"/File/Open...", NULL, hit_key, (int)"@", NULL},
+    {"/File/Save...", NULL, hit_key, (int)"#", NULL},
+/*     {"/File/Save as", NULL, NULL, 0, NULL}, */
+    {"/File/sep", NULL, NULL, 0, "<Separator>"},
+    {"/File/Quit", NULL, hit_key, (int)"\e", NULL},
 
-    {"<Main>/Channel/Select/Channel 1", "1", hit_key, "1"},
-    {"<Main>/Channel/Select/Channel 2", "2", hit_key, "2"},
-    {"<Main>/Channel/Select/Channel 3", "3", hit_key, "3"},
-    {"<Main>/Channel/Select/Channel 4", "4", hit_key, "4"},
-    {"<Main>/Channel/Select/Channel 5", "5", hit_key, "5"},
-    {"<Main>/Channel/Select/Channel 6", "6", hit_key, "6"},
-    {"<Main>/Channel/Select/Channel 7", "7", hit_key, "7"},
-    {"<Main>/Channel/Select/Channel 8", "8", hit_key, "8"},
-    {"<Main>/Channel/<separator>", NULL, NULL, NULL},
+    {"/Channel", NULL, NULL, 0, "<Branch>"},
+    {"/Channel/tear", NULL, NULL, 0, "<Tearoff>"},
+    {"/Channel/Channel 1", NULL, hit_key, (int)"1", NULL},
+    {"/Channel/Channel 2", NULL, hit_key, (int)"2", NULL},
+    {"/Channel/Channel 3", NULL, hit_key, (int)"3", NULL},
+    {"/Channel/Channel 4", NULL, hit_key, (int)"4", NULL},
+    {"/Channel/Channel 5", NULL, hit_key, (int)"5", NULL},
+    {"/Channel/Channel 6", NULL, hit_key, (int)"6", NULL},
+    {"/Channel/Channel 7", NULL, hit_key, (int)"7", NULL},
+    {"/Channel/Channel 8", NULL, hit_key, (int)"8", NULL},
+    {"/Channel/sep", NULL, NULL, 0, "<Separator>"},
+    {"/Channel/Hide Show", NULL, hit_key, (int)"\t", NULL},
 
-    {"<Main>/Channel/Hide Show", "\t", hit_key, "\t"},
-    {"<Main>/Channel/Scale/up", "}", hit_key, "}"},
-    {"<Main>/Channel/Scale/down", "{", hit_key, "{"},
-    {"<Main>/Channel/Scale/<separator>", NULL, NULL, NULL},
-    {"<Main>/Channel/Scale/50", NULL, setscale, "61"},
-    {"<Main>/Channel/Scale/20", NULL, setscale, "51"},
-    {"<Main>/Channel/Scale/10", NULL, setscale, "41"},
-    {"<Main>/Channel/Scale/5", NULL, setscale, "31"},
-    {"<Main>/Channel/Scale/2", NULL, setscale, "21"},
-    {"<Main>/Channel/Scale/1", NULL, setscale, "11"},
+    {"/Channel/Scale", NULL, NULL, 0, "<Branch>"},
+    {"/Channel/Scale/tear", NULL, NULL, 0, "<Tearoff>"},
+    {"/Channel/Scale/up", NULL, hit_key, (int)"}", NULL},
+    {"/Channel/Scale/down", NULL, hit_key, (int)"{", NULL},
+    {"/Channel/Scale/sep", NULL, NULL, 0, "<Separator>"},
+    {"/Channel/Scale/50", NULL, setscale, (int)"61", NULL},
+    {"/Channel/Scale/20", NULL, setscale, (int)"51", NULL},
+    {"/Channel/Scale/10", NULL, setscale, (int)"41", NULL},
+    {"/Channel/Scale/5", NULL, setscale, (int)"31", NULL},
+    {"/Channel/Scale/2", NULL, setscale, (int)"21", NULL},
+    {"/Channel/Scale/1", NULL, setscale, (int)"11", NULL},
 /* How the ? do you put a / in a menu ? Just use \ until I figure it out. */
-    {"<Main>/Channel/Scale/1\\2", NULL, setscale, "12"},
-    {"<Main>/Channel/Scale/1\\5", NULL, setscale, "13"},
-    {"<Main>/Channel/Scale/1\\10", NULL, setscale, "14"},
-    {"<Main>/Channel/Scale/1\\20", NULL, setscale, "15"},
-    {"<Main>/Channel/Scale/1\\50", NULL, setscale, "16"},
+    {"/Channel/Scale/1\\2", NULL, setscale, (int)"12", NULL},
+    {"/Channel/Scale/1\\5", NULL, setscale, (int)"13", NULL},
+    {"/Channel/Scale/1\\10", NULL, setscale, (int)"14", NULL},
+    {"/Channel/Scale/1\\20", NULL, setscale, (int)"15", NULL},
+    {"/Channel/Scale/1\\50", NULL, setscale, (int)"16", NULL},
 
-    {"<Main>/Channel/Position/up", "]", hit_key, "]"},
-    {"<Main>/Channel/Position/down", "[", hit_key, "["},
-    {"<Main>/Channel/Position/<separator>", NULL, NULL, NULL},
-    {"<Main>/Channel/Position/160", NULL, setposition, " k"},
-    {"<Main>/Channel/Position/144", NULL, setposition, " j"},
-    {"<Main>/Channel/Position/128", NULL, setposition, " i"},
-    {"<Main>/Channel/Position/112", NULL, setposition, " h"},
-    {"<Main>/Channel/Position/96", NULL, setposition, " g"},
-    {"<Main>/Channel/Position/80", NULL, setposition, " f"},
-    {"<Main>/Channel/Position/64", NULL, setposition, " e"},
-    {"<Main>/Channel/Position/48", NULL, setposition, " d"},
-    {"<Main>/Channel/Position/32", NULL, setposition, " c"},
-    {"<Main>/Channel/Position/16", NULL, setposition, " b"},
-    {"<Main>/Channel/Position/0", NULL, setposition, " a"},
-    {"<Main>/Channel/Position/-16", NULL, setposition, "-b"},
-    {"<Main>/Channel/Position/-32", NULL, setposition, "-c"},
-    {"<Main>/Channel/Position/-48", NULL, setposition, "-d"},
-    {"<Main>/Channel/Position/-64", NULL, setposition, "-e"},
-    {"<Main>/Channel/Position/-80", NULL, setposition, "-f"},
-    {"<Main>/Channel/Position/-96", NULL, setposition, "-g"},
-    {"<Main>/Channel/Position/-112", NULL, setposition, "-h"},
-    {"<Main>/Channel/Position/-128", NULL, setposition, "-i"},
-    {"<Main>/Channel/Position/-144", NULL, setposition, "-j"},
-    {"<Main>/Channel/Position/-160", NULL, setposition, "-k"},
-    {"<Main>/Channel/<separator>", NULL, NULL, NULL},
+    {"/Channel/Position", NULL, NULL, 0, "<Branch>"},
+    {"/Channel/Position/tear", NULL, NULL, 0, "<Tearoff>"},
+    {"/Channel/Position/up", "]", hit_key, (int)"]", NULL},
+    {"/Channel/Position/down", "[", hit_key, (int)"[", NULL},
+    {"/Channel/Position/sep", NULL, NULL, 0, "<Separator>"},
+    {"/Channel/Position/160", NULL, setposition, (int)" k", NULL},
+    {"/Channel/Position/144", NULL, setposition, (int)" j", NULL},
+    {"/Channel/Position/128", NULL, setposition, (int)" i", NULL},
+    {"/Channel/Position/112", NULL, setposition, (int)" h", NULL},
+    {"/Channel/Position/96", NULL, setposition, (int)" g", NULL},
+    {"/Channel/Position/80", NULL, setposition, (int)" f", NULL},
+    {"/Channel/Position/64", NULL, setposition, (int)" e", NULL},
+    {"/Channel/Position/48", NULL, setposition, (int)" d", NULL},
+    {"/Channel/Position/32", NULL, setposition, (int)" c", NULL},
+    {"/Channel/Position/16", NULL, setposition, (int)" b", NULL},
+    {"/Channel/Position/0", NULL, setposition, (int)" a", NULL},
+    {"/Channel/Position/-16", NULL, setposition, (int)"-b", NULL},
+    {"/Channel/Position/-32", NULL, setposition, (int)"-c", NULL},
+    {"/Channel/Position/-48", NULL, setposition, (int)"-d", NULL},
+    {"/Channel/Position/-64", NULL, setposition, (int)"-e", NULL},
+    {"/Channel/Position/-80", NULL, setposition, (int)"-f", NULL},
+    {"/Channel/Position/-96", NULL, setposition, (int)"-g", NULL},
+    {"/Channel/Position/-112", NULL, setposition, (int)"-h", NULL},
+    {"/Channel/Position/-128", NULL, setposition, (int)"-i", NULL},
+    {"/Channel/Position/-144", NULL, setposition, (int)"-j", NULL},
+    {"/Channel/Position/-160", NULL, setposition, (int)"-k", NULL},
+    {"/Channel/sep", NULL, NULL, 0, "<Separator>"},
 
-    {"<Main>/Channel/Math/Prev Function", ";", hit_key, ";"},
-    {"<Main>/Channel/Math/Next Function", ":", hit_key, ":"},
-    {"<Main>/Channel/Math/<separator>", NULL, NULL, NULL},
-    {"<Main>/Channel/Math/External Command...", "$", hit_key, "$"},
-    {"<Main>/Channel/Math/XY", NULL, runextern, "xy"},
-    {"<Main>/Channel/Math/<separator>", NULL, NULL, NULL},
+    {"/Channel/Math", NULL, NULL, 0, "<Branch>"},
+    {"/Channel/Math/tear", NULL, NULL, 0, "<Tearoff>"},
+    {"/Channel/Math/Prev Function", ";", hit_key, (int)";", NULL},
+    {"/Channel/Math/Next Function", ":", hit_key, (int)":", NULL},
+    {"/Channel/Math/sep", NULL, NULL, 0, "<Separator>"},
+    {"/Channel/Math/External Command...", "$", hit_key, (int)"$", NULL},
+    {"/Channel/Math/XY", NULL, runextern, (int)"xy", NULL},
+    {"/Channel/Math/sep", NULL, NULL, 0, "<Separator>"},
 
 /* this will need hacked if functions are added / changed in func.c */
-    {"<Main>/Channel/Math/Inv. 1", NULL, mathselect, "0"},
-    {"<Main>/Channel/Math/Inv. 2", NULL, mathselect, "1"},
-    {"<Main>/Channel/Math/Sum  1+2", NULL, mathselect, "2"},
-    {"<Main>/Channel/Math/Diff 1-2", NULL, mathselect, "3"},
-    {"<Main>/Channel/Math/Avg. 1,2", NULL, mathselect, "4"},
-    {"<Main>/Channel/Math/FFT. 1", NULL, mathselect, "5"},
-    {"<Main>/Channel/Math/FFT. 2", NULL, mathselect, "6"},
+    {"/Channel/Math/Inv. 1", NULL, mathselect, (int)"0", NULL},
+    {"/Channel/Math/Inv. 2", NULL, mathselect, (int)"1", NULL},
+    {"/Channel/Math/Sum  1+2", NULL, mathselect, (int)"2", NULL},
+    {"/Channel/Math/Diff 1-2", NULL, mathselect, (int)"3", NULL},
+    {"/Channel/Math/Avg. 1,2", NULL, mathselect, (int)"4", NULL},
+    {"/Channel/Math/FFT. 1", NULL, mathselect, (int)"5", NULL},
+    {"/Channel/Math/FFT. 2", NULL, mathselect, (int)"6", NULL},
 
-    {"<Main>/Channel/Store/Mem A", "A", hit_key, "A"},
-    {"<Main>/Channel/Store/Mem B", "B", hit_key, "B"},
-    {"<Main>/Channel/Store/Mem C", "C", hit_key, "C"},
-    {"<Main>/Channel/Store/Mem D", "D", hit_key, "D"},
-    {"<Main>/Channel/Store/Mem E", "E", hit_key, "E"},
-    {"<Main>/Channel/Store/Mem F", "F", hit_key, "F"},
-    {"<Main>/Channel/Store/Mem G", "G", hit_key, "G"},
-    {"<Main>/Channel/Store/Mem H", "H", hit_key, "H"},
-    {"<Main>/Channel/Store/Mem I", "I", hit_key, "I"},
-    {"<Main>/Channel/Store/Mem J", "J", hit_key, "J"},
-    {"<Main>/Channel/Store/Mem K", "K", hit_key, "K"},
-    {"<Main>/Channel/Store/Mem L", "L", hit_key, "L"},
-    {"<Main>/Channel/Store/Mem M", "M", hit_key, "M"},
-    {"<Main>/Channel/Store/Mem N", "N", hit_key, "N"},
-    {"<Main>/Channel/Store/Mem O", "O", hit_key, "O"},
-    {"<Main>/Channel/Store/Mem P", "P", hit_key, "P"},
-    {"<Main>/Channel/Store/Mem Q", "Q", hit_key, "Q"},
-    {"<Main>/Channel/Store/Mem R", "R", hit_key, "R"},
-    {"<Main>/Channel/Store/Mem S", "S", hit_key, "S"},
-    {"<Main>/Channel/Store/Mem T", "T", hit_key, "T"},
-    {"<Main>/Channel/Store/Mem U", "U", hit_key, "U"},
-    {"<Main>/Channel/Store/Mem V", "V", hit_key, "V"},
-    {"<Main>/Channel/Store/Mem W", "W", hit_key, "W"},
+    {"/Channel/Store", NULL, NULL, 0, "<Branch>"},
+    {"/Channel/Store/tear", NULL, NULL, 0, "<Tearoff>"},
+    {"/Channel/Store/Mem A", "A", hit_key, (int)"A", NULL},
+    {"/Channel/Store/Mem B", "B", hit_key, (int)"B", NULL},
+    {"/Channel/Store/Mem C", "C", hit_key, (int)"C", NULL},
+    {"/Channel/Store/Mem D", "D", hit_key, (int)"D", NULL},
+    {"/Channel/Store/Mem E", "E", hit_key, (int)"E", NULL},
+    {"/Channel/Store/Mem F", "F", hit_key, (int)"F", NULL},
+    {"/Channel/Store/Mem G", "G", hit_key, (int)"G", NULL},
+    {"/Channel/Store/Mem H", "H", hit_key, (int)"H", NULL},
+    {"/Channel/Store/Mem I", "I", hit_key, (int)"I", NULL},
+    {"/Channel/Store/Mem J", "J", hit_key, (int)"J", NULL},
+    {"/Channel/Store/Mem K", "K", hit_key, (int)"K", NULL},
+    {"/Channel/Store/Mem L", "L", hit_key, (int)"L", NULL},
+    {"/Channel/Store/Mem M", "M", hit_key, (int)"M", NULL},
+    {"/Channel/Store/Mem N", "N", hit_key, (int)"N", NULL},
+    {"/Channel/Store/Mem O", "O", hit_key, (int)"O", NULL},
+    {"/Channel/Store/Mem P", "P", hit_key, (int)"P", NULL},
+    {"/Channel/Store/Mem Q", "Q", hit_key, (int)"Q", NULL},
+    {"/Channel/Store/Mem R", "R", hit_key, (int)"R", NULL},
+    {"/Channel/Store/Mem S", "S", hit_key, (int)"S", NULL},
+    {"/Channel/Store/Mem T", "T", hit_key, (int)"T", NULL},
+    {"/Channel/Store/Mem U", "U", hit_key, (int)"U", NULL},
+    {"/Channel/Store/Mem V", "V", hit_key, (int)"V", NULL},
+    {"/Channel/Store/Mem W", "W", hit_key, (int)"W", NULL},
 
-    {"<Main>/Channel/Recall/Mem A", "a", hit_key, "a"},
-    {"<Main>/Channel/Recall/Mem B", "b", hit_key, "b"},
-    {"<Main>/Channel/Recall/Mem C", "c", hit_key, "c"},
-    {"<Main>/Channel/Recall/Mem D", "d", hit_key, "d"},
-    {"<Main>/Channel/Recall/Mem E", "e", hit_key, "e"},
-    {"<Main>/Channel/Recall/Mem F", "f", hit_key, "f"},
-    {"<Main>/Channel/Recall/Mem G", "g", hit_key, "g"},
-    {"<Main>/Channel/Recall/Mem H", "h", hit_key, "h"},
-    {"<Main>/Channel/Recall/Mem I", "i", hit_key, "i"},
-    {"<Main>/Channel/Recall/Mem J", "j", hit_key, "j"},
-    {"<Main>/Channel/Recall/Mem K", "k", hit_key, "k"},
-    {"<Main>/Channel/Recall/Mem L", "l", hit_key, "l"},
-    {"<Main>/Channel/Recall/Mem M", "m", hit_key, "m"},
-    {"<Main>/Channel/Recall/Mem N", "n", hit_key, "n"},
-    {"<Main>/Channel/Recall/Mem O", "o", hit_key, "o"},
-    {"<Main>/Channel/Recall/Mem P", "p", hit_key, "p"},
-    {"<Main>/Channel/Recall/Mem Q", "q", hit_key, "q"},
-    {"<Main>/Channel/Recall/Mem R", "r", hit_key, "r"},
-    {"<Main>/Channel/Recall/Mem S", "s", hit_key, "s"},
-    {"<Main>/Channel/Recall/Mem T", "t", hit_key, "t"},
-    {"<Main>/Channel/Recall/Mem U", "u", hit_key, "u"},
-    {"<Main>/Channel/Recall/Mem V", "v", hit_key, "v"},
-    {"<Main>/Channel/Recall/Mem W", "w", hit_key, "w"},
-    {"<Main>/Channel/Recall/Left Mix", "x", hit_key, "x"},
-    {"<Main>/Channel/Recall/Right Mix", "y", hit_key, "y"},
-    {"<Main>/Channel/Recall/ProbeScope", "z", hit_key, "z"},
+    {"/Channel/Recall", NULL, NULL, 0, "<Branch>"},
+    {"/Channel/Recall/tear", NULL, NULL, 0, "<Tearoff>"},
+    {"/Channel/Recall/Mem A", "a", hit_key, (int)"a", NULL},
+    {"/Channel/Recall/Mem B", "b", hit_key, (int)"b", NULL},
+    {"/Channel/Recall/Mem C", "c", hit_key, (int)"c", NULL},
+    {"/Channel/Recall/Mem D", "d", hit_key, (int)"d", NULL},
+    {"/Channel/Recall/Mem E", "e", hit_key, (int)"e", NULL},
+    {"/Channel/Recall/Mem F", "f", hit_key, (int)"f", NULL},
+    {"/Channel/Recall/Mem G", "g", hit_key, (int)"g", NULL},
+    {"/Channel/Recall/Mem H", "h", hit_key, (int)"h", NULL},
+    {"/Channel/Recall/Mem I", "i", hit_key, (int)"i", NULL},
+    {"/Channel/Recall/Mem J", "j", hit_key, (int)"j", NULL},
+    {"/Channel/Recall/Mem K", "k", hit_key, (int)"k", NULL},
+    {"/Channel/Recall/Mem L", "l", hit_key, (int)"l", NULL},
+    {"/Channel/Recall/Mem M", "m", hit_key, (int)"m", NULL},
+    {"/Channel/Recall/Mem N", "n", hit_key, (int)"n", NULL},
+    {"/Channel/Recall/Mem O", "o", hit_key, (int)"o", NULL},
+    {"/Channel/Recall/Mem P", "p", hit_key, (int)"p", NULL},
+    {"/Channel/Recall/Mem Q", "q", hit_key, (int)"q", NULL},
+    {"/Channel/Recall/Mem R", "r", hit_key, (int)"r", NULL},
+    {"/Channel/Recall/Mem S", "s", hit_key, (int)"s", NULL},
+    {"/Channel/Recall/Mem T", "t", hit_key, (int)"t", NULL},
+    {"/Channel/Recall/Mem U", "u", hit_key, (int)"u", NULL},
+    {"/Channel/Recall/Mem V", "v", hit_key, (int)"v", NULL},
+    {"/Channel/Recall/Mem W", "w", hit_key, (int)"w", NULL},
+    {"/Channel/Recall/Left Mix", "x", hit_key, (int)"x", NULL},
+    {"/Channel/Recall/Right Mix", "y", hit_key, (int)"y", NULL},
+    {"/Channel/Recall/ProbeScope", "z", hit_key, (int)"z", NULL},
 
-    {"<Main>/Trigger/Channel 1,2", "_", hit_key, "_"},
-    {"<Main>/Trigger/Auto,Rising,Falling", "+", hit_key, "+"},
-    {"<Main>/Trigger/<separator>", NULL, NULL, NULL},
-    {"<Main>/Trigger/Position up", "=", hit_key, "="},
-    {"<Main>/Trigger/Position down", "-", hit_key, "-"},
-    {"<Main>/Trigger/Position Positive/120", NULL, setposition, "Tb"},
-    {"<Main>/Trigger/Position Positive/112", NULL, setposition, "Tc"},
-    {"<Main>/Trigger/Position Positive/104", NULL, setposition, "Td"},
-    {"<Main>/Trigger/Position Positive/96", NULL, setposition, "Te"},
-    {"<Main>/Trigger/Position Positive/88", NULL, setposition, "Tf"},
-    {"<Main>/Trigger/Position Positive/80", NULL, setposition, "Tg"},
-    {"<Main>/Trigger/Position Positive/72", NULL, setposition, "Th"},
-    {"<Main>/Trigger/Position Positive/64", NULL, setposition, "Ti"},
-    {"<Main>/Trigger/Position Positive/56", NULL, setposition, "Tj"},
-    {"<Main>/Trigger/Position Positive/48", NULL, setposition, "Tk"},
-    {"<Main>/Trigger/Position Positive/40", NULL, setposition, "Tl"},
-    {"<Main>/Trigger/Position Positive/32", NULL, setposition, "Tm"},
-    {"<Main>/Trigger/Position Positive/24", NULL, setposition, "Tn"},
-    {"<Main>/Trigger/Position Positive/16", NULL, setposition, "To"},
-    {"<Main>/Trigger/Position Positive/8", NULL, setposition, "Tp"},
-    {"<Main>/Trigger/Position Positive/0", NULL, setposition, "Tq"},
-    {"<Main>/Trigger/Position Negative/0", NULL, setposition, "tq"},
-    {"<Main>/Trigger/Position Negative/-8", NULL, setposition, "tp"},
-    {"<Main>/Trigger/Position Negative/-16", NULL, setposition, "to"},
-    {"<Main>/Trigger/Position Negative/-24", NULL, setposition, "tn"},
-    {"<Main>/Trigger/Position Negative/-32", NULL, setposition, "tm"},
-    {"<Main>/Trigger/Position Negative/-40", NULL, setposition, "tl"},
-    {"<Main>/Trigger/Position Negative/-48", NULL, setposition, "tk"},
-    {"<Main>/Trigger/Position Negative/-56", NULL, setposition, "tj"},
-    {"<Main>/Trigger/Position Negative/-64", NULL, setposition, "ti"},
-    {"<Main>/Trigger/Position Negative/-72", NULL, setposition, "th"},
-    {"<Main>/Trigger/Position Negative/-80", NULL, setposition, "tg"},
-    {"<Main>/Trigger/Position Negative/-88", NULL, setposition, "tf"},
-    {"<Main>/Trigger/Position Negative/-96", NULL, setposition, "te"},
-    {"<Main>/Trigger/Position Negative/-104", NULL, setposition, "td"},
-    {"<Main>/Trigger/Position Negative/-112", NULL, setposition, "tc"},
-    {"<Main>/Trigger/Position Negative/-120", NULL, setposition, "tb"},
-    {"<Main>/Trigger/Position Negative/-128", NULL, setposition, "ta"},
+    {"/Trigger", NULL, NULL, 0, "<Branch>"},
+    {"/Trigger/tear", NULL, NULL, 0, "<Tearoff>"},
+    {"/Trigger/Channel 1,2", "_", hit_key, (int)"_", NULL},
+    {"/Trigger/Auto,Rising,Falling", "+", hit_key, (int)"+", NULL},
+    {"/Trigger/sep", NULL, NULL, 0, "<Separator>"},
+    {"/Trigger/Position up", "=", hit_key, (int)"=", NULL},
+    {"/Trigger/Position down", "-", hit_key, (int)"-", NULL},
+    {"/Trigger/Position Positive/120", NULL, setposition, (int)"Tb", NULL},
+    {"/Trigger/Position Positive/112", NULL, setposition, (int)"Tc", NULL},
+    {"/Trigger/Position Positive/104", NULL, setposition, (int)"Td", NULL},
+    {"/Trigger/Position Positive/96", NULL, setposition, (int)"Te", NULL},
+    {"/Trigger/Position Positive/88", NULL, setposition, (int)"Tf", NULL},
+    {"/Trigger/Position Positive/80", NULL, setposition, (int)"Tg", NULL},
+    {"/Trigger/Position Positive/72", NULL, setposition, (int)"Th", NULL},
+    {"/Trigger/Position Positive/64", NULL, setposition, (int)"Ti", NULL},
+    {"/Trigger/Position Positive/56", NULL, setposition, (int)"Tj", NULL},
+    {"/Trigger/Position Positive/48", NULL, setposition, (int)"Tk", NULL},
+    {"/Trigger/Position Positive/40", NULL, setposition, (int)"Tl", NULL},
+    {"/Trigger/Position Positive/32", NULL, setposition, (int)"Tm", NULL},
+    {"/Trigger/Position Positive/24", NULL, setposition, (int)"Tn", NULL},
+    {"/Trigger/Position Positive/16", NULL, setposition, (int)"To", NULL},
+    {"/Trigger/Position Positive/8", NULL, setposition, (int)"Tp", NULL},
+    {"/Trigger/Position Positive/0", NULL, setposition, (int)"Tq", NULL},
+    {"/Trigger/Position Negative/0", NULL, setposition, (int)"tq", NULL},
+    {"/Trigger/Position Negative/-8", NULL, setposition, (int)"tp", NULL},
+    {"/Trigger/Position Negative/-16", NULL, setposition, (int)"to", NULL},
+    {"/Trigger/Position Negative/-24", NULL, setposition, (int)"tn", NULL},
+    {"/Trigger/Position Negative/-32", NULL, setposition, (int)"tm", NULL},
+    {"/Trigger/Position Negative/-40", NULL, setposition, (int)"tl", NULL},
+    {"/Trigger/Position Negative/-48", NULL, setposition, (int)"tk", NULL},
+    {"/Trigger/Position Negative/-56", NULL, setposition, (int)"tj", NULL},
+    {"/Trigger/Position Negative/-64", NULL, setposition, (int)"ti", NULL},
+    {"/Trigger/Position Negative/-72", NULL, setposition, (int)"th", NULL},
+    {"/Trigger/Position Negative/-80", NULL, setposition, (int)"tg", NULL},
+    {"/Trigger/Position Negative/-88", NULL, setposition, (int)"tf", NULL},
+    {"/Trigger/Position Negative/-96", NULL, setposition, (int)"te", NULL},
+    {"/Trigger/Position Negative/-104", NULL, setposition, (int)"td", NULL},
+    {"/Trigger/Position Negative/-112", NULL, setposition, (int)"tc", NULL},
+    {"/Trigger/Position Negative/-120", NULL, setposition, (int)"tb", NULL},
+    {"/Trigger/Position Negative/-128", NULL, setposition, (int)"ta", NULL},
 
-    {"<Main>/Scope/Refresh", NULL, hit_key, "\n"},
-    {"<Main>/Scope/Plot Mode/Point", NULL, plotmode, "0"},
-    {"<Main>/Scope/Plot Mode/Point Accumulate", NULL, plotmode, "1"},
-    {"<Main>/Scope/Plot Mode/Line", NULL, plotmode, "2"},
-    {"<Main>/Scope/Plot Mode/Line Accumulate", NULL, plotmode, "3"},
-    {"<Main>/Scope/Graticule/Color/black", NULL, setcolor, "a"},
-    {"<Main>/Scope/Graticule/Color/blue", NULL, setcolor, "b"},
-    {"<Main>/Scope/Graticule/Color/green", NULL, setcolor, "c"},
-    {"<Main>/Scope/Graticule/Color/cyan", NULL, setcolor, "d"},
-    {"<Main>/Scope/Graticule/Color/red", NULL, setcolor, "e"},
-    {"<Main>/Scope/Graticule/Color/magenta", NULL, setcolor, "f"},
-    {"<Main>/Scope/Graticule/Color/orange", NULL, setcolor, "g"},
-    {"<Main>/Scope/Graticule/Color/gray66", NULL, setcolor, "h"},
-    {"<Main>/Scope/Graticule/Color/gray33", NULL, setcolor, "i"},
-    {"<Main>/Scope/Graticule/Color/blue4", NULL, setcolor, "j"},
-    {"<Main>/Scope/Graticule/Color/green4", NULL, setcolor, "k"},
-    {"<Main>/Scope/Graticule/Color/cyan4", NULL, setcolor, "l"},
-    {"<Main>/Scope/Graticule/Color/red4", NULL, setcolor, "m"},
-    {"<Main>/Scope/Graticule/Color/magenta4", NULL, setcolor, "n"},
-    {"<Main>/Scope/Graticule/Color/yellow", NULL, setcolor, "o"},
-    {"<Main>/Scope/Graticule/Color/white", NULL, setcolor, "p"},
-    {"<Main>/Scope/Graticule/<separator>", NULL, NULL, NULL},
-    {"<Main>/Scope/Graticule/In Front", NULL, graticule, "0"},
-    {"<Main>/Scope/Graticule/Behind", NULL, graticule, "1"},
-    {"<Main>/Scope/Graticule/<separator>", NULL, NULL, NULL},
-    {"<Main>/Scope/Graticule/None", NULL, graticule, "2"},
-    {"<Main>/Scope/Graticule/Minor Divisions", NULL, graticule, "3"},
-    {"<Main>/Scope/Graticule/Minor & Major", NULL, graticule, "4"},
-    {"<Main>/Scope/<separator>", NULL, NULL, NULL},
-    {"<Main>/Scope/SoundCard On|Off", NULL, hit_key, "&"},
-    {"<Main>/Scope/ProbeScope On|Off", NULL, hit_key, "^"},
+    {"/Scope", NULL, NULL, 0, "<Branch>"},
+    {"/Scope/tear", NULL, NULL, 0, "<Tearoff>"},
+    {"/Scope/Refresh", NULL, hit_key, (int)"\n", NULL},
+    {"/Scope/Plot Mode/Point", NULL, plotmode, (int)"0", NULL},
+    {"/Scope/Plot Mode/Point Accumulate", NULL, plotmode, (int)"1", NULL},
+    {"/Scope/Plot Mode/Line", NULL, plotmode, (int)"2", NULL},
+    {"/Scope/Plot Mode/Line Accumulate", NULL, plotmode, (int)"3", NULL},
+    {"/Scope/Graticule/Color/black", NULL, setcolor, (int)"a", NULL},
+    {"/Scope/Graticule/Color/blue", NULL, setcolor, (int)"b", NULL},
+    {"/Scope/Graticule/Color/green", NULL, setcolor, (int)"c", NULL},
+    {"/Scope/Graticule/Color/cyan", NULL, setcolor, (int)"d", NULL},
+    {"/Scope/Graticule/Color/red", NULL, setcolor, (int)"e", NULL},
+    {"/Scope/Graticule/Color/magenta", NULL, setcolor, (int)"f", NULL},
+    {"/Scope/Graticule/Color/orange", NULL, setcolor, (int)"g", NULL},
+    {"/Scope/Graticule/Color/gray66", NULL, setcolor, (int)"h", NULL},
+    {"/Scope/Graticule/Color/gray33", NULL, setcolor, (int)"i", NULL},
+    {"/Scope/Graticule/Color/blue4", NULL, setcolor, (int)"j", NULL},
+    {"/Scope/Graticule/Color/green4", NULL, setcolor, (int)"k", NULL},
+    {"/Scope/Graticule/Color/cyan4", NULL, setcolor, (int)"l", NULL},
+    {"/Scope/Graticule/Color/red4", NULL, setcolor, (int)"m", NULL},
+    {"/Scope/Graticule/Color/magenta4", NULL, setcolor, (int)"n", NULL},
+    {"/Scope/Graticule/Color/yellow", NULL, setcolor, (int)"o", NULL},
+    {"/Scope/Graticule/Color/white", NULL, setcolor, (int)"p", NULL},
+    {"/Scope/Graticule/sep", NULL, NULL, 0, "<Separator>"},
+    {"/Scope/Graticule/In Front", NULL, graticule, (int)"0", NULL},
+    {"/Scope/Graticule/Behind", NULL, graticule, (int)"1", NULL},
+    {"/Scope/Graticule/sep", NULL, NULL, 0, "<Separator>"},
+    {"/Scope/Graticule/None", NULL, graticule, (int)"2", NULL},
+    {"/Scope/Graticule/Minor Divisions", NULL, graticule, (int)"3", NULL},
+    {"/Scope/Graticule/Minor & Major", NULL, graticule, (int)"4", NULL},
+    {"/Scope/sep", NULL, NULL, 0, "<Separator>"},
+    {"/Scope/SoundCard On|Off", NULL, hit_key, (int)"&", NULL},
+    {"/Scope/ProbeScope On|Off", NULL, hit_key, (int)"^", NULL},
 
-    {"<Main>/<<", NULL, hit_key, "9"},
-    {"<Main>/<", NULL, hit_key, "("},
-    {"<Main>/>", NULL, hit_key, ")"},
-    {"<Main>/>> ", NULL, hit_key, "0"},
+    {"/<<", NULL, hit_key, (int)"9", NULL},
+    {"/<", NULL, hit_key, (int)"(", NULL},
+    {"/>", NULL, hit_key, (int)")", NULL},
+    {"/>> ", NULL, hit_key, (int)"0", NULL},
 
-    {"<Main>/Run", NULL, runmode, "1"},
-    {"<Main>/Wait", NULL, runmode, "2"},
-    {"<Main>/Stop", NULL, runmode, "0"},
+    {"/Run", NULL, runmode, (int)"1", NULL},
+    {"/Wait", NULL, runmode, (int)"2", NULL},
+    {"/Stop", NULL, runmode, (int)"0", NULL},
 
-    {"<Main>/?", NULL, hit_key, "?"},
-    {"<Main>/Help", NULL, help, NULL},
+    {"/_Help", NULL, NULL, 0, "<LastBranch>"},
+    {"/_Help/Keys&Info", NULL, hit_key, (int)"?", NULL},
+    {"/_Help/Manual", NULL, help, 0, NULL},
   };
-  int nmenu_items = sizeof(menu_items) / sizeof(menu_items[0]);
+  gint nmenu_items = sizeof(menu_items) / sizeof(menu_items[0]);
 
-  GtkMenuFactory *factory;
-  GtkMenuFactory *subfactory;
-  GtkMenuPath *menu_path;
+  GtkItemFactory *factory;
+/*    GtkAccelGroup *accel_group; */
 
-  factory = gtk_menu_factory_new(GTK_MENU_FACTORY_MENU_BAR);
-  subfactory = gtk_menu_factory_new(GTK_MENU_FACTORY_MENU_BAR);
+/*    accel_group = gtk_accel_group_new (); */
 
-  gtk_menu_factory_add_subfactory(factory, subfactory, "<Main>");
-  gtk_menu_factory_add_entries(factory, menu_items, nmenu_items);
-/*    gtk_window_add_accelerator_table(GTK_WINDOW(window), subfactory->table); */
+  factory = gtk_item_factory_new(GTK_TYPE_MENU_BAR, "<main>", NULL);
+  gtk_item_factory_create_items(factory, nmenu_items, menu_items, NULL);
 
-  menu_path = gtk_menu_factory_find(factory,  "<Main>/Help");
-  gtk_menu_item_right_justify(GTK_MENU_ITEM(menu_path->widget));
+/*        gtk_accel_group_attach (accel_group, GTK_OBJECT (window)); */
 
   if (menubar)
-    *menubar = subfactory->widget;
+    *menubar = gtk_item_factory_get_widget (factory, "<main>");
 }
 
 /* initialize all the widgets, called by init_screen in display.c */
@@ -697,123 +705,6 @@ init_widgets()
   gtk_signal_connect(GTK_OBJECT(drawing_area),"configure_event",
 		     GTK_SIGNAL_FUNC(configure_event), NULL);
 
-/* This stuff was an attempt to be like the libsx interface.  It
-   almost works, but because I can't figure out how to color code the
-   widgets and because they steal keyboard focus, I've opted to put
-   everything in the menubar instead.  -twitham, 1999/08/21 */
-
-/*    table2 = gtk_table_new(21, 2, FALSE); */
-
-/*    ywidg[1] = gtk_label_new("Trig"); */
-/*    gtk_table_attach_defaults(GTK_TABLE(table2), ywidg[1], 0, 2, 0, 1); */
-
-/*    ywidg[2] = gtk_button_new_with_label("/\\"); */
-/*    gtk_table_attach_defaults(GTK_TABLE(table2), ywidg[2], 0, 2, 1, 2); */
-/*    gtk_signal_connect(GTK_OBJECT(ywidg[2]), "clicked", */
-/*  		     GTK_SIGNAL_FUNC(hit_key), "="); */
-
-/*    ywidg[3] = gtk_button_new_with_label("<"); */
-/*    gtk_table_attach_defaults(GTK_TABLE(table2), ywidg[3], 0, 1, 2, 3); */
-/*    gtk_signal_connect(GTK_OBJECT(ywidg[3]), "clicked", */
-/*  		     GTK_SIGNAL_FUNC(hit_key), "_"); */
-
-/*    ywidg[4] = gtk_button_new_with_label(">"); */
-/*    gtk_table_attach_defaults(GTK_TABLE(table2), ywidg[4], 1, 2, 2, 3); */
-/*    gtk_signal_connect(GTK_OBJECT(ywidg[4]), "clicked", */
-/*  		     GTK_SIGNAL_FUNC(hit_key), "+"); */
-
-/*    ywidg[5] = gtk_button_new_with_label("\\/"); */
-/*    gtk_table_attach_defaults(GTK_TABLE(table2), ywidg[5], 0, 2, 3, 4); */
-/*    gtk_signal_connect(GTK_OBJECT(ywidg[5]), "clicked", */
-/*  		     GTK_SIGNAL_FUNC(hit_key), "-"); */
-
-/*    ywidg[6] = gtk_label_new("Scal"); */
-/*    gtk_table_attach_defaults(GTK_TABLE(table2), ywidg[6], 0, 2, 4, 5); */
-
-/*    ywidg[7] = gtk_button_new_with_label("/\\"); */
-/*    gtk_table_attach_defaults(GTK_TABLE(table2), ywidg[7], 0, 2, 5, 6); */
-/*    gtk_signal_connect(GTK_OBJECT(ywidg[7]), "clicked", */
-/*  		     GTK_SIGNAL_FUNC(hit_key), "}"); */
-
-/*    ywidg[8] = gtk_button_new_with_label("\\/"); */
-/*    gtk_table_attach_defaults(GTK_TABLE(table2), ywidg[8], 0, 2, 6, 7); */
-/*    gtk_signal_connect(GTK_OBJECT(ywidg[8]), "clicked", */
-/*  		     GTK_SIGNAL_FUNC(hit_key), "{"); */
-
-/*    ywidg[9] = gtk_label_new("Chan"); */
-/*    gtk_table_attach_defaults(GTK_TABLE(table2), ywidg[9], 0, 2, 7, 8); */
-
-/*    for (i = 0 ; i < CHANNELS ; i++) { */
-/*      cwidg[i] = gtk_button_new_with_label(&s[i][0]); */
-/*      gtk_table_attach_defaults(GTK_TABLE(table2), cwidg[i], 0, 2, i + 8, i + 9); */
-/*      gtk_widget_show(cwidg[i]); */
-/*      gtk_signal_connect(GTK_OBJECT(cwidg[i]), "clicked", */
-/*  		       GTK_SIGNAL_FUNC(hit_key), &s[i][0]); */
-/*    } */
-
-/*    ywidg[10] = gtk_label_new("Pos."); */
-/*    gtk_table_attach_defaults(GTK_TABLE(table2), ywidg[10], 0, 2, 16, 17); */
-
-/*    ywidg[11] = gtk_button_new_with_label("/\\"); */
-/*    gtk_table_attach_defaults(GTK_TABLE(table2), ywidg[11], 0, 2, 17, 18); */
-/*    gtk_signal_connect(GTK_OBJECT(ywidg[11]), "clicked", */
-/*  		     GTK_SIGNAL_FUNC(hit_key), "]"); */
-
-/*    ywidg[12] = gtk_button_new_with_label("\\/"); */
-/*    gtk_table_attach_defaults(GTK_TABLE(table2), ywidg[12], 0, 2, 18, 19); */
-/*    gtk_signal_connect(GTK_OBJECT(ywidg[12]), "clicked", */
-/*  		     GTK_SIGNAL_FUNC(hit_key), "["); */
-
-/*    ywidg[13] = gtk_label_new(""); */
-/*    gtk_table_attach_defaults(GTK_TABLE(table2), ywidg[13], 0, 2, 19, 20); */
-
-/*    ywidg[14] = gtk_button_new_with_label("Hide"); */
-/*    gtk_table_attach_defaults(GTK_TABLE(table2), ywidg[14], 0, 2, 20, 21); */
-/*    gtk_signal_connect(GTK_OBJECT(ywidg[14]), "clicked", */
-/*  		     GTK_SIGNAL_FUNC(hit_key), "\t"); */
-
-/*    for (i = 1 ; i < 15 ; i++) { */
-/*      gtk_widget_show(ywidg[i]); */
-/*    } */
-
-/*    hbox = gtk_hbox_new(FALSE, 0); */
-/*    gtk_box_pack_start(GTK_BOX(hbox), drawing_area, TRUE, TRUE, 0); */
-/*    gtk_box_pack_start(GTK_BOX(hbox), table2, FALSE, TRUE, 0); */
-/*    gtk_box_pack_start(GTK_BOX(vbox), hbox, TRUE, TRUE, 0); */
-/*    gtk_widget_show(drawing_area); */
-/*    gtk_widget_show(table2); */
-/*    gtk_widget_show(hbox); */
-
-/*    table = gtk_table_new(2, 29, FALSE); */
-/*    mwidg[0]  = gtk_label_new(" Store "); */
-/*    mwidg[29]  = gtk_label_new(" Recall"); */
-/*    gtk_table_attach_defaults(GTK_TABLE(table), mwidg[0], 0, 1, 0, 1); */
-/*    gtk_widget_show(mwidg[0]); */
-/*    gtk_table_attach_defaults(GTK_TABLE(table), mwidg[29], 0, 1, 1, 2); */
-/*    gtk_widget_show(mwidg[29]); */
-/*    gtk_widget_show(table); */
-
-/*    for (i = 0 ; i < 26 ; i++) { */
-/*      sprintf(error, "%c", i + 'A'); */
-/*      mwidg[i + 1] = gtk_button_new_with_label(error); */
-/*      gtk_table_attach_defaults(GTK_TABLE(table), mwidg[i + 1], */
-/*  			      i + 1, i + 2, 0, 1); */
-/*      gtk_signal_connect(GTK_OBJECT(mwidg[i + 1]), "clicked", */
-/*  		       GTK_SIGNAL_FUNC(hit_key), &alphabet[i]); */
-/*      gtk_widget_show(mwidg[i + 1]); */
-/*      sprintf(error, "%c", i + 'a'); */
-/*      mwidg[i + 30] = gtk_button_new_with_label(error); */
-/*      gtk_table_attach_defaults(GTK_TABLE(table), mwidg[i + 30], */
-/*  			      i + 1, i + 2, 1, 2); */
-/*      gtk_signal_connect(GTK_OBJECT(mwidg[i + 30]), "clicked", */
-/*  		       GTK_SIGNAL_FUNC(hit_key), &alphabet[i + 26]); */
-/*      gtk_widget_show(mwidg[i + 30]); */
-/*    } */
-
-/*    gtk_box_pack_start(GTK_BOX(vbox), table, FALSE, TRUE, 0); */
-
-				/* end of libsx-like interface */
-
   gtk_box_pack_start(GTK_BOX(vbox), drawing_area, TRUE, TRUE, 0);
   gtk_widget_show(drawing_area);
   gtk_widget_show(vbox);
@@ -826,9 +717,6 @@ init_widgets()
     gdkcolor[i].pixel = (gulong)(gdkcolor[i].red * 65536 +
 				 gdkcolor[i].green * 256 + gdkcolor[i].blue);
     gdk_color_alloc(gtk_widget_get_colormap(window), &gdkcolor[i]);
-/*      printf("%d %s %ld:\tr:%d g:%d b:%d\n", */
-/*  	   i, colors[i], gdkcolor[i].pixel, */
-/*  	   gdkcolor[i].red, gdkcolor[i].green, gdkcolor[i].blue); */
   }
   gdk_gc_set_background(gc, &gdkcolor[0]);
   SetColor(15);

@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: xy_gtk.c,v 1.1 1999/08/25 03:04:34 twitham Rel $
+ * @(#)$Id: xy_gtk.c,v 1.2 1999/08/29 02:11:08 twitham Rel $
  *
  * Copyright (C) 1996 - 1999 Tim Witham <twitham@quiknet.com>
  *
@@ -21,13 +21,6 @@ void
 clear()
 {
   ClearDrawArea();
-}
-
-/* quit button callback */
-void
-dismiss(GtkWidget *w, void *data)
-{
-  quit_key_pressed = 1;
 }
 
 /* plot mode menu callback */
@@ -58,27 +51,25 @@ configure_event (GtkWidget *widget, GdkEventConfigure *event)
 void
 get_main_menu(GtkWidget *window, GtkWidget ** menubar)
 {
-  static GtkMenuEntry menu_items[] =
+  static GtkItemFactoryEntry menu_items[] =
   {
-    {"<Main>/Quit", NULL, hit_key, "\e"},
-    {"<Main>/Plot Mode/Point", NULL, plotmode, "0"},
-    {"<Main>/Plot Mode/Point Accumulate", NULL, plotmode, "1"},
-    {"<Main>/Plot Mode/Line", NULL, plotmode, "2"},
-    {"<Main>/Plot Mode/Line Accumulate", NULL, plotmode, "3"},
+    {"/Close", NULL, hit_key, (int)"\e", NULL},
+    {"/Plot Mode", NULL, NULL, 0, "<Branch>"},
+    {"/Plot Mode/tear", NULL, NULL, 0, "<Tearoff>"},
+    {"/Plot Mode/Point", NULL, plotmode, (int)"0", NULL},
+    {"/Plot Mode/Point Accumulate", NULL, plotmode, (int)"1", NULL},
+    {"/Plot Mode/Line", NULL, plotmode, (int)"2", NULL},
+    {"/Plot Mode/Line Accumulate", NULL, plotmode, (int)"3", NULL},
   };
-  int nmenu_items = sizeof(menu_items) / sizeof(menu_items[0]);
+  gint nmenu_items = sizeof(menu_items) / sizeof(menu_items[0]);
 
-  GtkMenuFactory *factory;
-  GtkMenuFactory *subfactory;
+  GtkItemFactory *factory;
 
-  factory = gtk_menu_factory_new(GTK_MENU_FACTORY_MENU_BAR);
-  subfactory = gtk_menu_factory_new(GTK_MENU_FACTORY_MENU_BAR);
-
-  gtk_menu_factory_add_subfactory(factory, subfactory, "<Main>");
-  gtk_menu_factory_add_entries(factory, menu_items, nmenu_items);
+  factory = gtk_item_factory_new(GTK_TYPE_MENU_BAR, "<main>", NULL);
+  gtk_item_factory_create_items(factory, nmenu_items, menu_items, NULL);
 
   if (menubar)
-    *menubar = subfactory->widget;
+    *menubar = gtk_item_factory_get_widget (factory, "<main>");
 }
 
 /* build the menubar and drawing area */
