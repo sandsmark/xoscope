@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: gr_gtk.c,v 1.2 1998/08/22 17:22:21 twitham Exp $
+ * @(#)$Id: gr_gtk.c,v 1.3 1998/08/22 18:46:12 twitham Exp $
  *
  * Copyright (C) 1996 - 1998 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -25,14 +25,12 @@ GdkGC *gc;
 GtkWidget *menubar;
 GtkWidget *filemenu;
 GtkWidget *vbox;
+GtkWidget *table;
 
-GtkWidget *file[4];			/* file menu */
-GtkWidget plot[5];			/* plot menu */
-GtkWidget grat[6];			/* graticule menu */
 GtkWidget colormenu[17];		/* color menu */
 GtkWidget xwidg[11];		/* extra horizontal widgets */
-GtkWidget mwidg[57];		/* memory / math widgets */
-GtkWidget cwidg[CHANNELS];		/* channel button widgets */
+GtkWidget *mwidg[57];		/* memory / math widgets */
+GtkWidget cwidg[CHANNELS];	/* channel button widgets */
 GtkWidget ywidg[15];		/* vertical widgets */
 GtkWidget **math;			/* math menu */
 int **intarray;			/* indexes of math functions */
@@ -134,7 +132,7 @@ static gint
 expose_event(GtkWidget *widget, GdkEventExpose *event)
 {
   gdk_draw_pixmap(widget->window,
-		  widget->style->fg_gc[GTK_WIDGET_STATE (widget)],
+		  widget->style->fg_gc[GTK_WIDGET_STATE(widget)],
 		  pixmap,
 		  event->area.x, event->area.y,
 		  event->area.x, event->area.y,
@@ -480,7 +478,7 @@ get_main_menu(GtkWidget *window, GtkWidget ** menubar)
     {"<Main>/Plot Mode/Line Accumulate", NULL, plotmode, "3"},
     {"<Main>/Graticule/In Front", NULL, graticule, "0"},
     {"<Main>/Graticule/Behind", NULL, graticule, "1"},
-    {"<Main>/File/<separator>", NULL, NULL, NULL},
+    {"<Main>/Graticule/<separator>", NULL, NULL, NULL},
     {"<Main>/Graticule/None", NULL, graticule, "2"},
     {"<Main>/Graticule/Minor Divisions", NULL, graticule, "3"},
     {"<Main>/Graticule/Minor & Major", NULL, graticule, "4"},
@@ -541,10 +539,36 @@ init_widgets()
 		     (GtkSignalFunc) configure_event, NULL);
   gtk_signal_connect(GTK_OBJECT(window),"key_press_event",
 		     (GtkSignalFunc) key_press_event, NULL);
-/*   gtk_container_add(GTK_CONTAINER (window), drawing_area); */
   gtk_box_pack_start(GTK_BOX(vbox), drawing_area, TRUE, TRUE, 0);
-
   gtk_widget_show(drawing_area);
+
+  table = gtk_table_new(2, 29, FALSE);
+  gtk_box_pack_start(GTK_BOX(vbox), table, FALSE, TRUE, 0);
+  mwidg[0]  = gtk_label_new(" Store ");
+  mwidg[29]  = gtk_label_new(" Recall");
+  gtk_table_attach_defaults(GTK_TABLE(table), mwidg[0], 0, 1, 0, 1);
+  gtk_widget_show(mwidg[0]);
+  gtk_table_attach_defaults(GTK_TABLE(table), mwidg[29], 0, 1, 1, 2);
+  gtk_widget_show(mwidg[29]);
+  gtk_widget_show(table);
+
+  for (i = 0 ; i < 26 ; i++) {
+    sprintf(error, "%c", i + 'A');
+    mwidg[i + 1] = gtk_button_new_with_label(error);
+    gtk_table_attach_defaults(GTK_TABLE(table), mwidg[i + 1],
+			      i + 1, i + 2, 0, 1);
+    gtk_signal_connect(GTK_OBJECT(mwidg[i + 1]), "clicked",
+		       GTK_SIGNAL_FUNC(hit_key), &alphabet[i]);
+    gtk_widget_show(mwidg[i + 1]);
+    sprintf(error, "%c", i + 'a');
+    mwidg[i + 30] = gtk_button_new_with_label(error);
+    gtk_table_attach_defaults(GTK_TABLE(table), mwidg[i + 30],
+			      i + 1, i + 2, 1, 2);
+    gtk_signal_connect(GTK_OBJECT(mwidg[i + 30]), "clicked",
+		       GTK_SIGNAL_FUNC(hit_key), &alphabet[i + 26]);
+    gtk_widget_show(mwidg[i + 30]);
+  }
+
   gtk_widget_show(window);
 
   gc = gdk_gc_new(drawing_area->window);
@@ -620,26 +644,6 @@ init_widgets()
 /*   SetWidgetPos(ywidg[14],  PLACE_RIGHT, drawing_area, PLACE_UNDER, ywidg[13]); */
 
 /*   /* bottom rows of widgets */
-/*   mwidg[0]  = MakeLabel(" Store "); */
-/*   mwidg[29] = MakeLabel(" Recall"); */
-/*   SetWidgetPos(mwidg[0],  PLACE_UNDER, drawing_area, NO_CARE, NULL); */
-/*   SetWidgetPos(mwidg[29],  PLACE_UNDER, mwidg[0], NO_CARE, NULL); */
-/*   for (i = 0 ; i < 26 ; i++) { */
-/*     sprintf(error, "%c", i + 'A'); */
-/*     mwidg[i + 1] = MakeButton(error, hit_key, &alphabet[i]); */
-/*     SetWidgetPos(mwidg[i + 1], PLACE_UNDER, drawing_area, */
-/* 		 PLACE_RIGHT, mwidg[i]); */
-/*     sprintf(error, "%c", i + 'a'); */
-/*     mwidg[i + 30] = MakeButton(error, hit_key, &alphabet[i + 26]); */
-/*     SetWidgetPos(mwidg[i + 30], PLACE_UNDER, mwidg[0], */
-/* 		 PLACE_RIGHT, mwidg[i + 29]); */
-/*   } */
-/*   mwidg[27] = MakeMenu(  "Math"); */
-/*   mwidg[28] = MakeButton("XY", runextern, "xy"); */
-/*   mwidg[56] = MakeButton("Extern...", hit_key, "$"); */
-/*   SetWidgetPos(mwidg[27],  PLACE_UNDER, drawing_area, PLACE_RIGHT, mwidg[26]); */
-/*   SetWidgetPos(mwidg[28],  PLACE_UNDER, drawing_area, PLACE_RIGHT, mwidg[27]); */
-/*   SetWidgetPos(mwidg[56],  PLACE_UNDER, mwidg[27], PLACE_RIGHT, mwidg[55]); */
 
 /*   j = funccount - FUNC0; */
 /*   if ((math = malloc(sizeof(Widget *) * j)) == NULL) */
