@@ -1,4 +1,4 @@
-# @(#)$Id: Makefile,v 1.20 1997/05/24 23:36:40 twitham Exp $
+# @(#)$Id: Makefile,v 1.21 1997/06/07 21:36:54 twitham Rel $
 
 # Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
 
@@ -52,16 +52,23 @@ LDFLAGS	= -s
 # load flags to find the needed X libraries
 XFLAGS	= -L/usr/X11/lib -lsx -lXaw -lXt -lX11
 
-# try some of this for building on DOS (via DJGPP/GRX); doesn't yet work:
+############################################################
+# uncomment this for building for DOS (via DJGPP/GRX):
 #SCOPES	= OSCOPE
 #EXTERN	= 
-## CC	= dos-gcc
-#CFLAGS	= '-DLIBPATH=""' '-DVER="$(VER)"' \
+
+# for compiling under DOS directly:
+#CFLAGS	= '-DLIBPATH=""' '-DVER="$(VER)"' $(DFLAGS) \
+#	-I/0/djgpp/contrib/grx20/include -Wall -O3 -m486
+#LDFLAGS	= -L/0/djgpp/contrib/grx20/lib
+
+# for cross-compiling under Linux:
+#CC	= dos-gcc
+#AR	= dos-ar
+#AS	= dos-as
+#CFLAGS	= '-DLIBPATH=""' '-DVER="$(VER)"' $(DFLAGS) \
 #	-I/usr/local/src/djgpp/contrib/grx20/include -Wall -O3 -m486
 #LDFLAGS	= -L/usr/local/src/djgpp/contrib/grx20/lib
-#CFLAGS	= '-DLIBPATH=""' '-DVER="$(VER)"' \
-#	-I/0/djgpp/contrib/grx20/include -I/0/djgpp/contrib/sb -Wall -O3 -m486
-#LDFLAGS	= -L/0/djgpp/contrib/grx20/lib -L/0/djgpp/contrib/sb
 
 # nothing should need changed below here
 ############################################################
@@ -70,7 +77,7 @@ VER	= 1.4
 SRC	= oscope.c file.c func.c fft.c realfft.c display.c proscope.c
 VGA_SRC = $(SRC) sc_linux.c ser_unix.c gr_vga.c
 X11_SRC	= $(SRC) sc_linux.c ser_unix.c gr_sx.c freq.c dirlist.c
-DOS_SRC = $(SRC) sc_sb.c gr_grx.c
+DOS_SRC = $(SRC) sc_sb.c sb.c ser_dos.c gr_grx.c
 
 REL	= $(patsubst %,Rel%,$(subst .,_,$(VER)))
 
@@ -91,14 +98,17 @@ install:	all
 	cp $(EXTERN) $(LIBPATH)
 
 clean:
-	$(RM) *oscope offt xy *.o core *~ *.exe
+	$(RM) *oscope offt xy *.o core *~ *.exe *.a OSCOPE*
 
 oscope:	$(VGA_OBJ)
 	$(CC) $^ $(LDFLAGS) -o $@ $(MISC) -lm -lvga
 	chmod u+s oscope
 
-OSCOPE:	$(DOS_OBJ)
-	$(CC) $^ $(LDFLAGS) -o $@ -lgrx20 -lsb
+libsv.a:	svasync.o isr.o
+	$(AR) -rs libsv.a svasync.o isr.o
+
+OSCOPE:	$(DOS_OBJ) libsv.a
+	$(CC) $^ $(LDFLAGS) -o $@ -lgrx20
 
 xoscope:	$(X11_OBJ)
 	$(CC) $^ $(LDFLAGS) -o $@ -lm $(XFLAGS)
@@ -114,5 +124,5 @@ dist:
 		oscope-$(VER) )
 
 release:	clean
-	-rcs -N$(REL): -s$(REL) *
+	-rcs -N$(REL): -sRel *
 	-co -M *
