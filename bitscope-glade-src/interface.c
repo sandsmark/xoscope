@@ -24,6 +24,10 @@ create_dialog2 (void)
   GtkWidget *dialog2;
   GtkWidget *dialog_vbox1;
   GtkWidget *notebook1;
+  GtkWidget *table3;
+  GtkWidget *label23;
+  GtkWidget *device_entry;
+  GtkWidget *label22;
   GtkWidget *table1;
   GtkWidget *label6;
   GtkWidget *label7;
@@ -90,8 +94,6 @@ create_dialog2 (void)
   GtkWidget *radiobutton28;
   GtkWidget *radiobutton39;
   GtkWidget *label4;
-  GtkWidget *empty_notebook_page;
-  GtkWidget *label5;
   GtkWidget *dialog_action_area1;
   GtkWidget *hbuttonbox1;
   GtkWidget *button1;
@@ -112,6 +114,42 @@ create_dialog2 (void)
                             (GtkDestroyNotify) gtk_widget_unref);
   gtk_widget_show (notebook1);
   gtk_box_pack_start (GTK_BOX (dialog_vbox1), notebook1, TRUE, TRUE, 0);
+
+  table3 = gtk_table_new (1, 2, FALSE);
+  gtk_widget_ref (table3);
+  gtk_object_set_data_full (GTK_OBJECT (dialog2), "table3", table3,
+                            (GtkDestroyNotify) gtk_widget_unref);
+  gtk_widget_show (table3);
+  gtk_container_add (GTK_CONTAINER (notebook1), table3);
+  gtk_container_set_border_width (GTK_CONTAINER (table3), 10);
+  gtk_table_set_row_spacings (GTK_TABLE (table3), 10);
+  gtk_table_set_col_spacings (GTK_TABLE (table3), 10);
+
+  label23 = gtk_label_new ("Device:");
+  gtk_widget_ref (label23);
+  gtk_object_set_data_full (GTK_OBJECT (dialog2), "label23", label23,
+                            (GtkDestroyNotify) gtk_widget_unref);
+  gtk_widget_show (label23);
+  gtk_table_attach (GTK_TABLE (table3), label23, 0, 1, 0, 1,
+                    (GtkAttachOptions) (GTK_FILL),
+                    (GtkAttachOptions) (0), 0, 0);
+  gtk_misc_set_alignment (GTK_MISC (label23), 0, 0.5);
+
+  device_entry = gtk_entry_new ();
+  gtk_widget_ref (device_entry);
+  gtk_object_set_data_full (GTK_OBJECT (dialog2), "device_entry", device_entry,
+                            (GtkDestroyNotify) gtk_widget_unref);
+  gtk_widget_show (device_entry);
+  gtk_table_attach (GTK_TABLE (table3), device_entry, 1, 2, 0, 1,
+                    (GtkAttachOptions) (GTK_EXPAND | GTK_FILL),
+                    (GtkAttachOptions) (0), 0, 0);
+
+  label22 = gtk_label_new ("Connection");
+  gtk_widget_ref (label22);
+  gtk_object_set_data_full (GTK_OBJECT (dialog2), "label22", label22,
+                            (GtkDestroyNotify) gtk_widget_unref);
+  gtk_widget_show (label22);
+  gtk_notebook_set_tab_label (GTK_NOTEBOOK (notebook1), gtk_notebook_get_nth_page (GTK_NOTEBOOK (notebook1), 0), label22);
 
   table1 = gtk_table_new (7, 5, FALSE);
   gtk_widget_ref (table1);
@@ -399,7 +437,7 @@ create_dialog2 (void)
   gtk_object_set_data_full (GTK_OBJECT (dialog2), "label3", label3,
                             (GtkDestroyNotify) gtk_widget_unref);
   gtk_widget_show (label3);
-  gtk_notebook_set_tab_label (GTK_NOTEBOOK (notebook1), gtk_notebook_get_nth_page (GTK_NOTEBOOK (notebook1), 0), label3);
+  gtk_notebook_set_tab_label (GTK_NOTEBOOK (notebook1), gtk_notebook_get_nth_page (GTK_NOTEBOOK (notebook1), 1), label3);
 
   table2 = gtk_table_new (10, 3, FALSE);
   gtk_widget_ref (table2);
@@ -623,18 +661,7 @@ create_dialog2 (void)
   gtk_object_set_data_full (GTK_OBJECT (dialog2), "label4", label4,
                             (GtkDestroyNotify) gtk_widget_unref);
   gtk_widget_show (label4);
-  gtk_notebook_set_tab_label (GTK_NOTEBOOK (notebook1), gtk_notebook_get_nth_page (GTK_NOTEBOOK (notebook1), 1), label4);
-
-  empty_notebook_page = gtk_vbox_new (FALSE, 0);
-  gtk_widget_show (empty_notebook_page);
-  gtk_container_add (GTK_CONTAINER (notebook1), empty_notebook_page);
-
-  label5 = gtk_label_new ("Time");
-  gtk_widget_ref (label5);
-  gtk_object_set_data_full (GTK_OBJECT (dialog2), "label5", label5,
-                            (GtkDestroyNotify) gtk_widget_unref);
-  gtk_widget_show (label5);
-  gtk_notebook_set_tab_label (GTK_NOTEBOOK (notebook1), gtk_notebook_get_nth_page (GTK_NOTEBOOK (notebook1), 2), label5);
+  gtk_notebook_set_tab_label (GTK_NOTEBOOK (notebook1), gtk_notebook_get_nth_page (GTK_NOTEBOOK (notebook1), 2), label4);
 
   dialog_action_area1 = GTK_DIALOG (dialog2)->action_area;
   gtk_object_set_data (GTK_OBJECT (dialog2), "dialog_action_area1", dialog_action_area1);
