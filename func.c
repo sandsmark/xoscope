@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: func.c,v 1.2 1996/02/03 08:30:37 twitham Exp $
+ * @(#)$Id: func.c,v 1.3 1996/02/03 08:53:46 twitham Exp $
  *
  * Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
@@ -17,9 +17,9 @@
 /* The function names, the first three are special */
 char *funcnames[] =
 {
-  "Left In",
+  "Left  In",
   "Right In",
-  "Memory",
+  "Memory  ",
   "Sum  1+2",
   "Diff 1-2",
   "Avg. 1,2",
@@ -35,6 +35,8 @@ short *mem[26] = {
   NULL, NULL, NULL, NULL, NULL, NULL
 };
 
+int memcolor[26];
+
 /* store the currently selected signal to the given memory register */
 void
 save(char c)
@@ -45,6 +47,7 @@ save(char c)
   if (mem[i] == NULL)
     mem[i] = malloc(MAXWID);
   memcpy(mem[i], ch[scope.select].data, MAXWID);
+  memcolor[i] = ch[scope.select].color;
 }
 
 /* recall given memory register to the currently selected signal */
@@ -54,9 +57,11 @@ recall(char c)
   static int i;
 
   i = c - 'a';
-  if (mem[i] != NULL)
+  if (mem[i] != NULL) {
     memcpy(ch[scope.select].data, mem[i], MAXWID);
-  ch[scope.select].func = 2;
+    ch[scope.select].func = 2;
+    ch[scope.select].mem = c;
+  }
 }
 
 /* The functions; they take one arg: the channel # to store results in */

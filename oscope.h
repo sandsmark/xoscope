@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.h,v 1.14 1996/02/03 06:52:24 twitham Exp $
+ * @(#)$Id: oscope.h,v 1.15 1996/02/03 08:53:36 twitham Exp $
  *
  * Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
@@ -96,6 +96,7 @@ typedef struct Signal {		/* The signals (channels) */
   int color;
   int show;
   int func;
+  char mem;
 } Signal;
 extern Signal ch[CHANNELS];
 

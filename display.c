@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 1.19 1996/02/03 08:30:25 twitham Exp $
+ * @(#)$Id: display.c,v 1.20 1996/02/03 08:53:26 twitham Exp $
  *
  * Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
@@ -205,6 +205,12 @@ draw_text(int all)
       VGA_WRITE(funcnames[ch[i].func], 0, row(j + 3),
 		font, k, TEXT_BG, ALIGN_LEFT);
 
+      if (ch[i].func == 2) {
+	sprintf(string, "%c", ch[i].mem);
+	VGA_WRITE(string, col(7), row(j + 3),
+		  font, memcolor[ch[i].mem - 'a'], TEXT_BG, ALIGN_LEFT);
+      }
+
       if (scope.select == i) {
 	VGA_SETCOLOR(k);
 	VGA_DRAWLINE(0, row(j), col(11), row(j));
@@ -256,7 +262,7 @@ draw_text(int all)
       if (mem[i] != NULL) {
 	sprintf(string, "%c", i + 'a');
 	VGA_WRITE(string, col(27 + i), row(28),
-		  font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
+		  font, memcolor[i], TEXT_BG, ALIGN_LEFT);
       }
     }
   }

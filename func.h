@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: func.h,v 1.2 1996/02/03 08:30:47 twitham Exp $
+ * @(#)$Id: func.h,v 1.3 1996/02/03 08:53:53 twitham Exp $
  *
  * Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
@@ -17,6 +17,8 @@ extern char *funcnames[];
 extern void (*funcarray[])(int);
 
 extern short *mem[];
+
+extern int memcolor[];
 
 void
 save(char);
