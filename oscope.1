@@ -5,7 +5,7 @@
 .\" any higher version.  See section COPYING of the GNU Public license
 .\" for conditions under which this file may be redistributed.
 .\"
-.\" @(#)$Id: oscope.1,v 1.2 1996/01/03 05:36:45 twitham Exp $
+.\" @(#)$Id: oscope.1,v 1.3 1996/01/03 06:16:21 twitham Exp $
 
 .TH SCOPE 1 "January 3  1996" "Linux" "User Commands"
 .SH NAME
@@ -27,8 +27,9 @@ The svgalib library is used to implement a real-time waveform display.
 .SH "COMMAND\-LINE OPTIONS"
 Use
 .B scope -h
-to produce a usage message showing the default options and values.
-All options can be interactively changed, see the
+(an invalid option) to produce a usage message showing these options,
+their default values, and key equivalents.  All options can be
+interactively changed, see the
 .B RUN-TIME CONTROLS
 section below.
 
@@ -36,10 +37,10 @@ section below.
 .B -1
 .TP 0.5i
 .B -2
-These options are mutually exclusive. In single channel mode (-1),
-just one of the audio channels is sampled and plotted.  In dual
-channel mode (-2), both audio channels are sampled and plotted in two
-colors.  Dual channel mode is slower.
+These options are mutually exclusive. In single channel mode (-1), one
+of the audio channels is sampled and plotted.  In dual channel mode
+(-2), both audio channels are sampled and plotted in two colors.  Dual
+channel mode is slower.
 
 .TP 0.5i
 .B -r <rate>
@@ -48,7 +49,7 @@ limits depend on the sound card you have.
 
 .TP 0.5i
 .B -s <scale>
-Sets the time scale factor in number is horizontal pixels per sample.
+Sets the time scale factor in number of horizontal pixels per sample.
 This can be 1, 2, 4, 8, or 16.
 
 .TP 0.5i
@@ -95,10 +96,10 @@ slower than point mode.
 Toggles a graticule.  This draws a frame around the waveform and adds
 a time scale.  The time scale is always 5 millisecond major divisions
 and 1 millisecond minor divisions.  The minor divisions in turn have
-micro divisions at 0.1 millisecond intervals.  If trigger is enabled,
-a small tick mark is also shown on the graticule corresponding to the
-trigger level.  This option slows the display down but is needed to
-read a time period or frequency.
+micro divisions at 0.1 millisecond.  If trigger is enabled, a small
+tick mark is also shown on the graticule corresponding to the trigger
+level.  This option slows the display down but is needed to read a
+time period or frequency.
 
 .TP 0.5i
 .B -b
@@ -177,7 +178,7 @@ Toggle graticule behind/in front of signals.
 .TP 0.5i
 .B V/v
 Toggle verbose usage log on/off to stdout.  The verbose log shows one
-line of current sampling rate and options for each key press.
+line of current sampling rate and options for each key pressed.
 
 .TP 0.5i
 .B <space>
@@ -190,11 +191,12 @@ Quit the program.
 
 .SH EXAMPLES
 .TP 0.5i
-.B scope -r 44000 -l -v
+.B scope -r 44000 -l -t 128
 
 This runs
 .B scope
-at a 44kHz sampling rate, in line mode, with verbose option output.
+at a 44kHz sampling rate, in line mode, with a trigger set at
+mid-scale.
 
 .SH PORTABILITY
 .B Scope
@@ -205,9 +207,10 @@ graphics, and the Linux kernel sound drivers.
 .SH BUGS/LIMITATIONS
 .PP
 This should be considered BETA software.  It was basically written for
-fun rather than as a useful tool. It may have bugs, and it could use a
-better user interface. Unfortunately, adding anything to the display
-(controls, etc...) would slow it down considerably.
+fun but may actually be useful for audio frequencies only. It may have
+bugs, and it could use a better user interface. Unfortunately, adding
+anything to the display (controls, etc...) would slow it down
+considerably.
 
 Because it uses svgalib,
 .B scope
