@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: gr_gtk.c,v 1.5 1999/08/20 04:50:10 twitham Exp $
+ * @(#)$Id: gr_gtk.c,v 1.6 1999/08/20 05:43:38 twitham Exp $
  *
  * Copyright (C) 1996 - 1998 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -11,7 +11,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/stat.h>
 #include <gtk/gtk.h>
+#include <string.h>
 #include "oscope.h"		/* program defaults */
 #include "display.h"
 #include "func.h"
@@ -36,7 +38,6 @@ GtkWidget *mwidg[57];		/* memory / math widgets */
 GtkWidget *cwidg[CHANNELS];	/* channel button widgets */
 GtkWidget *ywidg[15];		/* vertical widgets */
 GtkWidget **math;		/* math menu */
-int my_yesno = -1;
 int **intarray;			/* indexes of math functions */
 int XX[] = {640,800,1024,1280};
 int XY[] = {480,600, 768,1024};
@@ -195,6 +196,14 @@ GetString(char *msg, char *def)
 }
 
 void
+yes_sel(GtkWidget *w, GtkWidget *win)
+{
+  gtk_widget_destroy(GTK_WIDGET(win));
+  savefile(my_filename);
+}
+
+
+void
 loadfile_ok_sel(GtkWidget *w, GtkFileSelection *fs)
 {
   strncpy(my_filename, gtk_file_selection_get_filename(fs), FILENAME_MAX);
@@ -205,9 +214,39 @@ loadfile_ok_sel(GtkWidget *w, GtkFileSelection *fs)
 void
 savefile_ok_sel(GtkWidget *w, GtkFileSelection *fs)
 {
+  GtkWidget *window, *yes, *no, *label;
+  struct stat buff;
+
   strncpy(my_filename, gtk_file_selection_get_filename(fs), FILENAME_MAX);
   gtk_widget_destroy(GTK_WIDGET(fs));
-  savefile(my_filename);
+
+  if (!stat(my_filename, &buff)) {
+    window = gtk_dialog_new();
+    yes = gtk_button_new_with_label("Yes");
+    gtk_box_pack_start(GTK_BOX(GTK_DIALOG(window)->action_area), yes,
+		       TRUE, TRUE, 0);
+    no = gtk_button_new_with_label("No");
+    gtk_box_pack_start(GTK_BOX(GTK_DIALOG(window)->action_area), no,
+		       TRUE, TRUE, 0);
+    gtk_signal_connect_object(GTK_OBJECT(window), "delete_event",
+			      GTK_SIGNAL_FUNC(gtk_widget_destroy),
+			      GTK_OBJECT(window));
+    gtk_signal_connect(GTK_OBJECT(yes), "clicked",
+		       GTK_SIGNAL_FUNC(yes_sel),
+		       GTK_OBJECT(window));
+    gtk_signal_connect_object(GTK_OBJECT(no), "clicked",
+			      GTK_SIGNAL_FUNC(gtk_widget_destroy),
+			      GTK_OBJECT(window));
+    gtk_widget_show(yes);
+    gtk_widget_show(no);
+    sprintf(error, "\n\n%s exists,\n\nOVERWRITE?\n\n", my_filename);
+    label = gtk_label_new(error);
+    gtk_box_pack_start(GTK_BOX(GTK_DIALOG(window)->vbox), label, TRUE, TRUE, 0);
+    gtk_widget_show(label);
+    gtk_widget_show(window);
+    gtk_grab_add(window);
+  } else
+    savefile(my_filename);
 }
 
 /* get a file name */
@@ -232,40 +271,6 @@ LoadSaveFile(int save)
 /*     gtk_file_selection_set_filename(GTK_FILE_SELECTION(filew), */
 /* 				    (gchar *)path); */
   gtk_widget_show(filew);
-}
-
-void
-yesno_yes_sel(GtkWidget *w, int *yes)
-{
-  my_yesno = yes;
-  gtk_widget_destroy(GTK_WIDGET(w));
-}
-
-
-/* ask a yes/no question */
-int
-GetYesNo(char *msg)
-{
-  GtkWidget *window, *yes, *no, *label;
-
-  window = gtk_dialog_new();
-  yes = gtk_button_new_with_label("Yes");
-  gtk_box_pack_start(GTK_BOX(GTK_DIALOG(window)->action_area), yes,
-		     TRUE, TRUE, 0);
-  no = gtk_button_new_with_label("No");
-  gtk_box_pack_start(GTK_BOX(GTK_DIALOG(window)->action_area), no,
-		     TRUE, TRUE, 0);
-  gtk_widget_show(yes);
-  gtk_widget_show(no);
-  label = gtk_label_new(msg);
-  gtk_box_pack_start(GTK_BOX(GTK_DIALOG(window)->vbox), label, TRUE, TRUE, 0);
-  gtk_widget_show(label);
-  gtk_widget_show(window);
-
-  gtk_grab_add(window);		/* modal */
-  gtk_grab_remove(window);	/* return */
-
-  return(1);			/* assume yes?! since we can't prompt */
 }
 
 void SyncDisplay() {
