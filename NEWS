@@ -3,11 +3,6 @@
 
 * Standard GNU-style `./configure ; make' automated build process.
 
-* Basic bitscope data capture at a fixed sample rate.  If a BitScope
-  is identified, it is used exclusively, turning off sound and
-  ProbeScope input devices.  It connects BitScope Channel A, B and LA
-  to X, Y and Z respectively.
-
 * Samples are now collected in parallel to display refresh for audio
   and bitscope devices.
 
@@ -22,6 +17,11 @@
 * Under GTK, mouse cursors are now draggable while left button
   decreases and middle button increases the variable pointed to.
   Right menu still pops up the context-sensitive menu.
+
+* Basic limited bitscope data capture at a fixed sample rate.  If a
+  BitScope is identified, it is used exclusively, turning off sound
+  and ProbeScope input devices.  It connects BitScope Channel A, B and
+  LA to X, Y and Z respectively.
 
 
 	NEW for 1.7	Released June 2000

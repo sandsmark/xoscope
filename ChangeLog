@@ -1,3 +1,8 @@
+2001-05-09  Timothy D. Witham  <twitham@quiknet.com>
+
+	* acconfig.h, AUTHORS, ChangeLog, config.h.in, configure, configure.in, Makefile.am, Makefile.dos, Makefile.in, NEWS, oscope.1, oscope.lsm, README, TODO, TODO.old:
+	Updated the documentation.
+
 2001-05-06  Timothy D. Witham  <twitham@quiknet.com>
 
 	* INSTALL, install-sh, missing, mkinstalldirs, acconfig.h, aclocal.m4, audio.dat, AUTHORS, bitscope.c, bitscope.dat, config.h, config.h.in, configure, configure.in, COPYING, dirlist.c, display.c, freq.c, func.c, gr_com.c, gr_grx.c, gr_gtk.c, gr_sx.c, gr_vga.c, Makefile, Makefile.am, Makefile.dos, Makefile.in, NEWS, operl, operl.in, oscope.c, oscope.h, sc_linux.c, ser_unix.c, stamp-h.in, xy_sx.c:

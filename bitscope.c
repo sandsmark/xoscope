@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: bitscope.c,v 1.17 2001/05/06 03:45:16 twitham Exp $
+ * @(#)$Id: bitscope.c,v 1.18 2001/05/19 17:24:32 twitham Rel $
  *
  * Copyright (C) 2000 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -391,7 +391,7 @@ bs_getdata(int fd)
 	mem[23].num = k > 8192 ? 8192 : k;
 	if (k > 8192) mem[24].num = k - 8192;
 	mem[25].num = k;
-      } else {		/* S mode, hex ASCII */
+      } else {			/* S mode, hex ASCII */
 	while (*buff != '\0') {
 	  if (k >= MAXWID)
 	    break;
