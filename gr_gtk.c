@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: gr_gtk.c,v 1.18 2000/05/20 23:43:39 twitham Exp $
+ * @(#)$Id: gr_gtk.c,v 1.19 2000/06/28 20:08:18 twitham Rel $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -859,8 +859,8 @@ buttoncol(int x)
   if (x < 100)
     return (x / 8);
   if (x > h_points - 100)
-    return (80 - (h_points - x) / 8);
-  return ((x - 100) / ((h_points - 200) / 55) + 12);
+    return (79 - (h_points - x) / 8);
+  return (10 * (x - 100) / (10 * (h_points - 200) / 55) + 12);
 }
 
 int
@@ -870,7 +870,7 @@ buttonrow(int y)
     return (y / 16);
   if (y >= v_points - 80)
     return (29 - (v_points - y) / 16);
-  return ((y - 80) / ((v_points - 160) / 20) + 5);
+  return (10 * (y - 80) / (10 * (v_points - 160) / 20) + 5);
 }
 
 /* context sensitive mouse click select, recall and pop-up menus */
