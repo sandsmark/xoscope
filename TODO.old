@@ -1,0 +1,179 @@
+	x*oscope mostly finished TODO list.
+
+	This file holds old TODOs that are mostly done, for historical
+	reference and status updates.  See the TODO file for
+	outstanding TODOs.
+
+2	single shot mode		(Jeff_Tranter@Mitel.Com)
+
+	This should be fairly easy to do and should be done.
+
+v1.2: DONE.  Use space bar to select `wait' mode, then the first
+trigger event will `stop' the scope.
+
+
+5	clean up the cluttered screen	(twitham@pcocd2.intel.com)
+
+	Tough to do unless I invent a smarter menu-driven interface.
+	And how do I do that on svgalib?  Maybe drop console support?
+	I could at least hide the (keys) and let them show up when you
+	hit a certain help key, say (?).  That's how freq does it.
+
+v1.2: DONE.  Just hit the `?' key to toggle.
+
+v1.3: now shows oscope version number.
+
+
+6	X-Y mode			(Grant_Siemers@ccm.fm.intel.com)
+
+	To be of most use, X and/or Y should be able to come from
+	memory or math.  This could be an external command as
+	described in the external spectrum analyzer idea, #16.
+
+v1.2: DONE.  As an external command, hit `$' key and enter `xy'.
+
+v1.3: You can now use the `xy' command with memory buffers by simply
+recalling the recorded signals into channel 1 or 2 with `xy' running
+on an another channel.
+
+
+13	redefine external interface	(Sean_Eilert@ccm.fm.intel.com)
+
+	Let user decide which signals to pass to external command.
+	This lets you do math on memory or on other math.  Enables you
+	to ask questions like what is the difference between this
+	signal and a previous reference in memory?
+
+	There would need to be a command protocol established on the
+	pipe.  This could also mark the trigger points so externals
+	could "sync" correctly after window resizing.
+
+v1.3: DONE?  You can now do math (internal or external) on memory by
+simply recalling the recorded signals into channel 1 or 2.  This
+should be sufficient.
+
+
+14	redefine internal math		(twitham@pcocd2.intel.com)
+
+	Let internal math operate on arbitrary channels so you can do
+	math on references or on other math.
+
+v1.3: DONE?  You can now do math (internal or external) on memory by
+simply recalling the recorded signals into channel 1 or 2.  This
+should be sufficient.
+	
+
+16	external spectrum analyzer	(Sean_Eilert@ccm.fm.intel.com)
+
+	For xoscope, modify Philip VanBaren's xfreq to be an external
+	command, displaying the frequency domain in another window!
+	This idea could be used for X-Y also.  Of course it only works
+	with a windowing system (X11).
+
+v1.1: DONE.  Hit the `$' key and run `ofreq' on a channel.  See
+README.f51 for instructions on building ofreq from freq51.
+
+v1.4: Patch updated to work with ProbeScope by allowing 1kS/s to
+20MS/s sample rates and scaling the input to 8 bit range.
+
+
+17	no hard-wired inputs		(twitham@pcocd2.intel.com)
+
+	Disconnect the "hard-wiring" of Left and Right sound inputs to
+	channel 1 and 2.  Make all display channels equivalent.  This
+	could enable the sound card to become optional and make it
+	easier to add other types of input "devices" to any channel.
+
+v1.3: DONE?  Left and Right are now "hard-wired" to X and Y which can
+be "recalled" to any of the 8 display channels.  Channel 1 and 2 are
+still special since they're the input to the math functions.
+
+v1.4: DONE?  ProbeScope is "hard-wired" to Z and displayed on Channel
+3 by default.
+
+
+18	signal input from files		(twitham@pcocd2.intel.com)
+
+	Read input signal from a file and loop over it.  You could
+	generate perfect test signals in software, save them to files,
+	then use oscope to see them or do math on them.
+
+v1.3: DONE?  You could now write an oscope data file with the signals
+stored as columns (save one to see the format).  Then just recall the
+columns to channel 1 and/or 2 to show them and do math on them.
+
+v1.4: See also #26.
+
+
+19	serial "Probe Scope" input	(twitham@pcocd2.intel.com)
+
+	Radio Shack now has an affordable 20 MHz "Probe Scope" that
+	can send samples out a serial cable to PC software.
+	Unfortunately, it is only 6 bit.  It would still be fun and
+	useful to support it as an input device, assuming I could
+	figure out its' protocol.  Oscope would just multiply by 4 to
+	get to the 1:1 scale.  Of course the time scaling would also
+	need to be reworked.  Then oscope would be able to do 20 MHz!
+
+v1.3: I bought a Probe Scope.  The protocol is documented and and I'm
+making progress on this.  Most of this version's code rearranging was
+to make it easier to add Probe Scope support.  Hopefully this will be
+done by next release.
+
+v1.4: DONE.  ProbeScope is connected to Z and displayed on Channel 3
+by default.  You may recall it to Channel 1 to do math on it.  The
+6-bit resolution is multiplied by 5 to result in 0.1, 1, or 10 V/div.
+
+
+20	external command OSCOPEPATH	(twitham@pcocd2.intel.com)
+
+	Maybe oscope should look for external commands in known
+	directories so they don't have to be on the users' $PATH.
+	There could be a default that the user can override with an
+	environment variable.  This would simply modify the PATH
+	environment variable for the subprocesses.
+
+v1.1: DONE.  It is the LIBPATH in the Makefile.
+
+
+21	increase "horizontal resolution"	(twitham@pcocd2.intel.com)
+
+	When "zoomed in" on a high frequency signal, display pixels
+	are skipped, resulting in a lousy horizontal resolution of
+	roughly 25 micro seconds.  For repetitive signals, this could
+	be improved by "estimating" where the trigger really was and
+	shifting the signal an appropriate amount horizontally before
+	plotting.  In conjunction with dot accumulate, this would plot
+	more of the horizontal pixels and produce a cleaner picture.
+
+v1.1: DONE.  Oscope now remembers one sample before trigger and then
+internally "connects the dots" with a line to guess where the trigger
+really was.  Then the samples are shifted horizontally to place this
+time at the trigger point.
+
+v1.3: This shifting no longer applies to channels displaying memory
+buffers.  Since they are a single snapshot of samples, accumulation
+can't make them any more clear; it just "blurs" the display if they're
+shifted.  The shifting still applies to math since it can enhance the
+result if the math is being performed on one or both input signals.
+
+v1.4: Shifting also doesn't apply to ProbeScope since we don't get
+the necessary sample before trigger.
+
+
+24	port to other OSs		(twitham@pcocd2.intel.com)
+
+	Yack!  Might already work on other unixes.  I need to pull the
+	soundcard specifics out to a separate file like Philip did for
+	freq.  Display stuff is already fairly modular; just write a
+	new file like gr_sx.c or gr_vga.c.
+
+v1.3: The OS specifics are now in separate files.  sc_* is the sound
+card connection and gr_* is the display.  gr_grx.c is a working
+display port to DOS using DJGPP with GRX.  If you know how make a
+sound card record in stereo under DOS, feel free to finish sc_sb.c and
+let me know how you did it (I'd give you the credit of course).
+Please let me know if you port it to any OS; I have no time or
+incentive to do any further porting myself.
+
+v1.4: The serial connection to ProbeScope is implemented in ser_*.c.
