@@ -7,7 +7,7 @@
  *
  * Enhanced by Tim Witham <twitham@pcocd2.intel.com>
  *
- * @(#)$Id: oscope.c,v 1.13 1995/12/30 09:10:25 twitham Exp $
+ * @(#)$Id: oscope.c,v 1.14 1995/12/30 10:30:39 twitham Exp $
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -61,11 +61,12 @@ int mode = G640x480x16;		/* graphics mode */
 int colour = 2;			/* colour */
 int dma = 4;			/* DMA buffer divisor */
 int point_mode = 0;		/* point v.s. line segment mode */
-int verbose = 0;		/* verbose mode */
+int verbose = 0;		/* verbose mode? */
 int v_points;			/* points in vertical axis */
 int h_points;			/* points in horizontal axis */
 int trigger = -1;		/* trigger level (-1 = disabled) */
 int graticule = 0;		/* show graticule */
+int behind = 0;			/* graticule behind the signal? */
 int scale = 1;			/* time scale or zoom factor */
 
 /* display command usage on standard error and exit */
@@ -76,15 +77,16 @@ usage()
 	  "usage: scope -r<rate> -m<mode> -c<colour> -d<dma divisor>\n"
 	  "             -t<trigger> -s<scale> -p -l -g -v\n"
 	  "Options:\n"
-	  "-r <rate>        sampling rate in Hz\n"
-	  "-m <mode>        graphics mode\n"
-	  "-c <colour>      trace colour\n"
+	  "-r <rate>        sampling Rate in Hz\n"
+	  "-m <mode>        graphics Mode\n"
+	  "-c <colour>      trace Colour\n"
 	  "-d <dma divide>  DMA buffer size divisor (1,2,4)\n"
-	  "-t <trigger>     trigger level (0 - 255, -1 = disabled = default)\n"
-	  "-s <scale>       time scale or zoom factor (1,2,4,8,16,32)\n"
-	  "-p               point mode (faster)\n"
-	  "-l               line segment mode (slower)\n"
-	  "-g               draw graticule (5msec major divs, 1 msec minor)\n"
+	  "-t <trigger>     Trigger level (0 - 255, -1 = disabled = default)\n"
+	  "-s <scale>       time Scale or zoom factor (1,2,4,8,16,32)\n"
+	  "-p               Point mode (faster)\n"
+	  "-l               Line segment mode (slower)\n"
+	  "-g               draw Graticule (5 msec major divs, 1 msec minor)\n"
+	  "-b               draw graticule Behind the signal instead of front\n"
 	  "-v               verbose options to stdout\n"
 	  );
   exit(1);
@@ -94,17 +96,15 @@ usage()
 static inline void
 show_info(unsigned char c) {
   if (verbose) {
-    printf("%1c: -m %2d  -d %1d  -c %2d ",
-	   c, mode, dma, colour);
-    if (point_mode)
-      printf(" -p");
-    else
-      printf(" -l");
-    if (graticule)
-      printf("  -g");
-    else
-      printf("    ");
-    printf("  -t %3d  -s %2d  -r %5d (actual: %5d)\n",
+    printf("%1c:  -m %2d  -d %1d  -c %2d  "
+	   "%2s  "
+	   "%2s  "
+	   "%2s  "
+	   "-t %3d  -s %2d  -r %5d  (actual: %5d)\n",
+	   c, mode, dma, colour,
+	   point_mode ? "-p" : "-l",
+	   graticule ? "-g" : "",
+	   behind ? "-b" : "",
 	   trigger, scale, sampling, actual);
   }
 }
@@ -113,7 +113,7 @@ show_info(unsigned char c) {
 void
 parse_args(int argc, char **argv)
 {
-  const char     *flags = "r:m:c:d:t:s:plgv";
+  const char     *flags = "r:m:c:d:t:s:plgbv";
   int             c;
 
   while ((c = getopt(argc, argv, flags)) != EOF) {
@@ -148,6 +148,9 @@ parse_args(int argc, char **argv)
       break;
     case 'g':
       graticule = 1;
+      break;
+    case 'b':
+      behind = 1;
       break;
     case 'v':
       verbose = 1;
@@ -315,6 +318,10 @@ handle_key()
     graticule = 0;		/* graticule off */
     CLEAR;
     break;
+  case 'B':
+  case 'b':
+    behind = !behind;		/* graticule behind/in front of signal */
+    break;
   case ' ':		
     while (vga_getkey() <= 0)	/* pause until key pressed */
       ;
@@ -327,7 +334,7 @@ handle_key()
   return(c);
 }
 
-/* get data from sound card */
+/* get data from sound card, calling handle_key internally */
 static inline void
 get_data()
 {
@@ -349,9 +356,10 @@ get_data()
       } while ((handle_key() <= 0)
 	       && ((datum > trigger) || (datum >= datem)));
     }
+  } else {			/* not triggering */
+    handle_key();
   }
-
-  /* now get the real data */
+				/* now get the real data */
   read(snd, buffer + 1, (h_points / scale - 2));
 }
 
@@ -447,12 +455,16 @@ main(int argc, char **argv)
   show_info(' ');
 
   while (!quit_key_pressed) {
-    handle_key();		/* need to change parameters? */
-    draw_graticule();		/* redraw graticule if it's on */
-    get_data();			/* get a screen full of data */
-    graph_data();		/* and plot it */
+    get_data();			/* Keys are now handled in get_data */
+    if (behind) {
+      draw_graticule();		/* plot data on top of graticule */
+      graph_data();
+    } else {		
+      graph_data();		/* plot graticule on top of data */
+      draw_graticule();
+    }
   }
 
-  cleanup();
+  cleanup();			/* close sound, back to text mode */
   exit(0);
 }
