@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: config.h,v 1.13 2000/05/20 23:43:49 twitham Rel $
+ * @(#)$Id: config.h,v 1.14 2000/07/03 18:18:14 twitham Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -30,7 +30,7 @@
 #define DEF_B	0		/* 0,1 (0) */
 #define DEF_V	0		/* 0,1 (0) */
 #define DEF_X	0		/* 0,1 (0) don't use sound card? */
-#define DEF_Z	0		/* 0,1 (0) don't search for ProbeScope? */
+#define DEF_Z	0		/* 0,1 (0) don't search for Serial Scope? */
 
 /* maximum screen width, also max number of samples in memory at once (1600) */
 #define MAXWID		1600
@@ -74,6 +74,6 @@
 /* FFT length, shorter than minimum screen width and multiple of 2 (512) */
 #define FFTLEN	512
 
-/* extra places to look for ProbeScope (set to {""} to not search) */
-/* ({"", "/dev/ttyS0", "/dev/ttyS1", "/dev/ttyS2", "/dev/ttyS3"}) */
-#define PSDEVS {"", "/dev/ttyS0", "/dev/ttyS1", "/dev/ttyS2", "/dev/ttyS3"}
+/* extra places to look for ProbeScope (set to {"", ""} to not search) */
+/* ({"", "", "/dev/ttyS0", "/dev/ttyS1", "/dev/ttyS2", "/dev/ttyS3"}) */
+#define PSDEVS {"", "", "/dev/ttyS0", "/dev/ttyS1", "/dev/ttyS2", "/dev/ttyS3"}

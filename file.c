@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: file.c,v 1.18 2000/05/20 23:43:57 twitham Rel $
+ * @(#)$Id: file.c,v 1.19 2000/07/03 18:18:14 twitham Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -16,6 +16,7 @@
 #include "display.h"		/* display routines */
 #include "func.h"		/* signal math functions */
 #include "proscope.h"		/* probescope */
+#include "bitscope.h"		/* bitscope */
 
 /* force num to stay within the range lo - hi */
 int
@@ -113,7 +114,7 @@ handle_opt(int opt, char *optarg)
     break;
   case 'z':			/* ProbeScope */
   case 'Z':
-    ps.found = DEF_Z;
+    ps.found = bs.found = DEF_Z;
     break;
   case 'a':			/* Active (selected) channel */
   case 'A':
@@ -215,7 +216,7 @@ writefile(char *filename)
 	  scope.behind ? "# -b\n" : "",
 	  scope.verbose ? "# -v\n" : "",
 	  snd ? "" : "# -x\n",
-	  ps.found ? "" : "# -z\n");
+	  ps.found || bs.found ? "" : "# -z\n");
   for (i = 0 ; i < CHANNELS ; i++) {
     p = &ch[i];
     fprintf(file, "# -%d %s%d.%d:%d/%d:", i + 1, p->show ? "" : "+",

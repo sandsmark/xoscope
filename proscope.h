@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: proscope.h,v 1.3 1997/05/30 04:13:47 twitham Rel $
+ * @(#)$Id: proscope.h,v 1.4 2000/07/03 18:18:14 twitham Exp $
  *
  * Copyright (C) 1997 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -36,6 +36,13 @@
 #define PS_OVERFLOW	BIT_MASK(0)
 #define PS_UNDERFLOW	BIT_MASK(1)
 #define PS_MINUS	BIT_MASK(3)
+
+#ifdef PSDEBUG
+#undef PSDEBUG
+#define PSDEBUG(format, arg) printf(format, arg)
+#else
+#define PSDEBUG(format, arg) ;
+#endif
 
 typedef struct ProbeScope {	/* The state of the ProbeScope */
   short found;

@@ -1,7 +1,7 @@
 /*
- * @(#)$Id: ser_dos.c,v 1.1 1997/06/07 21:30:40 twitham Rel $
+ * @(#)$Id: ser_dos.c,v 1.2 2000/07/03 18:18:14 twitham Exp $
  *
- * Copyright (C) 1997 Tim Witham <twitham@pcocd2.intel.com>
+ * Copyright (C) 1997 - 2000 Tim Witham <twitham@quiknet.com>
  *
  * (see the files README and COPYING for more details)
  *
@@ -18,13 +18,15 @@
 #include "svasync.h"
 #include "oscope.h"
 #include "proscope.h"
+#include "bitscope.h"
 
 /* stuff I need from svasync.c */
 #define BufSize 32768                   /* Buffer Size */
 extern unsigned volatile char RecBuffer[];
 extern unsigned volatile int RecHead, RecTail;
 
-int speed=19200, bits=BITS_7, stopbits=STOP_1, parity=NO_PARITY;
+int speed[] = {57600, 19200};
+int flags[] = {BITS_8 | STOP_1 | NO_PARITY, BITS_7 | STOP_1 | NO_PARITY};
 
 /* read one byte and return 1 or return -1 if none available */
 /* SVAsyncIn won't work since 0x00 is indistinguishable from EOF */
@@ -33,7 +35,7 @@ readSVAsyncIn(unsigned char *ch) {
 
   if(RecTail == RecHead)
     return -1;
-	
+
   disable();
   *ch = RecBuffer[RecTail++];
   if(RecTail >= BufSize)
@@ -69,35 +71,30 @@ cleanup_serial()
   SVAsyncStop();
 }
 
-/* return 1 if we find a ProbeScope on the given serial device */
+/* check given serial device for BitScope (2), ProbeScope (1) or nothing (0) */
 int
 findscope(int dev)
 {
-  int c, byte = 0, try = 0, n = 0;
+  int i, r;
 
-  if(SVAsyncInit(dev)) {
-    sprintf(error, "%s: can't open COM%d", progname, dev + 1);
-    perror(error);
-    return(0);
+  for (i = 0; i < 2; i++) {	/* look for BitScope or ProbeScope */
+    if(SVAsyncInit(dev)) {
+      sprintf(error, "%s: can't open COM%d", progname, dev + 1);
+      perror(error);
+      return(0);
+    }
+    SVAsyncFifoInit();
+
+    SVAsyncSet(speed[i], flags[i]);
+
+    flush_serial();
+    if ((r = idscope(i)))	/* serial port scope found! */
+      return(r);
   }
-  SVAsyncFifoInit();
-
-  SVAsyncSet(speed, bits | stopbits | parity);
-
-  flush_serial();
-  while (byte < 300 && try < 25) { /* give up in 2.5ms */
-    if ((c = getonebyte()) < 0) {
-      microsleep(100);		/* try again in 0.1ms */
-      try++;
-    } else if (c == 0x7f && ++n > 1)
-      return(1);		/* ProbeScope found! */
-    else
-      byte++;
-  }
-  return(0);			/* no ProbeScope found. */
+  return(0);			/* nothing found. */
 }
 
-/* set ps.found to non-zero if we find ProbeScope on a serial port */
+/* set [scope].found to non-zero if we find a scope on a serial port */
 void
 init_serial()
 {
@@ -105,8 +102,7 @@ init_serial()
   int i, num = sizeof(dev) / sizeof(int);
 
   for (i = 0; i < num; i++) {	/* look in all places specified in config.h */
-    if (findscope(dev[i])) {
-      i = ps.found = num;	/* done; exit the loop */
-    }
+    if (findscope(dev[i]))
+      i = num;			/* done; exit the loop */
   }
 }

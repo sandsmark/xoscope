@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: gr_gtk.c,v 1.19 2000/06/28 20:08:18 twitham Rel $
+ * @(#)$Id: gr_gtk.c,v 1.20 2000/07/03 18:18:14 twitham Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -19,6 +19,7 @@
 #include "func.h"
 #include "file.h"
 #include "proscope.h"
+#include "bitscope.h"
 #include "com_gtk.h"
 
 int XX[] = {640,800,1024,1280};
@@ -611,7 +612,7 @@ static GtkItemFactoryEntry menu_items[] =
   {"/Channel/Recall/sep", NULL, NULL, 0, "<Separator>"},
   {"/Channel/Recall/Left Mix", "x", hit_key, (int)"x", NULL},
   {"/Channel/Recall/Right Mix", "y", hit_key, (int)"y", NULL},
-  {"/Channel/Recall/ProbeScope", "z", hit_key, (int)"z", NULL},
+  {"/Channel/Recall/Serial Scope", "z", hit_key, (int)"z", NULL},
 
   {"/Trigger", NULL, NULL, 0, "<Branch>"},
   {"/Trigger/tear", NULL, NULL, 0, "<Tearoff>"},
@@ -693,7 +694,7 @@ static GtkItemFactoryEntry menu_items[] =
   {"/Scope/Graticule/Minor & Major", NULL, graticule, (int)"4", "/Scope/Graticule/Minor Divisions"},
   {"/Scope/Cursors", NULL, hit_key, (int)"'", "<CheckItem>"},
   {"/Scope/sep", NULL, NULL, 0, "<Separator>"},
-  {"/Scope/ProbeScope", NULL, hit_key, (int)"^", "<CheckItem>"},
+  {"/Scope/Serial Scope", NULL, hit_key, (int)"^", "<CheckItem>"},
   {"/Scope/SoundCard", NULL, hit_key, (int)"&", "<CheckItem>"},
 
   {"/Scope/DMA", NULL, NULL, 0, "<Branch>"},
@@ -790,7 +791,8 @@ fix_widgets()
      (gtk_item_factory_get_item(factory, "/Scope/SoundCard")), snd);
   gtk_check_menu_item_set_active
     (GTK_CHECK_MENU_ITEM
-     (gtk_item_factory_get_item(factory, "/Scope/ProbeScope")), ps.found);
+     (gtk_item_factory_get_item(factory, "/Scope/Serial Scope")),
+     ps.found || bs.found);
   if ((p = finditem("/Scope/DMA"))) {
     p += 2;
     if (scope.dma < 4) p++;

@@ -1,4 +1,4 @@
-# @(#)$Id: Makefile,v 1.25 2000/06/28 21:47:54 twitham Rel $
+# @(#)$Id: Makefile,v 1.26 2000/07/03 18:18:14 twitham Exp $
 
 # Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
 
@@ -45,7 +45,8 @@ EXTERN	= offt operl ofreq.ini xy
 # !! uncomment this if you don't have GTK or libsx (since you can't make xy)
 # EXTERN	= offt operl ofreq.ini
 
-# !! the first place to look for ProbeScope, if no PROBESCOPE environment var
+# !! the first place to look for serial scopes, if no environment vars
+BITSCOPE = /dev/bitscope
 PROBESCOPE = /dev/probescope
 
 # compiler
@@ -53,7 +54,8 @@ CC	= gcc
 
 # compiler flags; -DLIBPATH sets default value of OSCOPEPATH env variable
 COMMON	= '-DLIBPATH="$(LIBPATH)"' '-DVER="$(VER)"' $(ESDCFLAGS)\
-	'-DPROBESCOPE="$(PROBESCOPE)"' $(DFLAGS) -Wall -m486 -O3
+	'-DPROBESCOPE="$(PROBESCOPE)"' '-DBITSCOPE="$(BITSCOPE)"'\
+	$(DFLAGS) -Wall -m486 -O3
 
 # !! we'll assume you want to use GTK+ to build xoscope, but...
 CFLAGS = $(COMMON) `gtk-config --cflags`
@@ -92,8 +94,8 @@ LDFLAGS	= -s $(ESDLDFLAGS) $(DFLAGS)
 # nothing should need changed below here
 ############################################################
 
-VER	= 1.7
-SRC	= oscope.c file.c func.c fft.c realfft.c display.c proscope.c
+VER	= 1.9.1
+SRC	= oscope.c file.c func.c fft.c realfft.c display.c proscope.c bitscope.c
 VGA_SRC = $(SRC) sc_linux.c ser_unix.c gr_com.c gr_vga.c
 SX_SRC	= $(SRC) sc_linux.c ser_unix.c gr_com.c gr_sx.c freq.c dirlist.c
 GTK_SRC	= $(SRC) sc_linux.c ser_unix.c com_gtk.c gr_gtk.c

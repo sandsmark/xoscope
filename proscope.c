@@ -1,7 +1,7 @@
 /*
- * @(#)$Id: proscope.c,v 1.4 1997/05/30 04:44:18 twitham Rel $
+ * @(#)$Id: proscope.c,v 1.5 2000/07/03 18:18:14 twitham Exp $
  *
- * Copyright (C) 1997 Tim Witham <twitham@pcocd2.intel.com>
+ * Copyright (C) 1997 - 2000 Tim Witham <twitham@quiknet.com>
  *
  * (see the files README and COPYING for more details)
  *
@@ -15,13 +15,6 @@
 #include "proscope.h"
 #include "oscope.h"
 #include "display.h"
-
-#ifdef PSDEBUG
-#undef PSDEBUG
-#define PSDEBUG(format, arg) printf(format, arg)
-#else
-#define PSDEBUG(format, arg) ;
-#endif
 
 unsigned int ps_rate[] = {20000000, 10000000, 2000000, 1000000,
 			  200000, 100000, 20000, 10000, 2000, 1000};

@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.c,v 1.75 2000/05/20 23:44:04 twitham Rel $
+ * @(#)$Id: oscope.c,v 1.76 2000/07/03 18:18:14 twitham Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -17,6 +17,7 @@
 #include "func.h"		/* signal math functions */
 #include "file.h"		/* file I/O functions */
 #include "proscope.h"		/* ProbeScope (serial) functions */
+#include "bitscope.h"		/* BitScope (serial) functions */
 
 /* global program structures */
 Scope scope;
@@ -65,7 +66,7 @@ Startup Options  Description (defaults)               version %s
 -b               %s Behind instead of in front of %s
 -v               turn Verbose key help display %s
 -x               turn sound card (XY) input device %s
--z               turn ProbeScope (Z)  input device %s
+-z               turn SerialScope (Z) input device %s
 file             %s file to load to restore settings and memory
 ",
 	  progname, version, CHANNELS, CHANNELS, DEF_A,
@@ -122,7 +123,7 @@ init_scope()
   scope.select = DEF_A - 1;
   scope.verbose = DEF_V;
   snd = DEF_X ? 0 : -1;
-  ps.found = !DEF_Z;
+  ps.found = bs.found = !DEF_Z;
 }
 
 /* initialize the signals */
@@ -225,7 +226,7 @@ loadfile(char *file)
   readfile(filename = file);
   if (snd)
     resetsoundcard(scope.rate);
-  if (ps.found) {
+  if (ps.found || bs.found) {
     init_probescope();
     init_serial();
   }
@@ -446,8 +447,8 @@ handle_key(unsigned char c)
       message("External commands can not run on Channel 1 or 2", KEY_FG);
     break;
   case '^':
-    if (ps.found) {		/* toggle ProbeScope on/off */
-      ps.found = 0;
+    if (ps.found || bs.found) {	/* toggle Serial Scope on/off */
+      ps.found = bs.found = 0;
     } else {
       init_probescope();
       init_serial();
@@ -533,7 +534,7 @@ main(int argc, char **argv)
     }
   if (snd)
     resetsoundcard(scope.rate);
-  if (ps.found) {
+  if (ps.found || bs.found) {
     init_probescope();
     init_serial();
   }

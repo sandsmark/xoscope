@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 1.57 2000/06/28 21:31:31 twitham Rel $
+ * @(#)$Id: display.c,v 1.58 2000/07/03 18:18:14 twitham Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -15,6 +15,7 @@
 #include "display.h"
 #include "func.h"
 #include "proscope.h"
+#include "bitscope.h"
 
 void	show_data();
 int	vga_write();
@@ -151,8 +152,11 @@ draw_text(int all)
 		font, KEY_FG, TEXT_BG, ALIGN_LEFT);
 
       if (scope.verbose || ch[i].show || scope.select == i) {
-	if (ch[i].func == FUNCPS ||
-	    (ch[i].func >= FUNCEXT && ch[0].func == FUNCPS))
+	if (bs.found)
+	  sprintf(string, "%g V/div",
+		  (float)bs.volts * (float)ch[i].div / (float)ch[i].mult / 800);
+	else if (ch[i].func == FUNCPS ||
+		 (ch[i].func >= FUNCEXT && ch[0].func == FUNCPS))
 	  sprintf(string, "%g V/div",
 		  (float)ps.volts * (float)ch[i].div / (float)ch[i].mult / 10);
 	else
@@ -197,7 +201,8 @@ draw_text(int all)
       vga_write("Pos.", col(3), row(27), font, p->color,TEXT_BG,ALIGN_LEFT);
 
       vga_write("(^)", 0, row(28), font, KEY_FG, TEXT_BG, ALIGN_LEFT);
-      sprintf(string, "ProbeScope %s", ps.found ? "On" : "Off");
+      sprintf(string, "Serial Scope %s", bs.found ? bs.bcid
+	      : (ps.found ? "ProbeScope" : "Off"));
       vga_write(string, col(3), row(28),
 		font, mem[25].color, TEXT_BG, ALIGN_LEFT);
 
@@ -537,7 +542,7 @@ animate(void *data)
   clip = 0;
   if (ps.found) probescope();
   if (scope.run) {
-    triggered = get_data();
+    triggered = bs.found ? bs_getdata(bs.fd) : get_data();
     if (triggered && scope.run > 1) {	/* auto-stop single-shot wait */
       scope.run = 0;
       draw_text(1);
