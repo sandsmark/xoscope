@@ -1,4 +1,4 @@
-# @(#)$Id: Makefile,v 1.12 1996/03/02 07:13:21 twitham Exp $
+# @(#)$Id: Makefile,v 1.13 1996/03/10 02:46:40 twitham Exp $
 
 # Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
 # Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
@@ -41,9 +41,9 @@ LDFLAGS	= -s
 ############################################################
 
 VER	= 0.5
-ALLSRC	= oscope.c func.c realfft.c
+ALLSRC	= oscope.c func.c realfft.c file.c
 SRC	= display.c $(ALLSRC)
-X11_SRC	= xdisplay.c x11.c $(ALLSRC)
+X11_SRC	= xdisplay.c x11.c freq.c dirlist.c $(ALLSRC)
 
 OBJ	= $(SRC:.c=.o)
 X11_OBJ	= $(X11_SRC:.c=.o)
