@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: file.c,v 1.1 1996/03/10 01:36:30 twitham Exp $
+ * @(#)$Id: file.c,v 1.2 1996/03/10 03:22:07 twitham Exp $
  *
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -46,7 +46,7 @@ handle_opt(int opt, char *optarg)
   case 't':			/* trigger */
   case 'T':
       p = optarg;
-      scope.trig = limit(strtol(p, NULL, 0) + 128, -128, 127);
+      scope.trig = limit(strtol(p, NULL, 0) + 128, 0, 255);
       if ((q = strchr(p, ':')) != NULL) {
 	scope.trige = limit(strtol(++q, NULL, 0), 0, 2);
 	p = q;
