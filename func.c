@@ -1,9 +1,9 @@
 /*
- * @(#)$Id: func.c,v 1.6 1996/02/24 04:29:17 twitham Exp $
+ * @(#)$Id: func.c,v 1.7 1996/03/02 07:09:22 twitham Exp $
  *
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
- * (see oscope.c and the file COPYING for more details)
+ * (see the files README and COPYING for more details)
  *
  * This file implements the signal math and memory.
  * To add functions, search for !!! and add to those sections.
@@ -46,7 +46,7 @@ short *mem[26] = {
 int memcolor[26];
 
 /* for the fft function: x position to bin number map, and data buffer */
-int x[MAXWID];
+int xmap[MAXWID];
 short fftdata[MAXWID];
 
 
@@ -59,8 +59,10 @@ save(char c)
   i = c - 'A';
   if (mem[i] == NULL)
     mem[i] = malloc(MAXWID);
-  memcpy(mem[i], ch[scope.select].data, MAXWID);
-  memcolor[i] = ch[scope.select].color;
+  if (mem[i] != NULL) {
+    memcpy(mem[i], ch[scope.select].data, MAXWID);
+    memcolor[i] = ch[scope.select].color;
+  }
 }
 
 /* recall given memory register to the currently selected signal */
@@ -140,8 +142,8 @@ fft(int num, int sig)
   RealFFT(fftdata);
   a = ch[num].data;
   for (i = 0 ; i < h_points ; i++) {
-    if (x[i] > -1) {
-      bri = BitReversed[x[i]];
+    if (xmap[i] > -1) {
+      bri = BitReversed[xmap[i]];
       re = fftdata[bri];
       im = fftdata[bri + 1];
       it = (re * re + im * im);
@@ -190,11 +192,11 @@ init_math()
 
   for (i = 0 ; i < MAXWID ; i++) {
     fftdata[i] = 0;
-    x[i]=floor((double)i / 440.0 * FFTLEN / 2.0 + 0.5);
-    if(x[i] >= FFTLEN / 2)	/* don't display these uncomputed bins */
-      x[i] = -1;
-    if(x[i] == x[i-1])		/* duplicate bin */
-      x[i] = -1;
+    xmap[i]=floor((double)i / 440.0 * FFTLEN / 2.0 + 0.5);
+    if(xmap[i] >= FFTLEN / 2)	/* don't display these uncomputed bins */
+      xmap[i] = -1;
+    if(xmap[i] == xmap[i-1])	/* duplicate bin */
+      xmap[i] = -1;
   }
   InitializeFFT(FFTLEN);
 }
@@ -206,7 +208,7 @@ do_math()
   static int i;
 
   for (i = 2 ; i < CHANNELS ; i++) {
-    if (ch[i].func > 2)
+    if ((scope.select == i || ch[i].show) && (ch[i].func > 2))
       funcarray[ch[i].func](i);
   }
 }
@@ -248,13 +250,16 @@ measure_data(Signal *sig) {
     }
     prev = j;
   }
-  if (sig->func == 3 || sig->func == 4) { /* time/freq from peak FFT */
-    sig->time = 1000000 / (actual / 2 / 440 * max);
-    sig->freq = actual / 2 * max / 440;
+  if (sig->func == 3 || sig->func == 4) { /* frequency from peak FFT */
+    if ((sig->freq = actual * max / 880) > 0)
+      sig->time = 1000000 / sig->freq;
+    else
+      sig->time = 0;
   } else if (count > 1) {	/* wave: period = length / # periods */
-    i = 1000000 * (last - first) / (count - 1) / actual;
-    sig->time = i;
-    sig->freq = i > 1 ? 1000000 / i : i;
+    if ((sig->time = 1000000 * (last - first) / (count - 1) / actual) > 0)
+      sig->freq = 1000000 / sig->time;
+    else
+      sig->freq = 0;
   } else {			/* couldn't measure */
     sig->time = 0;
     sig->freq = 0;
