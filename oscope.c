@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.c,v 1.61 1997/05/24 23:25:27 twitham Exp $
+ * @(#)$Id: oscope.c,v 1.62 1997/05/28 05:37:56 twitham Exp $
  *
  * Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -135,9 +135,9 @@ init_channels()
     ch[i].mult = 1;
     ch[i].div = 1;
     ch[i].pos = 0;
-    ch[i].show = (i < 2);
-    ch[i].func = i < 2 ? i : FUNCMEM;
-    ch[i].mem = i < 2 ? 'x' + i : 0;
+    ch[i].show = (i < FUNCMEM);
+    ch[i].func = i < FUNCMEM ? i : FUNCMEM;
+    ch[i].mem = i < FUNCMEM ? 'x' + i : 0;
     strcpy(ch[i].command, COMMAND);
     ch[i].pid = 0;
   }
@@ -368,6 +368,15 @@ handle_key(unsigned char c)
       }
     }
     break;
+  case '%':
+    if (ps.found)		/* toggle ProbeScope on/off */
+      ps.found = 0;
+    else {
+      init_probescope();
+      init_serial();
+    }
+    clear();
+    break;
   case '!':
     scope.mode++;		/* point, point accumulate, line, line acc. */
     if (scope.mode > 3)
@@ -432,6 +441,7 @@ main(int argc, char **argv)
       readfile(filename);
     }
   open_sound_card(scope.dma);
+  init_probescope();
   init_serial();
   resetsoundcard();
   mainloop();			/* to display.c */
