@@ -5,7 +5,7 @@
  *
  * [x]scope --- Use Linux's /dev/dsp (a sound card) as an oscilloscope
  *
- * @(#)$Id: oscope.c,v 1.26 1996/01/25 05:28:56 twitham Exp $
+ * @(#)$Id: oscope.c,v 1.27 1996/01/26 07:52:38 twitham Exp $
  *
  * Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
@@ -92,6 +92,8 @@ int v_points;			/* points in vertical axis */
 int h_points;			/* points in horizontal axis */
 int offset;			/* vertical offset */
 int actual;			/* actual sampling rate */
+int scaler[] = {1,2,5,10,20,50,100,200,500,1000,2000,5000,1};
+int *pscaler = scaler;
 
 /* display command usage on standard error and exit */
 void
@@ -274,16 +276,36 @@ handle_key(unsigned char c)
     clear();
     break;
   case 'S':
-    if (scale <= 8) {		/* double the scale (zoom) */
-      scale <<= 1;
-      clear();
-    }
+    if (sampling == 8800) {
+      sampling = 22000;
+      check_status(ioctl(snd, SOUND_PCM_SYNC, 0), __LINE__);
+      check_status(ioctl(snd, SOUND_PCM_WRITE_RATE, &sampling), __LINE__);
+      check_status(ioctl(snd, SOUND_PCM_READ_RATE, &actual), __LINE__);
+    } else if (sampling == 22000) {
+      sampling = 44000;
+      check_status(ioctl(snd, SOUND_PCM_SYNC, 0), __LINE__);
+      check_status(ioctl(snd, SOUND_PCM_WRITE_RATE, &sampling), __LINE__);
+      check_status(ioctl(snd, SOUND_PCM_READ_RATE, &actual), __LINE__);
+    } else 
+      pscaler++;
+    scale  = *pscaler;
+    clear();
     break;
   case 's':
-    if (scale > 1) {		/* half the scale */
-      scale >>= 1;
-      clear();
-    }
+    if (sampling == 22000) {
+      sampling = 8800;
+      check_status(ioctl(snd, SOUND_PCM_SYNC, 0), __LINE__);
+      check_status(ioctl(snd, SOUND_PCM_WRITE_RATE, &sampling), __LINE__);
+      check_status(ioctl(snd, SOUND_PCM_READ_RATE, &actual), __LINE__);
+    } else if (pscaler == scaler) {
+      sampling = 22000;
+      check_status(ioctl(snd, SOUND_PCM_SYNC, 0), __LINE__);
+      check_status(ioctl(snd, SOUND_PCM_WRITE_RATE, &sampling), __LINE__);
+      check_status(ioctl(snd, SOUND_PCM_READ_RATE, &actual), __LINE__);
+    } else
+      pscaler--;
+    scale  = *pscaler;
+    clear();
     break;
   case 'T':
     if (trigger < 0)		/* enable the trigger at half scale */
@@ -339,7 +361,9 @@ handle_key(unsigned char c)
   case 'l':
   case 'P':
   case 'p':
-    point_mode = !point_mode;	/* line/point mode */
+    point_mode++;		/* point, point accumulate, line, line acc. */
+    if (point_mode > 3)
+      point_mode = 0;
     clear();
     break;
   case 'G':
@@ -404,7 +428,7 @@ get_data()
     return;			/* give up and keep previous samples */
 
   /* now get the real data */
-  read(snd, buffer + channels, (h_points * channels / scale - 2));
+  read(snd, buffer + channels - 1, (h_points * channels / scale));
 }
 
 /* main program */

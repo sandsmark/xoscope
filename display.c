@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 1.2 1996/01/25 05:27:16 twitham Exp $
+ * @(#)$Id: display.c,v 1.3 1996/01/26 07:52:45 twitham Exp $
  *
  * Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
@@ -120,42 +120,33 @@ draw_graticule()
   static int i, j;
 
   VGA_SETCOLOR(colour+2);
-  VGA_DRAWLINE(0, offset-1, h_points-1, offset-1);
-  VGA_DRAWLINE(0, offset+256, h_points-1, offset+256);
-  VGA_DRAWLINE(0, offset-1, 0, offset+256);
-  VGA_DRAWLINE(h_points-1, offset, h_points-1, offset+256);
+  VGA_DRAWLINE(100, offset-32, 540, offset-32);
+  VGA_DRAWLINE(100, offset+288, 540, offset+288);
+  VGA_DRAWLINE(100, offset-32, 100, offset+288);
+  VGA_DRAWLINE(540, offset-32, 540, offset+288);
 
   if (graticule) {
 
-    /* horizontial line at mid-scale */
-    VGA_SETCOLOR(colour+2);
-    VGA_DRAWLINE(0, offset+128, h_points-1, offset+128);
+    /* cross-hairs */
+    VGA_DRAWLINE(100, offset+128, 540, offset+128);
+    VGA_DRAWLINE(320, offset-32, 320, offset+288);
 
-    /* 1 pixel dots at 0.1 msec intervals */
-    for (i = 0 ; (j = i / 10000) < h_points ; i += (actual * scale)) {
-      VGA_DRAWPIXEL(j, offset);
-      VGA_DRAWLINE(j, offset+127, j, offset+129);
-      VGA_DRAWPIXEL(j, offset + 255);
+    /* vertical dotted lines */
+    for (i = 144 ; i < 540 ; i += 44) {
+      for (j = (offset - 32) * 10 ; j < (offset + 288) * 10 ; j += 64) {
+	VGA_DRAWPIXEL(i, j / 10);
+      }
+    }
 
-      /* 5 pixel marks at 0.5 msec intervals */
-      if ((j = i / 2000) < h_points) {
-	VGA_DRAWLINE(j, offset, j, offset+4);
-	VGA_DRAWLINE(j, offset+123, j, offset+133);
-	VGA_DRAWLINE(j, offset+251, j, offset+255);
+    /* horizontal dotted lines */
+    for (i = offset - 32 ; i < (offset + 288) ; i += 32) {
+      for (j = 1088 ; j < 5400 ; j += 88) {
+	VGA_DRAWPIXEL(j / 10, i);
       }
-      /* 20 pixel marks at 1 msec intervals */
-      if ((j = i / 1000) < h_points) {
-	VGA_DRAWLINE(j, offset, j, offset+20);
-	VGA_DRAWLINE(j, offset+107, j, offset+149);
-	VGA_DRAWLINE(j, offset+235, j, offset+255);
-      }
-      /* vertical major divs at 5 msec intervals */
-      if ((j = i / 200) < h_points)
-	VGA_DRAWLINE(j, offset, j, offset+255);
     }
     /* a tick mark where the trigger level is */
     if (trigger > -1)
-      VGA_DRAWLINE(0, offset+trigger, 5, offset+trigger);
+      VGA_DRAWLINE(100, offset+trigger, 105, offset+trigger);
 
   }
 }
@@ -166,36 +157,40 @@ draw_data()
 {
   static int i, j, k;
 
-  if (point_mode) {
+  if (point_mode < 2) {
     for (j = 0 ; j < channels ; j++) {
-      for (i = 1 ; i < (h_points / scale - 1) ; i++) {
-	k = i * channels + j;	/* calc this offset once for efficiency */
-	VGA_SETCOLOR(BLACK);	/* erase previous dot */
-	VGA_DRAWPIXEL(i * scale,
-		      old[k] + offset);
+      for (i = 0 ; i <= 440 / scale ; i++) {
+	k = i * channels + j; /* calc this offset once for efficiency */
+	if (point_mode == 0) {
+	  VGA_SETCOLOR(BLACK);	/* erase previous dot */
+	  VGA_DRAWPIXEL(i * scale + 100,
+			old[k] + offset);
+	}
 	VGA_SETCOLOR(colour + j); /* draw dot */
-	VGA_DRAWPIXEL(i * scale,
+	VGA_DRAWPIXEL(i * scale + 100,
 		      buffer[k] + offset);
 	old[k] = buffer[k];
       }
     }
   } else {			/* line mode, a little slower */
     for (j = 0 ; j < channels ; j++) {
-      for (i = 1 ; i < (h_points / scale - 2) ; i++) {
-	k = i * channels + j;	/* calc this offset once for efficiency */
-	VGA_SETCOLOR(BLACK);	/* erase previous line */
-	VGA_DRAWLINE(i * scale,
-		     old[k] + offset,
-		     i * scale + scale,
-		     old[k + channels] + offset);
+      for (i = 0 ; i <= 440 / scale - 1 ; i++) {
+	k = i * channels + j; /* calc this offset once for efficiency */
+	if (point_mode == 2) {
+	  VGA_SETCOLOR(BLACK);	/* erase previous line */
+	  VGA_DRAWLINE(i * scale + 100,
+		       old[k] + offset,
+		       i * scale + scale + 100,
+		       old[k + channels] + offset);
+	}
 	VGA_SETCOLOR(colour + j); /* draw line */
-	VGA_DRAWLINE(i * scale,
+	VGA_DRAWLINE(i * scale + 100,
 		     buffer[k] + offset,
-		     i * scale + scale,
+		     i * scale + scale + 100,
 		     buffer[k + channels] + offset);
 	old[k] = buffer[k];
       }
-      old[i * channels + j] = buffer[i * channels + j];
+      old[--i * channels + j] = buffer[--i * channels + j];
     }
   }
 #ifdef XSCOPE
