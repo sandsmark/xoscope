@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.c,v 1.81 2000/07/07 02:39:13 twitham Exp $
+ * @(#)$Id: oscope.c,v 1.82 2000/07/07 23:06:17 twitham Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -275,11 +275,11 @@ handle_key(unsigned char c)
     clear();
     break;
   case 'q' - 96:		/* -96 is CTRL keys */
-    if ((scope.cursa -= 10) < 1)
+    if ((scope.cursa -= s / 20) < 1)
       scope.cursa = s - 1;
     break;
   case 'w' - 96:
-    if ((scope.cursa += 10) >= s)
+    if ((scope.cursa += 2 / 20) >= s)
       scope.cursa = 1;
     break;
   case 'e' - 96:
@@ -291,11 +291,11 @@ handle_key(unsigned char c)
       scope.cursa = 1;
     break;
   case 'a' - 96:
-    if ((scope.cursb -= 10) < 1)
+    if ((scope.cursb -= s / 20) < 1)
       scope.cursb = s - 1;
     break;
   case 's' - 96:
-    if ((scope.cursb += 10) >= s)
+    if ((scope.cursb += s / 20) >= s)
       scope.cursb = 1;
     break;
   case 'd' - 96:

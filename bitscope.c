@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: bitscope.c,v 1.8 2000/07/07 02:39:13 twitham Exp $
+ * @(#)$Id: bitscope.c,v 1.9 2000/07/07 23:06:17 twitham Exp $
  *
  * Copyright (C) 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -185,10 +185,13 @@ bs_init(int fd)
   bs.r[3] = bs.r[4] = 0;
   bs.r[5] = 0;
   bs.r[6] = 127;		/*  scope.trig; ? */
+  bs.r[6] = 0xff;		/* don't care */
   bs.r[7] = TRIGEDGE | TRIGEDGEF2T | LOWER16BNC | TRIGCOMPARE | TRIGANALOG;
   bs.r[8] = SIMPLE;		/* SIMPLE; TIMEBASE; TIMEBASECHOP */
-  SETWORD(&bs.r[11], 10);	/* !!! the hell should this be? */
-  bs.r[13] = 0;			/* !!! and this? */
+
+  SETWORD(&bs.r[11], 2);	/* try to just fill the 16384 memory: */
+  bs.r[13] = 179;		/* 2,179 through mode 0 formula = 1644 */
+
   bs.r[14] = PRIMARY(RANGE1200 | CHANNELA | ZZCLK)
     | SECONDARY(RANGE1200 | CHANNELB | ZZCLK);
   bs.r[15] = 0;			/* max samples per dump (256) */
@@ -227,8 +230,13 @@ idscope(int probescope)
       PSDEBUG("%d\n", byte);
     }
   } else {			/* identify bitscope */
-    if (bs_io(bs.fd, "?", error) && error[1] == 'B' && error[2] == 'C') {
-      strncpy(bs.bcid, error + 1, sizeof(bs.bcid));
+    c = 10;			/* clear serial FIFO */
+    while ((byte < sizeof(bs.buf)) && c--) {
+      byte += serial_read(bs.fd, bs.buf, sizeof(bs.buf) - byte);
+      usleep(1);
+    }
+    if (bs_io(bs.fd, "?", bs.buf) && bs.buf[1] == 'B' && bs.buf[2] == 'C') {
+      strncpy(bs.bcid, bs.buf + 1, sizeof(bs.bcid));
       bs.bcid[8] = '\0';
       bs_init(bs.fd);
       return(2);		/* BitScope found! */
@@ -242,7 +250,7 @@ int
 bs_getdata(int fd)
 {
   static unsigned char buffer[MAXWID * 2], *buff;
-  static int i, alt = 0, j, k, n;
+  static int i, alt = 1, j, k, n;
 
   if (!fd) return(0);		/* device open? */
   if (in_progress) {		/* finish a get */
@@ -264,7 +272,7 @@ bs_getdata(int fd)
 	  }
 	}
 	mem[23].num = mem[24].num = mem[25].num = k < MAXWID ? k : MAXWID;
-	if (k >= samples(mem[23].rate)) { /* all done */
+	if (k >= samples(mem[23].rate) || k >= 16 * 1024) { /* all done */
 	  k = 0;
 	  in_progress = 0;
 	} else {		/* still need more, start another */
@@ -275,6 +283,7 @@ bs_getdata(int fd)
   } else {			/* start a get */
     if (!bs_io(fd, "[e]@", buffer))
       return(0);
+    alt = !alt;
     bs.r[14] = (bs.r[14] & 0xfb) | (!alt << 2); /* attempt to ALT dual trace */
     sprintf(error, "[%x]s>T", bs.r[14]);
     if (!bs_io(fd, error, buffer))
@@ -282,7 +291,6 @@ bs_getdata(int fd)
     fprintf(stderr, "%s", buffer);
     if (!bs_io(fd, "S", buffer))
       return(0);
-    alt = !alt;
     in_progress = 1;
   }
   return(1);
