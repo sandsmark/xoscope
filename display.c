@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 1.50 1999/08/26 04:47:22 twitham Exp $
+ * @(#)$Id: display.c,v 1.51 1999/08/27 03:56:17 twitham Rel $
  *
  * Copyright (C) 1996 - 1999 Tim Witham <twitham@quiknet.com>
  *
@@ -461,7 +461,6 @@ draw_data()
     }
   }
   old = delay;
-  SyncDisplay();
 }
 
 /* calculate any math and plot the results and the graticule */
@@ -478,6 +477,7 @@ show_data()
     draw_data();		/* plot graticule on top of data */
     draw_graticule();
   }
+  SyncDisplay();
 }
 
 /* get and plot one screen full of data */
