@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.c,v 1.67 1997/06/11 01:07:48 twitham Rel $
+ * @(#)$Id: oscope.c,v 1.68 1997/08/29 04:57:48 twitham Exp $
  *
  * Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -55,7 +55,7 @@ Startup Options  Description (defaults)               version %s
 -h               this Help message and exit
 -# <code>        #=1-%d, code=pos[:scale[:func#, mem letter, or cmd]] (0:1/1)
 -a <channel>     set the Active channel: 1-%d                  (%d)
--r <rate>        sampling Rate in Hz: 8800,11000,22000,44000  (%d)
+-r <rate>        sampling Rate in Hz: 8000,11025,22050,44100  (%d)
 -s <scale>       time Scale: 1/20-1000 where 1=1ms/div        (%d/1)
 -t <trigger>     Trigger level[:type[:channel]]               (%s)
 -c <color>       graticule Color: 0-15                        (%d)
@@ -321,21 +321,21 @@ handle_key(unsigned char c)
   case '(':
     if (scope.run)		/* decrease sample rate */
       if (scope.rate < 16500)
-	setsoundcard(8800);
+	setsoundcard(8000);
       else if (scope.rate < 33000)
-	setsoundcard(11000);
+	setsoundcard(11025);
       else
-	setsoundcard(22000);
+	setsoundcard(22050);
     clear();
     break;
   case ')':
     if (scope.run)		/* increase sample rate */
       if (scope.rate > 16500)
-	setsoundcard(44000);
-      else if (scope.rate > 9900)
-	setsoundcard(22000);
+	setsoundcard(44100);
+      else if (scope.rate > 9500)
+	setsoundcard(22050);
       else
-	setsoundcard(11000);
+	setsoundcard(11025);
     clear();
     break;
   case '<':
