@@ -73,7 +73,7 @@ void usage()
 	  "-c <colour>      trace colour\n"
 	  "-d <dma divide>  DMA buffer size divisor (1,2,4)\n"
 	  "-t <trigger>     trigger level (0 - 255)\n"
-	  "-s <scale>       time scale, or zoom (1,2,4,8,16,32)\n"
+	  "-s <scale>       time scale, or zoom factor (1,2,4,8,16,32)\n"
 	  "-p               point mode (faster)\n"
 	  "-l               line segment mode (slower)\n"
 	  "-g               draw graticule\n"
@@ -384,25 +384,29 @@ inline void handle_key()
 /* get data from sound card */
 inline void get_data()
 {
-  unsigned char datum;
-  
+  unsigned char datum, datem;
+
   /* simple trigger function */
   if (trigger != -1) {
-    /* positive trigger */
-    if (trigger >128)
+    /* positive trigger, look for rising edge only */
+    if (trigger > 128) {
+      datum = 255;
       do {
+	datem = datum;		/* remember previous sample */
 	read(snd, &datum, 1);
-      } while (datum < trigger);
-    else
-      /* negative trigger */
+      } while ((datum < trigger) || (datum <= datem));
+    } else {
+      /* negative trigger, look for falling edge only */
+      datum = 0;
       do {
+	datem = datum;		/* remember previous sample */
 	read(snd, &datum, 1);
-      } while (datum > trigger);
-  }
-  
+      } while ((datum > trigger) || (datum >= datem));
+    }
+  } 
   /* now get the real data */  
   read(snd, buffer + 1, (h_points / scale - 2));
-  
+
 }
 
 /* graph the data */
