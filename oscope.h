@@ -2,7 +2,7 @@
 
 /* Tweaking these parameters will automagically fix the usage message */
 
-/* @(#)$Id: oscope.h,v 1.2 1996/01/02 03:08:29 twitham Exp $ */
+/* @(#)$Id: oscope.h,v 1.3 1996/01/02 06:26:02 twitham Exp $ */
 
 /* maximum screen width, also the maximum number of samples in memory at once */
 #define MAXWID	1280
@@ -10,7 +10,7 @@
 /* program defaults for the command-line options */
 #define DEF_12 1		/* -1/-2: 1=single channel, 2=dual channels */
 #define DEF_R 8000		/* -r: 5000 - 44100 works for SoundBlaster */
-#define DEF_S 1			/* -s: 1, 2, 4, 8, 16, 32 */
+#define DEF_S 4			/* -s: 1, 2, 4, 8, 16 */
 #define DEF_T -1		/* -t: 0 - 255 or -1 = disabled, 128 = center */
 #define DEF_C 2			/* -c: 0 - ?, depends on graphics mode */
 #define DEF_M G640x480x16	/* -m: SVGA graphics mode as-in vga.h */
