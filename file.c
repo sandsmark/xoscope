@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: file.c,v 1.2 1996/03/10 03:22:07 twitham Exp $
+ * @(#)$Id: file.c,v 1.3 1996/04/21 02:33:19 twitham Rel1_1 $
  *
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -97,6 +97,11 @@ handle_opt(int opt, char *optarg)
     if (opt >= '1' && opt <= '0' + CHANNELS) {
       s = &ch[opt - '1'];
       p = optarg;
+      s->show = 1;
+      if (*p == '+') {
+	s->show = 0;
+	p++;
+      }
       s->pos = limit(-strtol(p, NULL, 0), -1280, 1280);
       if ((q = strchr(p, ':')) != NULL) {
 	s->mult = limit(strtol(++q, NULL, 0), 1, 200);
@@ -107,21 +112,24 @@ handle_opt(int opt, char *optarg)
 	p = q;
       }
       if ((q = strchr(p, ':')) != NULL) {
-	s->func = limit(strtol(++q, NULL, 0) + 2, 2, funccount);
-	s->mem = 0;
-	if (*q >= 'a' && *q <= 'z') {
-	  s->func = 2;
+	if (*++q >= '0' && *q <= '9') {
+	  s->func = limit(strtol(q, NULL, 0) + 3, 3, funccount - 1);
+	  s->mem = 0;
+	} else if (*q >= 'a' && *q <= 'z'
+		   && (*(q + 1) == '\0' || *(q + 1) == '\n')) {
+	  s->func = FUNCMEM;
 	  s->mem = *q;
+	} else {
+	  s->func = FUNCEXT;
+	  strcpy(command[opt - '1'], q);
+	  if ((p = strchr(command[opt - '1'], '\n')) != NULL)
+	    *p = '\0';
+	  s->mem = EXTSTART;
 	}
 	if (opt < '3') {
 	  s->func = opt - '1';
 	  s->mem = 0;
 	}
-	p = q;
-      }
-      s->show = 1;
-      if ((q = strchr(p, ':')) != NULL) {
-	s->show = limit(strtol(++q, NULL, 0), 0, 1);
       }
     }
     break;
@@ -153,8 +161,7 @@ writefile(char *filename)
 # -d %d
 # -p %d
 # -g %d
-# -b %d
-",
+%s",
 	  progname, h_points, v_points,
 	  scope.select + 1,
 	  actual,
@@ -165,15 +172,18 @@ writefile(char *filename)
 	  scope.dma,
 	  scope.mode,
 	  scope.grat,
-	  scope.behind);
+	  scope.behind ? "# -b\n" : "");
   for (i = 0 ; i < CHANNELS ; i++) {
     p = &ch[i];
-    fprintf(file, "# -%d %d:%d/%d:", i + 1, -p->pos, p->mult, p->div);
-    if (p->func == 2)
+    fprintf(file, "# -%d %s%d:%d/%d:", i + 1, p->show ? "" : "+",
+	    -p->pos, p->mult, p->div);
+    if (p->func == FUNCMEM)
       fprintf(file, "%c", (p->mem >= 'a' && p->mem <= 'z') ? p->mem : '0');
+    else if (p->func == FUNCEXT)
+      fprintf(file, "%s", command[i]);
     else
-      fprintf(file, "%d", i > 1 ? (p->func - 2) : 0);
-    fprintf(file, ":%d\n", p->show);
+      fprintf(file, "%d", i > 1 ? (p->func - 3) : 0);
+    fprintf(file, "\n");
   }
   for (i = 0 ; i < 26 ; i++) {
     if (mem[i] != NULL)
