@@ -7,7 +7,7 @@
  *
  * Enhanced by Tim Witham <twitham@pcocd2.intel.com>
  *
- * @(#)$Id: oscope.c,v 1.14 1995/12/30 10:30:39 twitham Exp $
+ * @(#)$Id: oscope.c,v 1.15 1996/01/01 20:45:12 twitham Exp $
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -68,27 +68,37 @@ int trigger = -1;		/* trigger level (-1 = disabled) */
 int graticule = 0;		/* show graticule */
 int behind = 0;			/* graticule behind the signal? */
 int scale = 1;			/* time scale or zoom factor */
+char *def[] = {			/* for -p/-l in the usage message */
+  "",	
+  ", default"
+};
 
 /* display command usage on standard error and exit */
 void
 usage()
 {
-  fprintf(stderr,
-	  "usage: scope -r<rate> -m<mode> -c<colour> -d<dma divisor>\n"
-	  "             -t<trigger> -s<scale> -p -l -g -v\n"
-	  "Options:\n"
-	  "-r <rate>        sampling Rate in Hz\n"
-	  "-m <mode>        graphics Mode\n"
-	  "-c <colour>      trace Colour\n"
-	  "-d <dma divide>  DMA buffer size divisor (1,2,4)\n"
-	  "-t <trigger>     Trigger level (0 - 255, -1 = disabled = default)\n"
-	  "-s <scale>       time Scale or zoom factor (1,2,4,8,16,32)\n"
-	  "-p               Point mode (faster)\n"
-	  "-l               Line segment mode (slower)\n"
-	  "-g               draw Graticule (5 msec major divs, 1 msec minor)\n"
-	  "-b               draw graticule Behind the signal instead of front\n"
-	  "-v               verbose options to stdout\n"
-	  );
+  fprintf(stderr, "usage: scope"
+	  " [-r<rate>] [-s<scale>] [-t<trigger>] [-c<colour>]
+             [-m<mode>] [-d<dma divisor>] [-p|-l] [-g] [-b] [-v]
+
+Options          Runtime Increase Decrease or Toggle Keys
+-r <rate>        R=+10%% r=-10%%  sampling Rate in Hz             (default=%d)
+-s <scale>       S=*2   s=/2    time Scale or zoom factor (1-32, default=%d)
+-t <trigger>     T=+10  t=-10   Trigger level (0-255,-1=disabled,default=%d)
+-c <colour>      C=+1   c=-1    trace Colour                    (default=%d)
+-m <mode>                       SVGA graphics Mode              (default=%d)
+-d <dma divisor>                DMA buffer size divisor  (1,2,4, default=%d)
+-p               P p =toggle    Point mode (faster, opposite of -l%s)
+-l               L l =toggle    Line  mode (slower, opposite of -p%s)
+-g               G g =toggle    draw Graticule (5 msec major divs, 1 msec minor)
+-b               B b =toggle    draw graticule Behind / in front of signal
+-v               V v =toggle    Verbose keypress / option log to stdout
+                 <space>        pause the display until another key is pressed
+                 Q q            Quit program
+",
+	  sampling, scale, trigger,
+	  colour, mode, dma,
+	  def[point_mode], def[!point_mode]);
   exit(1);
 }
 
@@ -96,16 +106,14 @@ usage()
 static inline void
 show_info(unsigned char c) {
   if (verbose) {
-    printf("%1c:  -m %2d  -d %1d  -c %2d  "
-	   "%2s  "
-	   "%2s  "
-	   "%2s  "
-	   "-t %3d  -s %2d  -r %5d  (actual: %5d)\n",
-	   c, mode, dma, colour,
+    printf("%1c %5dHz:  -r %5d  -s %2d  -t %3d  -c %2d  -m %2d  -d %1d  "
+	   "%2s  %2s  %2s%s\n",
+	   c, actual, sampling, scale, trigger, colour, mode, dma,
 	   point_mode ? "-p" : "-l",
 	   graticule ? "-g" : "",
 	   behind ? "-b" : "",
-	   trigger, scale, sampling, actual);
+	   verbose ? "  -v" : ""
+	   );
   }
 }
 
@@ -245,10 +253,6 @@ handle_key()
   case 0:
   case -1:			/* no key pressed */
     break;
-  case 'q':
-  case 'Q':			/* flag quit */
-    quit_key_pressed = 1;
-    break;
   case 'R':
     sampling *= 1.1;		/* 10% sample rate increase */
     check_status(ioctl(snd, SOUND_PCM_SYNC, 0));
@@ -291,16 +295,6 @@ handle_key()
       trigger = -1;
     CLEAR;
     break;
-  case 'l':
-  case 'L':		
-    point_mode = 0;		/* line mode */
-    CLEAR;
-    break;
-  case 'p':
-  case 'P':
-    point_mode = 1;		/* point mode */
-    CLEAR;
-    break;
   case 'C':
     colour++;			/* increase color */
     CLEAR;
@@ -311,20 +305,33 @@ handle_key()
       CLEAR;
     }
     break;
-  case 'G':
-    graticule = 1;		/* graticule on */
+  case 'L':		
+  case 'l':
+  case 'P':
+  case 'p':
+    point_mode = !point_mode;	/* line/point mode */
+    CLEAR;
     break;
+  case 'G':
   case 'g':
-    graticule = 0;		/* graticule off */
+    graticule = !graticule;	/* graticule on/off */
     CLEAR;
     break;
   case 'B':
   case 'b':
     behind = !behind;		/* graticule behind/in front of signal */
     break;
+  case 'V':
+  case 'v':
+    verbose = !verbose;		/* verbose log on/off */
+    break;
   case ' ':		
     while (vga_getkey() <= 0)	/* pause until key pressed */
       ;
+    break;
+  case 'q':
+  case 'Q':			/* quit */
+    quit_key_pressed = 1;
     break;
   }
 
@@ -347,14 +354,14 @@ get_data()
 	datem = datum;		/* remember previous sample */
 	read(snd, &datum, 1);
       } while ((handle_key() <= 0)
-	       && ((datum < trigger) || (datum <= datem)));
+	       && ((datum < trigger) || (datem > trigger)));
     } else {
       datum = 0;		/* negative trigger, look for falling edge */
       do {
 	datem = datum;		/* remember previous sample */
 	read(snd, &datum, 1);
       } while ((handle_key() <= 0)
-	       && ((datum > trigger) || (datum >= datem)));
+	       && ((datum > trigger) || (datem < trigger)));
     }
   } else {			/* not triggering */
     handle_key();
