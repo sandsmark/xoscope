@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: file.c,v 1.5 1996/10/06 05:43:35 twitham Rel1_2 $
+ * @(#)$Id: file.c,v 1.6 1997/02/23 05:20:00 twitham Exp $
  *
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -12,7 +12,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/stat.h>
-#include <unistd.h>
 #include <string.h>
 #include "oscope.h"		/* program defaults */
 #include "display.h"		/* display routines */
@@ -83,11 +82,11 @@ handle_opt(int opt, char *optarg)
     break;
   case 'b':			/* behind/front */
   case 'B':
-    scope.behind = !scope.behind;
+    scope.behind = !DEF_B;
     break;
   case 'v':			/* verbose display */
   case 'V':
-    scope.verbose = !scope.verbose;
+    scope.verbose = !DEF_V;
     break;
   case 'a':			/* Active (selected) channel */
   case 'A':
