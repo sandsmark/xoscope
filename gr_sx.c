@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: gr_sx.c,v 1.4 1996/03/10 01:48:59 twitham Exp $
+ * @(#)$Id: gr_sx.c,v 1.5 1996/04/21 02:32:06 twitham Rel1_1 $
  *
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -21,10 +21,10 @@
 Widget draw_widget;		/* scope drawing area */
 Widget file[4];			/* file menu */
 Widget plot[5];			/* plot menu */
-Widget grat[5];			/* graticule menu */
-Widget colormenu[17];		/* graticule menu */
-Widget xwidg[7];		/* extra horizontal widgets */
-Widget mwidg[54];
+Widget grat[6];			/* graticule menu */
+Widget colormenu[17];		/* color menu */
+Widget xwidg[5];		/* extra horizontal widgets */
+Widget mwidg[56];		/* memory / math widgets */
 Widget cwidg[CHANNELS];		/* channel button widgets */
 Widget ywidg[15];		/* vertical widgets */
 Widget **math;			/* math menu */
@@ -92,20 +92,19 @@ keys(Widget w, char *input, int up_or_down, void *data)
 {
   if (!up_or_down)		/* 0 press, 1 release */
     return;
-  if (input[1] == '\0') {	/* single character to handle */
+  if (input[1] == '\0')		/* single character to handle */
     handle_key(input[0]);
-  }
 }
 
 /* menu option callbacks */
 void
-loadfile(Widget w1, void *data)
+loadfile(Widget w, void *data)
 {
   char *fname;
 
   fname = GetFile(NULL);
   if (fname != NULL)
-      readfile(fname);
+    readfile(fname);
 }
 
 void
@@ -147,7 +146,7 @@ mathselect(Widget w, void *data)
   int *c = (int *)data;
 
   if (scope.select > 1) {
-    ch[scope.select].func = *c + 3;
+    ch[scope.select].func = *c + 4;
     clear();
   }
 }
@@ -203,6 +202,7 @@ hit_key(Widget w, void *data)
   handle_key(*c);
 }
 
+/* die on malloc error */
 void
 nomalloc(int line)
 {
@@ -216,8 +216,8 @@ cleanup_x11()
 {
   int i;
 
-  for (i = 0 ; i < (funccount > 19 ? funccount - 3 : 16) ; i++) {
-    if (i < funccount - 3)
+  for (i = 0 ; i < (funccount > 19 ? funccount - 4 : 16) ; i++) {
+    if (i < funccount - 4)
       free(math[i]);
     free(intarray[i]);
   }
@@ -244,16 +244,21 @@ fix_widgets()
   for (i = 0 ; i < 16 ; i++) {
     SetMenuItemChecked(colormenu[i + 1], scope.color == i);
   }
-  for (i = 0 ; i < funccount - 3 ; i++) {
-    SetMenuItemChecked(*math[i], ch[scope.select].func == i + 3);
+  for (i = 0 ; i < funccount - 4 ; i++) {
+    SetMenuItemChecked(*math[i], ch[scope.select].func == i + 4);
   }
+
+  SetBgColor(mwidg[0], ch[scope.select].color);
+  SetBgColor(mwidg[27], ch[scope.select].color);
+  SetBgColor(mwidg[28], ch[scope.select].color);
+  SetBgColor(mwidg[55], ch[scope.select].color);
+  SetWidgetState(mwidg[0], actual >= 44000);
+  SetWidgetState(mwidg[27], scope.select > 1);
+  SetWidgetState(mwidg[28], scope.select > 1);
+  SetWidgetState(mwidg[55], scope.select > 1);
   for (i = 0 ; i < 26 ; i++) {
-    SetBgColor(mwidg[0], ch[scope.select].color);
-    SetBgColor(mwidg[27], scope.select > 1
-	       ? ch[scope.select].color : color[15]);
     if (mem[i] != NULL)
-      SetBgColor(mwidg[i + 28], memcolor[i]);
-    SetLabel(mwidg[0], actual >= 44000 ? "Store " : "");
+      SetBgColor(mwidg[i + 29], memcolor[i]);
   }
 
   SetLabel(xwidg[4], scope.run ? "Stop" : "Run");
@@ -262,16 +267,16 @@ fix_widgets()
   SetBgColor(ywidg[3], ch[scope.trigch].color);
   SetBgColor(ywidg[4], ch[scope.trigch].color);
   SetBgColor(ywidg[5], ch[scope.trigch].color);
+  SetBgColor(ywidg[7], ch[scope.select].color);
+  SetBgColor(ywidg[8], ch[scope.select].color);
+  SetBgColor(ywidg[11], ch[scope.select].color);
+  SetBgColor(ywidg[12], ch[scope.select].color);
+  SetBgColor(ywidg[14], ch[scope.select].color);
 
   SetLabel(ywidg[3], scope.trigch ? "2" : "1");
   SetLabel(ywidg[4], tilt[scope.trige]);
-  SetLabel(ywidg[8], ch[scope.select].show ? "Hide" : "Show");
-  SetLabel(ywidg[13], scope.select > 1 ? "Math" : "");
+  SetLabel(ywidg[14], ch[scope.select].show ? "Hide" : "Show");
 
-  for (i = 0 ; i < 3 ; i++) {
-    SetBgColor(ywidg[i + 7], ch[scope.select].color);
-    SetBgColor(ywidg[i + 12], ch[scope.select].color);
-  }
   for (i = 0 ; i < CHANNELS ; i++) {
     SetFgColor(cwidg[i], ch[i].show ? color[0] : ch[i].color);
     SetBgColor(cwidg[i], ch[i].show ? ch[i].color : color[0]);
@@ -349,10 +354,9 @@ init_widgets()
 
   ywidg[6] = MakeLabel("Pos.");
   ywidg[7] = MakeButton(" /\\ ", hit_key, "}");
-  ywidg[8] = MakeButton("Hide", hit_key, "\t");
-  ywidg[9] = MakeButton(" \\/ ", hit_key, "{");
+  ywidg[8] = MakeButton(" \\/ ", hit_key, "{");
 
-  ywidg[10] = MakeLabel("Chan");
+  ywidg[9] = MakeLabel("Chan");
 
   SetWidgetPos(ywidg[0],  PLACE_RIGHT, draw_widget, NO_CARE, NULL);
   SetWidgetPos(ywidg[1],  PLACE_RIGHT, draw_widget, PLACE_UNDER, ywidg[0]);
@@ -364,41 +368,47 @@ init_widgets()
   SetWidgetPos(ywidg[7],  PLACE_RIGHT, draw_widget, PLACE_UNDER, ywidg[6]);
   SetWidgetPos(ywidg[8],  PLACE_RIGHT, draw_widget, PLACE_UNDER, ywidg[7]);
   SetWidgetPos(ywidg[9],  PLACE_RIGHT, draw_widget, PLACE_UNDER, ywidg[8]);
-  SetWidgetPos(ywidg[10],  PLACE_RIGHT, draw_widget, PLACE_UNDER, ywidg[9]);
   
   for (i = 0 ; i < CHANNELS ; i++) {
     cwidg[i] = MakeButton(s[i], hit_key, &s[i][1]);
     SetWidgetPos(cwidg[i],  PLACE_RIGHT, draw_widget,
-		 PLACE_UNDER, i ? cwidg[i - 1] : ywidg[10]);
+		 PLACE_UNDER, i ? cwidg[i - 1] : ywidg[9]);
   }
 
-  ywidg[11] = MakeLabel("Scal");
-  ywidg[12] = MakeButton(" /\\ ", hit_key, "]");
-  ywidg[13] = MakeMenu("Math");
-  ywidg[14] = MakeButton(" \\/ ", hit_key, "[");
+  ywidg[10] = MakeLabel("Scal");
+  ywidg[11] = MakeButton(" /\\ ", hit_key, "]");
+  ywidg[12] = MakeButton(" \\/ ", hit_key, "[");
+  ywidg[13] = MakeLabel("");
+  ywidg[14] = MakeButton("Hide", hit_key, "\t");
 
-  SetWidgetPos(ywidg[11],  PLACE_RIGHT, draw_widget,
+  SetWidgetPos(ywidg[10],  PLACE_RIGHT, draw_widget,
 	       PLACE_UNDER, cwidg[CHANNELS - 1]);
+  SetWidgetPos(ywidg[11],  PLACE_RIGHT, draw_widget, PLACE_UNDER, ywidg[10]);
   SetWidgetPos(ywidg[12],  PLACE_RIGHT, draw_widget, PLACE_UNDER, ywidg[11]);
   SetWidgetPos(ywidg[13],  PLACE_RIGHT, draw_widget, PLACE_UNDER, ywidg[12]);
   SetWidgetPos(ywidg[14],  PLACE_RIGHT, draw_widget, PLACE_UNDER, ywidg[13]);
 
-  mwidg[0]  = MakeLabel("Store ");
-  mwidg[27] = MakeLabel("Recall");
+  /* bottom rows of widgets */
+  mwidg[0]  = MakeLabel(" Store ");
+  mwidg[28] = MakeLabel(" Recall");
   SetWidgetPos(mwidg[0],  PLACE_UNDER, draw_widget, NO_CARE, NULL);
-  SetWidgetPos(mwidg[27],  PLACE_UNDER, mwidg[0], NO_CARE, NULL);
+  SetWidgetPos(mwidg[28],  PLACE_UNDER, mwidg[0], NO_CARE, NULL);
   for (i = 0 ; i < 26 ; i++) {
     sprintf(error, "%c", i + 'A');
     mwidg[i + 1] = MakeButton(error, hit_key, &alphabet[i]);
     SetWidgetPos(mwidg[i + 1], PLACE_UNDER, draw_widget,
 		 PLACE_RIGHT, mwidg[i]);
     sprintf(error, "%c", i + 'a');
-    mwidg[i + 28] = MakeButton(error, hit_key, &alphabet[i + 26]);
-    SetWidgetPos(mwidg[i + 28], PLACE_UNDER, mwidg[0],
-		 PLACE_RIGHT, mwidg[i + 27]);
+    mwidg[i + 29] = MakeButton(error, hit_key, &alphabet[i + 26]);
+    SetWidgetPos(mwidg[i + 29], PLACE_UNDER, mwidg[0],
+		 PLACE_RIGHT, mwidg[i + 28]);
   }
+  mwidg[27] = MakeMenu(  "Math     ");
+  mwidg[55] = MakeButton("Extern...", hit_key, "$");
+  SetWidgetPos(mwidg[27],  PLACE_UNDER, draw_widget, PLACE_RIGHT, mwidg[26]);
+  SetWidgetPos(mwidg[55],  PLACE_UNDER, mwidg[27], PLACE_RIGHT, mwidg[54]);
 
-  j = funccount - 3;
+  j = funccount - 4;
   if ((math = malloc(sizeof(Widget *) * j)) == NULL)
     nomalloc(__LINE__);
   if ((intarray = malloc(sizeof(int *) * (j > 16 ? j : 16))) == NULL)
@@ -410,7 +420,7 @@ init_widgets()
     if (i < j) {
       if ((math[i] = malloc(sizeof(Widget))) == NULL)
 	nomalloc(__LINE__);
-      *math[i] = MakeMenuItem(ywidg[13], funcnames[3 + i],
+      *math[i] = MakeMenuItem(mwidg[27], funcnames[4 + i],
 			      mathselect, intarray[i]);
     }
   }
@@ -424,7 +434,7 @@ init_widgets()
   }
 
   for (i = 0 ; i < 26 ; i++) {
-    SetBgColor(mwidg[i + 28], color[0]);
+    SetBgColor(mwidg[i + 29], color[0]);
   }
 
   SetBgColor(draw_widget, color[0]);
