@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.h,v 1.22 1996/04/21 02:28:48 twitham Rel1_1 $
+ * @(#)$Id: oscope.h,v 1.23 1996/10/06 02:40:30 twitham Exp $
  *
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -65,17 +65,8 @@ typedef struct Signal {		/* The signals (channels) */
 extern Signal ch[CHANNELS];
 
 /* functions that are called by files other than oscope.c */
-void
-usage();
-
-int
-get_data();
-
-void
-handle_key(unsigned char);
-
-void
-parse_args(int, char **);
-
-char *
-GetString(char *, char *);
+void	usage();
+int	get_data();
+void	handle_key(unsigned char);
+void	nomalloc();
+void	cleanup();

@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.c,v 1.52 1996/10/05 05:50:20 twitham Exp $
+ * @(#)$Id: oscope.c,v 1.53 1996/10/06 02:39:55 twitham Exp $
  *
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -71,7 +71,7 @@ file             %s file to load to restore settings and memory
 	  progname, CHANNELS, CHANNELS, DEF_A,
 	  DEF_R, DEF_S, DEF_T,
 	  DEF_C, scope.size, scope.dma,
-	  fonts(),		/* the font method for the display */
+	  fonts,		/* the font method for the display */
 	  scope.mode,
 	  scope.grat, def[scope.behind], def[!scope.behind], progname);
   exit(1);
@@ -92,8 +92,27 @@ parse_args(int argc, char **argv)
   }
 }
 
+/* cleanup before exiting due to error or program end */
+void
+cleanup()
+{
+  cleanup_math();
+  cleanup_display();
+  close(snd);
+}
+
+/* die on malloc error */
+void
+nomalloc(char *file, int line)
+{
+  sprintf(error, "%s: out of memory at %s line %d", progname, file, line);
+  perror(error);
+  cleanup();
+  exit(1);
+}
+
 /* abort and show system error if given ioctl status is bad */
-static inline void
+void
 check_status(int status, int line)
 {
   if (status < 0) {
@@ -474,7 +493,9 @@ main(int argc, char **argv)
   init_sound_card(1);
   init_channels();
   init_math();
-  opendisplay(argc, argv);	/* in display.c, calls parse_args */
+  if ((argc = OpenDisplay(argc, argv)) == FALSE)
+    exit(1);
+  parse_args(argc, argv);
   init_screen();
   init_sound_card(0);
   filename = FILENAME;

@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: gr_sx.c,v 1.7 1996/10/05 20:06:07 twitham Exp $
+ * @(#)$Id: gr_sx.c,v 1.8 1996/10/06 02:37:25 twitham Exp $
  *
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -11,9 +11,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
+#include <libsx.h>
 #include "oscope.h"		/* program defaults */
-#include "x11.h"
 #include "display.h"
 #include "func.h"
 #include "file.h"
@@ -32,6 +31,8 @@ int **intarray;			/* indexes of math functions */
 int XX[] = {640,800,1024,1280};
 int XY[] = {480,600, 768,1024};
 XFont font;
+char fontname[80] = DEF_FX;
+char fonts[] = "xlsfonts";
 int color[16];
 char *alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 char *colors[] = {		/* X colors similar to 16 console colors */
@@ -55,7 +56,7 @@ char *colors[] = {		/* X colors similar to 16 console colors */
 
 /* a libsx text writer similar to libvgamisc's vga_write */
 int
-VGA_WRITE(char *s, short x, short y, XFont f, short fg, short bg, char p)
+vga_write(char *s, short x, short y, void *f, short fg, short bg, char p)
 {
   SetColor(fg);
   if (p == ALIGN_CENTER)
@@ -102,8 +103,7 @@ loadfile(Widget w, void *data)
 {
   char *fname;
 
-  fname = GetFile(NULL);
-  if (fname != NULL)
+  if ((fname = GetFile(NULL)) != NULL)
     readfile(fname);
 }
 
@@ -112,8 +112,7 @@ savefile(Widget w, void *data)
 {
   char *fname;
 
-  fname = GetFile(NULL);
-  if (fname != NULL)
+  if ((fname = GetFile(NULL)) != NULL)
       writefile(fname);
 }
 
@@ -147,6 +146,15 @@ graticule(Widget w, void *data)
   else
     scope.grat = i - 2;
   clear();
+}
+
+void
+setcolor(Widget w, void *data)
+{
+  int *c = (int *)data;
+
+  scope.color = *c;
+  draw_text(1);
 }
 
 void
@@ -211,17 +219,8 @@ hit_key(Widget w, void *data)
   handle_key(*c);
 }
 
-/* die on malloc error */
 void
-nomalloc(int line)
-{
-  sprintf(error, "%s: out of memory at x11.c line %d!", progname, line);
-  perror(error);
-  exit(1);
-}
-
-void
-cleanup_x11()
+cleanup_display()
 {
   int i;
 
@@ -292,15 +291,6 @@ fix_widgets()
     SetFgColor(cwidg[i], ch[i].show ? color[0] : ch[i].color);
     SetBgColor(cwidg[i], ch[i].show ? ch[i].color : color[0]);
   }
-}
-
-void
-setcolor(Widget w, void *data)
-{
-  int *c = (int *)data;
-
-  scope.color = *c;
-  draw_text(1);
 }
 
 /* initialize all the widgets, called by init_screen in display.c */
@@ -425,16 +415,16 @@ init_widgets()
 
   j = funccount - 4;
   if ((math = malloc(sizeof(Widget *) * j)) == NULL)
-    nomalloc(__LINE__);
+    nomalloc(__FILE__, __LINE__);
   if ((intarray = malloc(sizeof(int *) * (j > 16 ? j : 16))) == NULL)
-    nomalloc(__LINE__);
+    nomalloc(__FILE__, __LINE__);
   for (i = 0 ; i < (j > 16 ? j : 16) ; i++) {
     if ((intarray[i] = malloc(sizeof(int))) == NULL)
-      nomalloc(__LINE__);
+      nomalloc(__FILE__, __LINE__);
     *intarray[i] = i;
     if (i < j) {
       if ((math[i] = malloc(sizeof(Widget))) == NULL)
-	nomalloc(__LINE__);
+	nomalloc(__FILE__, __LINE__);
       *math[i] = MakeMenuItem(mwidg[27], funcnames[4 + i],
 			      mathselect, intarray[i]);
     }
@@ -456,4 +446,19 @@ init_widgets()
   font = GetFont(fontname);
   SetWidgetFont(draw_widget, font);
   ClearDrawArea();
+}
+
+void
+clear_display()
+{
+  ClearDrawArea();
+}
+
+/* loop until finished */
+void
+mainloop()
+{
+  draw_text(1);
+  animate(NULL);
+  MainLoop();
 }
