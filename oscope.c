@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.c,v 1.82 2000/07/07 23:06:17 twitham Exp $
+ * @(#)$Id: oscope.c,v 1.83 2000/07/10 23:36:51 twitham Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -479,7 +479,7 @@ handle_key(unsigned char c)
     break;
   case '!':
     scope.mode++;		/* point, point accumulate, line, line acc. */
-    if (scope.mode > 3)
+    if (scope.mode > 5)
       scope.mode = 0;
     clear();
     break;

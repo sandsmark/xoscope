@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 1.64 2000/07/07 02:39:13 twitham Exp $
+ * @(#)$Id: display.c,v 1.65 2000/07/10 23:36:51 twitham Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -75,7 +75,9 @@ draw_text(int all)
     "Point",
     "Point Accum.",
     "Line",
-    "Line Accum."
+    "Line Accum.",
+    "Step",
+    "Step Accum.",
   };
   static char *trigs[] = {
     "Auto",
@@ -414,12 +416,12 @@ draw_data()
   static long int num;
   static int old = 100, preva = 100, prevb = 100;
   static Channel *p;
-  static short *samples;
+  static short *samp;
 
   /* interpolate a line between the sample just before and after trigger */
   if (scope.trige) {		/* to place time zero at trigger */
-    samples = mem[k = scope.trigch + 23].data;
-    if ((i = samples[0]) != (j = samples[1])) /* avoid divide by zero: */
+    samp = mem[k = scope.trigch + 23].data;
+    if ((i = samp[0]) != (j = samp[1])) /* avoid divide by zero: */
       delay = 100 + abs(j - scope.trig + 128) * 44000 * scope.scale
 	/ (abs(j - i) * mem[k].rate); /* y=mx+b  so  x=(y-b)/m */
     if (delay < 100 || delay > h_points - 200)
@@ -453,11 +455,11 @@ draw_data()
 
 	if (k) {		/* erase previous samples */
 	  SetColor(color[0]);
-	  samples = p->old + 1;
+	  samp = p->old + 1;
 	  l = old;
 	} else {		/* plot new samples */
 	  SetColor(erase_data ? color[0] : p->color);
-	  samples = p->signal->data + 1;
+	  samp = p->signal->data + 1;
 	  l = delay;
 	}
 
@@ -475,50 +477,34 @@ draw_data()
 	  prevb = time;
 	}
 
-	if (scope.mode < 2)	/* point / point accumulate */
-	  for (bit = start ; bit <= end ; bit++) {
-	    prev = -1;
-	    bitoff = bit * 16 - end * 8 + 4;
-	    for (i = 0 ; i < h_points - 100 - l ; i++) {
-	      if ((time = i * num / 10000) > prev && time < MAXWID) {
-		if ((x = i + l) > h_points - 100)
-		  break;	/* edge of screen, exit loop*/
-		DrawPixel(x, off - (bit < 0 ? samples[time]
-				    : (bitoff - (samples[time] & (1 << bit)
-						 ? 0 : 8)))
-			  * mult / div);
-	      }
-	      if (time > prev) prev = time;
-	    }
-	  }
-
-	else			/* line / line accumulate */
-	  for (bit = start ; bit <= end ; bit++) {
-	    prev = -1;
-	    X = 0;
-	    bitoff = bit * 16 - end * 8 + 4;
-	    for (i = 0 ; i < h_points - 100 - l ; i++) {
-	      if ((time = i * num / 10000) > prev && time < MAXWID) {
-		if ((x = i + l) > h_points - 100)
-		  break;	/* edge of screen, exit loop*/
-		y = off - (bit < 0 ? samples[time]
-			   : (bitoff - (samples[time] & (1 << bit) ? 0 : 8)))
-		  * mult / div;
-		if (X) {
-		  if (bit < 0)
-		    DrawLine(X, Y, x, y);
-		  else {
-		    DrawLine(X, Y, x, Y);
-		    DrawLine(x, Y, x, y);
-		  }
+	for (bit = start ; bit <= end ; bit++) {
+	  prev = -1;
+	  X = 0;
+	  bitoff = bit * 16 - end * 8 + 4;
+	  for (i = 0 ; i < h_points - 100 - l ; i++) {
+	    if ((time = i * num / 10000) > prev && time < MAXWID) {
+	      if ((x = i + l) > h_points - 100)
+		break;
+	      y = off - (bit < 0 ? samp[time]
+			 : (bitoff - (samp[time] & (1 << bit) ? 0 : 8)))
+		* mult / div;
+	      if (scope.mode < 2)
+		DrawPixel(x, y);
+	      else if (X) {
+		if (scope.mode < 4)
+		  DrawLine(X, Y, x, y);
+		else {
+		  DrawLine(X, Y, x, Y);
+		  DrawLine(x, Y, x, y);
 		}
-		X = x; Y = y;
 	      }
-	      if (time > prev) prev = time;
+	      X = x; Y = y;
 	    }
+	    if (time > prev) prev = time;
 	  }
+	}
       }
-      memcpy(p->old, p->signal->data, sizeof(short) * MAXWID);
+      memcpy(p->old, p->signal->data, sizeof(short) * samples(p->signal->rate));
       DrawLine(90, off, 100, off);
       DrawLine(h_points - 100, off, h_points - 90, off);
     }

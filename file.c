@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: file.c,v 1.21 2000/07/06 20:12:08 twitham Exp $
+ * @(#)$Id: file.c,v 1.22 2000/07/10 23:36:51 twitham Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -92,7 +92,7 @@ handle_opt(int opt, char *optarg)
     break;
   case 'p':			/* plotting mode */
   case 'P':
-    scope.mode = limit(strtol(optarg, NULL, 0), 0, 3);
+    scope.mode = limit(strtol(optarg, NULL, 0), 0, 5);
     break;
   case 'g':			/* graticule on/off */
   case 'G':

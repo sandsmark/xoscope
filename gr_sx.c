@@ -1,11 +1,11 @@
 /*
- * @(#)$Id: gr_sx.c,v 1.16 1997/06/11 01:08:07 twitham Rel $
+ * @(#)$Id: gr_sx.c,v 1.17 2000/07/10 23:36:51 twitham Exp $
  *
- * Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
+ * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
  * (see the files README and COPYING for more details)
  *
- * This file implements the X11 (libsx) specific pieces of the display
+ * This file implements the libsx specific pieces of the display
  *
  */
 
@@ -19,7 +19,7 @@
 
 Widget draw_widget;		/* scope drawing area */
 Widget file[4];			/* file menu */
-Widget plot[5];			/* plot menu */
+Widget plot[7];			/* plot menu */
 Widget grat[6];			/* graticule menu */
 Widget colormenu[17];		/* color menu */
 Widget xwidg[11];		/* extra horizontal widgets */
@@ -317,6 +317,8 @@ init_widgets()
   plot[2] = MakeMenuItem(plot[0], "Point Accumulate", plotmode, "1");
   plot[3] = MakeMenuItem(plot[0], "Line", plotmode, "2");
   plot[4] = MakeMenuItem(plot[0], "Line Accumulate", plotmode, "3");
+  plot[5] = MakeMenuItem(plot[0], "Step", plotmode, "4");
+  plot[6] = MakeMenuItem(plot[0], "Step Accumulate", plotmode, "5");
 
   colormenu[0] = MakeMenu("Color");
 

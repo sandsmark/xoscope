@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: gr_gtk.c,v 1.20 2000/07/03 18:18:14 twitham Exp $
+ * @(#)$Id: gr_gtk.c,v 1.21 2000/07/10 23:36:51 twitham Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -667,6 +667,8 @@ static GtkItemFactoryEntry menu_items[] =
   {"/Scope/Plot Mode/Point Accumulate", NULL, plotmode, (int)"1", "/Scope/Plot Mode/Point"},
   {"/Scope/Plot Mode/Line", NULL, plotmode, (int)"2", "/Scope/Plot Mode/Point Accumulate"},
   {"/Scope/Plot Mode/Line Accumulate", NULL, plotmode, (int)"3", "/Scope/Plot Mode/Line"},
+  {"/Scope/Plot Mode/Step", NULL, plotmode, (int)"4", "/Scope/Plot Mode/Line Accumulate"},
+  {"/Scope/Plot Mode/Step Accumulate", NULL, plotmode, (int)"5", "/Scope/Plot Mode/Step"},
   {"/Scope/Graticule/tear", NULL, NULL, 0, "<Tearoff>"},
   {"/Scope/Graticule/Color/tear", NULL, NULL, 0, "<Tearoff>"},
   {"/Scope/Graticule/Color/black", NULL, setcolor, (int)"a", NULL},
