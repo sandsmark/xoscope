@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.c,v 1.58 1997/05/03 05:45:47 twitham Exp $
+ * @(#)$Id: oscope.c,v 1.59 1997/05/03 16:15:27 twitham Exp $
  *
  * Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -136,6 +136,8 @@ init_channels()
     ch[i].show = (i < 2);
     ch[i].func = i < 2 ? i : FUNCMEM;
     ch[i].mem = i < 2 ? 'x' + i : 0;
+    strcpy(ch[i].command, COMMAND);
+    ch[i].pid = 0;
   }
 }
 
@@ -354,8 +356,8 @@ handle_key(unsigned char c)
   case '$':
     if (scope.select > 1) {
       if ((s = GetString("External command and args:",
-			 command[scope.select])) != NULL) {
-	strcpy(command[scope.select], s);
+			 ch[scope.select].command)) != NULL) {
+	strcpy(ch[scope.select].command, s);
 	ch[scope.select].func = FUNCEXT;
 	ch[scope.select].mem = EXTSTART;
 	clear();

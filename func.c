@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: func.c,v 1.14 1997/05/01 04:45:21 twitham Exp $
+ * @(#)$Id: func.c,v 1.15 1997/05/03 16:15:45 twitham Exp $
  *
  * Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -45,14 +45,6 @@ int funccount = sizeof(funcnames) / sizeof(char *);
 /* the signals: 0-22=A-W=memories, 23=X=left, 24=Y=right, 26-33=functions */
 Signal mem[34];
 
-/* for the fft function: x position to bin number map, and data buffer */
-int xmap[MAXWID];
-short fftdata[MAXWID];
-
-/* the external commands and their PIDs */
-char command[CHANNELS][256];
-pid_t pid[] = {0, 0, 0, 0, 0, 0, 0, 0};
-
 /* recall given memory register to the currently selected signal */
 void
 recall(char c)
@@ -96,10 +88,10 @@ pipeto(int num)
   static char *path, *oscopepath;
 
   if (ch[num].mem == EXTSTART) {
-    if (pid[num] > 0) {		/* close previous command pipes */
+    if (ch[num].pid > 0) {	/* close previous command pipes */
       close(to[num][1]);
       close(from[num][0]);	/* and reap the child process */
-      waitpid(pid[num], NULL, 0);
+      waitpid(ch[num].pid, NULL, 0);
     }
     if (pipe(to[num]) || pipe(from[num])) { /* get a set of pipes */
       sprintf(error, "%s: can't create pipes", progname);
@@ -107,10 +99,10 @@ pipeto(int num)
       return;
     }
     signal(SIGPIPE, SIG_IGN);
-    if ((pid[num] = fork()) > 0) { /* parent */
+    if ((ch[num].pid = fork()) > 0) { /* parent */
 	close(to[num][0]);
 	close(from[num][1]);
-    } else if (pid[num] == 0) {	/* child */
+    } else if (ch[num].pid == 0) { /* child */
       close(to[num][1]);
       close(from[num][0]);
       close(0);
@@ -127,9 +119,9 @@ pipeto(int num)
 	putenv(path);
       }
 
-      execlp("/bin/sh", "sh", "-c", command[num], NULL);
+      execlp("/bin/sh", "sh", "-c", ch[num].command, NULL);
       sprintf(error, "%s: child can't exec /bin/sh -c \"%s\"",
-	      progname, command[num]);
+	      progname, ch[num].command);
       perror(error);
       exit(1);
     } else {			/* fork error */
@@ -137,7 +129,7 @@ pipeto(int num)
       perror(error);
       return;
     }
-    message(command[num], ch[num].color);
+    message(ch[num].command, ch[num].color);
     ch[num].mem = EXTRUN;
   }
   if (ch[num].mem == EXTRUN) {	/* write to / read from child process */
@@ -155,7 +147,7 @@ pipeto(int num)
     }
     if (j) {
       sprintf(error, "%s: %d pipe r/w errors from \"%s\"",
-	      progname, i, command[num]);
+	      progname, i, ch[num].command);
       perror(error);
       ch[num].mem = EXTSTOP;
     }
@@ -270,9 +262,6 @@ init_math()
 {
   static int i;
 
-  for (i = 0 ; i < CHANNELS ; i++) {
-    strcpy(command[i], COMMAND);
-  }
   for (i = 0 ; i < 34 ; i++) {
     mem[i].rate = 44000;
     memset(mem[i].data, 0, MAXWID * sizeof(short));

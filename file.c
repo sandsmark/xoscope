@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: file.c,v 1.8 1997/05/03 05:43:12 twitham Exp $
+ * @(#)$Id: file.c,v 1.9 1997/05/03 16:15:18 twitham Exp $
  *
  * Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -135,8 +135,8 @@ handle_opt(int opt, char *optarg)
 	  s->mem = *q;
 	} else {
 	  s->func = FUNCEXT;
-	  strcpy(command[opt - '1'], q);
-	  if ((p = strchr(command[opt - '1'], '\n')) != NULL)
+	  strcpy(ch[opt - '1'].command, q);
+	  if ((p = strchr(ch[opt - '1'].command, '\n')) != NULL)
 	    *p = '\0';
 	  s->mem = EXTSTART;
 	}
@@ -196,7 +196,7 @@ writefile(char *filename)
     if (p->func == FUNCMEM || p->func == FUNCLEFT || p->func == FUNCRIGHT)
       fprintf(file, "%c", (p->mem >= 'a' && p->mem <= 'z') ? p->mem : '0');
     else if (p->func == FUNCEXT)
-      fprintf(file, "%s", command[i]);
+      fprintf(file, "%s", p->command);
     else
       fprintf(file, "%d", i > 1 ? (p->func - 3) : 0);
     fprintf(file, "\n");

@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.h,v 1.27 1997/05/03 06:02:43 twitham Exp $
+ * @(#)$Id: oscope.h,v 1.28 1997/05/03 16:15:35 twitham Exp $
  *
  * Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -46,14 +46,14 @@ typedef struct Scope {		/* The oscilloscope */
 } Scope;
 extern Scope scope;
 
-typedef struct Signal {		/* The signals */
+typedef struct Signal {		/* The input/memory/math signals */
   short data[MAXWID];
   int rate;
   int color;
 } Signal;
 extern Signal mem[34];
 
-typedef struct Channel {	/* The channels */
+typedef struct Channel {	/* The display channels */
   Signal *signal;
   short old[MAXWID];
   short min;
@@ -67,6 +67,8 @@ typedef struct Channel {	/* The channels */
   int show;
   int func;
   char mem;
+  char command[256];
+  int pid;
 } Channel;
 extern Channel ch[CHANNELS];
 

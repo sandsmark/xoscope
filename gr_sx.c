@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: gr_sx.c,v 1.11 1997/05/02 06:01:11 twitham Exp $
+ * @(#)$Id: gr_sx.c,v 1.12 1997/05/03 16:14:55 twitham Exp $
  *
  * Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -189,7 +189,7 @@ dismiss(Widget w, void *data)
 void
 runextern(Widget w, void *data)
 {
-  strcpy(command[scope.select], (char *)data);
+  strcpy(ch[scope.select].command, (char *)data);
   ch[scope.select].func = FUNCEXT;
   ch[scope.select].mem = EXTSTART;
   clear();

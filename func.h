@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: func.h,v 1.10 1997/05/01 04:47:46 twitham Exp $
+ * @(#)$Id: func.h,v 1.11 1997/05/03 16:15:57 twitham Rel1_3 $
  *
  * Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -22,12 +22,6 @@
 extern int funccount;
 
 extern char *funcnames[];
-
-extern char command[CHANNELS][256];
-
-extern int xmap[];		/* in oscopefft.c and func.c */
-
-extern short fftdata[];		/* in oscopefft.c and func.c */
 
 void
 save(char);
