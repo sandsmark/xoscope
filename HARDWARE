@@ -18,17 +18,17 @@ CIRCUIT IS WITH YOU.
 
 	HISTORY
 
-I was using a piece of wire to the line in on my sound card to probe a
-circuit one day when I happened to notice that the probing was loading
-my circuit down.  This implies my sound card's line input may have
-less than ideal input impedance for looking at arbitrary signals.  I
+I was probing a circuit with a piece of wire to the line in on my
+sound card when I happened to notice that the probing was loading my
+circuit down.  This implies my sound card's line input may have less
+than ideal input impedance for looking at arbitrary signals.  I
 eliminated the loading by using a less intrusive 10x (10 times)
 attenuating oscilloscope probe.  But then the signal was too small to
 see on [x]oscope.  So, for fun, I actually built a little line in
 buffer circuit to solve these problems and more.
 
 
-	THE BUFFER CIRCUIT 
+	THE BUFFER CIRCUIT
 
 The result is shown in the file buff.fig (xfig source format) or
 buff.ps (postscript format).  The purpose of this circuit is to:
@@ -76,12 +76,13 @@ same effect as the "GND" input coupling of a real oscilloscope.
 
 	ASSEMBLY AND CONNECTION
 
-I built two of the circuits on a the back of a full size drive bay
-cover.  The op-amp and surrounding components were mounted on a small
-circuit board in the center with the BNC conncectors, switches and
-potentiometers mounted on either side.  It is under 1/2" thick so an
-internal drive can even fit behind it.  I may get some pictures or
-drawings up on my WWW site someday.
+See buff2.fig or buff2.ps for my circuit layout.  I built two of the
+circuits on the back of a full size drive bay cover.  The op-amp and
+surrounding components were mounted on a small circuit board (see
+pcb.fig / pcb.ps) positioned in the center of the drive bay cover.
+The BNC connectors, switches and potentiometers were mounted through
+the cover on either side of the circuit board.  The result is under
+1/2" thick so an internal drive can even fit behind it.
 
 A -12V power connector may not be readily available in your computer.
 The standard disk drive power connectors are +5 and +12.  I added an
@@ -113,7 +114,7 @@ Qty	Part#	Description
 
 2	S1	SPST mini toggle switch
 
-1		circuit board, (1/2 RS 276-1598)
+1		circuit board, (1/2 RS 276-159)
 1		8-pin DIP socket
 2		1/4" knob for R6
 2		female BNC connectors, panel mount
@@ -128,7 +129,6 @@ This circuit was designed and built by me on my own time and
 equipment.  My employer has absolutely nothing to do with it.
 
 
-If you're interested in my exact circuit layout, or have other
-comments on this thing, please let me know.
+If you have comments on this thing, please let me know.
 
 	Tim Witham <twitham@pcocd2.intel.com>
