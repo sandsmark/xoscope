@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: config.h,v 1.12 2000/03/05 23:03:51 twitham Rel $
+ * @(#)$Id: config.h,v 1.13 2000/05/20 23:43:49 twitham Rel $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -19,6 +19,7 @@
 #define DEF_R	44100		/* 8000,11025,22050,44100 (44100) */
 #define DEF_S	10		/* 1,2,5,10,20,50,100,200,500,1000 (10) */
 #define DEF_T	"0:0:x"		/* -128-127:0,1,2:x,y ("0:0:x") */
+#define DEF_L	"1:1:0"		/* 1-MAXWID:1-MAXWID:0,1 ("1:1:0") */
 #define DEF_C	4		/* 0-16 (4) */
 #define DEF_M	0		/* 0,1,2 (0) */
 #define DEF_D	4		/* 1,2,4 (4) */
