@@ -172,14 +172,18 @@ inline void draw_graticule()
   vga_drawline(h_points-1, offset, h_points-1, offset+256);
 
   if (actual) {
-    /* draw tick marks at 1 msec intervals */
-    for (i = 0 ; (j = i / 1000) < h_points ; i += (actual * scale)) {
-      vga_drawline(j, offset, j, offset+5);
-      vga_drawline(j, offset+251, j, offset+256);
-    }
-    /* draw vertical lines at 10 msec intervals */
-    for (i = 0 ; (j = i / 100) < h_points ; i += (actual * scale)) {
-      vga_drawline(j, offset, j, offset+256);
+    /* draw tiny tick marks at 0.5 msec intervals */
+    for (i = 0 ; (j = i / 2000) < h_points ; i += (actual * scale)) {
+      vga_drawpixel(j, offset);
+      vga_drawpixel(j, offset + 255);
+      /* draw bigger marks at 1 msec intervals */
+      if ((j = i / 1000) < h_points) {
+	vga_drawline(j, offset, j, offset+5);
+	vga_drawline(j, offset+250, j, offset+256);
+      }
+      /* draw vertical lines at 5 msec intervals */
+      if ((j = i / 200) < h_points)
+	vga_drawline(j, offset, j, offset+256);
     }
   }
 
