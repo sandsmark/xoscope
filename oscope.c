@@ -9,7 +9,7 @@
  *
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
- * @(#)$Id: oscope.c,v 1.18 1996/01/02 06:25:14 twitham Exp $
+ * @(#)$Id: oscope.c,v 1.19 1996/01/02 07:25:28 twitham Exp $
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -374,14 +374,14 @@ handle_key()
     CLEAR;
     break;
   case 'R':
-    sampling *= 1.1;		/* 10% sample rate increase */
+    sampling += sampling / 10;	/* 10% sample rate increase */
     check_status(ioctl(snd, SOUND_PCM_SYNC, 0), __LINE__);
     check_status(ioctl(snd, SOUND_PCM_WRITE_RATE, &sampling), __LINE__);
     check_status(ioctl(snd, SOUND_PCM_READ_RATE, &actual), __LINE__);
     CLEAR;
     break;
   case 'r':
-    sampling *= 0.9;		/* 10% sample rate decrease */
+    sampling -= sampling / 10;	/* 10% sample rate decrease */
     check_status(ioctl(snd, SOUND_PCM_SYNC, 0), __LINE__);
     check_status(ioctl(snd, SOUND_PCM_WRITE_RATE, &sampling), __LINE__);
     check_status(ioctl(snd, SOUND_PCM_READ_RATE, &actual), __LINE__);
