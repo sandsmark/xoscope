@@ -85,24 +85,18 @@ void usage()
 /* if verbose mode, show current parameter settings on standard out */
 inline void show_info() {
   if (verbose) {
-    printf("graphics mode: %d\n", mode);
-    printf("       colour: %d\n", colour);
-    printf("  DMA divisor: %d\n", dma);
+    printf(" -m %2d  -d %1d  -c %2d ",
+	   mode, dma, colour);
     if (point_mode)
-      printf(" drawing mode: point\n");
+      printf(" -p");
     else
-      printf(" drawing mode: line segment\n");
+      printf(" -l");
     if (graticule)
-      printf("    graticule: on\n");
+      printf("  -g");
     else
-      printf("    graticule: off\n");
-    if (trigger == -1)
-      printf("trigger level: disabled\n");
-    else
-      printf("trigger level: %d\n", trigger);
-    printf("sampling rate: %d\n", sampling);
-    printf("  actual rate: %d\n", actual);
-    printf(" scale (zoom): %d\n", scale);
+      printf("    ");
+    printf("  -t %3d  -s %2d  -r %5d (actual: %5d)\n",
+	   trigger, scale, sampling, actual);
   }
 }
 
