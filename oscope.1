@@ -5,18 +5,18 @@
 .\" any higher version.  See section COPYING of the GNU Public license
 .\" for conditions under which this file may be redistributed.
 .\"
-.\" @(#)$Id: oscope.1,v 1.3 1996/01/03 06:16:21 twitham Exp $
+.\" @(#)$Id: oscope.1,v 1.4 1996/01/31 07:40:37 twitham Exp $
 
-.TH SCOPE 1 "January 3  1996" "Linux" "User Commands"
+.TH OSCOPE 1 "January 3  1996" "Linux" "User Commands"
 .SH NAME
-scope \- Software Oscilloscope
+oscope \- Software Oscilloscope
 .SH SYNOPSIS
-scope [-1|-2] [-r<rate>] [-s <scale>] [-c<colour>] [-t<trigger>] \
+oscope [-1|-2] [-r<rate>] [-s <scale>] [-c<colour>] [-t<trigger>] \
 [-m<mode>] [-d<dma divisor>] [-p|-l] [-g] [-b] [-v]
 
 .SH DESCRIPTION
 
-.B Scope
+.B Oscope
 is a simple software emulation of an oscilloscope. It graphically
 displays voltage as a function of time. The input is via a sound card
 using the kernel sound device /dev/dsp.
@@ -26,7 +26,7 @@ The svgalib library is used to implement a real-time waveform display.
 .PP
 .SH "COMMAND\-LINE OPTIONS"
 Use
-.B scope -h
+.B oscope -h
 (an invalid option) to produce a usage message showing these options,
 their default values, and key equivalents.  All options can be
 interactively changed, see the
@@ -55,10 +55,10 @@ This can be 1, 2, 4, 8, or 16.
 .TP 0.5i
 .B -t <trigger>
 Sets the trigger level.
-.B scope
+.B oscope
 will wait until it receives a signal "edge" at this level. It should
 be in the range 0 - 255.  -1 causes
-.B scope
+.B oscope
 to run without waiting for a trigger. Note that the top of the display
 is 0, the bottom is 255, and the midpoint is 128.
 
@@ -109,7 +109,7 @@ signals.  Obviously has no effect if the graticule is not on.
 .TP 0.5i
 .B -v
 Toggles
-.B scope
+.B oscope
 verbose mode.  Key press and option information is displayed on
 standard output.
 
@@ -191,15 +191,15 @@ Quit the program.
 
 .SH EXAMPLES
 .TP 0.5i
-.B scope -r 44000 -l -t 128
+.B oscope -r 44000 -l -t 128
 
 This runs
-.B scope
+.B oscope
 at a 44kHz sampling rate, in line mode, with a trigger set at
 mid-scale.
 
 .SH PORTABILITY
-.B Scope
+.B Oscope
 was written specifically for Linux, and uses the Linux sound driver
 and svgalib plotting routines. Obviously you need a sound card, VGA
 graphics, and the Linux kernel sound drivers.
@@ -213,7 +213,7 @@ anything to the display (controls, etc...) would slow it down
 considerably.
 
 Because it uses svgalib,
-.B scope
+.B oscope
 must be run as root or setuid to root.
 
 The display will probably not be able to keep up at higher sampling
@@ -231,9 +231,9 @@ graphical controls (mouse), and storage mode (with waveform
 save/load), but it would probably run too slowly.
 
 .SH AUTHOR
-.B Scope
+.B Oscope
 was written by Jeff Tranter (Jeff_Tranter@Mitel.COM) and later
 enhanced by Tim Witham (twitham@pcocd2.intel.com).
-.B Scope
+.B Oscope
 is released under the conditions of the GNU General Public License.
 See the file COPYING and notes in the source code for details.

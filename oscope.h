@@ -1,12 +1,12 @@
 /*
- * @(#)$Id: oscope.h,v 1.9 1996/01/31 07:18:43 twitham Exp $
+ * @(#)$Id: oscope.h,v 1.10 1996/01/31 07:40:37 twitham Exp $
  *
  * Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
  * (see scope.c and the file COPYING for more details)
  *
- * This file simply sets the program's default options, see scope.c
+ * This file simply sets the program's default options, see oscope.c
  * Tweaking these parameters will automagically fix the usage message
  *
  */
@@ -96,7 +96,7 @@ typedef struct Signal {		/* The signals (channels) */
 } Signal;
 extern Signal ch[CHANNELS];
 
-/* functions that are called by files other than scope.c */
+/* functions that are called by files other than oscope.c */
 void
 get_data();
 

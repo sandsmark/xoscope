@@ -10,7 +10,7 @@ version (highly recommended).
 
 You need "libsx" to get the X client (highly recommended).
 
-See the Makefile and scope.h for config options.
+See the Makefile and oscope.h for config options.
 
 Enjoy,
 

@@ -1,10 +1,10 @@
 /*
- * @(#)$Id: display.c,v 1.12 1996/01/31 07:19:09 twitham Exp $
+ * @(#)$Id: display.c,v 1.13 1996/01/31 07:40:37 twitham Exp $
  *
  * Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
- * (see scope.c and the file COPYING for more details)
+ * (see oscope.c and the file COPYING for more details)
  *
  * This file implements the display for both the console and X11
  *
@@ -13,11 +13,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include "scope.h"		/* program defaults */
+#include "oscope.h"		/* program defaults */
 #include "display.h"
 
 /* libsx vs. svgalib drawing routines */
-#ifdef XSCOPE
+#ifdef XOSCOPE
 
 #include <libsx.h>
 #define VGA_DRAWPIXEL	DrawPixel
@@ -72,7 +72,7 @@ char *colors[] = {		/* X colors similar to 16 console colors */
   "white"
 };
 
-#ifdef XSCOPE
+#ifdef XOSCOPE
 char fontname[80] = DEF_FX;
 int XX[] = {640,800,1024,1280};
 int XY[] = {480,600, 768,1024};
@@ -95,7 +95,7 @@ font_t font;			/* pointer to the font structure */
 void
 cleanup()
 {
-#ifdef XSCOPE
+#ifdef XOSCOPE
   FreeFont(font);
 #else
   vga_setmode(TEXT);		/* restore text screen */
@@ -129,7 +129,7 @@ row(int y)
 void
 draw_text()
 {
-#if defined XSCOPE || defined HAVEVGAMISC
+#if defined XOSCOPE || defined HAVEVGAMISC
   static char string[81];
   static int i, j;
   static char *strings[] = {
@@ -224,7 +224,7 @@ draw_text()
 void
 clear()
 {
-#ifdef XSCOPE
+#ifdef XOSCOPE
   ClearDrawArea();
 #else
   vga_clear();
@@ -242,7 +242,7 @@ show_info(unsigned char c) {
 	    scope.rate, scope.scale, scope.trig, scope.color, mode, dma,
 	    plot_mode ? "-p" : "-l",
 
-	    /* reverse logic if these booleans are on by default in scope.h */
+	    /* reverse logic if these booleans are on by default in oscope.h */
 #if DEF_G
 	    scope.grat ? "" : "-g",
 #else
@@ -359,7 +359,7 @@ draw_data()
       p->old[i] = p->data[i];
     }
   }
-#ifdef XSCOPE
+#ifdef XOSCOPE
   SyncDisplay();
 #endif
 }
@@ -377,7 +377,7 @@ animate(void *data)
     draw_data();		/* plot graticule on top of data */
     draw_graticule();
   }
-#ifdef XSCOPE
+#ifdef XOSCOPE
   if (quit_key_pressed) {
     cleanup();
     exit(0);
@@ -386,7 +386,7 @@ animate(void *data)
 #endif
 }
 
-#ifdef XSCOPE
+#ifdef XOSCOPE
 /* callback to redisplay the X11 screen */
 void
 redisplay(Widget w, int new_width, int new_height, void *data) {
@@ -420,7 +420,7 @@ init_screen(int firsttime)
   int i;
 
   if (firsttime) {
-#ifdef XSCOPE
+#ifdef XOSCOPE
     h_points = XX[mode];
     v_points = XY[mode];
     w[0] = MakeDrawArea(h_points, v_points, redisplay, NULL);
@@ -443,7 +443,7 @@ init_screen(int firsttime)
 #endif
 #endif
   }
-#ifndef XSCOPE
+#ifndef XOSCOPE
   vga_setmode(screen_modes[mode]);
   v_points = vga_getydim();
   h_points = vga_getxdim();
@@ -456,7 +456,7 @@ void
 mainloop()
 {
   draw_text();
-#ifdef XSCOPE
+#ifdef XOSCOPE
   animate(NULL);
   MainLoop();
 #else
@@ -471,7 +471,7 @@ mainloop()
 int
 opendisplay(int argc, char **argv)
 {
-#ifdef XSCOPE
+#ifdef XOSCOPE
   if ((argc = OpenDisplay(argc, argv)) == FALSE)
     exit(1);
 #endif
@@ -482,7 +482,7 @@ opendisplay(int argc, char **argv)
 char *
 fonts()
 {
-#ifdef XSCOPE
+#ifdef XOSCOPE
   return "xlsfonts";
 #else
   return "/usr/lib/kbd/consolefonts";

@@ -3,9 +3,9 @@
  *                      | Software Oscilloscope |
  *                      \-----------------------/
  *
- * [x]scope --- Use Linux's /dev/dsp (a sound card) as an oscilloscope
+ * [x]oscope --- Use Linux's /dev/dsp (a sound card) as an oscilloscope
  *
- * @(#)$Id: oscope.c,v 1.34 1996/01/31 07:19:01 twitham Exp $
+ * @(#)$Id: oscope.c,v 1.35 1996/01/31 07:40:37 twitham Exp $
  *
  * Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
@@ -28,7 +28,7 @@
  *
  * See the man page for a description of what this program does and
  * what the requirements to run it are.  If you would prefer different
- * defaults, simply tweak scope.h and re-make.
+ * defaults, simply tweak oscope.h and re-make.
  *
  * scope 0.1 (original by Jeff Tranter) was developed using:
  * - Linux kernel 1.0
@@ -38,7 +38,7 @@
  * - Trident VGA card
  * - 80386DX40 CPU with 8MB RAM
  *
- * [x]scope 1.0 (enhancements by Tim Witham) was developed using:
+ * [x]oscope 1.0 (enhancements by Tim Witham) was developed using:
  * - Linux kernel 1.2.10
  * - gcc 2.6.3
  * - svgalib 1.22
@@ -55,10 +55,10 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <sys/soundcard.h>
-#include "scope.h"		/* program defaults */
+#include "oscope.h"		/* program defaults */
 #include "display.h"		/* display functions */
 
-/* global program defaults, defined in scope.h (see also) */
+/* global program defaults, defined in oscope.h (see also) */
 Scope scope;
 Signal ch[CHANNELS];
 int channels = DEF_1;
