@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: sc_linux.c,v 1.15 2000/03/02 06:03:11 twitham Rel $
+ * @(#)$Id: sc_linux.c,v 1.16 2000/03/25 05:26:16 twitham Rel $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -174,10 +174,10 @@ get_data()
   for (i = 0; i < (j + 4) / 2; i++) {	/* move it into channel 1 and 2 */
     if (*buff == 0 || *buff == 255)
       clip = 1;
-    mem[23].data[i] = (short)(*buff++) - 128;
+    mem[23].data[i] = (short)(*buff++) - 127;
     if (*buff == 0 || *buff == 255)
       clip = 2;
-    mem[24].data[i] = (short)(*buff++) - 128;
+    mem[24].data[i] = (short)(*buff++) - 127;
   }
   return(1);
 }
