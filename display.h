@@ -1,7 +1,7 @@
 /*
- * @(#)$Id: display.h,v 1.8 1996/10/06 02:34:56 twitham Rel1_2 $
+ * @(#)$Id: display.h,v 1.9 1997/05/04 20:24:15 twitham Rel $
  *
- * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
+ * Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
  *
  * (see the files README and COPYING for more details)
  *
@@ -21,6 +21,7 @@ extern int color[];
 
 int	OpenDisplay();
 void	init_screen();
+void	init_widgets();
 void	mainloop();
 void	draw_text();
 void	clear();
