@@ -1,4 +1,4 @@
-# @(#)$Id: Makefile,v 1.16 1996/10/06 05:44:59 twitham Exp $
+# @(#)$Id: Makefile,v 1.17 1996/10/12 07:51:37 twitham Rel1_2 $
 
 # Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
 
@@ -61,12 +61,14 @@ X11_OBJ	= $(X11_SRC:.c=.o)
 
 all:	$(SCOPES) $(EXTERN)
 
-install:	$(SCOPES) $(EXTERN)
+install:	all
+	-mkdir -p $(BINPATH)
 	cp -p $(SCOPES) $(BINPATH)
-	chmod u+s $(BINPATH)/oscope
-	chmod go-w $(BINPATH)/oscope
+	-chmod u+s $(BINPATH)/oscope
+	-chmod go-w $(BINPATH)/oscope
+	-mkdir -p $(MANPATH)
 	cp *.1 $(MANPATH)
-	mkdir -p $(LIBPATH)
+	-mkdir -p $(LIBPATH)
 	cp -p $(EXTERN) $(LIBPATH)
 
 clean:
@@ -85,7 +87,7 @@ offt:	fft.o offt.o realfft.o
 xy:	xy.o
 	$(CC) $^ -o $@ $(XFLAGS)
 
-dist:	release
+dist:
 	( cd .. ; tar --exclude oscope-$(VER)/RCS -czvf oscope-$(VER).tar.gz \
 		oscope-$(VER) )
 

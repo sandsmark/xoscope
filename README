@@ -18,11 +18,13 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 	(see the file COPYING for more details)
 
-Latest official version is available at:
+Latest official version is available by anonymous ftp at:
 
 		ftp://sunsite.unc.edu/pub/Linux/apps/circuits/
 
-See also:	http://www.bobsplace.com/~twitham/oscope/
+The latest version, binary releases and more is available at:
+
+		http://www.bobsplace.com/~twitham/oscope/
 
 
 	SUMMARY:
@@ -34,23 +36,55 @@ digital-scope-like features.  The name was changed since there is
 already an xscope program that is nothing like this program.  Also,
 the name oscope makes it obvious what this is; an oscilloscope.
 
+http://www.bobsplace.com/~twitham/oscope/ now has pre-built binary
+releases.  You may want to try one if you have problems building this
+from source.  Currently the binaries were built on Linux 2.0.12, ELF.
+They may or may not work on your system.
+
+
+	NEW for 1.2 (see also the files ChangeLog and TODO):
+
+* !!! At least 2X faster (inefficient display loop fixed) !!!
+
+* average math function fixed; it didn't work in 1.2.
+
+* single shot mode; show the first set of samples after trigger.
+
+* xy external command for xoscope; show xy in another window.
+
+* cleaner easier to read display; hit ? to toggle the help screen.
+
+* buff2.*, pcb.*; exact layout of the circuit described in HARDWARE.
+
 
 	WHAT YOU NEED:
 
-(All things mentioned here can be obtained by anonymous ftp from
-sunsite.unc.edu or equivalent.  Search the LSM (Linux Software Map) to
-find the latest versions.)
+All things mentioned here can be obtained by anonymous ftp from
+sunsite.unc.edu or a mirror site.  A recent version should be
+available in the directory listed here.
 
 * You will need a mixer program to select input source and levels.
-  Examples are "xmix" and "cam".
+  Examples are "xfmix", "xmix", and "cam".
+
+	ftp://sunsite.unc.edu/pub/Linux/apps/sound/mixers/
 
 * You will need "libsx" to build the X client (highly recommended).
+  You only need to make src/libsx.a then move it to somewhere like
+  /usr/local/lib or /usr/lib.
+
+	ftp://sunsite.unc.edu/pub/Linux/X11/devel/
 
 * You will need "libvga" from the "svgalib" package to build the
-  SVGA console version.
+  SVGA console version.  You may already have this in /usr/lib.
+
+	ftp://sunsite.unc.edu/pub/Linux/libs/graphics/
 
 * You will need "libvgamisc" from the "g3vga" kit to get text on the
   console version (highly recommended if you use the console version).
+  You only need to make misc/libvgamisc.a then move it to somewhere
+  like /usr/local/lib or /usr/lib.
+
+	ftp://sunsite.unc.edu/pub/Linux/apps/graphics/viewers/
 
 If you don't have these libraries, or if they're in strange places,
 you will need to tweak the Makefile.  See the Makefile and config.h
@@ -60,7 +94,7 @@ can't be displayed on your screen (bummer!).  If I were you, I'd get
 the libraries instead. :-)
 
 If you have X11 and would like to do simultaneous Spectrum Analysis,
-see README.freq51 for extra optional instructions.
+see the file README.freq51 for extra optional instructions.
 
 
 	INSTALLATION:
@@ -94,18 +128,17 @@ and offt.c external math command examples.
 	PLATFORMS:
 
 [x]oscope was developed specifically for Linux on:
- - Linux kernel 1.2.10
- - gcc 2.6.3
- - svgalib 1.22
+ - Linux kernel 1.2.10	(and then on):	2.0.12
+ - gcc 2.6.3				2.7.2
+ - svgalib 1.2.9			1.2.10
  - libsx 1.1
  - SoundBlaster 16
  - ATI Win Turbo 2MB VRAM
  - 100 MHz Intel Pentium(R) Processor, 32MB RAM
 
-To date, this is all I know it has been tried on.  You will probably
-need a fast processor and video card if you want to see several
-signals in near real-time.  Please let me know if it has problems (or
-not) on your specific Linux system or sound card.
+You will probably need a fast processor and video card if you want to
+see several signals in real-time.  Please let me know if it has
+problems (or not) on your specific Linux system or sound card.
 
 
 	EXTRA:

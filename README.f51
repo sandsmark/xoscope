@@ -2,12 +2,10 @@
 
 	SUMMARY:
 
-xfreq is a spectrum analyzer program by Philip VanBaren, available at
-sunsite.unc.edu.  If you have X11 this file will show you how to run
-both xoscope and xfreq together to see signals in the time and
-frequency domains simultaneously.
-
-Of course doing this will really slow things down since Linux will
+xfreq is a spectrum analyzer program by Philip VanBaren.  If you have
+X11 this file will show you how to run both xoscope and xfreq together
+to see signals in the time and frequency domains simultaneously in two
+windows. Of course doing this will slow things down since Linux will
 need to split processing time across the two processes.  But it works
 quite well for repetitive signals.
 
@@ -16,8 +14,11 @@ quite well for repetitive signals.
 
 * The "freq51" distribution from sunsite.unc.edu or a mirror.
 
+	ftp://sunsite.unc.edu/pub/Linux/apps/sound/freqs/
+
 * "libsrgp" from the "srgp" distribution, also available at sunsite.
 
+	ftp://sunsite.unc.edu/pub/Linux/libs/X/
 
 	INSTALLATION:
 
@@ -28,10 +29,10 @@ from xoscope:
 
 * cd freq51/source
 
-* patch < /path/to/oscope-1.1/freq51.patch
+* patch < /path/to/oscope-1.2/freq51.patch
 
 * edit the "DEFINES" line of makefile.srgp_linux if you put your
-* ofreq.ini file somewhere other than /usr/local/lib/oscope/ofreq.ini
+  ofreq.ini file somewhere other than /usr/local/lib/oscope/ofreq.ini
 
 * make -f makefile.srgp_linux clean
 
@@ -42,7 +43,7 @@ from xoscope:
 * cp -p xfreq /usr/local/bin	(or wherever you want xfreq)
 
 * ln -s /usr/local/bin/xfreq /usr/local/lib/oscope/ofreq
-* (fix the paths if necessary)
+  (fix the paths if necessary)
 
 
 	USAGE:
