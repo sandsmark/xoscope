@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: proscope.c,v 1.5 2000/07/03 18:18:14 twitham Exp $
+ * @(#)$Id: proscope.c,v 1.6 2000/07/07 02:39:13 twitham Exp $
  *
  * Copyright (C) 1997 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -11,7 +11,7 @@
  */
 
 #include <stdio.h>
-#include <sys/time.h>
+#include <unistd.h>
 #include "proscope.h"
 #include "oscope.h"
 #include "display.h"
@@ -20,16 +20,6 @@ unsigned int ps_rate[] = {20000000, 10000000, 2000000, 1000000,
 			  200000, 100000, 20000, 10000, 2000, 1000};
 
 ProbeScope ps;
-
-/* sleep approximately this many microseconds  */
-void
-microsleep(unsigned long microsecs) {
-  struct timeval timeout;
-
-  timeout.tv_sec = microsecs/1000000L;
-  timeout.tv_usec = microsecs - (timeout.tv_sec * 1000000L);
-  select(0, (fd_set *)0, (fd_set *)0, (fd_set *)0, &timeout);
-}
 
 /* initialize the probescope structure */
 void
@@ -55,7 +45,7 @@ probescope()
       } else {
 	PSDEBUG("%s", ".");
 	flush = 0;		/* we've caught up with the serial FIFO! */
-	microsleep(400);	/* next arrive ~ 8bits/19200bits/s = .4167ms */
+	usleep(400);		/* next arrive ~ 8bits/19200bits/s = .4167ms */
       }
     } else {			/* byte available? yes: */
       if (c > 0x7b) {		/* Synchronization Byte and/or WAITING! */

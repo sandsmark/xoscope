@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: ser_dos.c,v 1.2 2000/07/03 18:18:14 twitham Exp $
+ * @(#)$Id: ser_dos.c,v 1.3 2000/07/07 02:39:13 twitham Rel $
  *
  * Copyright (C) 1997 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -20,28 +20,42 @@
 #include "proscope.h"
 #include "bitscope.h"
 
-/* stuff I need from svasync.c */
-#define BufSize 32768                   /* Buffer Size */
-extern unsigned volatile char RecBuffer[];
-extern unsigned volatile int RecHead, RecTail;
-
 int speed[] = {57600, 19200};
 int flags[] = {BITS_8 | STOP_1 | NO_PARITY, BITS_7 | STOP_1 | NO_PARITY};
 
-/* read one byte and return 1 or return -1 if none available */
-/* SVAsyncIn won't work since 0x00 is indistinguishable from EOF */
-int
-readSVAsyncIn(unsigned char *ch) {
+/* emulate a unix read(2) to the serial port (fd is ignored) */
+ssize_t
+serial_read(int fd, void *buf, size_t count)
+{
+  int i = 0;
+  unsigned char *pos = buf;
 
-  if(RecTail == RecHead)
-    return -1;
+  while (i < count) {
+    if (SVAsyncInStat() >= 1) {
+      *pos = SVAsyncIn();
+      pos++;
+      i++;
+    } else
+      break;
+  }
+  return(i);
+}
 
-  disable();
-  *ch = RecBuffer[RecTail++];
-  if(RecTail >= BufSize)
-    RecTail = 0;
-  enable();
-  return 1;
+/* emulate a unix write(2) to the serial port (fd is ignored) */
+ssize_t
+serial_write(int fd, void *buf, size_t count)
+{
+  int i = 0;
+  unsigned char *pos = buf;
+
+  while (i < count) {
+    if (SVAsyncOutStat())
+      return(-1);
+    SVAsyncOut(*pos);
+    pos++;
+    i++;
+  }
+  return(i);
 }
 
 /* return a single byte from the serial device or return -1 if none avail. */
@@ -50,8 +64,8 @@ getonebyte()
 {
   static unsigned char ch;
 
-  if (readSVAsyncIn(&ch) == 1)
-    return(ch);
+  if (SVAsyncInStat() >= 1)
+    return(SVAsyncIn());
   return(-1);
 }
 

@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: bitscope.c,v 1.7 2000/07/06 20:12:08 twitham Exp $
+ * @(#)$Id: bitscope.c,v 1.8 2000/07/07 02:39:13 twitham Exp $
  *
  * Copyright (C) 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -22,6 +22,12 @@
 
 BitScope bs;			/* the BitScope structure */
 
+/* use real read and write except on DOS where they are emulated */
+#ifndef GO32
+#define serial_read(a, b, c)	read(a, b, c)
+#define serial_write(a, b, c)	write(a, b, c)
+#endif
+
 /* run CMD command string on bitscope FD or return 0 if unsuccessful */
 int
 bs_cmd(int fd, char *cmd)
@@ -35,9 +41,9 @@ bs_cmd(int fd, char *cmd)
   j = strlen(cmd);
   PSDEBUG("bs_cmd: %s\n", cmd);
   for (i = 0; i < j; i++) {
-    if (write(fd, cmd + i, 1) == 1) {
+    if (serial_write(fd, cmd + i, 1) == 1) {
       k = 10;
-      while (read(fd, &c, 1) < 1) {
+      while (serial_read(fd, &c, 1) < 1) {
 	if (!k--) return(0);
 	PSDEBUG("cmd sleeping %d\n", k);
 	usleep(1);
@@ -59,7 +65,7 @@ bs_read(int fd, char *buf, int n)
   int i = 0, j, k = n + 10;
 
   while (n) {
-    if ((j = read(fd, buf + i, n)) < 1) {
+    if ((j = serial_read(fd, buf + i, n)) < 1) {
       if (!k--) return(0);
       PSDEBUG("read sleeping %d\n", k);
       usleep(1);
@@ -72,6 +78,7 @@ bs_read(int fd, char *buf, int n)
   return(1);
 }
 
+/* start an asynchronous read of N bytes from FD */
 int
 bs_read_async(int fd, int n)
 {
@@ -95,11 +102,11 @@ bs_io(int fd, char *in, char *out)
     return bs_read_async(fd, R15 * 5 + (R15 / 16) + 1);
   case 'M':
     if (bs.version >= 110)
-      return bs_read(fd, out, R15 * 2);
+      return bs_read_async(fd, R15 * 2);
     break;
   case 'A':
     if (bs.version >= 110)
-      return bs_read(fd, out, R15);
+      return bs_read_async(fd, R15);
     break;
   case 'P':
     if (bs.version >= 110)
@@ -209,7 +216,7 @@ idscope(int probescope)
   if (probescope) {
     while (byte < 300 && try < 75) { /* give up in 7.5ms */
       if ((c = getonebyte()) < 0) {
-	microsleep(100);	/* try again in 0.1ms */
+	usleep(100);		/* try again in 0.1ms */
 	try++;
       } else if (c > 0x7b) {
 	ps.found = 1;
@@ -240,7 +247,7 @@ bs_getdata(int fd)
   if (!fd) return(0);		/* device open? */
   if (in_progress) {		/* finish a get */
     j = bs.end - bs.pos;
-    if ((i = read(fd, bs.pos, j)) > 0) {
+    if ((i = serial_read(fd, bs.pos, j)) > 0) {
       bs.pos += i;
       if (bs.pos >= bs.end) {	/* got some data! */
 	buff = bs.buf;
@@ -260,7 +267,7 @@ bs_getdata(int fd)
 	if (k >= samples(mem[23].rate)) { /* all done */
 	  k = 0;
 	  in_progress = 0;
-	} else {			/* still need more, start another */
+	} else {		/* still need more, start another */
 	  bs_io(fd, "S", buffer);
 	}
       }

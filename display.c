@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 1.63 2000/07/06 20:12:08 twitham Exp $
+ * @(#)$Id: display.c,v 1.64 2000/07/07 02:39:13 twitham Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -10,6 +10,7 @@
  */
 
 #include <stdio.h>
+#include <unistd.h>
 #include <time.h>
 #include "oscope.h"		/* program defaults */
 #include "display.h"
@@ -285,7 +286,7 @@ draw_text(int all)
 	      TEXT_FG, TEXT_BG, ALIGN_RIGHT);
 
     i = 1000 * scope.div / scope.scale;
-    sprintf(string, "%d %cs/div", i > 999 ? i / 1000 : i, i > 999 ? 'm' : 'u');
+    sprintf(string, "%d %cs/div", i > 999 ? i / 1000: i, i > 999 ? 'm' : 'u');
     vga_write(string, col(40), row(25), font, TEXT_FG, TEXT_BG, ALIGN_CENTER);
 
     sprintf(string, "%d S/s", p->signal->rate);
@@ -558,7 +559,7 @@ animate(void *data)
   } else if (in_progress)
     bs.found ? bs_getdata(bs.fd) : get_data();
   else
-    microsleep(100000);		/* no need to suck all CPU cycles */
+    usleep(100000);		/* no need to suck all CPU cycles */
   show_data();
   if (quit_key_pressed) {
     cleanup();

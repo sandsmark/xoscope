@@ -1,6 +1,49 @@
+2000-07-06  Tim Witham  <twitham@quiknet.com>
+
+	* bitscope.c, config.h, display.c, file.c, func.c, oscope.c, oscope.h, sc_linux.c:
+	Allow up to 2 sec/div time scale!  This is most useful with 8000 S/s
+	audio sampling to see lots of time.  All buffers increased to 256K to
+	handle this.  Memories now store time zero to current display point.
+	File length is now as long as the longest sample stored in memory.
+
+	* oscope.h, sc_linux.c, audio.dat, bitscope.c, bitscope.h, display.c, oscope.c:
+	Allow soundcard to collect enough samples to fill any display length
+	by letting it collect parallel to disply like bitscope does.
+
+	* bitscope.c, display.c, func.c, oscope.c, oscope.h:
+	Enhanced math to work on the number of samples displayed instead
+	h_points.  External math is still a constant though.  Enhanced some
+	display strings.
+
+2000-07-05  Tim Witham  <twitham@quiknet.com>
+
+	* bitscope.c, bitscope.dat, bitscope.h:
+	BitScope serial data is now grabbed and processed in parallel with
+	display refreshing, greatly improving interactive response time.  You
+	can actually see the data being read in real-time.
+
+	* bitscope.c, config.h, display.c, file.c, func.c, oscope.h, sc_linux.c:
+	Snag only enough samples to fill the display.
+
+2000-07-03  Tim Witham  <twitham@quiknet.com>
+
+	* bitscope.c, bitscope.dat, display.c, Makefile, oscope.c:
+	First attempt at ALT dual trace to get both A & B.
+
+	* bitscope.c, bitscope.h, config.h, display.c, file.c, gr_gtk.c, Makefile, oscope.c, proscope.c, proscope.h, ser_dos.c, ser_unix.c:
+	First connection of BitScope, partly based on code submitted by Ingo
+	Cyliax.  If a BitScope is identified, it is used exclusively, turning
+	off sound and ProbeScope input devices.  It connects BitScope Channel
+	A, B and LA to X, Y and Z respectively.
+
+2000-07-01  Tim Witham  <twitham@quiknet.com>
+
+	* x11.h, xdisplay.c:
+	Tossed obsolete files.
+
 2000-06-28  Tim Witham  <twitham@quiknet.com>
 
-	* oscope.lsm, README, Makefile, TODO, TODO.old: For 1.7.
+	* ChangeLog oscope.lsm, README, Makefile, TODO, TODO.old: For 1.7.
 
 	* count.dat: New file.
 

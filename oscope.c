@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.c,v 1.80 2000/07/06 20:12:08 twitham Exp $
+ * @(#)$Id: oscope.c,v 1.81 2000/07/07 02:39:13 twitham Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -245,8 +245,10 @@ void
 handle_key(unsigned char c)
 {
   static Channel *p;
+  static int s;
 
   p = &ch[scope.select];
+  s = samples(p->signal->rate);
   if (c >= 'A' && c <= 'Z') {
     save(c);			/* store channel */
     draw_text(1);
@@ -274,34 +276,34 @@ handle_key(unsigned char c)
     break;
   case 'q' - 96:		/* -96 is CTRL keys */
     if ((scope.cursa -= 10) < 1)
-      scope.cursa = h_points - 1;
+      scope.cursa = s - 1;
     break;
   case 'w' - 96:
-    if ((scope.cursa += 10) >= h_points)
+    if ((scope.cursa += 10) >= s)
       scope.cursa = 1;
     break;
   case 'e' - 96:
     if (--scope.cursa < 1)
-      scope.cursa = h_points - 1;
+      scope.cursa = s - 1;
     break;
   case 'r' - 96:
-    if (++scope.cursa >= h_points)
+    if (++scope.cursa >= s)
       scope.cursa = 1;
     break;
   case 'a' - 96:
     if ((scope.cursb -= 10) < 1)
-      scope.cursb = h_points - 1;
+      scope.cursb = s - 1;
     break;
   case 's' - 96:
-    if ((scope.cursb += 10) >= h_points)
+    if ((scope.cursb += 10) >= s)
       scope.cursb = 1;
     break;
   case 'd' - 96:
     if (--scope.cursb < 1)
-      scope.cursb = h_points - 1;
+      scope.cursb = s - 1;
     break;
   case 'f' - 96:
-    if (++scope.cursb >= h_points)
+    if (++scope.cursb >= s)
       scope.cursb = 1;
     break;
   case '\t':
@@ -366,7 +368,7 @@ handle_key(unsigned char c)
     if (scope.div > 1)		/* decrease time scale, zoom in */
       scope.div = scaledown(scope.div);
     else
-      scope.scale = scaleup(scope.scale, 1000);
+      scope.scale = scaleup(scope.scale, 5000);
     clear();
     break;
   case '9':
