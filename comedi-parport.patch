@@ -1,0 +1,25 @@
+*** comedi-0.7.66/comedi/drivers/comedi_parport.c~	Sun May 18 22:35:49 2003
+--- comedi-0.7.66/comedi/drivers/comedi_parport.c	Mon May 19 01:26:44 2003
+***************
+*** 113,122 ****
+--- 113,132 ----
+  	comedi_insn *insn,lsampl_t *data)
+  {
+  	if(data[0]){
++ 		s->io_bits = 0xff;
++ 		devpriv->c_data &= ~(1<<5);
++ 
++ 		outb(devpriv->c_data,dev->iobase+PARPORT_C);
++ 
+  		devpriv->a_data &= ~data[0];
+  		devpriv->a_data |= (data[0]&data[1]);
+  
+  		outb(devpriv->a_data,dev->iobase+PARPORT_A);
++ 	} else {
++ 		s->io_bits = 0;
++ 		devpriv->c_data |= (1<<5);
++ 
++ 		outb(devpriv->c_data,dev->iobase+PARPORT_C);
+  	}
+  
+  	data[1] = inb(dev->iobase+PARPORT_A);

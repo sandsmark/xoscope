@@ -2,58 +2,71 @@
 xoscope 1.10 now supports using the parallel port as a digital input
 device, via COMEDI and RTAI.  COMEDI (www.comedi.org), the Linux
 Control and Measurement Device Interface is "a collection of drivers
-for data acquisition hardware".  For devices that doesn't natively
-support timed acquisition (like the parallel port), COMEDI includes a
-generic module (comedi_rt_timer) that, when used in conjunction with a
-real-time kernel extension, allows timed acquisition at sampling rates
-up to 10 kHz (by default).  Higher sampling rates are possible, but
-the exact limit depends heavily on the particular machine.  RTAI, the
-Realtime Application Interface (www.rtai.org), one of two major Linux
-realtime extensions (the other is RTLinux), has been tested and is
-known to work (RTLinux status is unknown).
+for data acquisition hardware".  RTAI, the Realtime Application
+Interface (www.rtai.org), one of two major Linux realtime extensions
+(the other is RTLinux), has been tested and is known to work (RTLinux
+status is unknown).
+
+For devices that doesn't natively support timed acquisition (like the
+parallel port), COMEDI includes a generic module (comedi_rt_timer)
+that, when used in conjunction with a real-time kernel extension,
+allows timed acquisition at sampling rates up to 10 kHz (by default).
+Higher sampling rates are possible, but the exact limit depends
+heavily on the particular machine.
 
 At the very least, xoscope 1.10 with a patched comedi 0.7.66 and rtai
 24.1.11 on Linux 2.4.20 is known to work on the PowerPC (and Intel?)
-architecture.  WARNING: Installing RTAI requires recompiling the
-kernel and all its modules.
+architecture.
+
+WARNING: Installing RTAI requires recompiling the kernel and all its
+modules.
 
 0. Check to see if RTAI and/or COMEDI are already available on your
    system - "modprobe rtai" and "modprobe comedi" should suffice.
+
    Note that if you have COMEDI but not RTAI, you will still need to
    recompile COMEDI before it will work with RTAI.  Although both use
    kernel modules, COMEDI can be built without any kernel patches,
    while RTAI requires a patched (and thus recompiled) Linux kernel.
 
 1. Download (if needed) RTAI, and follow its instructions to patch,
-   compile, test and install a modified Linux kernel.  I had little
-   difficulty with this step, as the kernel patches are fairly small.
-   However, in addition to the base kernel being recompiled, I also
-   needed to recompile all the kernel modules, and if you're running a
-   GRUB-based system like Redhat 8, you'll also need to create a new
-   initial disk image, so this can be the most involved (or at least
-   time-consuming) step.  If you have problems with modules not
-   loading due to symbol problems, the obvious solution is to simply
-   "make clean" in the kernel tree and recompile everything there.
-   Difficulties here are best resolved via the RTAI documentation and
-   mailing lists.
+   compile, test and install a modified Linux kernel.
+
+   I had little difficulty with this step, as the kernel patches are
+   fairly small.  However, in addition to the base kernel being
+   recompiled, I also needed to recompile all the kernel modules, so
+   this can be the most involved (or at least time-consuming) step.
+   If you're running a GRUB-based system like Redhat 8, you'll also
+   need to create a new initial disk image (using mkinitrd).  If you
+   have problems with modules not loading due to symbol problems, the
+   obvious solution is to simply "make clean" in the kernel tree and
+   recompile everything there.  Difficulties here are best resolved
+   via the RTAI documentation and mailing lists.
 
 2. Configure and compile the RTAI modules and user-space utilities.
+   You don't need LXRT, NEWLXRT, or the LXRT COMEDI wrapper; they are
+   used for running real-time COMEDI programs in user space, which we
+   won't be doing.
+
    The configuration scripts check the kernel Makefile for "rthal" in
    its EXTRAVERSION variable to confirm that you have an RTAI-patched
-   kernel.  If, like me, you didn't apply the part of the patch that
-   put "rthal" in your kernel Makefile, you can comment out the check
-   at the beginning of scripts/config.in.  You will have to at least
-   install the RTAI modules.  For testing, I suggest "msg_clock" as
-   one of the simplest RTAI example programs.  You may be tempted to
-   try the "sw" example, as it produces output on the parallel port,
-   but note that it uses the "rtai_leds" module, which defaults to use
-   the _second_ parallel port and needs to be re-compiled to use the
-   first (or to work at all on PowerPC).
+   kernel.  If you didn't apply the part of the patch that put "rthal"
+   in your kernel Makefile, you can comment out the check at the
+   beginning of scripts/config.in.  Also, ignore the repeated error
+   messages during the build for rtai_lxrt.o and rtai_sched.o.
+
+   You will have to at least install the RTAI modules.  For testing, I
+   suggest "msg_clock" as one of the simplest RTAI example programs.
+   You may be tempted to try the "sw" example, as it produces output
+   on the parallel port, but note that it uses the "rtai_leds" module,
+   which defaults to use the _second_ parallel port and needs to be
+   patched and re-compiled to use the first (or to work at all on
+   PowerPC).
 
 3. Download (if needed) COMEDI, as well as its associated comedilib.
-   If it is version 0.7.66, install the patches in xoscope's comedi
-   subdirectory.  Later versions (hopefully) will integrate these
-   patches into the COMEDI distribution.
+   If it is version 0.7.66, install comedi-parport.patch (distributed
+   with xoscope).  Later versions (hopefully) will integrate this
+   patch into the COMEDI distribution.
 
 4. Configure, compile, and install COMEDI.  If you have installed
    RTAI, be sure to do a completely clean COMEDI re-build.  In its
