@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.c,v 1.65 1997/06/07 21:41:23 twitham Exp $
+ * @(#)$Id: oscope.c,v 1.66 1997/06/10 01:28:47 twitham Exp $
  *
  * Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -478,6 +478,7 @@ main(int argc, char **argv)
     init_probescope();
     init_serial();
   }
+  clear();
   mainloop();			/* to display.c */
   cleanup();
   exit(0);
