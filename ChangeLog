@@ -1,4 +1,54 @@
-Sat Apr 27 16:08:18 1996  Tim Witham  <twitham@eng.fm.intel.com>
+Sat Aug  3 23:10:20 1996  Tim Witham  <twitham@eng.fm.intel.com>
+
+	* oscope.lsm: For 1.1.
+
+	* HARDWARE, TODO, README.freq51, freq51.patch, buff.ps, buff.fig:
+	Initial revision
+
+	* README: Updated for 1.1 release.
+
+	* Makefile:
+	Updates for the new external command path and other changes.
+
+	* oscope.1: Updated for 1.1 release.
+
+	* offt.c:
+	Renamed oscope.fft to offt for easier typing (comment change only).
+
+	* config.h: Renamed oscope.perl to operl for easier typing.
+
+	* oscope.c, func.h, func.c:
+	Added new invert functions and OSCOPEPATH for external commands.
+
+	* ofreq.ini: Initial revision
+
+	* operl:
+	Fixed bug in the delay example; it was being delayed by $x instead of $t.
+
+Tue Jul 30 05:42:58 1996  Tim Witham  <twitham@eng.fm.intel.com>
+
+	* display.c:
+	Fixed bug: in accumulate modes, the current set of data would be drawn
+	incorrectly just after a S/s change.  Optimized the draw_data loops.
+
+Sat Jul 27 05:43:18 1996  Tim Witham  <twitham@eng.fm.intel.com>
+
+	* fft.c: Synched with freq51.
+
+Fri Jul 12 03:02:27 1996  Tim Witham  <twitham@eng.fm.intel.com>
+
+	* oscope.c, display.c:
+	First sample is now the one just before trigger, second the one after.
+	We "connect" these samples with a straight line to more accurately
+	guess where the trigger really was.  All samples are then shifted
+	horizontally to position the trigger at time zero.  This greatly
+	improves the horizontal resolution of high frequency signals in either
+	of the accumulate modes.  This is best used by placing the trigger at
+	0 where the linear approximation is most correct.
+
+Sat Apr 27 17:47:21 1996  Tim Witham  <twitham@eng.fm.intel.com>
+
+	* ChangeLog: 1.0 released.
 
 	* ChangeLog: Initial revision
 
