@@ -1,7 +1,7 @@
 /*
- * @(#)$Id: com_gtk.c,v 1.2 1999/08/29 02:07:57 twitham Exp $
+ * @(#)$Id: com_gtk.c,v 1.3 2000/03/03 23:30:40 twitham Rel $
  *
- * Copyright (C) 1996 - 1999 Tim Witham <twitham@quiknet.com>
+ * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
  * (see the files README and COPYING for more details)
  *
@@ -20,7 +20,7 @@ GdkGC *gc;
 GtkWidget *menubar;
 GtkWidget *vbox;
 GdkColor gdkcolor[16];
-int color[16];
+int color[16], fixing_widgets = 0;
 char *colors[] = {		/* X colors similar to 16 console colors */
   "black",			/* 0 */
   "blue",
@@ -126,5 +126,6 @@ key_press_event(GtkWidget *widget, GdkEventKey *event)
 void
 hit_key(GtkWidget *w, gpointer data)
 {
+  if (fixing_widgets) return;
   handle_key(((char *)data)[0]);
 }
