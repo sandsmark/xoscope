@@ -1,13 +1,12 @@
-# @(#)$Id: Makefile,v 1.13 1996/03/10 02:46:40 twitham Exp $
+# @(#)$Id: Makefile,v 1.14 1996/04/21 02:38:06 twitham Rel1_0 $
 
-# Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
 # Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
 
 # (see the files README and COPYING for more details)
 
 
 # we'll assume you want both console-based oscope and X11-based xoscope
-TARGET	= oscope xoscope
+SCOPES	= oscope xoscope
 MISC	= -lvgamisc
 
 # configuration defines
@@ -17,19 +16,25 @@ MISC	= -lvgamisc
 #MISC	=
 
 # uncomment this line if you don't want console-based oscope
-#TARGET	= xoscope
+#SCOPES	= xoscope
 
 # uncomment this line if you don't have libsx or if you don't want xoscope
-#TARGET	= oscope
+#SCOPES	= oscope
 
-# where to install (/bin and /man/man1 will be appended):
+# we'll assume you want the example external math commands
+TARGET = $(SCOPES) oscope.fft oscope.perl
+
+# uncomment this line if you don't want the example external programs
+#TARGET = $(SCOPES)
+
+# where to install (/bin and /man/man1 will be appended)
 PREFIX	= /usr/local
 
 # compiler
 CC	= gcc
 
 # compiler flags
-CFLAGS	= $(DFLAGS) -Wall -O3 -m486
+CFLAGS	= $(DFLAGS) -Wall -O4 -m486
 
 # loader
 LD	= gcc
@@ -40,8 +45,8 @@ LDFLAGS	= -s
 # nothing should need changed below here
 ############################################################
 
-VER	= 0.5
-ALLSRC	= oscope.c func.c realfft.c file.c
+VER	= 1.0
+ALLSRC	= oscope.c file.c func.c fft.c realfft.c
 SRC	= display.c $(ALLSRC)
 X11_SRC	= xdisplay.c x11.c freq.c dirlist.c $(ALLSRC)
 
@@ -51,21 +56,24 @@ X11_OBJ	= $(X11_SRC:.c=.o)
 all:	$(TARGET)
 
 oscope:	$(OBJ)
-	$(CC) $(OBJ) $(LDFLAGS) -o oscope $(MISC) -lm -lvga
+	$(CC) $(OBJ) $(LDFLAGS) -o $@ $(MISC) -lm -lvga
 	chmod u+s oscope
 
 xoscope:	$(X11_OBJ)
-	$(CC) $(X11_OBJ) $(LDFLAGS) -o xoscope \
-		-lm -lsx -lXaw -lXt -lX11 -L/usr/X11/lib
+	$(CC) $(X11_OBJ) $(LDFLAGS) -o $@ \
+		-lm -lsx -L/usr/X11/lib -lXaw -lXt -lX11
 
-install:	all
-	cp -p *oscope $(PREFIX)/bin
+oscope.fft:	fft.o oscopefft.o realfft.o
+	$(CC) $^ $(LDFLAGS) -o $@ -lm
+
+install:	$(TARGET)
+	cp -p $^ $(PREFIX)/bin
 	chmod u+s $(PREFIX)/bin/oscope
 	chmod go-w $(PREFIX)/bin/oscope
 	cp *.1 $(PREFIX)/man/man1
 
 clean:
-	$(RM) *oscope *.o core *~
+	$(RM) *oscope oscope.fft *.o core *~
 
 dist:	clean
 	( cd .. ; tar --exclude oscope-$(VER)/RCS -czvf oscope-$(VER).tar.gz \
