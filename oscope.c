@@ -7,7 +7,7 @@
  *
  * Enhanced by Tim Witham <twitham@pcocd2.intel.com>
  *
- * @(#)$Id: oscope.c,v 1.11 1995/12/29 08:42:14 twitham Exp $
+ * @(#)$Id: oscope.c,v 1.12 1995/12/30 04:52:34 twitham Exp $
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -77,18 +77,18 @@ usage()
 	  "-m <mode>        graphics mode\n"
 	  "-c <colour>      trace colour\n"
 	  "-d <dma divide>  DMA buffer size divisor (1,2,4)\n"
-	  "-t <trigger>     trigger level (0 - 255)\n"
+	  "-t <trigger>     trigger level (0 - 255, -1 = disabled = default)\n"
 	  "-s <scale>       time scale or zoom factor (1,2,4,8,16,32)\n"
 	  "-p               point mode (faster)\n"
 	  "-l               line segment mode (slower)\n"
 	  "-g               draw graticule (5msec major divs, 1 msec minor)\n"
-	  "-v               verbose output\n"
+	  "-v               verbose options to stdout\n"
 	  );
   exit(1);
 }
 
 /* if verbose mode, show current parameter settings on standard out */
-inline void
+static inline void
 show_info(unsigned char c) {
   if (verbose) {
     printf("%1c: -m %2d  -d %1d  -c %2d ",
@@ -132,6 +132,10 @@ parse_args(int argc, char **argv)
       break;
     case 's':
       scale = strtol(optarg, NULL, 0);
+      if (scale < 1)
+	scale = 1;
+      if (scale > 32)
+	scale = 32;
       break;
     case 'p':
       point_mode = 1;
@@ -145,8 +149,8 @@ parse_args(int argc, char **argv)
     case 'v':
       verbose = 1;
       break;
+    case ':':
     case '?':
-    case 'h':
       usage();
       break;
     }
@@ -162,7 +166,7 @@ cleanup()
 }
 
 /* abort and show system error if given ioctl status is bad */
-void
+static inline void
 check_status(int status)
 {
   if (status < 0) {
@@ -172,45 +176,47 @@ check_status(int status)
   }
 }
 
-/* draw graticule */
-inline void
+/* if graticule mode, draw graticule */
+static inline void
 draw_graticule()
 {
   register int i, j;
 
-  vga_clear();
+  if (graticule) {
+    vga_clear();
 
-  /* draw a frame */
-  vga_setcolor(colour+1);
-  vga_drawline(0, offset-1, h_points-1, offset-1);
-  vga_drawline(0, offset+256, h_points-1, offset+256);
-  vga_drawline(0, offset-1, 0, offset+256);
-  vga_drawline(h_points-1, offset, h_points-1, offset+256);
+    /* draw a frame */
+    vga_setcolor(colour+1);
+    vga_drawline(0, offset-1, h_points-1, offset-1);
+    vga_drawline(0, offset+256, h_points-1, offset+256);
+    vga_drawline(0, offset-1, 0, offset+256);
+    vga_drawline(h_points-1, offset, h_points-1, offset+256);
 
-  /* draw tiny tick marks at 0.5 msec intervals */
-  for (i = 0 ; (j = i / 2000) < h_points ; i += (actual * scale)) {
-    vga_drawpixel(j, offset);
-    vga_drawpixel(j, offset + 255);
+    /* draw tiny tick marks at 0.5 msec intervals */
+    for (i = 0 ; (j = i / 2000) < h_points ; i += (actual * scale)) {
+      vga_drawpixel(j, offset);
+      vga_drawpixel(j, offset + 255);
 
-    /* draw bigger marks at 1 msec intervals */
-    if ((j = i / 1000) < h_points) {
-      vga_drawline(j, offset, j, offset+5);
-      vga_drawline(j, offset+250, j, offset+255);
+      /* draw bigger marks at 1 msec intervals */
+      if ((j = i / 1000) < h_points) {
+	vga_drawline(j, offset, j, offset+5);
+	vga_drawline(j, offset+250, j, offset+255);
+      }
+
+      /* draw vertical lines at 5 msec intervals */
+      if ((j = i / 200) < h_points)
+	vga_drawline(j, offset, j, offset+255);
     }
 
-    /* draw vertical lines at 5 msec intervals */
-    if ((j = i / 200) < h_points)
-      vga_drawline(j, offset, j, offset+255);
-  }
-
-  /* draw a tick mark where the trigger level is */
-  if (trigger != -1) {
-    vga_drawline(0, offset+trigger, 5, offset+trigger);
+    /* draw a tick mark where the trigger level is */
+    if (trigger != -1) {
+      vga_drawline(0, offset+trigger, 5, offset+trigger);
+    }
   }
 }
 
 /* handle single key commands */
-inline void
+static inline void
 handle_key()
 {
   unsigned char c;
@@ -229,58 +235,51 @@ handle_key()
     check_status(ioctl(snd, SOUND_PCM_SYNC, 0));
     check_status(ioctl(snd, SOUND_PCM_WRITE_RATE, &sampling));
     check_status(ioctl(snd, SOUND_PCM_READ_RATE, &actual));
-    if (graticule)
-      draw_graticule();
+    draw_graticule();
     break;
   case 'r':
     sampling *= 0.9;
     check_status(ioctl(snd, SOUND_PCM_SYNC, 0));
     check_status(ioctl(snd, SOUND_PCM_WRITE_RATE, &sampling));
     check_status(ioctl(snd, SOUND_PCM_READ_RATE, &actual));
-    if (graticule)
-      draw_graticule();
+    draw_graticule();
     break;
   case 'S':
     scale *= 2;
     if (scale > 32)
       scale = 32;
     vga_clear();
-    if (graticule)
-      draw_graticule();
+    draw_graticule();
     break;
   case 's':
     scale /= 2;
     if (scale < 1)
       scale = 1;
     vga_clear();
-    if (graticule)
-      draw_graticule();
+    draw_graticule();
     break;
   case 'T':
-    if (trigger != -1) {
-      trigger += 10;
-      if (trigger > 255)
-	trigger = 255;
-      if (graticule)
-	draw_graticule();
-    }
+    if (trigger == -1)		/* turn on disabled trigger at 128 */
+      trigger = 118;
+    trigger += 10;
+    if (trigger > 255)		/* disable trigger when it leaves the scale */
+      trigger = -1;
+    draw_graticule();
     break;
   case 't':
-    if (trigger != -1) {
-      trigger -= 10;
-      if (trigger < 0)
-	trigger = 0;
-      if (graticule)
-	draw_graticule();
-    }
+    if (trigger == -1)		/* turn on disabled trigger at 128 */
+      trigger = 138;
+    trigger -= 10;
+    if (trigger < 0)		/* disable trigger when it leaves the scale */
+      trigger = -1;
+    draw_graticule();
     break;
   case 'l':
   case 'L':
     if (point_mode == 1) {
       point_mode = 0;
       vga_clear();
-      if (graticule)
-	draw_graticule();
+      draw_graticule();
     }
     break;
   case 'p':
@@ -288,20 +287,17 @@ handle_key()
     if (point_mode == 0) {
       point_mode = 1;
       vga_clear();
-      if (graticule)
-	draw_graticule();
+      draw_graticule();
     }
     break;
   case 'C':
     colour++;
-    if (graticule)
-      draw_graticule();
+    draw_graticule();
     break;
   case 'c':
     if (colour > 0) {
       colour--;
-      if (graticule)
-	draw_graticule();
+      draw_graticule();
     }
     break;
   case 'G':
@@ -309,23 +305,19 @@ handle_key()
     draw_graticule();
     break;
   case 'g':
-    if (graticule == 1) {
-      graticule = 0;
-      vga_clear();
-    }
+    graticule = 0;
+    vga_clear();
     break;
   case ' ':			/* pause until key pressed */
     while (vga_getkey() == 0)
       ;
-    break;
-  default:
     break;
   }
   show_info(c);
 }
 
 /* get data from sound card */
-inline void
+static inline void
 get_data()
 {
   unsigned char datum, datem;
@@ -358,7 +350,7 @@ get_data()
 }
 
 /* graph the data */
-inline void
+static inline void
 graph_data()
 {
   register int i;
@@ -434,8 +426,7 @@ init_screen()
   v_points = vga_getydim();
   h_points = vga_getxdim();
   offset = v_points / 2 - 127;
-  if (graticule)
-    draw_graticule();
+  draw_graticule();
 }
 
 /* main program */
