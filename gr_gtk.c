@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: gr_gtk.c,v 1.15 2000/03/04 21:37:26 twitham Exp $
+ * @(#)$Id: gr_gtk.c,v 1.16 2000/03/05 21:53:34 twitham Rel $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -243,6 +243,16 @@ plotmode(GtkWidget *w, gpointer data)
 {
   if (fixing_widgets) return;
   scope.mode = ((char *)data)[0] - '0';
+  clear();
+}
+
+void
+dma(GtkWidget *w, gpointer data)
+{
+  if (fixing_widgets) return;
+  scope.dma = ((char *)data)[0] - '0';
+  if (snd)
+    resetsoundcard(scope.rate);
   clear();
 }
 
@@ -662,8 +672,14 @@ static GtkItemFactoryEntry menu_items[] =
   {"/Scope/Graticule/Minor Divisions", NULL, graticule, (int)"3", "/Scope/Graticule/None"},
   {"/Scope/Graticule/Minor & Major", NULL, graticule, (int)"4", "/Scope/Graticule/Minor Divisions"},
   {"/Scope/sep", NULL, NULL, 0, "<Separator>"},
-  {"/Scope/SoundCard", NULL, hit_key, (int)"&", "<CheckItem>"},
   {"/Scope/ProbeScope", NULL, hit_key, (int)"^", "<CheckItem>"},
+  {"/Scope/SoundCard", NULL, hit_key, (int)"&", "<CheckItem>"},
+
+  {"/Scope/DMA", NULL, NULL, 0, "<Branch>"},
+  {"/Scope/DMA/tear", NULL, NULL, 0, "<Tearoff>"},
+  {"/Scope/DMA/4 (block)", NULL, dma, (int)"4", "<RadioItem>"},
+  {"/Scope/DMA/2 (nonblock)", NULL, dma, (int)"2", "/Scope/DMA/4 (block)"},
+  {"/Scope/DMA/1 (nonblock)", NULL, dma, (int)"1", "/Scope/DMA/2 (nonblock)"},
 
   {"/<<", NULL, hit_key, (int)"9", NULL},
   {"/<", NULL, hit_key, (int)"(", NULL},
@@ -745,6 +761,14 @@ fix_widgets()
   gtk_check_menu_item_set_active
     (GTK_CHECK_MENU_ITEM
      (gtk_item_factory_get_item(factory, "/Scope/ProbeScope")), ps.found);
+  if ((p = finditem("/Scope/DMA"))) {
+    p += 2;
+    if (scope.dma < 4) p++;
+    if (scope.dma < 2) p++;
+    gtk_check_menu_item_set_active
+      (GTK_CHECK_MENU_ITEM
+       (gtk_item_factory_get_item(factory, p->path)), TRUE);
+  }
 
   gtk_check_menu_item_set_active
     (GTK_CHECK_MENU_ITEM
@@ -798,13 +822,83 @@ get_main_menu(GtkWidget *window, GtkWidget ** menubar)
     *menubar = gtk_item_factory_get_widget(factory, "<main>");
 }
 
+/* these are the inverse of row and col in display.c, used by button_event */
+int
+buttoncol(int x)
+{
+  if (x < 100)
+    return (x / 8);
+  if (x > h_points - 100)
+    return (80 - (h_points - x) / 8);
+  return ((x - 100) / ((h_points - 200) / 55) + 12);
+}
+
+int
+buttonrow(int y)
+{
+  if (y <= 80)
+    return (y / 16);
+  if (y >= v_points - 80)
+    return (29 - (v_points - y) / 16);
+  return ((y - 80) / ((v_points - 160) / 20) + 5);
+}
+
+/* context sensitive mouse click select, recall and pop-up menus */
+gint
+button_event(GtkWidget *widget, GdkEventButton *event, gpointer data)
+{
+  static int x, y, b;
+
+  x = buttoncol(event->x);	/* convert graphic to text position */
+  y = buttonrow(event->y);
+  b = event->button;
+/*    printf("button: %d @ %f,%f -> %d,%d\n", b, event->x, event->y, x, y); */
+  if (!y && x > 70)
+    handle_key('?');
+  else if (y == 28 && x >= 27 && x <= 53) {
+    if (b > 1)
+    gtk_menu_popup(GTK_MENU(gtk_item_factory_get_widget
+			    (factory, "/Channel/Store")),
+		   NULL, NULL, NULL, NULL, event->button, event->time);
+    else
+      handle_key((x - 27) + 'a');
+  } else if (y < 4)
+    gtk_menu_popup(GTK_MENU(gtk_item_factory_get_widget
+			    (factory, "/Trigger")),
+		   NULL, NULL, NULL, NULL, event->button, event->time);
+  else if (y == 4)
+    gtk_menu_popup(GTK_MENU(gtk_item_factory_get_widget
+			    (factory, "/Scope/Plot Mode")),
+		   NULL, NULL, NULL, NULL, event->button, event->time);
+  else if (y < 25 && (x < 11 || x > 69)) {
+    handle_key((y - 5) / 5 + '1' + (x > 69 ? 4 : 0));
+    if (b > 1) {
+      if (!((y - 1) % 5))
+	gtk_menu_popup(GTK_MENU(gtk_item_factory_get_widget
+				(factory, "/Channel/Scale")),
+		       NULL, NULL, NULL, NULL, event->button, event->time);
+      else if (!((y - 2) % 5))
+	gtk_menu_popup(GTK_MENU(gtk_item_factory_get_widget
+				(factory, "/Channel/Position")),
+		       NULL, NULL, NULL, NULL, event->button, event->time);
+      else
+	gtk_menu_popup(GTK_MENU(gtk_item_factory_get_widget
+				(factory, "/Channel")),
+		       NULL, NULL, NULL, NULL, event->button, event->time);
+    }
+  } else if (b > 1)
+    gtk_menu_popup(GTK_MENU(gtk_item_factory_get_widget
+			    (factory, "/Scope")),
+		   NULL, NULL, NULL, NULL, event->button, event->time);
+  return TRUE;
+}
+
 /* initialize all the widgets, called by init_screen in display.c */
 void
 init_widgets()
 {
   int i;
   GtkWidget *menubar;
-/*    static char *s[] = {"1", "2", "3", "4", "5", "6", "7", "8"}; */
 
   h_points = XX[scope.size];
   v_points = XY[scope.size];
@@ -828,6 +922,10 @@ init_widgets()
 		     GTK_SIGNAL_FUNC(expose_event), NULL);
   gtk_signal_connect(GTK_OBJECT(drawing_area),"configure_event",
 		     GTK_SIGNAL_FUNC(configure_event), NULL);
+  gtk_signal_connect(GTK_OBJECT(drawing_area), "button_press_event",
+		     GTK_SIGNAL_FUNC(button_event), NULL);
+  gtk_widget_set_events (drawing_area, GDK_EXPOSURE_MASK
+			 | GDK_BUTTON_PRESS_MASK);
 
   gtk_box_pack_start(GTK_BOX(vbox), drawing_area, TRUE, TRUE, 0);
   gtk_widget_show(drawing_area);
