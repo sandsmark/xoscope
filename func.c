@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: func.c,v 1.21 2000/05/20 23:43:28 twitham Rel $
+ * @(#)$Id: func.c,v 1.22 2000/07/05 03:01:51 twitham Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -324,7 +324,7 @@ measure_data(Channel *sig) {
       sig->max = j;
     count = 2;
   } else {			/* automatic period measurements */
-    for (i = 0 ; i < h_points ; i++) {
+    for (i = 0 ; i < SAMPLES(sig->signal->rate) ; i++) {
       j = sig->signal->data[i];
       if (j < sig->min)		/* minimum */
 	sig->min = j;

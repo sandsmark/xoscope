@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: bitscope.c,v 1.2 2000/07/03 23:01:29 twitham Exp $
+ * @(#)$Id: bitscope.c,v 1.3 2000/07/05 03:01:51 twitham Exp $
  *
  * Copyright (C) 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -29,6 +29,7 @@ bs_cmd(int fd, char *cmd)
   int i, j, k;
   char c;
 
+/*    if (fd < 3) return(0); */
   j = strlen(cmd);
   PSDEBUG("bs_cmd: %s\n", cmd);
   for (i = 0; i < j; i++) {
@@ -41,8 +42,10 @@ bs_cmd(int fd, char *cmd)
       }
       if (cmd[i] != c)
 	fprintf(stderr, "bs mismatch @ %d: sent:%c != recv:%c\n", i, cmd[i], c);
-    } else
-      perror("write failed");
+    } else {
+      sprintf(error, "write failed to %d", fd);
+      perror(error);
+    }
   }
   return(1);
 }
@@ -152,12 +155,13 @@ bs_putregs(int fd, unsigned char *reg)
   return(1);
 }
 
+/* initialize previously identified BitScope FD */
 void
 bs_init(int fd)
 {
-  if (!fd) return;
+  if (fd < 3) return;
   if (snd) handle_key('&');	/* turn off sound card and probescope */
-  bs.found = 1; ps.found = 0;
+  bs.found = 1;
   bs.version = strtol(bs.bcid + 2, NULL, 10);
   mem[23].rate = mem[24].rate = mem[25].rate = 25000000;
 
@@ -168,8 +172,8 @@ bs_init(int fd)
   bs.r[6] = 127;		/*  scope.trig; ? */
   bs.r[7] = TRIGEDGE | TRIGEDGEF2T | LOWER16BNC | TRIGCOMPARE | TRIGANALOG;
   bs.r[8] = SIMPLE;		/* SIMPLE; TIMEBASE; TIMEBASECHOP */
-  SETWORD(&bs.r[11], 2);
-  bs.r[13] = 0;
+  SETWORD(&bs.r[11], 10);	/* !!! the hell should this be? */
+  bs.r[13] = 0;			/* !!! and this? */
   bs.r[14] = PRIMARY(RANGE1200 | CHANNELA | ZZCLK)
     | SECONDARY(RANGE1200 | CHANNELB | ZZCLK);
   bs.r[15] = 0;			/* max samples per dump (256) */
@@ -183,13 +187,14 @@ idscope(int probescope)
   int c, byte = 0, try = 0;
 
   flush_serial();
+  ps.found = bs.found = 0;
   if (probescope) {
     while (byte < 300 && try < 75) { /* give up in 7.5ms */
       if ((c = getonebyte()) < 0) {
 	microsleep(100);	/* try again in 0.1ms */
 	try++;
       } else if (c > 0x7b) {
-	ps.found = 1; bs.found = 0;
+	ps.found = 1;
 	return(1);		/* ProbeScope found! */
       } else
 	byte++;
@@ -210,22 +215,25 @@ idscope(int probescope)
   return(0);
 }
 
+/* ultimately, this will need to be done in a separate thread for speed */
 int
 bs_getdata(int fd)
 {
   static unsigned char buffer[MAXWID * 2], *buff;
-  static int i, j = 0, k, n;
+  static int i, alt = 0, j, k, n;
 
   if (!fd) return(0);		/* device open? */
   if (!bs_io(fd, "[e]@", buffer))
     return(0);
-  bs.r[14] = (bs.r[14] & 0xfb) | (!j << 2); /* attempt to ALT dual trace */
-  sprintf(error, "[%x]sT", bs.r[14]);
+  bs.r[14] = (bs.r[14] & 0xfb) | (!alt << 2); /* attempt to ALT dual trace */
+  sprintf(error, "[%x]s>T", bs.r[14]);
   if (!bs_io(fd, error, buffer))
     return(0);
   fprintf(stderr, "%s", buffer);
   i = 0;
-  for (k = 0; k < 1; k++) {	/* snag multiple S dumps ? */
+  j = SAMPLES(mem[23].rate) / R15 + 1;
+  if (j > 16384 / R15) j = 16384 / R15;
+  for (k = 0; k < j; k++) { /* snag multiple S dumps ? */
     if (!bs_io(fd, "S", buffer))
       return(0);
     buff = buffer;
@@ -234,12 +242,12 @@ bs_getdata(int fd)
 	buff++;
       else {
 	n = strtol(buff, NULL, 16);
-	mem[23 + j].data[i] = (n & 0xff) - 128;
+	mem[23 + alt].data[i] = (n & 0xff) - 128;
 	mem[25].data[i++] = ((n & 0xff00) >> 8) - 128;
 	buff += 5;
       }
     }
   }
-  j = !j;
+  alt = !alt;
   return(1);
 }

@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: file.c,v 1.19 2000/07/03 18:18:14 twitham Exp $
+ * @(#)$Id: file.c,v 1.20 2000/07/05 03:01:51 twitham Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -43,7 +43,7 @@ handle_opt(int opt, char *optarg)
     break;
   case 's':			/* scale (zoom) */
   case 'S':
-    scope.scale = limit(strtol(p = optarg, NULL, 0), 1, 100);
+    scope.scale = limit(strtol(p = optarg, NULL, 0), 1, 1000);
     if ((q = strchr(p, '/')) != NULL)
       scope.div = limit(strtol(++q, NULL, 0), 1, 100);
     break;

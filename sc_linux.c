@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: sc_linux.c,v 1.16 2000/03/25 05:26:16 twitham Rel $
+ * @(#)$Id: sc_linux.c,v 1.17 2000/07/05 03:01:51 twitham Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -120,24 +120,21 @@ get_data()
 {
   static unsigned char datum[2], prev[2], *buff;
   static unsigned char buffer[MAXWID * 2], junk[DISCARDBUF];
-  static int i, j;
+  static int i, j, k;
   audio_buf_info info = {0, 0, 0, MAXWID * 2};
 
   if (!snd) return(0);		/* device open? */
 
   /* Discard excess samples so we can keep our time snapshot close to
-     real-time and minimize sound recording overruns.  If we flush too
-     much, then we have to wait for more to accumulate.  In 1.5 I kept
-     only 2 screenfuls of samples and flushed the rest, but this was
-     too few for slow sample rates.  So, let's just keep the buffer
-     about 1/3 full, which should work better for all rates.  */
+     real-time and minimize sound recording overruns.  */
 
   check_status_ioctl(snd, SNDCTL_DSP_GETISPACE, &info, __LINE__);
 #ifdef DEBUG
   printf("avail:%d\ttotal:%d\tsize:%d\tbytes:%d\n",
 	 info.fragments, info.fragstotal, info.fragsize, info.bytes);
 #endif
-  if ((i = info.bytes - info.fragstotal * info.fragsize / 6 * 2) > 0)
+  k = SAMPLES(scope.rate);	/* minimum samples needed */
+  if ((i = info.bytes - k * 4) > 0)
     read(snd, junk, i < DISCARDBUF ? i : DISCARDBUF);
 #ifdef DEBUG
   check_status_ioctl(snd, SNDCTL_DSP_GETISPACE, &info, __LINE__);
@@ -150,25 +147,25 @@ get_data()
     do {
       memcpy(prev, datum, 2);	/* remember previous, read channels */
       read(snd, datum, 2);
-    } while (((i++ < h_points)) && ((datum[scope.trigch] < scope.trig) ||
-				    (prev[scope.trigch] >= scope.trig)));
+    } while (((i++ < k)) && ((datum[scope.trigch] < scope.trig) ||
+			     (prev[scope.trigch] >= scope.trig)));
   } else if (scope.trige == 2) {
     read(snd, datum, 2);	/* look for falling edge */
     do {
       memcpy(prev, datum, 2);	/* remember previous, read channels */
       read(snd, datum, 2);
-    } while (((i++ < h_points)) && ((datum[scope.trigch] > scope.trig) ||
-				    (prev[scope.trigch] <= scope.trig)));
+    } while (((i++ < k)) && ((datum[scope.trigch] > scope.trig) ||
+			     (prev[scope.trigch] <= scope.trig)));
   } else {
     read(snd, prev, 2);
     read(snd, datum, 2);
   }
-  if (i > h_points)		/* haven't triggered within the screen */
+  if (i > k)			/* haven't triggered within the screen */
     return(0);			/* give up and keep previous samples */
 
   memcpy(buffer, prev, 2);	/* now get the post-trigger data */
   memcpy(buffer + 2, datum, 2);
-  if ((j = read(snd, buffer + 4, h_points * 2 - 4)) < 0)
+  if ((j = read(snd, buffer + 4,  k * 2 - 4)) < 0)
     j = 0;
   buff = buffer;
   for (i = 0; i < (j + 4) / 2; i++) {	/* move it into channel 1 and 2 */
