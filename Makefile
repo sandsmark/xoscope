@@ -6,7 +6,7 @@ LDFLAGS = -s
 scope:	scope.o
 	$(LD) $(LDFLAGS) -o scope scope.o -lvga
 
-scope.o: scope.c
+scope.o: scope.c scope.h
 	$(CC) $(CFLAGS) -c scope.c
 
 install: scope
