@@ -1,6 +1,6 @@
 /* config.h.in.  Generated automatically from configure.in by autoheader.  */
 /*
- * @(#)$Id: config.h.in,v 1.9 2003/06/19 07:20:59 baccala Exp $
+ * @(#)$Id: config.h.in,v 1.10 2003/06/30 08:29:13 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *

@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: comedi.c,v 1.3 2003/06/25 06:38:14 baccala Exp $
+ * @(#)$Id: comedi.c,v 1.4 2003/06/30 08:29:13 baccala Exp $
  *
  * Author: Brent Baccala <baccala@freesoft.org>
  *
@@ -523,16 +523,21 @@ static int fd(void)
   return (comedi_running ? comedi_fileno(comedi_dev) : -1);
 }
 
-/* Also has the effect of setting rate and volts (during start_comedi_running)
- * in the Signal structure.  Don't need to start COMEDI, just prep it
- *
- * XXX should it check to make sure we're not already capturing chan?
+/* reset() - part of the data source API.  Called when we're ready to
+ * start capturing.  Clears the old capture_list and builds a new one.
+ * capture_ptr is used to make sure we build the list from the top
+ * down, not the bottom up, mainly to make sure trig_index counts from
+ * the top down.  Finally, we start COMEDI.  We don't really need to
+ * start COMEDI, just prep it, but we start it in order to set the
+ * rate and volts fields (during start_comedi_running) in the Signal
+ * structures.
  */
 
 static void
 reset(void)
 {
   struct capture *capture;
+  struct capture **capture_ptr;
   int i;
 
   stop_comedi_running();
@@ -545,6 +550,7 @@ reset(void)
   capture_list = NULL;
   active_channels = 0;
   trig_index = -1;
+  capture_ptr = &capture_list;
 
   for (i = 0; i < NCHANS; i++) {
     if ((comedi_chans[i].listeners) || ((trig_mode > 0) && (trig_chan == i))) {
@@ -557,13 +563,13 @@ reset(void)
 
       capture->chan = i;
       capture->signal = &comedi_chans[i];
-      capture->next = capture_list;
-      capture_list = capture;
+      capture->next = NULL;
+      *capture_ptr = capture;
+      capture_ptr = &capture->next;
 
       comedi_chans[i].num = 0;
       comedi_chans[i].frame ++;
 
-      /* XXX wrong - index counts from end of list, not beginning */
       if ((trig_mode > 0) && (trig_chan == i)) trig_index = active_channels;
 
       active_channels ++;
