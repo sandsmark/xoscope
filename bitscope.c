@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: bitscope.c,v 1.14 2000/07/18 03:02:02 twitham Exp $
+ * @(#)$Id: bitscope.c,v 1.15 2000/07/18 06:01:55 twitham Exp $
  *
  * Copyright (C) 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -36,8 +36,7 @@ bs_cmd(int fd, char *cmd)
   char c;
 
 /*    if (fd < 3) return(0); */
-  bs.pos = bs.buf;
-  *bs.pos = '\0';
+  in_progress = 0;
   j = strlen(cmd);
   PSDEBUG("bs_cmd: %s\n", cmd);
   for (i = 0; i < j; i++) {
@@ -62,9 +61,10 @@ bs_cmd(int fd, char *cmd)
 int
 bs_read(int fd, char *buf, int n)
 {
-//  int i = 0, j, k = n + 10;
-  int i = 0, j, k = n + 500;
+  int i = 0, j, k = n + 10;
 
+  in_progress = 0;
+  buf[0] = '\0';
   while (n) {
     if ((j = serial_read(fd, buf + i, n)) < 1) {
       if (!k--) return(0);
@@ -79,12 +79,28 @@ bs_read(int fd, char *buf, int n)
   return(1);
 }
 
-/* start an asynchronous read of N bytes from FD */
+/* asynchronously read N bytes from bitscope FD into BUF, return N when done */
 int
-bs_read_async(int fd, int n)
+bs_read_async(int fd, char *buf, int n, char c)
 {
-  bs.end = bs.pos + n;
-  return(1);
+  static char *pos, *end;
+  int i;
+
+  if (in_progress) {
+    if ((i = serial_read(fd, pos, end - pos)) > 0) {
+      pos += i;
+      if (pos >= end) {
+	in_progress = 0;
+	return(n);
+      }
+    }
+    return(0);
+  }
+  pos = buf;
+  *pos = '\0';
+  end = pos + n;
+  in_progress = c;
+  return(0);
 }
 
 /* Run IN on bitscope FD and store results in OUT (not including echo) */
@@ -94,19 +110,19 @@ bs_io(int fd, char *in, char *out)
 {
 
   out[0] = '\0';
-  if (!bs_cmd(fd, in))
-    return(0);
+  if (!in_progress)
+    bs_cmd(fd, in);
   switch (in[strlen(in) - 1]) {
   case 'T':
-    return bs_read(fd, out, 6);
+    return bs_read_async(fd, out, 6, 'T');
   case 'M':
     if (bs.version >= 110)
-      return bs_read_async(fd, R15 * 2);
+      return bs_read_async(fd, out, R15 * 2, 'M');
   case 'A':
     if (bs.version >= 110)
-      return bs_read_async(fd, R15);
+      return bs_read_async(fd, out, R15, 'A');
   case 'S':			/* DDAA, per sample + newlines per 16 */
-    return bs_read_async(fd, R15 * 5 + (R15 / 16) + 1);
+    return bs_read_async(fd, out, R15 * 5 + (R15 / 16) + 1, 'S');
   case 'P':
     if (bs.version >= 110)
       return bs_read(fd, out, 14);
@@ -121,6 +137,7 @@ bs_io(int fd, char *in, char *out)
     if (bs.version >= 110)
       return bs_read(fd, out, 4);
   }
+  in_progress = 0;
   return(1);
 }
 
@@ -302,63 +319,55 @@ idscope(int probescope)
 int
 bs_getdata(int fd)
 {
-  static unsigned char buffer[MAXWID * 2], *buff;
-  static int i, alt = 1, j, k, n;
+  static unsigned char *buff;
+  static int alt = 1, k, n;
 
   if (!fd) return(0);		/* device open? */
-  if (in_progress) {		/* finish a get */
-    j = bs.end - bs.pos;
-    if ((i = serial_read(fd, bs.pos, j)) > 0) {
-      bs.pos += i;
-      if (bs.pos >= bs.end) {	/* got some data! */
-	buff = bs.buf;
-	if (bs.version >= 110) { /* M mode, simple bytes */
-	  while (buff < bs.end) {
-	    if (k >= MAXWID)
-	      break;
-	    mem[25].data[k] = *buff++ - 128;
-	    mem[23 + alt].data[k] = *buff++ - 128;
+  if (in_progress == 'M') {	/* finish a get */
+    if ((n = bs_io(fd, "M", bs.buf))) {
+      buff = bs.buf;
+      if (bs.version >= 110) { /* M mode, simple bytes */
+	while (buff < bs.buf + n) {
+	  if (k >= MAXWID)
+	    break;
+	  mem[25].data[k] = *buff++ - 128;
+	  mem[23 + alt].data[k] = *buff++ - 128;
+	  if (alt) k++;
+	  alt = !alt;
+	}
+      } else {		/* S mode, hex ASCII */
+	while (*buff != '\0') {
+	  if (k >= MAXWID)
+	    break;
+	  if (*buff == '\r' || *buff == '\n')
+	    buff++;
+	  else {
+	    n = strtol(buff, NULL, 16);
+	    mem[23 + alt].data[k] = (n & 0xff) - 128;
+	    mem[25].data[k] = ((n & 0xff00) >> 8) - 128;
+	    buff += 5;
 	    if (alt) k++;
 	    alt = !alt;
 	  }
-	} else {		/* S mode, hex ASCII */
-	  while (*buff != '\0') {
-	    if (k >= MAXWID)
-	      break;
-	    if (*buff == '\r' || *buff == '\n')
-	      buff++;
-	    else {
-	      n = strtol(buff, NULL, 16);
-	      mem[23 + alt].data[k] = (n & 0xff) - 128;
-	      mem[25].data[k] = ((n & 0xff00) >> 8) - 128;
-	      buff += 5;
-	      if (alt) k++;
-	      alt = !alt;
-	    }
-	  }
-	}
-	mem[23].num = mem[24].num = mem[25].num = k < MAXWID ? k : MAXWID;
-	if (k >= samples(mem[23].rate) || k >= 8 * 1024) { /* all done */
-	  k = 0;
-	  in_progress = 0;
-	} else {		/* still need more, start another */
-	  bs_io(fd, "M", buffer);
 	}
       }
+      mem[23].num = mem[24].num = mem[25].num = k < MAXWID ? k : MAXWID;
+      if (k >= samples(mem[23].rate) || k >= 8 * 1024) { /* all done */
+	k = 0;
+	in_progress = 0;
+      } else {		/* still need more, start another */
+	bs_io(fd, "M", bs.buf);
+      }
     }
-  } else {			/* start a get */
-//    if (!bs_io(fd, "[e]@", buffer))
-//      return(0);
-//    alt = !alt;			/* attempt to ALT dual trace via nibble swap */
-//    bs.r[14] = ((bs.r[14] & 0x0f) << 4) | ((bs.r[14] & 0xf0) >> 4);
-//    sprintf(error, "[%x]s>T", bs.r[14]);
-    sprintf(error, ">T");
-    if (!bs_io(fd, error, buffer))
+  } else if (in_progress == 'T') { /* finish a trigger */
+    if (bs_io(fd, "T", bs.buf)) {
+      fprintf(stderr, "%s", bs.buf);
+      bs_io(fd, "M", bs.buf);	/* start a get */
+      k = 0;
+    } else
       return(0);
-    fprintf(stderr, "%s", buffer);
-    bs_io(fd, "M", buffer);
-    k = 0;
-    in_progress = 1;
+  } else {			/* start a trigger */
+    return(bs_io(fd, ">T", bs.buf));
   }
   return(1);
 }

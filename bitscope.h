@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: bitscope.h,v 1.6 2000/07/18 03:02:02 twitham Exp $
+ * @(#)$Id: bitscope.h,v 1.7 2000/07/18 06:01:55 twitham Exp $
  *
  * Copyright (C) 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -66,7 +66,6 @@ typedef struct BitScope {	/* The state of the BitScope */
   int fd;			/* file descriptor */
   unsigned char r[24];		/* registers */
   unsigned char buf[256 * 5 + 20]; /* serial input buffer */
-  unsigned char *pos, *end;	/* ... and its pointers */
   unsigned char x10;
 } BitScope;
 extern BitScope bs;
