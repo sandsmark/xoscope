@@ -5,6 +5,10 @@
  *
  * Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
  *
+ * Enhanced by Tim Witham <twitham@pcocd2.intel.com>, Jan. 1996
+ *
+ * @(#)$Id: oscope.c,v 1.10 1995/12/29 08:07:32 twitham Exp $
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
@@ -139,6 +143,7 @@ void parse_args(int argc, char **argv)
       verbose = 1;
       break;
     case '?':
+    case 'h':
       usage();
       break;
     }
@@ -170,28 +175,25 @@ inline void draw_graticule()
   vga_drawline(0, offset-1, 0, offset+256);
   vga_drawline(h_points-1, offset, h_points-1, offset+256);
 
-  if (actual) {
+  /* draw tiny tick marks at 0.5 msec intervals */
+  for (i = 0 ; (j = i / 2000) < h_points ; i += (actual * scale)) {
+    vga_drawpixel(j, offset);
+    vga_drawpixel(j, offset + 255);
 
-    /* draw tiny tick marks at 0.5 msec intervals */
-    for (i = 0 ; (j = i / 2000) < h_points ; i += (actual * scale)) {
-      vga_drawpixel(j, offset);
-      vga_drawpixel(j, offset + 255);
-
-      /* draw bigger marks at 1 msec intervals */
-      if ((j = i / 1000) < h_points) {
-	vga_drawline(j, offset, j, offset+5);
-	vga_drawline(j, offset+250, j, offset+256);
-      }
-
-      /* draw vertical lines at 5 msec intervals */
-      if ((j = i / 200) < h_points)
-	vga_drawline(j, offset, j, offset+256);
+    /* draw bigger marks at 1 msec intervals */
+    if ((j = i / 1000) < h_points) {
+      vga_drawline(j, offset, j, offset+5);
+      vga_drawline(j, offset+250, j, offset+255);
     }
+
+    /* draw vertical lines at 5 msec intervals */
+    if ((j = i / 200) < h_points)
+      vga_drawline(j, offset, j, offset+255);
   }
 
   /* draw a tick mark where the trigger level is */
   if (trigger != -1) {
-    vga_drawline(0, offset+trigger, 3, offset+trigger);
+    vga_drawline(0, offset+trigger, 5, offset+trigger);
   }
 }
 
@@ -215,13 +217,21 @@ void cleanup()
   close(snd);			/* close sound device */
 }
 
+/* abort and show system error if given ioctl status is bad */
+void check_status(int status)
+{
+  if (status < 0) {
+    perror("error from sound device ioctl");
+    cleanup();
+    exit(1);
+  }
+}
+
 /* initialize /dev/dsp */
 void init_sound_card()
 {
   int parm;
-  int status;
-
-  /* open DSP device for read */
+				/* open DSP device for read */
   snd = open("/dev/dsp", O_RDONLY);
   if (snd < 0) {
     perror("cannot open /dev/dsp");
@@ -229,45 +239,18 @@ void init_sound_card()
     exit(1);
   }
 
-  /* set mono */
-  parm = 1;
-  status = ioctl(snd, SOUND_PCM_WRITE_CHANNELS, &parm);
-  if (status < 0) {
-    perror("error from sound device ioctl");
-    cleanup();
-    exit(1);
-  }
+  parm = 1;			/* set mono */
+  check_status(ioctl(snd, SOUND_PCM_WRITE_CHANNELS, &parm));
 
-  /* set 8-bit samples */
-  parm = 8;
-  status = ioctl(snd, SOUND_PCM_WRITE_BITS, &parm);
-  if (status < 0) {
-    perror("error from sound device ioctl");
-    cleanup();
-    exit(1);
-  }
+  parm = 8;			/* set 8-bit samples */
+  check_status(ioctl(snd, SOUND_PCM_WRITE_BITS, &parm));
 
-  /* set DMA buffer size */
-  status = ioctl(snd, SOUND_PCM_SUBDIVIDE, &dma);
-  if (status < 0) {
-    perror("error from sound device ioctl");
-    cleanup();
-    exit(1);
-  }
+				/* set DMA buffer size */
+  check_status(ioctl(snd, SOUND_PCM_SUBDIVIDE, &dma));
 
-  /* set sampling rate */
-  status = ioctl(snd, SOUND_PCM_WRITE_RATE, &sampling);
-  if (status < 0) {
-    perror("error from sound device ioctl");
-    cleanup();
-    exit(1);
-  }
-  status = ioctl(snd, SOUND_PCM_READ_RATE, &actual);
-  if (status < 0) {
-    perror("error from sound device ioctl");
-    cleanup();
-    exit(1);
-  }
+				/* set sampling rate */
+  check_status(ioctl(snd, SOUND_PCM_WRITE_RATE, &sampling));
+  check_status(ioctl(snd, SOUND_PCM_READ_RATE, &actual));
 }
 
 /* handle single key commands */
@@ -284,17 +267,17 @@ inline void handle_key()
     break;
   case 'R':
     sampling *= 1.1;
-    ioctl(snd, SOUND_PCM_SYNC, 0);
-    ioctl(snd, SOUND_PCM_WRITE_RATE, &sampling);
-    ioctl(snd, SOUND_PCM_READ_RATE, &actual);
+    check_status(ioctl(snd, SOUND_PCM_SYNC, 0));
+    check_status(ioctl(snd, SOUND_PCM_WRITE_RATE, &sampling));
+    check_status(ioctl(snd, SOUND_PCM_READ_RATE, &actual));
     if (graticule)
       draw_graticule();
     break;
   case 'r':
     sampling *= 0.9;
-    ioctl(snd, SOUND_PCM_SYNC, 0);
-    ioctl(snd, SOUND_PCM_WRITE_RATE, &sampling);
-    ioctl(snd, SOUND_PCM_READ_RATE, &actual);
+    check_status(ioctl(snd, SOUND_PCM_SYNC, 0));
+    check_status(ioctl(snd, SOUND_PCM_WRITE_RATE, &sampling));
+    check_status(ioctl(snd, SOUND_PCM_READ_RATE, &actual));
     if (graticule)
       draw_graticule();
     break;
