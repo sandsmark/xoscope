@@ -1,17 +1,17 @@
 .\" Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
 .\" Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
 .\"
-.\" (see scope.c and the file COPYING for more details)
+.\" (see the files README and COPYING for more details)
 .\"
-.\" @(#)$Id: oscope.1,v 1.5 1996/03/02 07:03:47 twitham Exp $
+.\" @(#)$Id: oscope.1,v 1.6 1996/03/10 02:45:25 twitham Exp $
 
-.TH OSCOPE 1 "March 1  1996" "Linux" "User Commands"
+.TH OSCOPE 1 "April 1  1996" "Linux" "User Commands"
 .SH NAME
 oscope xoscope \- Digital Oscilloscope for /dev/dsp
 .SH SYNOPSIS
-oscope [oscope options]
+oscope [oscope options] [file]
 .br
-xoscope [X toolkit options] [oscope options]
+xoscope [X toolkit options] [oscope options] [file]
 
 .SH DESCRIPTION
 
@@ -32,6 +32,24 @@ keyboard at run-time.  Each available key is shown on the screen in
 .TP 0.5i
 .B Escape
 Immediately quit the program.
+
+.TP 0.5i
+.B @
+Load a previously saved file.  You are prompted for the filename
+unless your
+.B oscope
+can't display text.  In that case, the filename used is the one given
+on the command line, or a default name.
+
+.TP 0.5i
+.B #
+Save current settings and memory buffers to a file that can be loaded
+later.  You are prompted for the filename unless your
+.B oscope
+can't display text.  In that case, the filename used is the one given
+on the command line, or a default name.
+.B WARNING:
+This will overwrite existing files so be careful.
 
 .TP 0.5i
 .B Enter
@@ -126,6 +144,9 @@ functions as the corresponding keyboard commands above.
 .PP
 .SH "COMMAND\-LINE OPTIONS"
 
+All these options may also be capitalized in case they conflict with
+an X toolkit option.
+
 .TP 0.5i
 .B -h
 Produce a usage message showing these startup options with their
@@ -134,11 +155,16 @@ default values, then exit.
 .TP 0.5i
 .B -# <code>
 Specify the startup conditions of the channel.  # is a channel number
-from 1 to 8.  Code can have up to three fields, separated by colons:
-position[:scale[:function#]].  Position is the number of pixels above
-(positive) or below (negative) the center of the display.  Scale is a
-valid scaling factor from 1/200 to 200.  Function number is the math
-function to perform on the channel.
+from 1 to 8.  Code can have up to four fields, separated by colons:
+position[:scale[:function#[:visible]]].  Position is the number of
+pixels above (positive) or below (negative) the center of the display.
+Scale is a valid scaling factor from 1/200 to 200.  Function number is
+the math function to perform on the channel or the memory letter to
+recall to the channel.  Visible should be 0 to hide the channel.
+
+.TP 0.5i
+.B -a <channel>
+Specify the selected, or active, channel.
 
 .TP 0.5i
 .B -r <rate>
@@ -151,21 +177,25 @@ Sets the time scale factor, 1, 2, 5, 10, 20, 100, or 200.
 
 .TP 0.5i
 .B -t <trigger>
-Sets the trigger level, -128 to 127.
-.B oscope
-will wait until it receives a signal "edge" at this level.  255 = no
-trigger.
+Sets the initial trigger conditions.  Trigger can have up to three
+fields, separated by colons: position[:type[:channel]].  Position is
+the number of pixels above (positive) or below (negative) the center
+of the display.  Type is a number indicating the kind of trigger, 0 =
+none, 1 = rising edge, 2 = falling edge.  Channel should be 1 or 2.
 
 .TP 0.5i
 .B -c <color>
-Sets the graticule color, 0 - 16.
+Sets the graticule color, 0 - 15.
 
 .TP 0.5i
 .B -m <mode>
-Sets the graphics mode to use on the console.  For xoscope, use the
-more flexible -geometry instead.  0 = 640x480x16, 1 = 800x600x16, 2 =
-1024x768x16, 3 = 1280x1024x16.  WARNING: not all modes are supported
-by all video cards; don't use unsupported modes!
+Sets the graphics mode to use on the console.  For
+.B xoscope,
+use the more flexible -geometry instead.  0 = 640x480x16, 1 =
+800x600x16, 2 = 1024x768x16, 3 = 1280x1024x16.
+.B WARNING:
+not all modes are supported by all video cards; don't use unsupported
+modes!
 
 .TP 0.5i
 .B -d <dma divisor>
@@ -175,9 +205,11 @@ usually gives the fastest display rate.
 
 .TP 0.5i
 .B -f
-Font to use.  For oscope, these are listed in
-/usr/lib/kbd/consolfonts.  For xoscope, they're the output of
-xlsfonts.  The default should work best.
+Font to use.  For
+.B oscope,
+these are listed in /usr/lib/kbd/consolfonts.  For
+.B xoscope,
+they're the output of xlsfonts.  The default should work best.
 
 .TP 0.5i
 .B -p <type>
@@ -193,16 +225,51 @@ major divisions.
 .B -b
 Whether the graticule is drawn behind or in front of the signals.
 
+.B file
+The name of a file to load upon startup.  This should be a file
+previously saved by 
 
 .SH EXAMPLES
 .TP 0.5i
-.B xoscope -1 80 -2 -80 -3 0:1/100:1 -4 -160:1/100:2
+.B oscope -1 80 -2 -80 -3 0:1/100:1 -4 -160:1/100:2
 
 This runs
 .B oscope
 with channel 1 above and channel 2 below the center of the display.
 Also channel 3 and 4 are made visible to show the FFT of channel 1 and
 2 respectively at a reduced scale of 1/100.
+
+.TP 0.5i
+.B oscope oscope.osp
+
+This runs oscope, loading settings and memory buffers from a
+previously saved data file called "oscope.osp".
+
+.SH FILES
+.B Oscope
+creates readable text data files.  The files contain at least a
+comment header which holds the current settings of
+.B oscope.
+Loading the file causes these saved settings to be restored.
+
+To record your signals permanently first Store them into memory
+buffers, optionally recall them to channels, and then Save the file.
+All non-empty memory buffers are written to a column of the file
+following the comment header.  Columns are separated by tab
+characters.  These are stored back in to the memory buffers when the
+file is loaded.  Simply recall them to channels to view them.
+.P
+
+This format could also be read by some spreadsheet or plotting
+programs.  For example, the
+.B gnuplot (1)
+command
+.P
+
+plot "oscope.osp" using 0:1, "oscope.osp" using 0:2
+.P
+
+would plot the first and second columns of the "oscope.osp" data file.
 
 .SH PORTABILITY
 .B Oscope
@@ -226,7 +293,7 @@ plot, depending on your sound card, graphics card, and processor
 speed.  Floating point math is used only by the FFT, so a math
 coprocessor shouldn't make much difference.  To optimize refresh
 speed, hide all unneeded channels, use point or point accumulate mode,
-zoom in on Sec/Div as much as possible, and hide the graticule.
+zoom in on Sec/Div as much as possible, and turn off the graticule.
 
 You have to use an external mixer program to select the input source
 device, level, etc.  Since these unknowns affect the amplitude, there
