@@ -16,7 +16,13 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
-(see the file COPYING for more details)
+	(see the file COPYING for more details)
+
+Latest official version is available at:
+
+		ftp://sunsite.unc.edu/pub/Linux/apps/circuits/
+
+See also:	http://www.bobsplace.com/~twitham/oscope/
 
 
 	SUMMARY:
@@ -53,6 +59,9 @@ will have to read the manual page and memorize the controls since they
 can't be displayed on your screen (bummer!).  If I were you, I'd get
 the libraries instead. :-)
 
+If you have X11 and would like to do simultaneous Spectrum Analysis,
+see README.freq51 for extra optional instructions.
+
 
 	INSTALLATION:
 
@@ -78,8 +87,8 @@ require any special permissions.
 
 Please see the man page for instructions on how to use [x]oscope.
 Also use the option '-h' to show command-line options.  If you're
-interested in doing advanced signal math at run-time, see the
-oscope.perl and oscopefft.c external math command examples.
+interested in doing advanced signal math at run-time, see the operl
+and offt.c external math command examples.
 
 
 	PLATFORMS:
@@ -93,20 +102,25 @@ oscope.perl and oscopefft.c external math command examples.
  - ATI Win Turbo 2MB VRAM
  - 100 MHz Intel Pentium(R) Processor, 32MB RAM
 
-To date, this is all it has been tried on.  You will probably need a
-fast processor and video card if you want to see several signals in
-near real-time.  Please let me know if it has problems (or not) on
-your specific Linux system or sound card.
+To date, this is all I know it has been tried on.  You will probably
+need a fast processor and video card if you want to see several
+signals in near real-time.  Please let me know if it has problems (or
+not) on your specific Linux system or sound card.
+
+
+	EXTRA:
+
+If you like to build things, check out the HARDWARE file.
 
 
 	CREDITS:
 
 Thanks to Jeff Tranter <Jeff_Tranter@Mitel.com> for writing the
-original scope-0.1.
+original scope-0.1 that inspired all this.
 
 Thanks to Philip VanBaren <phillipv@eecs.umich.edu> for the realfft.c
-code from his freq5 program.  If you want a Spectrum Analyzer, you
-should get Philip's freq program.
+code from his freq program.  If you want a Spectrum Analyzer, you
+should get Philip's freq program and read README.freq51.
 
 Thanks to the Cthugha-L program (Torps Productions, Harald Deischinger
 <k3096e5@c210.edvz.uni-linz.ac.at>) for inspiring the X11 client and
