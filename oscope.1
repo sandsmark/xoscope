@@ -1,106 +1,192 @@
-.\" This file Copyright (C) 1994 Jeff Tranter
-.\" (Jeff_Tranter@Mitel.COM)
+.\" This file Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
+.\"           Copyright (C) 1996 Tim Witham (twitham@pcocd2.intel.com)
+.\"
 .\" It may be distributed under the GNU Public License, version 2, or
 .\" any higher version.  See section COPYING of the GNU Public license
 .\" for conditions under which this file may be redistributed.
-.TH SCOPE 1 "April 12  1994" "Linux" "User Commands"
+.\"
+.\" @(#)$Id: oscope.1,v 1.2 1996/01/03 05:36:45 twitham Exp $
+
+.TH SCOPE 1 "January 3  1996" "Linux" "User Commands"
 .SH NAME
 scope \- Software Oscilloscope
 .SH SYNOPSIS
-
-scope -r<rate> -m<mode> -c<colour> -d<dma divisor> -t<trigger> -p -l -g -v
+scope [-1|-2] [-r<rate>] [-s <scale>] [-c<colour>] [-t<trigger>] \
+[-m<mode>] [-d<dma divisor>] [-p|-l] [-g] [-b] [-v]
 
 .SH DESCRIPTION
 
 .B Scope
 is a simple software emulation of an oscilloscope. It graphically
-displays voltage as a function of time. The input is via a sound
-card using the kernel sound device /dev/dsp.
+displays voltage as a function of time. The input is via a sound card
+using the kernel sound device /dev/dsp.
 
-The svgalib library is used to implement a real-time waveform
-display.
+The svgalib library is used to implement a real-time waveform display.
 
 .PP
 .SH "COMMAND\-LINE OPTIONS"
+Use
+.B scope -h
+to produce a usage message showing the default options and values.
+All options can be interactively changed, see the
+.B RUN-TIME CONTROLS
+section below.
+
+.TP 0.5i
+.B -1
+.TP 0.5i
+.B -2
+These options are mutually exclusive. In single channel mode (-1),
+just one of the audio channels is sampled and plotted.  In dual
+channel mode (-2), both audio channels are sampled and plotted in two
+colors.  Dual channel mode is slower.
+
 .TP 0.5i
 .B -r <rate>
 Specify the sampling rate in samples per second. The upper and lower
-limits depend on the sound card you have; the default is
-8000.
+limits depend on the sound card you have.
 
 .TP 0.5i
-.B -m <mode>
-Sets the graphics to use. The modes are listed in the svgalib header
-file "vga.h". The default mode is 4 -- 640x480 with 16 colours. If
-you select a graphics mode with a vertical resolution of less than 255
-you may not be able to display the entire waveform. Don't use graphics
-modes that are not supported by your monitor.
+.B -s <scale>
+Sets the time scale factor in number is horizontal pixels per sample.
+This can be 1, 2, 4, 8, or 16.
+
+.TP 0.5i
+.B -t <trigger>
+Sets the trigger level.
+.B scope
+will wait until it receives a signal "edge" at this level. It should
+be in the range 0 - 255.  -1 causes
+.B scope
+to run without waiting for a trigger. Note that the top of the display
+is 0, the bottom is 255, and the midpoint is 128.
 
 .TP 0.5i
 .B -c <colour>
-Sets the trace colour. The colours available depend on the graphics
-mode selected. The default is 2 -- green (just like a real
-oscilloscope).
+Sets the channel 1 trace colour. The colours available depend on the
+graphics mode selected.  Channel 2 is drawn in colour+1 and the
+graticule is drawn in colour+2.
+
+.TP 0.5i
+.B -m <mode>
+Sets the graphics mode to use. The modes are listed in the svgalib
+header file "vga.h". If you select a graphics mode with a vertical
+resolution of less than 255 you may not be able to display the entire
+waveform. Don't use graphics modes that are not supported by your
+monitor.
 
 .TP 0.5i
 .B -d <dma divisor>
 Sets the divisor for DMA buffer size. Valid numbers are 1, 2, or 4.
 The kernel sound driver will divide it's DMA buffer by this factor.
-The default value of 4 usually gives the fastest display rate.
+The value 4 usually gives the fastest display rate.
 
 .TP 0.5i
-.B -t <trigger>
-Sets the trigger level. The scope will wait until it receives a signal
-greater than this level. It should be in the range 0 .. 255. The
-default is to run without waiting for a trigger. Note that the top of
-the display is 0, the bottom is 255, and the midpoint is 128.
-
-You cannot quit using "Q" while waiting for a trigger (use Control-C
-instead). You cannot change the trigger level unless it was enabled
-from the command line.
-
+.B -p
 .TP 0.5i
-.B -p (point mode)
-.TP 0.5i
-.B -l (line mode)
+.B -l
 These options are mutually exclusive. In point mode (-p) the graph is
 shown as individual data points. In line mode (-l) the points are
 joined using lines. Line mode gives a better display, but is somewhat
-slower than point mode. The default is line mode.
+slower than point mode.
 
 .TP 0.5i
 .B -g
-Enables a graticule (a frame around the waveform). This slows down the
-display a little bit. If trigger is enabled, a small tick mark is
-shown on the graticule corresponding to the trigger level.
+Toggles a graticule.  This draws a frame around the waveform and adds
+a time scale.  The time scale is always 5 millisecond major divisions
+and 1 millisecond minor divisions.  The minor divisions in turn have
+micro divisions at 0.1 millisecond intervals.  If trigger is enabled,
+a small tick mark is also shown on the graticule corresponding to the
+trigger level.  This option slows the display down but is needed to
+read a time period or frequency.
+
+.TP 0.5i
+.B -b
+Toggles whether the graticule is drawn behind or in front of the
+signals.  Obviously has no effect if the graticule is not on.
 
 .TP 0.5i
 .B -v
-Runs
+Toggles
 .B scope
-in verbose mode. Extra information is displayed on standard
-output.
+verbose mode.  Key press and option information is displayed on
+standard output.
 
 .PP
 .SH "RUN\-TIME CONTROLS"
 .PP
 
-While the program is running, it accepts the following single key commands:
+While the program is running, it accepts the following single key
+commands:
 
-.PP
-q/Q - quit the program
-.PP
-R/r - increase/decrease sampling rate 10%
-.PP
-T/t - increase/decrease trigger level 10 units
-.PP
-l/p - go to line/point mode
-.PP
-C/c - increment/decrement colour used
-.PP
-G/g - enable/disable graticule
-.PP
-<space> - pause the display until another key is pressed
+.TP 0.5i
+.B 1/2
+Toggle single/dual channel mode.  Single channel mode is faster.
+
+.TP 0.5i
+.B R/r
+Increase/decrease sampling rate 10%.  Use this to give the signals
+more or less detail.  This also stretches or shrinks the time scale on
+the graticule.
+
+.TP 0.5i
+.B S/s
+Increase/decrease time scale by a factor of 2.  Use this to zoom
+in/out or to get a more readable graticule.  Increasing scale speeds
+up the display considerably.
+
+.TP 0.5i
+.B T/t
+Increase/decrease trigger level 10 units.  Use this to stabilize a
+"moving" waveform.  Pushing the trigger level beyond the limit of the
+signal will cause the display to "freeze" as it waits for trigger.  In
+this state, each key press will force a trigger.  Pushing the trigger
+off the vertical axis will disable the trigger.  Pressing
+.B T/t
+once again will re-enable the trigger at mid-scale.
+
+.TP 0.5i
+.B C/c
+Increment/decrement colour used.  This could make the display easier
+to see.
+
+.TP 0.5i
+.B M/m
+Increment/decrement video mode.  USE WITH CAUTION; using video modes
+not supported by your video card or monitor will not work.
+
+.TP 0.5i
+.B D/d
+Increase/decrease DMA divisor.  The higher values will usually give
+the fastest display rate.
+
+.TP 0.5i
+.B P/L/p/l
+Toggle point/line mode.  Use this to speed up/slow down the display or
+to better visualize the signals.
+
+.TP 0.5i
+.B G/g
+Toggle on/off graticule.  Turning off the graticule speeds up the
+display.
+
+.TP 0.5i
+.B B/b
+Toggle graticule behind/in front of signals.
+
+.TP 0.5i
+.B V/v
+Toggle verbose usage log on/off to stdout.  The verbose log shows one
+line of current sampling rate and options for each key press.
+
+.TP 0.5i
+.B <space>
+Pause the display until another key is pressed.  Use this to "freeze"
+the display.
+
+.TP 0.5i
+.B Q/q
+Quit the program.
 
 .SH EXAMPLES
 .TP 0.5i
@@ -108,7 +194,7 @@ G/g - enable/disable graticule
 
 This runs
 .B scope
-at a 44kHz sampling rate, in line mode, with verbose output.
+at a 44kHz sampling rate, in line mode, with verbose option output.
 
 .SH PORTABILITY
 .B Scope
@@ -118,11 +204,10 @@ graphics, and the Linux kernel sound drivers.
 
 .SH BUGS/LIMITATIONS
 .PP
-
-This should be considered ALPHA software.  It was basically written
-for fun rather than as a useful tool. It has a few known bugs, and it
-really needs a better user interface. Unfortunately, adding anything
-to the display (controls, etc...) would slow it down considerably.
+This should be considered BETA software.  It was basically written for
+fun rather than as a useful tool. It may have bugs, and it could use a
+better user interface. Unfortunately, adding anything to the display
+(controls, etc...) would slow it down considerably.
 
 Because it uses svgalib,
 .B scope
@@ -138,14 +223,14 @@ device, level, etc... (if you use a microphone the default should
 work).
 
 I can think of a bunch of enhancements that might be fun to add: 16
-bit and stereo sampling, single shot mode, envelope mode, spectrum
-analyzer (FFT) mode, graphical controls (mouse), graticule, and
-storage mode (with waveform save/load), but it would probably run too
-slowly.
+bit, single shot mode, envelope mode, spectrum analyzer (FFT) mode,
+graphical controls (mouse), and storage mode (with waveform
+save/load), but it would probably run too slowly.
 
 .SH AUTHOR
 .B Scope
-was written by Jeff Tranter (Jeff_Tranter@Mitel.COM).
+was written by Jeff Tranter (Jeff_Tranter@Mitel.COM) and later
+enhanced by Tim Witham (twitham@pcocd2.intel.com).
 .B Scope
 is released under the conditions of the GNU General Public License.
 See the file COPYING and notes in the source code for details.
