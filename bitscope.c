@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: bitscope.c,v 1.12 2000/07/14 05:02:49 twitham Exp $
+ * @(#)$Id: bitscope.c,v 1.13 2000/07/17 21:36:36 twitham Exp $
  *
  * Copyright (C) 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -194,20 +194,30 @@ bs_init(int fd)
   in_progress = 0;
   bs.version = strtol(bs.bcid + 2, NULL, 10);
   mem[23].rate = mem[24].rate = mem[25].rate = 25000000;
+  mem[23].rate = mem[24].rate = mem[25].rate = 50000;
 
   bs_getregs(fd, bs.r);		/* get and reset registers */
   bs.r[3] = bs.r[4] = 0;
   bs.r[5] = 0;
   bs.r[6] = 127;		/*  scope.trig; ? */
-  bs.r[6] = 0xff;		/* don't care */
+//  bs.r[6] = 0xff;		/* don't care */
   bs.r[7] = TRIGEDGE | TRIGEDGEF2T | LOWER16BNC | TRIGCOMPARE | TRIGANALOG;
-  bs.r[8] = SIMPLE;		/* SIMPLE; TIMEBASE; TIMEBASECHOP */
+  bs.r[8] = 4;			/* trace mode, 0-4 */
 
-  SETWORD(&bs.r[11], 2);	/* try to just fill the 16384 memory: */
-  bs.r[13] = 179;		/* 2,179 through mode 0 formula = 1644 */
+  /* 0: 0, 2, 179 */
+  /* 1: 0, 107, 1 */
+  /* 2: 0, 80, 1 */
+  /* 3: 0, 16319, 1 */
+
+//  SETWORD(&bs.r[11], 2);	/* try to just fill the 16384 memory: */
+//  bs.r[13] = 179;		/* 2,179 through mode 0 formula = 1644 */
+
+  bs.r[20] = 1;			/* PRETD	pre trigger delay */
+  SETWORD(&bs.r[11], 16319);	/* PTD		post trigger delay */
+  bs.r[13] = 1;			/* TB		time base */
 
   bs.r[14] = PRIMARY(RANGE1200 | CHANNELA | ZZCLK)
-    | SECONDARY(RANGE600 | CHANNELB | ZZCLK);
+    | SECONDARY(RANGE1200 | CHANNELB | ZZCLK);
   bs.r[15] = 0;			/* max samples per dump (256) */
   bs_putregs(fd, bs.r);
   funcnames[2] = labels[6];
@@ -285,7 +295,9 @@ bs_getdata(int fd)
 	    if (k >= MAXWID)
 	      break;
 	    mem[25].data[k] = *buff++ - 128;
-	    mem[23 + !alt].data[k++] = *buff++ - 128;
+	    mem[23 + alt].data[k] = *buff++ - 128;
+	    if (alt) k++;
+	    alt = !alt;
 	  }
 	} else {		/* S mode, hex ASCII */
 	  while (*buff != '\0') {
@@ -295,14 +307,16 @@ bs_getdata(int fd)
 	      buff++;
 	    else {
 	      n = strtol(buff, NULL, 16);
-	      mem[23 + !alt].data[k] = (n & 0xff) - 128;
-	      mem[25].data[k++] = ((n & 0xff00) >> 8) - 128;
+	      mem[23 + alt].data[k] = (n & 0xff) - 128;
+	      mem[25].data[k] = ((n & 0xff00) >> 8) - 128;
 	      buff += 5;
+	      if (alt) k++;
+	      alt = !alt;
 	    }
 	  }
 	}
-	mem[23 + !alt].num = mem[25].num = k < MAXWID ? k : MAXWID;
-	if (k >= samples(mem[23].rate) || k >= 16 * 1024) { /* all done */
+	mem[23].num = mem[24].num = mem[25].num = k < MAXWID ? k : MAXWID;
+	if (k >= samples(mem[23].rate) || k >= 8 * 1024) { /* all done */
 	  k = 0;
 	  in_progress = 0;
 	} else {		/* still need more, start another */
@@ -311,11 +325,12 @@ bs_getdata(int fd)
       }
     }
   } else {			/* start a get */
-    if (!bs_io(fd, "[e]@", buffer))
-      return(0);
-    alt = !alt;			/* attempt to ALT dual trace via nibble swap */
-    bs.r[14] = ((bs.r[14] & 0x0f) << 4) | ((bs.r[14] & 0xf0) >> 4);
-    sprintf(error, "[%x]s>T", bs.r[14]);
+//    if (!bs_io(fd, "[e]@", buffer))
+//      return(0);
+//    alt = !alt;			/* attempt to ALT dual trace via nibble swap */
+//    bs.r[14] = ((bs.r[14] & 0x0f) << 4) | ((bs.r[14] & 0xf0) >> 4);
+//    sprintf(error, "[%x]s>T", bs.r[14]);
+    sprintf(error, ">T");
     if (!bs_io(fd, error, buffer))
       return(0);
     fprintf(stderr, "%s", buffer);
