@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.c,v 1.51 1996/08/03 22:27:55 twitham Rel1_1 $
+ * @(#)$Id: oscope.c,v 1.52 1996/10/05 05:50:20 twitham Exp $
  *
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -399,7 +399,9 @@ handle_key(unsigned char c)
     draw_text(1);
     break;
   case ' ':
-    scope.run = !scope.run;
+    scope.run++;
+    if (scope.run > 2)
+      scope.run = 0;
     draw_text(1);
     break;
   case '\r':
@@ -456,7 +458,7 @@ get_data()
       clip = 2;
     ch[1].data[i] = (short)(*buff++) - 128;
   }
-  return(scope.trige);
+  return(1);
 }
 
 /* main program */

@@ -1,10 +1,10 @@
-.\" @(#)$Id: oscope.1,v 1.9 1996/08/03 22:37:05 twitham Rel1_1 $
+.\" @(#)$Id: oscope.1,v 1.10 1996/10/05 05:52:31 twitham Exp $
 .\"
 .\" Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
 .\"
 .\" (see the files README and COPYING for more details)
 
-.TH OSCOPE 1 "August  3  1996" "Linux" "User Commands"
+.TH OSCOPE 1 "October  4  1996" "Linux" "User Commands"
 .SH NAME
 oscope xoscope \- Digital Oscilloscope for /dev/dsp
 .SH SYNOPSIS
@@ -56,12 +56,19 @@ Clear and refresh the entire screen.
 
 .TP 0.5i
 .B Space
-Toggle Run/Stop: pauses or continues the acquiring of new samples.
+Cycle the sampling mode: run, wait, stop.  Run mode continuously
+acquires and displays samples after trigger events.  Wait mode waits
+for the first trigger event and displays only the first set of
+samples; this is "single-shot" mode.  Stop mode suspends the data
+acquisition and displays the current samples.
 
 .TP 0.5i
 .B !
 Cycle the plotting mode: point, point accumulate, line, or line
-accumulate.
+accumulate.  In the accumulate modes, all samples stay on the screen;
+use
+.B Enter
+to clear them.
 
 .TP 0.5i
 .B 9/0
@@ -77,7 +84,7 @@ Toggle the trigger channel: 1 or 2.
 
 .TP 0.5i
 .B +
-Cycle the trigger type: none, rising edge, or falling edge.
+Cycle the trigger type: automatic, rising edge, or falling edge.
 
 .TP 0.5i
 .B &
@@ -193,7 +200,8 @@ Sets the initial Trigger conditions.  Trigger can have up to three
 fields, separated by colons: position[:type[:channel]].  Position is
 the number of pixels above (positive) or below (negative) the center
 of the display.  Type is a number indicating the kind of trigger, 0 =
-none, 1 = rising edge, 2 = falling edge.  Channel should be 1 or 2.
+automatic, 1 = rising edge, 2 = falling edge.  Channel should be 1 or
+2.
 
 .TP 0.5i
 .B -c <color>

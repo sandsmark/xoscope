@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 1.31 1996/10/04 05:11:03 twitham Exp $
+ * @(#)$Id: display.c,v 1.32 1996/10/05 05:49:52 twitham Exp $
  *
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -162,7 +162,7 @@ draw_text(int all)
     "Line Accum."
   };
   static char *trigs[] = {
-    "No",
+    "Auto",
     "Rising",
     "Falling"
   };
@@ -210,8 +210,8 @@ draw_text(int all)
 
     VGA_WRITE("(space)", h_points - 100 - 8 * 4, 62,
 	      font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
-    VGA_WRITE(scope.run ? " RUN" : "STOP", h_points - 100, 62,
-	      font, TEXT_FG, TEXT_BG, ALIGN_RIGHT);
+    VGA_WRITE(scope.run ? (scope.run > 1 ? "WAIT" : " RUN") : "STOP",
+	      h_points - 100, 62, font, TEXT_FG, TEXT_BG, ALIGN_RIGHT);
 
     /* sides of graticule */
     for (i = 0 ; i < CHANNELS ; i++) {
@@ -476,13 +476,20 @@ show_data()
   }
 }
 
-/* get and plot one screen full of data and draw the graticule */
+/* get and plot one screen full of data */
 static inline void
 animate(void *data)
 {
   if (scope.run) {
     triggered = get_data();
-    show_data();
+    if (triggered) {
+      if (scope.run > 1) {	/* auto-stop single-shot wait */
+	scope.run = 0;
+	draw_text(1);
+      }
+      show_data();
+    } else			/* no need to redraw samples */
+      draw_text(0);
     data_good = 1;
   }
 #ifdef XOSCOPE
