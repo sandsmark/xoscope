@@ -9,7 +9,7 @@
  *
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
- * @(#)$Id: oscope.c,v 1.22 1996/01/20 07:25:58 twitham Exp $
+ * @(#)$Id: oscope.c,v 1.23 1996/01/20 08:27:11 twitham Exp $
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -57,12 +57,15 @@
 #include <sys/ioctl.h>
 #include <vga.h>
 #include <sys/soundcard.h>
-#include "fontutils.h"
 #include "scope.h"		/* program defaults */
 
+#ifdef HAVEVGAMISC
+#include <fontutils.h>
+#endif
 
-/* a macro to always redraw the frame when we clear the screen */
-#define CLEAR	vga_clear(); draw_frame()
+
+/* a macro to always redraw the "static" data when we clear the screen */
+#define CLEAR	vga_clear(); draw_frame(); draw_text()
 
 /* global program defaults, defined in scope.h (see also) */
 int channels = DEF_12;
@@ -137,6 +140,23 @@ Options          Runtime Keys   Description (defaults)
   exit(1);
 }
 
+/* draw text to graphics screen */
+static inline void
+draw_text()
+{
+#ifdef HAVEVGAMISC
+  static int i;
+
+  vga_write("RUN ",  COL(0), ROW(0),  &font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
+  if (verbose)
+    vga_write(error,  COL(0), ROW(5),  &font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
+  else
+    for (i = 0; i < 80 ; i++) {
+      vga_putc(' ', COL(i), ROW(5), &font, TEXT_FG, TEXT_BG);
+    }
+#endif
+}
+
 /* if verbose mode, show current parameter settings on standard out */
 static inline void
 show_info(unsigned char c) {
@@ -167,7 +187,7 @@ show_info(unsigned char c) {
 	    verbose ? "  -v" : ""
 #endif
 	    );
-    vga_write(error,  COL(0), ROW(5),  &font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
+    draw_text();
     printf("%s\n", error);
   }
 }
@@ -441,7 +461,7 @@ handle_key()
     CLEAR;
     break;
   case 'm':
-    if (mode > 0) {		/* decrease video mode */
+    if (mode > 1) {		/* decrease video mode */
       mode--;
       init_screen(0);
       CLEAR;
@@ -478,13 +498,16 @@ handle_key()
   case 'V':
   case 'v':
     verbose = !verbose;		/* verbose log on/off */
+    draw_text();
     break;
   case ' ':
+#ifdef HAVEVGAMISC
     vga_write("STOP",  COL(0), ROW(0),  &font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
+#endif
     while (vga_getkey() <= 0)	/* pause until key pressed */
       ;
     c = 0;			/* pretend like nothing happened */
-    vga_write("RUN ",  COL(0), ROW(0),  &font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
+    draw_text();
     break;
   case 'q':
   case 'Q':			/* quit */
