@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: sc_sb.c,v 1.3 1997/05/03 15:30:36 twitham Exp $
+ * @(#)$Id: sc_sb.c,v 1.4 1997/05/04 20:58:34 twitham Rel1_3 $
  *
  * Copyright (C) 1997 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -27,7 +27,7 @@ close_sound_card()
 
 /* attempt to change sample rate and return actual sample rate set */
 int
-set_sound_card(unsigned int rate)
+set_sound_card(int rate, int chan, int bits)
 {
   sb_uninstall_driver();
   if(sb_install_driver(rate)!=SB_SUCCESS) {
@@ -38,19 +38,13 @@ set_sound_card(unsigned int rate)
 }
 
 void
-open_sound_card()
+open_sound_card(int dma)
 {
   if(sb_install_driver(scope.rate)!=SB_SUCCESS) {
     fprintf(stderr,"Driver error: %s",sb_driver_error);
     exit(1);
   }
-}
-
-/* [re]set the sound card, and return actual sample rate */
-int
-reset_sound_card(int rate, int chan, int bits, int dma)
-{
-  set_sound_card(rate);
+  set_sound_card(44000, 2, 8);
   clrscr();
 
   if(sb_info.dspVersion>=0x040C)
@@ -66,8 +60,13 @@ reset_sound_card(int rate, int chan, int bits, int dma)
 
   cprintf(" detected at Address %xH, IRQ %d\n\r",sb_info.reset-6,sb_info.IRQ);
   cprintf("Using a sampling rate of %d",sb_sample_frequency);
+}
 
-  return(set_sound_card(rate));
+/* [re]set the sound card, and return actual sample rate */
+int
+reset_sound_card(int rate, int chan, int bits)
+{
+  return(set_sound_card(rate, chan, bits));
 }
 
 /* get data from sound card, return value is whether we triggered or not */

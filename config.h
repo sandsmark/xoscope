@@ -1,7 +1,7 @@
 /*
- * @(#)$Id: config.h,v 1.6 1996/10/06 05:44:26 twitham Rel1_2 $
+ * @(#)$Id: config.h,v 1.7 1997/05/04 20:59:50 twitham Rel1_3 $
  *
- * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
+ * Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
  *
  * (see the files README and COPYING for more details)
  *
@@ -15,7 +15,7 @@
 #define DEF_A	1		/* 1-8 (1) */
 #define DEF_R	44000		/* 8800,22000,44000 (44000) */
 #define DEF_S	1		/* 1,2,5,10,20,50,100,200 (1) */
-#define DEF_T	"0:1:1"		/* -128-127:0,1,2:1,2 ("0:1:1") */
+#define DEF_T	"0:1:x"		/* -128-127:0,1,2:x,y ("0:1:x") */
 #define DEF_C	4		/* 0-16 (4) */
 #define DEF_M	0		/* 0,1,2 (0) */
 #define DEF_D	4		/* 1,2,4 (4) */
@@ -36,11 +36,11 @@
 /* max number of channels, up to 8 (8) */
 #define CHANNELS	8
 
-/* initial colors of the channels; see colors in x11.c ({2,3,5,6,14,1,4,15}) */
+/* colors of the channels; see colors in gr_sx.c ({2,3,5,6,14,1,4,15}) */
 #define CHANNELCOLOR	{2,3,5,6,14,1,4,15}
 
-/* text foreground color (color[2]) */
-#define TEXT_FG		color[2]
+/* text foreground color (color[15]) */
+#define TEXT_FG		color[15]
 
 /* key foreground color (color[5]) */
 #define KEY_FG		color[5]
