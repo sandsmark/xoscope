@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 1.22 1996/02/04 04:00:43 twitham Exp $
+ * @(#)$Id: display.c,v 1.23 1996/02/04 08:48:50 twitham Exp $
  *
  * Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
@@ -117,10 +117,11 @@ col(int x)
     return (x * 8);
   if (x > 67)			/* right side; absolute */
     return (h_points - ((80 - x) * 8));
-  return (x * h_points / 80);	/* middle; spread it out proportionally */
+  /* middle; spread it out proportionally */
+  return ((x - 12) * (h_points - 200) / 56 + 100);
 }
 
-/* how to convert text row(0-30) to graphics position */
+/* how to convert text row(0-29) to graphics position */
 int
 row(int y)
 {
@@ -128,7 +129,8 @@ row(int y)
     return (y * 16);
   if (y > 24)			/* bottom; absolute */
     return (v_points - ((30 - y) * 16));
-  return (y * v_points / 30);	/* center; spread out proportionally */
+  /* center; spread out proportionally */
+  return ((y - 5) * (v_points - 160) / 20 + 80);
 }
 
 /* draw just dynamic or all text to graphics screen */
@@ -158,20 +160,20 @@ draw_text(int all)
 	    p->show ? "Visible" : "HIDDEN ");
     VGA_WRITE(string, col(5), row(1), font, p->color, TEXT_BG, ALIGN_LEFT);
 
-    VGA_WRITE("(Enter)", col(71), 0, font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
-    VGA_WRITE("Refresh", col(78), 0, font, TEXT_FG, TEXT_BG, ALIGN_RIGHT);
+    VGA_WRITE("(Enter)", col(70), 0, font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
+    VGA_WRITE("Refresh", col(77), 0, font, TEXT_FG, TEXT_BG, ALIGN_RIGHT);
 
-    VGA_WRITE("(&)", col(71), row(1), font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
-    VGA_WRITE("Graticule", col(80), row(1),
+    VGA_WRITE("(&)", col(70), row(1), font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
+    VGA_WRITE("Graticule", col(79), row(1),
 	      font, TEXT_FG, TEXT_BG, ALIGN_RIGHT);
 
-    VGA_WRITE("(*)", col(71), row(2), font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
-    VGA_WRITE(scope.behind ? "Behind   " : "In Front ", col(80), row(2),
+    VGA_WRITE("(*)", col(70), row(2), font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
+    VGA_WRITE(scope.behind ? "Behind   " : "In Front ", col(79), row(2),
 	      font, TEXT_FG, TEXT_BG, ALIGN_RIGHT);
 
-    VGA_WRITE("(()      ())", col(80), row(3),
+    VGA_WRITE("(()      ())", col(79), row(3),
 	      font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
-    VGA_WRITE("Color", col(76), row(3), font, TEXT_FG, TEXT_BG, ALIGN_RIGHT);
+    VGA_WRITE("Color", col(75), row(3), font, TEXT_FG, TEXT_BG, ALIGN_RIGHT);
 
     VGA_WRITE("(!)", 100, 62, font, KEY_FG, TEXT_BG, ALIGN_LEFT);
     VGA_WRITE(strings[scope.mode],
@@ -218,9 +220,9 @@ draw_text(int all)
       if (scope.select == i) {
 	VGA_SETCOLOR(k);
 	k = i < 4 ? 11 : 80 - 11;
-	VGA_DRAWLINE(col(i < 4 ? 0 : 80), row(j), col(k), row(j));
-	VGA_DRAWLINE(col(k), row(j), col(k), row(j + 4));
-	VGA_DRAWLINE(col(i < 4 ? 0 : 80), row(j + 4), col(k), row(j + 4));
+	VGA_DRAWLINE(col(i < 4 ? 0 : 79), row(j), col(k), row(j));
+	VGA_DRAWLINE(col(k), row(j), col(k), row(j + 5));
+	VGA_DRAWLINE(col(i < 4 ? 0 : 79), row(j + 5), col(k), row(j + 5));
       }
     }
 
@@ -245,31 +247,35 @@ draw_text(int all)
     sprintf(string, "%d %cs/div",
 	    i > 999 ? i / 1000 : i,
 	    i > 999 ? 'm' : 'u');
-    VGA_WRITE(string, col(40), row(25), font, TEXT_FG, TEXT_BG, ALIGN_CENTER);
+    VGA_WRITE(string, col(40), row(25),
+	      font, TEXT_FG, TEXT_BG, ALIGN_CENTER);
 
     VGA_WRITE("(_)(-)                      (=)(+)", col(40), row(27),
 	      font, KEY_FG, TEXT_BG, ALIGN_CENTER);
-    sprintf(string, "%s Trigger @ %3d",
-	    scope.trige ? " Rising" : "Falling", scope.trig - 128);
+    sprintf(string, "%s Trigger @ %d",
+	    scope.trige ? "Rising" : "Falling", scope.trig - 128);
     VGA_WRITE(scope.trig > -1 ? string : "No Trigger", col(40), row(27),
 	      font, ch[scope.trigch].color, TEXT_BG, ALIGN_CENTER);
 
-    VGA_WRITE("(A-Z)", col(74), row(27), font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
-    VGA_WRITE("Save  ", col(80), row(27), font, p->color, TEXT_BG, ALIGN_RIGHT);
-
-    if (scope.select > 1) {
-      VGA_WRITE("(;)", col(74), row(26),
-		font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
-      VGA_WRITE("Math  ", col(80), row(26),
-		font, p->color, TEXT_BG, ALIGN_RIGHT);
-      VGA_WRITE("(a-z)", col(74), row(28),
-		font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
-      VGA_WRITE("Recall", col(80), row(28),
+    if (actual >= 44000) {
+      VGA_WRITE("(A-Z)", col(73), row(27), font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
+      VGA_WRITE("Save  ", col(79), row(27),
 		font, p->color, TEXT_BG, ALIGN_RIGHT);
     }
 
-    VGA_WRITE("(", col(27), row(28), font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
-    VGA_WRITE(")", col(54), row(28), font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
+    if (scope.select > 1) {
+      VGA_WRITE("(;)", col(73), row(26),
+		font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
+      VGA_WRITE("Math  ", col(79), row(26),
+		font, p->color, TEXT_BG, ALIGN_RIGHT);
+      VGA_WRITE("(a-z)", col(73), row(28),
+		font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
+      VGA_WRITE("Recall", col(79), row(28),
+		font, p->color, TEXT_BG, ALIGN_RIGHT);
+    }
+
+    VGA_WRITE("(", col(26), row(28), font, KEY_FG, TEXT_BG, ALIGN_LEFT);
+    VGA_WRITE(")", col(53), row(28), font, KEY_FG, TEXT_BG, ALIGN_LEFT);
     for (i = 0 ; i < 26 ; i++) {
       if (mem[i] != NULL) {
 	sprintf(string, "%c", i + 'a');
@@ -346,10 +352,11 @@ draw_graticule()
 
   /* a mark where the trigger level is */
   if (scope.trig > -1) {
-    i = offset + ch[scope.trigch].pos + 128 - scope.trig;
-    VGA_SETCOLOR(ch[scope.trigch].color);
-    VGA_DRAWLINE(90, i + (scope.trige ? -10 : 10),
-		 110, i + (scope.trige ? 10 : -10));
+    i = scope.trigch;
+    j = offset + ch[i].pos + (128 - scope.trig) * ch[i].mult / ch[i].div;
+    VGA_SETCOLOR(ch[i].color);
+    VGA_DRAWLINE(90, j + (scope.trige ? -10 : 10),
+		 110, j + (scope.trige ? 10 : -10));
   }
 
   VGA_SETCOLOR(color[scope.color]);
@@ -360,11 +367,11 @@ draw_graticule()
 
   if (scope.grat) {
 
-    /* cross-hairs every 5 x 4 divisions */
+    /* cross-hairs every 5 x 5 divisions */
     for (i = 320 ; i < h_points - 100 ; i += 220) {
       VGA_DRAWLINE(i, 80, i, v_points - 80);
     }
-    for (i = 0 ; (offset - i) > 80 ; i += 128) {
+    for (i = 0 ; (offset - i) > 80 ; i += 160) {
       VGA_DRAWLINE(100, offset - i, h_points - 100, offset - i);
       VGA_DRAWLINE(100, offset + i, h_points - 100, offset + i);
     }
