@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: gr_gtk.c,v 1.21 2000/07/10 23:36:51 twitham Exp $
+ * @(#)$Id: gr_gtk.c,v 1.22 2000/07/18 18:35:41 twitham Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -877,17 +877,13 @@ buttonrow(int y)
   return (10 * (y - 80) / (10 * (v_points - 160) / 20) + 5);
 }
 
-/* context sensitive mouse click select, recall and pop-up menus */
 gint
-button_event(GtkWidget *widget, GdkEventButton *event, gpointer data)
+positioncursor(int x, int y, int b)
 {
-  static int x, y, z, b;
+  static int z;
 
-  x = event->x;
-  y = event->y;
-  b = event->button;
   if (x > 100 && x < h_points - 100 && y > 80 && y < v_points - 80) {
-    z = (event->x - 100) * 100 * ch[scope.select].signal->rate * scope.div
+    z = ((float)x - 100) * 100 * ch[scope.select].signal->rate * scope.div
       / scope.scale / 440 / 10000 + 1;
     if (b == 1) {
       scope.cursa = z;
@@ -898,6 +894,42 @@ button_event(GtkWidget *widget, GdkEventButton *event, gpointer data)
       return TRUE;
     }
   }
+  return FALSE;
+}
+
+/* draggable cursor positioning */
+gint
+motion_event (GtkWidget *widget, GdkEventMotion *event)
+{
+  static int x, y;
+  GdkModifierType state;
+
+  if (event->is_hint)
+    gdk_window_get_pointer (event->window, &x, &y, &state);
+  else {
+    x = event->x;
+    y = event->y;
+    state = event->state;
+  }
+  if (state & GDK_BUTTON1_MASK)
+    return positioncursor(x, y, 1);
+  if (state & GDK_BUTTON2_MASK)
+    return positioncursor(x, y, 2);
+  return TRUE;
+}
+
+/* context sensitive mouse click select, recall and pop-up menus */
+gint
+button_event(GtkWidget *widget, GdkEventButton *event, gpointer data)
+{
+  static int x, y, b;
+
+  x = event->x;
+  y = event->y;
+  b = event->button;
+  if (positioncursor(x, y, b))
+    return TRUE;
+
   x = buttoncol(event->x);	/* convert graphic to text position */
   y = buttonrow(event->y);
   /*    printf("button: %d @ %f,%f -> %d,%d\n", b, event->x, event->y, x, y); */
@@ -975,10 +1007,15 @@ init_widgets()
 		     GTK_SIGNAL_FUNC(expose_event), NULL);
   gtk_signal_connect(GTK_OBJECT(drawing_area),"configure_event",
 		     GTK_SIGNAL_FUNC(configure_event), NULL);
+  gtk_signal_connect(GTK_OBJECT(drawing_area), "motion_notify_event",
+		     GTK_SIGNAL_FUNC(motion_event), NULL);
   gtk_signal_connect(GTK_OBJECT(drawing_area), "button_press_event",
 		     GTK_SIGNAL_FUNC(button_event), NULL);
   gtk_widget_set_events (drawing_area, GDK_EXPOSURE_MASK
-			 | GDK_BUTTON_PRESS_MASK);
+			 | GDK_LEAVE_NOTIFY_MASK
+			 | GDK_BUTTON_PRESS_MASK
+			 | GDK_POINTER_MOTION_MASK
+			 | GDK_POINTER_MOTION_HINT_MASK);
 
   gtk_box_pack_start(GTK_BOX(vbox), drawing_area, TRUE, TRUE, 0);
   gtk_widget_show(drawing_area);
