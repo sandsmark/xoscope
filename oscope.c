@@ -1,10 +1,7 @@
-
-
 /*
  *                      /-----------------------\
  *                      | Software Oscilloscope |
  *                      \-----------------------/
- *
  *
  * scope --- Use /dev/dsp (a sound card) as an oscilloscope under Linux
  *
@@ -12,7 +9,7 @@
  *
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
- * @(#)$Id: oscope.c,v 1.16 1996/01/02 00:31:54 twitham Exp $
+ * @(#)$Id: oscope.c,v 1.17 1996/01/02 03:08:03 twitham Exp $
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -34,7 +31,7 @@
  * the requirements to run it are.  If you don't like the defaults,
  * tweak scope.h and re-make.
  *
- * scope 0.1 (Jeff Tranter) was developed using:
+ * scope 0.1 (original by Jeff Tranter) was developed using:
  * - Linux kernel 1.0
  * - gcc 2.4.5
  * - svgalib version 1.05
@@ -42,17 +39,13 @@
  * - Trident VGA card
  * - 80386DX40 CPU with 8MB RAM
  *
- * scope 1.1+ (Tim Witham) was developed using:
+ * scope 1.0 (enhancements by Tim Witham) was developed using:
  * - Linux kernel 1.2.10
  * - gcc 2.6.3
  * - svgalib 1.22
  * - SoundBlaster Pro
  * - ATI Win Turbo 2MB VRAM
- * 100 MHz Intel Pentium(R) Processor, 32MB RAM
- *
- * So if your computer can't keep up with the latest,
- * you may want to try 0.1
- *
+ * - 100 MHz Intel Pentium(R) Processor, 32MB RAM
  */
 
 #include <unistd.h>
@@ -69,14 +62,15 @@
 /* always redraw the frame when we clear the screen */
 #define CLEAR	vga_clear(); draw_frame()
 
-/* program defaults, see scope.h for explanation */
+/* global program defaults, defined in scope.h */
+int channels = DEF_12;
 int sampling = DEF_R;
 int scale = DEF_S;
 int trigger = DEF_T;
 int colour = DEF_C;
 int mode = DEF_M;
 int dma = DEF_D;
-int point_mode = DEF_P;
+int point_mode = DEF_PL;
 int graticule = DEF_G;
 int behind = DEF_G;
 int verbose = DEF_V;
@@ -86,17 +80,17 @@ int verbose = DEF_V;
 char *progname;			/* the program's name, autoset via argv[0] */
 char error[256];		/* buffer for "one-line" error messages */
 char *def[] = {		
+  "",				/* used by -1/-2/-p/-l in usage message */
+    ", default",
   "on",				/* used by -g/-v in usage message */
   "off",
-  "",				/* used by -p/-l in usage message */
-  ", default",
   "graticule",			/* used by -b in usage message */
   "signal"
 };
 int quit_key_pressed;		/* set by handle_key() */
 int snd;			/* file descriptor for sound device */
-unsigned char buffer[MAXWID];	/* buffer for sound data */
-unsigned char old[MAXWID];	/* previous buffer for sound data */
+unsigned char buffer[MAXWID * 2]; /* buffer for sound data */
+unsigned char old[MAXWID * 2];	/* previous buffer for sound data */
 int v_points;			/* points in vertical axis */
 int h_points;			/* points in horizontal axis */
 int offset;			/* vertical offset */
@@ -106,18 +100,22 @@ int actual;			/* actual sampling rate */
 void
 usage()
 {
-  fprintf(stderr, "usage: %s [-r<rate>] [-s<scale>] [-t<trigger>] [-c<colour>]
+  fprintf(stderr, "usage: %s "
+	  "[-1|-2] [-r<rate>] [-s<scale>] [-t<trigger>] [-c<colour>]
              [-m<mode>] [-d<dma divisor>] [-p|-l] [-g] [-b] [-v]
 
-Options          Runtime Increase Decrease or Toggle Keys
+Options          Runtime Keys   Description (defaults)
+
+-1               1      toggle  Single channel  (opposite of -2%s)
+-2               2      toggle  Dual   channel  (opposite of -1%s)
 -r <rate>        R +10%% r -10%%  sampling Rate in Hz             (default=%d)
 -s <scale>       S *2   s /2    time Scale or zoom factor (1-32, default=%d)
 -t <trigger>     T +10  t -10   Trigger level (0-255,-1=disabled,default=%d)
 -c <colour>      C +1   c -1    trace Colour                    (default=%d)
 -m <mode>        M +1   m -1    SVGA graphics Mode (USE CAUTION, default=%d)
 -d <dma divisor> D *2   d /2    DMA buffer size divisor  (1,2,4, default=%d)
--p               P  p   toggle  Point mode (faster, opposite of -l%s)
--l               L  l   toggle  Line  mode (slower, opposite of -p%s)
+-p               P  p   toggle  Point mode      (opposite of -l%s)
+-l               L  l   toggle  Line  mode      (opposite of -p%s)
 -g               G  g   toggle  turn %s Graticule (5 msec major divisions)
 -b               B  b   toggle  %s Behind instead of in front of %s
 -v               V  v   toggle  turn %s Verbose keypress option log to stdout
@@ -125,11 +123,12 @@ Options          Runtime Increase Decrease or Toggle Keys
                  Q q            Quit %s
 ",
 	  progname,
+	  def[!(channels - 1)], def[channels - 1],
 	  sampling, scale, trigger,
 	  colour, mode, dma,
-	  def[point_mode + 2], def[!point_mode + 2],
-	  def[graticule], def[behind + 4], def[!behind + 4],
-	  def[verbose],
+	  def[point_mode], def[!point_mode],
+	  def[graticule + 2], def[behind + 4], def[!behind + 4],
+	  def[verbose + 2],
 	  progname);
   exit(1);
 }
@@ -138,11 +137,15 @@ Options          Runtime Increase Decrease or Toggle Keys
 static inline void
 show_info(unsigned char c) {
   if (verbose) {
-    printf("%1c %5dHz:  -r %5d  -s %2d  -t %3d  -c %2d  -m %2d  -d %1d  "
+    printf("%1c %5dHz:  %2s  -r %5d  -s %2d  -t %3d  -c %2d  -m %2d  -d %1d  "
 	   "%2s  %2s  %2s%s\n",
-	   c, actual, sampling, scale, trigger, colour, mode, dma,
+	   c, actual,
+	   channels == 1 ? "-1" : "-2",
+	   sampling, scale, trigger, colour, mode, dma,
 
 	   point_mode ? "-p" : "-l",
+
+	   /* reverse logic if these booleans are on by default in scope.h */
 #if DEF_G
 	   graticule ? "" : "-g",
 #else
@@ -168,11 +171,17 @@ show_info(unsigned char c) {
 void
 parse_args(int argc, char **argv)
 {
-  const char     *flags = "r:m:c:d:t:s:plgbv";
+  const char     *flags = "r:m:c:d:t:s:plgbv12";
   int             c;
 
   while ((c = getopt(argc, argv, flags)) != EOF) {
     switch (c) {
+    case '1':
+      channels = 1;
+      break;
+    case '2':
+      channels = 2;
+      break;
     case 'r':
       sampling = strtol(optarg, NULL, 0);
       break;
@@ -243,7 +252,7 @@ check_status(int status, int line)
 static inline void
 draw_frame()
 {
-  vga_setcolor(colour+1);
+  vga_setcolor(colour+2);
   vga_drawline(0, offset-1, h_points-1, offset-1);
   vga_drawline(0, offset+256, h_points-1, offset+256);
   vga_drawline(0, offset-1, 0, offset+256);
@@ -259,7 +268,7 @@ draw_graticule()
 
   if (graticule) {
 				/* horizontial line at mid-scale */
-    vga_setcolor(colour+1);
+    vga_setcolor(colour+2);
     vga_drawline(0, offset+128, h_points-1, offset+128);
 
 				/* 1 pixel dots at 0.1 msec intervals */
@@ -304,7 +313,7 @@ init_data()
   }
 }
 
-/* initialize /dev/dsp */
+/* [re]initialize /dev/dsp */
 void
 init_sound_card(int firsttime)
 {
@@ -320,7 +329,7 @@ init_sound_card(int firsttime)
     exit(1);
   }
 
-  parm = 1;			/* set mono */
+  parm = channels;		/* set mono/stereo */
   check_status(ioctl(snd, SOUND_PCM_WRITE_CHANNELS, &parm), __LINE__);
 
   parm = 8;			/* set 8-bit samples */
@@ -334,7 +343,7 @@ init_sound_card(int firsttime)
   check_status(ioctl(snd, SOUND_PCM_READ_RATE, &actual), __LINE__);
 }
 
-/* initialize graphics screen */
+/* [re]initialize graphics screen */
 void
 init_screen(int firsttime)
 {
@@ -359,6 +368,12 @@ handle_key()
   switch (c = vga_getkey()) {
   case 0:
   case -1:			/* no key pressed */
+    break;
+  case '1':
+  case '2':			/* single or dual channel mode */
+    channels = channels == 1 ? 2 : 1;
+    init_sound_card(0);
+    CLEAR;
     break;
   case 'R':
     sampling *= 1.1;		/* 10% sample rate increase */
@@ -476,56 +491,66 @@ handle_key()
 static inline void
 get_data()
 {
-  static unsigned char datum, datem;
+  static unsigned char datum[2], datem;
 			
-  if (trigger != -1) {		/* simple trigger function */
+  if (trigger != -1) {		/* trigger enabled */
     if (trigger > 128) {
-      datum = 255;		/* positive trigger, look for rising edge */
-       do {		
-	datem = datum;		/* remember previous sample */
-	read(snd, &datum, 1);
+      datum[0] = 255;		/* positive trigger, look for rising edge */
+      do {		
+	datem = datum[0];	/* remember previous sample */
+	read(snd, datum, channels);
       } while ((handle_key() <= 0)
-	       && ((datum < trigger) || (datem > trigger)));
+	       && ((datum[0] < trigger) || (datem > trigger)));
     } else {
-      datum = 0;		/* negative trigger, look for falling edge */
+      datum[0] = 0;		/* negative trigger, look for falling edge */
       do {
-	datem = datum;		/* remember previous sample */
-	read(snd, &datum, 1);
+	datem = datum[0];	/* remember previous sample */
+	read(snd, &datum, channels);
       } while ((handle_key() <= 0)
-	       && ((datum > trigger) || (datem < trigger)));
+	       && ((datum[0] > trigger) || (datem < trigger)));
     }
   } else {			/* not triggering */
     handle_key();
   }
-				/* now get the real data */
-  read(snd, buffer + 1, (h_points / scale - 2));
+  /* now get the real data */
+  read(snd, buffer + 1, (h_points * channels / scale - 2));
 }
 
 /* graph the data */
 static inline void
 graph_data()
 {
-  static int i;
+  static int i, j;
 
   if (point_mode) {
-    for (i = 1 ; i < (h_points / scale - 1) ; i++) {
-      vga_setcolor(0);		/* erase previous point */
-      vga_drawpixel(i * scale, old[i] + offset);
-      vga_setcolor(colour);	/* draw new point */
-      vga_drawpixel(i * scale, buffer[i] + offset);
-      old[i] = buffer[i];	/* this becomes the point to erase next time */
+    for (j = 0 ; j < channels ; j++) {
+      for (i = 1 ; i < (h_points / scale - 1) ; i++) {
+	vga_setcolor(0);	/* erase previous dot */
+	vga_drawpixel(i * scale,
+		      old[i * channels + j] + offset);
+	vga_setcolor(colour + j); /* draw dot */
+	vga_drawpixel(i * scale,
+		      buffer[i * channels + j] + offset);
+	old[i * channels + j] = buffer[i * channels + j];
+      }
     }
   } else {			/* line mode */
-    for (i = 1 ; i < (h_points / scale - 2) ; i++) {
-      vga_setcolor(0);		/* erase previous line */
-      vga_drawline(i*scale, old[i] + offset,
-		   i*scale+scale, old[i+1] + offset);
-      vga_setcolor(colour);	/* draw new line */
-      vga_drawline(i*scale, buffer[i] + offset,
-		   i*scale+scale, buffer[i+1] + offset);
-      old[i] = buffer[i];	/* this becomes the point to erase next time */
+    for (j = 0 ; j < channels ; j++) {
+      for (i = 1 ; i < (h_points / scale - 2) ; i++) {
+	vga_setcolor(0);	/* erase previous line */
+	vga_drawline(i * scale,
+		     old[i * channels + j] + offset,
+		     i * scale + scale,
+		     old[i * channels + j + channels] + offset);
+	vga_setcolor(colour + j); /* draw line */
+	vga_drawline(i * scale,
+		     buffer[i * channels + j] + offset,
+		     i * scale + scale,
+		     buffer[i * channels + j + channels] + offset);
+	old[i * channels + j] = buffer[i * channels + j];
+      }
+      old[i * channels + j] = buffer[i * channels + j];
     }
-    old[i] = buffer[i];
   }
 }
 
