@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: sc_linux.c,v 1.18 2000/07/06 16:00:44 twitham Exp $
+ * @(#)$Id: sc_linux.c,v 1.19 2000/07/06 20:12:08 twitham Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -70,7 +70,7 @@ open_sound_card(int dma)
 #endif
 
   /* we try a few times in case someone else is using device (FvwmAudio) */
-  while (!esd && (snd = open(SOUNDDEVICE, O_RDONLY)) < 0 && i > 0) {
+  while (!esd && (snd = open(SOUNDDEVICE, O_RDONLY | O_NDELAY)) < 0 && i > 0) {
     sprintf(error, "%s: can't open %s, retrying %d",
 	    progname, SOUNDDEVICE, i--);
     perror(error);
@@ -134,7 +134,7 @@ get_data()
     printf("avail:%d\ttotal:%d\tsize:%d\tbytes:%d\n",
 	   info.fragments, info.fragstotal, info.fragsize, info.bytes);
 #endif
-    k = SAMPLES(scope.rate);	/* minimum samples needed */
+    k = samples(scope.rate);	/* minimum samples needed */
     if ((i = info.bytes - k * 4) > 0)
       read(snd, junk, i < DISCARDBUF ? i : DISCARDBUF);
 #ifdef DEBUG
@@ -170,18 +170,20 @@ get_data()
     mem[24].data[1] = datum[1] - 127;
     in_progress = 2;
   }
+  k = samples(scope.rate);
   if ((j = read(snd, buffer,  (k - in_progress) * 2)) > 0) {
     buff = buffer;		/* get the post-trigger data */
     i = 0;
     while (i < j) {
-      if (i > MAXWID) break;
+      if (in_progress >= MAXWID) break;
       if (*buff == 0 || *buff == 255)
 	clip = i % 2 + 1;
       mem[23 + i % 2].data[in_progress] = (short)(*buff++) - 127;
       in_progress += i++ % 2;
     }
+    mem[23].num = mem[24].num = in_progress < MAXWID ? in_progress : MAXWID;
   }
-  if (in_progress >= k)
+  if (in_progress >= k || in_progress >= MAXWID)
     in_progress = 0;
   return(1);
 }

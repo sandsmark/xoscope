@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: bitscope.c,v 1.6 2000/07/06 16:00:43 twitham Exp $
+ * @(#)$Id: bitscope.c,v 1.7 2000/07/06 20:12:08 twitham Exp $
  *
  * Copyright (C) 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -256,7 +256,8 @@ bs_getdata(int fd)
 	    buff += 5;
 	  }
 	}
-	if (k > SAMPLES(mem[23].rate) || k >= MAXWID) { /* all done */
+	mem[23].num = mem[24].num = mem[25].num = k < MAXWID ? k : MAXWID;
+	if (k >= samples(mem[23].rate)) { /* all done */
 	  k = 0;
 	  in_progress = 0;
 	} else {			/* still need more, start another */

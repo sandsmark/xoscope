@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: file.c,v 1.20 2000/07/05 03:01:51 twitham Exp $
+ * @(#)$Id: file.c,v 1.21 2000/07/06 20:12:08 twitham Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -45,7 +45,7 @@ handle_opt(int opt, char *optarg)
   case 'S':
     scope.scale = limit(strtol(p = optarg, NULL, 0), 1, 1000);
     if ((q = strchr(p, '/')) != NULL)
-      scope.div = limit(strtol(++q, NULL, 0), 1, 100);
+      scope.div = limit(strtol(++q, NULL, 0), 1, 2000);
     break;
   case 't':			/* trigger */
   case 'T':
@@ -180,7 +180,7 @@ void
 writefile(char *filename)
 {
   FILE *file;
-  int i, j, k = 0, chan[26], roloc[256];
+  int i, j, k = 0, l = 0, chan[26], roloc[256];
   Channel *p;
 
   if ((file = fopen(filename, "w")) == NULL) {
@@ -232,6 +232,8 @@ writefile(char *filename)
   for (i = 0 ; i < 23 ; i++) {
     if (mem[i].color != 0)
       chan[k++] = i;
+    if (mem[i].num > l)
+      l = mem[i].num;
   }
   if (k) {
     for (i = 0 ; i < 16 ; i++) { /* reverse color mapper */
@@ -245,7 +247,7 @@ writefile(char *filename)
       fprintf(file, "%s%d", i ? "\t" : "\n#:", mem[chan[i]].rate);
     }
     fprintf(file, "\n");
-    for (j = 0 ; j < h_points ; j++) {
+    for (j = 0 ; j < l ; j++) {
       for (i = 0 ; i < k ; i++) {
 	fprintf(file, "%s%d", i ? "\t" : "", mem[chan[i]].data[j]);
       }
@@ -308,9 +310,10 @@ readfile(char *filename)
       while (j < 26 && (!j || ((p = strchr(q, '\t')) != NULL))) {
 	if (p == NULL)
 	  p = buff;
-	if (chan[j] > -1 && i < MAXWID)
+	if (chan[j] > -1 && i < MAXWID) {
 	  mem[chan[j]].data[i] = strtol(p++, NULL, 0);
-	j++;
+	  mem[chan[j++]].num = i + 1;
+	}
 	q = p;
       }
       i++;

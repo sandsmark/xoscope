@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 1.62 2000/07/06 16:00:43 twitham Exp $
+ * @(#)$Id: display.c,v 1.63 2000/07/06 20:12:08 twitham Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -293,7 +293,7 @@ draw_text(int all)
 
 /*      sprintf(string, "%d Hz/div FFT", scope.div * p->signal->rate / 1000 */
 /*  	    * p->signal->rate / 880 / scope.scale); */
-    sprintf(string, "%d Samples", SAMPLES(p->signal->rate) - 2);
+    sprintf(string, "%d Samples", samples(p->signal->rate) - 2);
     vga_write(string, col(40), row(27), font, p->color, TEXT_BG, ALIGN_CENTER);
 
     for (i = 0 ; i < 26 ; i++) {
@@ -409,7 +409,8 @@ void
 draw_data()
 {
   static int i, j, k, l, x, y, X, Y, mult, div, off, bit, start, end;
-  static int num, time, prev, delay, bitoff;
+  static int time, prev, delay, bitoff;
+  static long int num;
   static int old = 100, preva = 100, prevb = 100;
   static Channel *p;
   static short *samples;
@@ -478,15 +479,14 @@ draw_data()
 	    prev = -1;
 	    bitoff = bit * 16 - end * 8 + 4;
 	    for (i = 0 ; i < h_points - 100 - l ; i++) {
-	      if ((time = i * num / 10000) > prev && time < MAXWID)
-		if ((x = i + l) > h_points - 100) {
-		  i = MAXWID;
-		  continue;	/* edge of screen, exit loop*/
-		}
-		DrawPixel(x,
-			  off - (bit < 0 ? samples[time]
-			   : (bitoff - (samples[time] & (1 << bit) ? 0 : 8)))
+	      if ((time = i * num / 10000) > prev && time < MAXWID) {
+		if ((x = i + l) > h_points - 100)
+		  break;	/* edge of screen, exit loop*/
+		DrawPixel(x, off - (bit < 0 ? samples[time]
+				    : (bitoff - (samples[time] & (1 << bit)
+						 ? 0 : 8)))
 			  * mult / div);
+	      }
 	      if (time > prev) prev = time;
 	    }
 	  }
@@ -498,10 +498,8 @@ draw_data()
 	    bitoff = bit * 16 - end * 8 + 4;
 	    for (i = 0 ; i < h_points - 100 - l ; i++) {
 	      if ((time = i * num / 10000) > prev && time < MAXWID) {
-		if ((x = i + l) > h_points - 100) {
-		  i = MAXWID;
-		  continue;	/* edge of screen, exit loop*/
-		}
+		if ((x = i + l) > h_points - 100)
+		  break;	/* edge of screen, exit loop*/
 		y = off - (bit < 0 ? samples[time]
 			   : (bitoff - (samples[time] & (1 << bit) ? 0 : 8)))
 		  * mult / div;

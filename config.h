@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: config.h,v 1.15 2000/07/05 03:01:51 twitham Exp $
+ * @(#)$Id: config.h,v 1.16 2000/07/06 20:12:08 twitham Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -32,8 +32,8 @@
 #define DEF_X	0		/* 0,1 (0) don't use sound card? */
 #define DEF_Z	0		/* 0,1 (0) don't search for Serial Scope? */
 
-/* maximum number of samples collected by any scope devices (16384) */
-#define MAXWID		16384
+/* maximum number of samples stored in memories (16384) */
+#define MAXWID		1024 * 256
 
 /* The first few samples after a reset seem invalid.  If you see
    strange "glitches" at the left edge of the screen, increase this (32) */

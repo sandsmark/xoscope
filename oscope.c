@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.c,v 1.79 2000/07/06 16:00:43 twitham Exp $
+ * @(#)$Id: oscope.c,v 1.80 2000/07/06 20:12:08 twitham Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -156,54 +156,46 @@ init_channels()
   }
 }
 
-/* scale num upward like a scope does, 1 to max */
-void
-scaleup(int *num, int max)
+/* samples needed to draw a current display of RATE */
+int
+samples(int rate)
 {
-  if (*num < 2)
-    *num = 2;
-  else if (*num < 5)
-    *num = 5;
-  else if (*num < 10)
-    *num = 10;
-  else if (*num < 20)
-    *num = 20;
-  else if (*num < 50)
-    *num = 50;
-  else if (*num < 100)
-    *num = 100;
-  else if (*num < 200)
-    *num = 200;
-  else if (*num < 500)
-    *num = 500;
-  else
-    *num = 1000;
-  if (*num > max)
-    *num = max;
+  static unsigned long int r;
+  r = (rate * ((h_points - 200) / 44) * scope.div / scope.scale / 1000) + 2;
+  if (r > MAXWID) r = MAXWID;
+  return (r);
 }
 
-/* scale num downward like a scope does, 1000 to 1 */
-void
-scaledown(int *num)
+/* scale num upward like a scope does, to max */
+int
+scaleup(int num, int max)
 {
-  if (*num > 500)
-    *num = 500;
-  else if (*num > 200)
-    *num = 200;
-  else if (*num > 100)
-    *num = 100;
-  else if (*num > 50)
-    *num = 50;
-  else if (*num > 20)
-    *num = 20;
-  else if (*num > 10)
-    *num = 10;
-  else if (*num > 5)
-    *num = 5;
-  else if (*num > 2)
-    *num = 2;
-  else
-    *num = 1;
+  int i;
+
+  i = num;
+  while (!(i % 10)) {
+    i /= 10;
+  }
+  if (i == 2) num = num * 5 / 2;
+  else num *= 2;
+  if (num > max) num = max;
+  return(num);
+}
+
+/* scale num downward like a scope does */
+int
+scaledown(int num)
+{
+  int i;
+
+  i = num;
+  while (!(i % 10)) {
+    i /= 10;
+  }
+  if (i == 5) num = num * 2 / 5;
+  else num /= 2;
+  if (num < 1) num = 1;
+  return(num);
 }
 
 /* internal only, change rate and propogate it everywhere */
@@ -328,16 +320,16 @@ handle_key(unsigned char c)
     break;
   case '}':
     if (p->div > 1)		/* increase scale */
-      scaledown(&p->div);
+      p->div = scaledown(p->div);
     else
-      scaleup(&p->mult, 50);
+      p->mult = scaleup(p->mult, 50);
     clear();
     break;
   case '{':
     if (p->mult > 1)		/* decrease scale */
-      scaledown(&p->mult);
+      p->mult = scaledown(p->mult);
     else
-      scaleup(&p->div, 50);
+      p->div = scaleup(p->div, 50);
     clear();
     break;
   case ']':
@@ -372,16 +364,16 @@ handle_key(unsigned char c)
     break;
   case '0':
     if (scope.div > 1)		/* decrease time scale, zoom in */
-      scaledown(&scope.div);
+      scope.div = scaledown(scope.div);
     else
-      scaleup(&scope.scale, 1000);
+      scope.scale = scaleup(scope.scale, 1000);
     clear();
     break;
   case '9':
     if (scope.scale > 1)	/* increase time scale, zoom out */
-      scaledown(&scope.scale);
+      scope.scale = scaledown(scope.scale);
     else
-      scaleup(&scope.div, 20);
+      scope.div = scaleup(scope.div, 2000);
     clear();
     break;
   case '=':
@@ -407,6 +399,8 @@ handle_key(unsigned char c)
     clear();
     break;
   case '(':
+    if (bs.found)
+      break;
     if (scope.run) {		/* decrease sample rate */
       if (scope.rate < 16500)
 	resetsoundcard(8000);
@@ -415,9 +409,12 @@ handle_key(unsigned char c)
       else
 	resetsoundcard(22050);
     }
+    in_progress = 0;
     clear();
     break;
   case ')':
+    if (bs.found)
+      break;
     if (scope.run) {		/* increase sample rate */
       if (scope.rate > 16500)
 	resetsoundcard(44100);
@@ -426,6 +423,7 @@ handle_key(unsigned char c)
       else
 	resetsoundcard(11025);
     }
+    in_progress = 0;
     clear();
     break;
   case '<':

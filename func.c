@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: func.c,v 1.23 2000/07/06 02:04:56 twitham Exp $
+ * @(#)$Id: func.c,v 1.24 2000/07/06 20:12:08 twitham Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -67,6 +67,7 @@ save(char c)
   if (c < 'X') {
     memcpy(mem[i].data, ch[scope.select].signal->data, MAXWID * sizeof(short));
     mem[i].rate = ch[scope.select].signal->rate;
+    mem[i].num = ch[scope.select].signal->num;
     mem[i].color = ch[scope.select].color;
   }
   k = scope.select;
@@ -280,7 +281,7 @@ do_math()
 {
   static int i, j;
 
-  total_samples = SAMPLES(ch[0].signal->rate);
+  total_samples = samples(ch[0].signal->rate);
   for (i = 2 ; i < CHANNELS ; i++) {
     if (ch[i].pid && ch[i].func != FUNCEXT) { /* external needs halted */
       j = ch[i].mem;
@@ -291,6 +292,7 @@ do_math()
     if ((ch[i].show || scope.select == i) && *funcarray[ch[i].func] != NULL) {
       ch[i].signal = &mem[26+i];
       ch[i].signal->rate = ch[0].signal->rate;
+      ch[i].signal->num = ch[0].signal->num;
       funcarray[ch[i].func](i);
     }
   }
@@ -327,7 +329,7 @@ measure_data(Channel *sig) {
       sig->max = j;
     count = 2;
   } else {			/* automatic period measurements */
-    for (i = 0 ; i < SAMPLES(sig->signal->rate) ; i++) {
+    for (i = 0 ; i < samples(sig->signal->rate) ; i++) {
       j = sig->signal->data[i];
       if (j < sig->min)		/* minimum */
 	sig->min = j;

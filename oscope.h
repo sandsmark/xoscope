@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.h,v 1.37 2000/07/06 16:00:44 twitham Exp $
+ * @(#)$Id: oscope.h,v 1.38 2000/07/06 20:12:08 twitham Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -15,10 +15,6 @@
 #endif
 
 #include "config.h"
-
-/* samples needed to draw the current display, macro for efficiency */
-#define SAMPLES(r)	(int)(((long)r * ((h_points - 200) / 44) * scope.div / \
-			scope.scale / 1000) + 2)
 
 /* global program variables */
 extern char *progname;
@@ -58,6 +54,7 @@ extern Scope scope;
 typedef struct Signal {		/* The input/memory/math signals */
   short data[MAXWID];
   int rate;
+  int num;
   int color;
 } Signal;
 extern Signal mem[34];
@@ -89,6 +86,7 @@ void	handle_key(unsigned char);
 void	cleanup();
 void	init_scope();
 void	init_channels();
+int	samples();
 void	loadfile();
 void	savefile();
 void	startcommand();
