@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.c,v 1.47 1996/03/02 06:59:16 twitham Exp $
+ * @(#)$Id: oscope.c,v 1.48 1996/03/10 01:39:25 twitham Exp $
  *
  * Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
@@ -20,6 +20,7 @@
 #include "oscope.h"		/* program defaults */
 #include "display.h"		/* display routines */
 #include "func.h"		/* signal math functions */
+#include "file.h"		/* file I/O functions */
 
 /* global program variables */
 Scope scope;
@@ -37,6 +38,7 @@ int h_points;			/* pixels in horizontal axis */
 int offset;			/* vertical pixel offset to zero line */
 int actual;			/* actual sampling rate */
 int clip = 0;			/* whether we're maxed out or not */
+char *filename;			/* default file name */
 
 /* display command usage on standard error and exit */
 void
@@ -48,24 +50,25 @@ usage()
   };
 
   fprintf(stderr, "usage: %s "
-	  "[-h] [-#<code>] ... [-r<rate>] [-s<scale>] [-t<trigger>]
-[-c<color>] [-m<mode>] [-d<dma divisor>] [-f<font>] [-p<type>] [-g<style>] [-b]
+	  "[-h] [-#<code>] ... [-a #] [-r<rate>] [-s<scale>] [-t<trigger>]
+[-c<color>] [-m<mode>] [-d<dma>] [-f<font>] [-p<type>] [-g<style>] [-b] [file]
 
 Startup Options  Description (defaults)
 -h               this Help message and exit
--# <code>        #=channel (1-%d), code=position:[scale[:function#]] (0:1/1:0)
--r <rate>        sampling Rate in Hz: 8800,22000,44000      (%d)
--s <scale>       time Scale: 1,2,5,10,20,100,200            (%d)
--t <trigger>     Trigger level: -128 - 127, 255 = disabled  (%d)
--c <color>       graticule Color: 0-15                      (%d)
--m <mode>        video mode (size): 0,1,2,3                 (%d)
--d <dma divisor> DMA buffer size divisor: 1,2,4             (%d)
+-# <code>        #=1-%d, code=pos[:scale[:func num or memory letter]] (0:1/1:0)
+-a <channel>     set the Active channel: 1-%d                  (%d)
+-r <rate>        sampling Rate in Hz: 8800,22000,44000        (%d)
+-s <scale>       time Scale: 1,2,5,10,20,100,200              (%d)
+-t <trigger>     Trigger level[:type[:channel]]               (%s)
+-c <color>       graticule Color: 0-15                        (%d)
+-m <mode>        video mode (size): 0,1,2,3                   (%d)
+-d <dma divisor> DMA buffer size divisor: 1,2,4               (%d)
 -f <font name>   The font name as-in %s
--p <type>        Plot mode: 0,1,2,3                         (%d)
--g <style>       Graticule: 0=none, 1=minor, 2=major        (%d)
+-p <type>        Plot mode: 0=point, 1=accum, 2=line, 3=accum (%d)
+-g <style>       Graticule: 0=none,  1=minor, 2=major         (%d)
 -b               %s Behind instead of in front of %s
 ",
-	  progname, CHANNELS,
+	  progname, CHANNELS, CHANNELS, DEF_A,
 	  DEF_R, DEF_S, DEF_T,
 	  DEF_C, scope.size, scope.dma,
 	  fonts(),		/* the font method for the display */
@@ -80,86 +83,12 @@ parse_args(int argc, char **argv)
 {
   const char     *flags = "h"
     "1:2:3:4:5:6:7:8:"
-    "r:s:t:c:m:d:f:p:g:b"
-    "R:S:T:C:M:D:F:P:G:B";
-  char *p, *q;
+    "a:r:s:t:c:m:d:f:p:g:b"
+    "A:R:S:T:C:M:D:F:P:G:B";
   int c;
 
   while ((c = getopt(argc, argv, flags)) != EOF) {
-    switch (c) {
-    case 'r':			/* sample rate */
-    case 'R':
-      scope.rate = strtol(optarg, NULL, 0);
-      break;
-    case 's':			/* scale (zoom) */
-    case 'S':
-      scope.scale = strtol(optarg, NULL, 0);
-      if (scope.scale < 1)
-	scope.scale = 1;
-      break;
-    case 't':			/* trigger level */
-    case 'T':
-      scope.trig = 128 + strtol(optarg, NULL, 0);
-      if (scope.trig > 128) {
-	scope.trig = 128;
-	scope.trige = 0;
-      }
-      break;
-    case 'c':			/* graticule color */
-    case 'C':
-      scope.color = strtol(optarg, NULL, 0);
-      break;
-    case 'm':			/* video mode */
-    case 'M':
-      scope.size = strtol(optarg, NULL, 0);
-      break;
-    case 'd':			/* dma diviisor */
-    case 'D':
-      scope.dma = strtol(optarg, NULL, 0);
-      scope.dma &= 0x0007;
-      break;
-    case 'f':			/* font name */
-    case 'F':
-      strcpy(fontname, optarg);
-      break;
-    case 'p':			/* point mode */
-    case 'P':
-      scope.mode = strtol(optarg, NULL, 0);
-      break;
-    case 'g':			/* graticule on/off */
-    case 'G':
-      scope.grat = strtol(optarg, NULL, 0);
-      break;
-    case 'b':			/* behind/front */
-    case 'B':
-      scope.behind = !scope.behind;
-      break;
-    case ':':			/* help or unknown option */
-    case '?':
-    case 'h':
-    case 'H':
-      usage();
-      break;
-    default:
-      if (c >= '1' && c <= '0' + CHANNELS) {
-	p = optarg;
-	ch[c - '1'].show = 1;
-	ch[c - '1'].pos = -strtol(p, NULL, 0);
-	if ((q = strchr(p, ':')) != NULL) {
-	  ch[c - '1'].mult = strtol(++q, NULL, 0);
-	  p = q;
-	}
-	if ((q = strchr(p, '/')) != NULL) {
-	  ch[c - '1'].div = strtol(++q, NULL, 0);
-	  p = q;
-	}
-	if (c > '1' && (q = strchr(p, ':')) != NULL) {
-	  ch[c - '1'].func = strtol(++q, NULL, 0) + 2;
-	  p = q;
-	}
-      }
-      break;
-    }
+    handle_opt(c, optarg);
   }
 }
 
@@ -185,14 +114,12 @@ init_scope()
   scope.mode = DEF_P;
   scope.scale = DEF_S;
   scope.rate = DEF_R;
-  scope.trigch = 0;
-  scope.trig = 128 + DEF_T;
-  scope.trige = (DEF_T != -1);
+  handle_opt('t', DEF_T);
   scope.grat = DEF_G;
   scope.behind = DEF_B;
   scope.run = 1;
   scope.color = DEF_C;
-  scope.select = 0;
+  scope.select = DEF_A - 1;
 }
 
 /* initialize the signals */
@@ -202,8 +129,8 @@ init_channels()
   int i;
 
   for (i = 0 ; i < CHANNELS ; i++) {
-    memset(ch[i].data, 0, MAXWID);
-    memset(ch[i].old, 0, MAXWID);
+    memset(ch[i].data, 0, MAXWID * sizeof(short));
+    memset(ch[i].old, 0, MAXWID * sizeof(short));
     ch[i].mult = 1;
     ch[i].div = 1;
     ch[i].pos = 0;
@@ -287,6 +214,7 @@ void
 handle_key(unsigned char c)
 {
   static Signal *p;
+  char *s;
 
   p = &ch[scope.select];
   if (c >= 'A' && c <= 'Z' && actual >= 44000) {
@@ -434,6 +362,14 @@ handle_key(unsigned char c)
       draw_text(1);
     }
     break;
+  case '@':
+    if ((s = GetFile(NULL)) != NULL)
+      readfile(s);
+    break;
+  case '#':
+    if ((s = GetFile(NULL)) != NULL)
+      writefile(s);
+    break;
   case '!':
     scope.mode++;		/* point, point accumulate, line, line acc. */
     if (scope.mode > 3)
@@ -523,6 +459,12 @@ main(int argc, char **argv)
   init_screen();
   init_sound_card(1);
   init_math();
+  filename = FILENAME;
+  if (optind < argc)
+    if (argv[optind] != NULL) {
+      filename = argv[optind];
+      readfile(filename);
+    }
   mainloop();			/* to display.c */
   cleanup();
   exit(0);

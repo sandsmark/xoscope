@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.h,v 1.20 1996/03/02 07:00:01 twitham Exp $
+ * @(#)$Id: oscope.h,v 1.21 1996/03/10 01:39:46 twitham Exp $
  *
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -28,6 +28,7 @@ extern int h_points;
 extern int offset;
 extern int actual;
 extern int clip;
+extern char *filename;
 
 typedef struct Scope {		/* The oscilloscope */
   int mode;
@@ -64,6 +65,9 @@ typedef struct Signal {		/* The signals (channels) */
 extern Signal ch[CHANNELS];
 
 /* functions that are called by files other than oscope.c */
+void
+usage();
+
 int
 get_data();
 
