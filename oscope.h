@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.h,v 1.29 1997/05/04 20:18:10 twitham Rel1_3 $
+ * @(#)$Id: oscope.h,v 1.30 1997/05/31 17:25:11 twitham Rel $
  *
  * Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -26,6 +26,7 @@ extern int h_points;
 extern int offset;
 extern int clip;
 extern char *filename;
+extern int snd;
 
 typedef struct Scope {		/* The oscilloscope */
   unsigned int mode;
