@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: sc_linux.c,v 1.19 2000/07/06 20:12:08 twitham Exp $
+ * @(#)$Id: sc_linux.c,v 1.20 2000/12/06 05:03:19 twitham Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -121,26 +121,29 @@ get_data()
   static unsigned char datum[2], prev[2], *buff;
   static unsigned char buffer[MAXWID * 2], junk[DISCARDBUF];
   static int i, j, k;
-  audio_buf_info info = {0, 0, 0, 2048}; /* emulation values for ESD */
+  audio_buf_info info = {0, 0, 0, MAXWID}; /* emulation values for ESD */
 
   if (!snd) return(0);		/* device open? */
 
   if (!in_progress) {
-    /* Discard excess samples so we can keep our time snapshot close to
-       real-time and minimize sound recording overruns.  */
+    /* Discard excess samples so we can keep our time snapshot close
+       to real-time and minimize sound recording overruns.  For ESD we
+       don't know how many are available (do we?) so we discard them
+       all to start with a fresh buffer that hopefully won't wrap
+       around before we get it read. */
 
     check_status_ioctl(snd, SNDCTL_DSP_GETISPACE, &info, __LINE__);
 #ifdef DEBUG
-    printf("avail:%d\ttotal:%d\tsize:%d\tbytes:%d\n",
+    printf("avail:%d\ttotal:%d\tsize:%d\tbytes:%d",
 	   info.fragments, info.fragstotal, info.fragsize, info.bytes);
 #endif
     k = samples(scope.rate);	/* minimum samples needed */
     if ((i = info.bytes - k * 4) > 0)
-      read(snd, junk, i < DISCARDBUF ? i : DISCARDBUF);
+      j = read(snd, junk, i < DISCARDBUF ? i : DISCARDBUF);
 #ifdef DEBUG
     check_status_ioctl(snd, SNDCTL_DSP_GETISPACE, &info, __LINE__);
-    printf("\tavail:%d\ttotal:%d\tsize:%d\tbytes:%d\n",
-	   info.fragments, info.fragstotal, info.fragsize, info.bytes);
+    printf("\tdiscarded:%d/%d\n\tavail:%d\ttotal:%d\tsize:%d\tbytes:%d\n",
+	   j, i, info.fragments, info.fragstotal, info.fragsize, info.bytes);
 #endif
     i = 0;
     if (scope.trige == 1) {
