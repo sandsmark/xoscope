@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: sc_linux.c,v 1.13 2000/02/26 16:58:42 twitham Exp $
+ * @(#)$Id: sc_linux.c,v 1.14 2000/02/26 20:01:19 twitham Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -14,6 +14,8 @@
 #include <fcntl.h>
 #ifdef ESD
 #include <esd.h>
+#else
+#define ESD 0
 #endif
 #include <sys/ioctl.h>
 #include <sys/soundcard.h>
@@ -30,16 +32,15 @@ int esd = 0;			/* using esd (1) or /dev/dsp (0) */
 void
 close_sound_card()
 {
-  if (snd)
-    close(snd);
-  snd = 0;
+  if (snd) close(snd);
+  snd = esd = 0;
 }
 
 /* show system error and close sound device if given ioctl status is bad */
 void
-check_status(status, line)
+check_status_ioctl(int d, int request, void *argp, int line)
 {
-  if (!esd && status < 0) {
+  if (!esd && ioctl(d, request, argp) < 0) {
     sprintf(error, "%s: error from sound device ioctl at line %d",
 	    progname, line);
     perror(error);
@@ -54,16 +55,15 @@ open_sound_card(int dma)
   int parm;
   int i = 3;
 
-  if (snd) close(snd);
-  esd = 0;
+  close_sound_card();
 
-#ifdef ESD
+#if ESD
   if ((snd = esd_monitor_stream(ESD_BITS8|ESD_STEREO|ESD_STREAM|ESD_MONITOR,
 				ESD, NULL, progname)) <= 0) {
     sprintf(error, "%s: can't open %s", progname, ESDDEVICE);
     perror(error);
   } else {			/* we have esd connection! non-block it */
-    fcntl(snd, F_SETFL, O_NONBLOCK);
+/*      fcntl(snd, F_SETFL, O_NONBLOCK); */
     esd = 1;
   }
 #endif
@@ -84,7 +84,7 @@ open_sound_card(int dma)
     return;
   }
   parm = dma;			/* set DMA buffer size */
-  check_status(ioctl(snd, SOUND_PCM_SUBDIVIDE, &parm), __LINE__);
+  check_status_ioctl(snd, SOUND_PCM_SUBDIVIDE, &parm, __LINE__);
 }
 
 /* [re]set the sound card, and return actual sample rate */
@@ -94,19 +94,19 @@ reset_sound_card(int rate, int chan, int bits)
   int parm;
   static char junk[SAMPLESKIP];
 
-  if (snd) close(snd);
+  close_sound_card();
   open_sound_card(scope.dma);
   if (!snd) return(rate);
 
   parm = chan;			/* set mono/stereo */
-  check_status(ioctl(snd, SOUND_PCM_WRITE_CHANNELS, &parm), __LINE__);
+  check_status_ioctl(snd, SOUND_PCM_WRITE_CHANNELS, &parm, __LINE__);
 
   parm = bits;			/* set 8-bit samples */
-  check_status(ioctl(snd, SOUND_PCM_WRITE_BITS, &parm), __LINE__);
+  check_status_ioctl(snd, SOUND_PCM_WRITE_BITS, &parm, __LINE__);
 
   parm = rate;			/* set sampling rate */
-  check_status(ioctl(snd, SOUND_PCM_WRITE_RATE, &parm), __LINE__);
-  check_status(ioctl(snd, SOUND_PCM_READ_RATE, &parm), __LINE__);
+  check_status_ioctl(snd, SOUND_PCM_WRITE_RATE, &parm, __LINE__);
+  check_status_ioctl(snd, SOUND_PCM_READ_RATE, &parm, __LINE__);
 
   read(snd, junk, SAMPLESKIP);
 
@@ -131,7 +131,7 @@ get_data()
      too few for slow sample rates.  So, let's just keep the buffer
      about 1/3 full, which should work better for all rates.  */
 
-  check_status(ioctl(snd, SNDCTL_DSP_GETISPACE, &info), __LINE__);
+  check_status_ioctl(snd, SNDCTL_DSP_GETISPACE, &info, __LINE__);
 #ifdef DEBUG
   printf("avail:%d\ttotal:%d\tsize:%d\tbytes:%d\n",
 	 info.fragments, info.fragstotal, info.fragsize, info.bytes);
@@ -139,7 +139,7 @@ get_data()
   if ((i = info.bytes - info.fragstotal * info.fragsize / 6 * 2) > 0)
     read(snd, junk, i < DISCARDBUF ? i : DISCARDBUF);
 #ifdef DEBUG
-  check_status(ioctl(snd, SNDCTL_DSP_GETISPACE, &info), __LINE__);
+  check_status_ioctl(snd, SNDCTL_DSP_GETISPACE, &info, __LINE__);
   printf("\tavail:%d\ttotal:%d\tsize:%d\tbytes:%d\n",
 	 info.fragments, info.fragstotal, info.fragsize, info.bytes);
 #endif
@@ -164,9 +164,8 @@ get_data()
 
   memcpy(buffer, prev, 2);	/* now get the post-trigger data */
   memcpy(buffer + 2, datum, 2);
-  if (read(snd, buffer + (scope.trige ? 4 : 0),
-	   h_points * 2 - (scope.trige ? 4 : 0)) < 0)
-    return(0);
+  read(snd, buffer + (scope.trige ? 4 : 0),
+       h_points * 2 - (scope.trige ? 4 : 0));
   buff = buffer;
   for(i=0; i < h_points; i++) {	/* move it into channel 1 and 2 */
     if (*buff == 0 || *buff == 255)
