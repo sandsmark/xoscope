@@ -9,7 +9,7 @@
  *
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
- * @(#)$Id: oscope.c,v 1.17 1996/01/02 03:08:03 twitham Exp $
+ * @(#)$Id: oscope.c,v 1.18 1996/01/02 06:25:14 twitham Exp $
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -79,9 +79,9 @@ int verbose = DEF_V;
 /* extra global variables */
 char *progname;			/* the program's name, autoset via argv[0] */
 char error[256];		/* buffer for "one-line" error messages */
-char *def[] = {		
+char *def[] = {
   "",				/* used by -1/-2/-p/-l in usage message */
-    ", default",
+  "(default)",
   "on",				/* used by -g/-v in usage message */
   "off",
   "graticule",			/* used by -b in usage message */
@@ -105,18 +105,17 @@ usage()
              [-m<mode>] [-d<dma divisor>] [-p|-l] [-g] [-b] [-v]
 
 Options          Runtime Keys   Description (defaults)
-
--1               1      toggle  Single channel  (opposite of -2%s)
--2               2      toggle  Dual   channel  (opposite of -1%s)
+-1               1      toggle  Single channel, opposite of -2  %s
+-2               2      toggle  Dual   channel, opposite of -1  %s
 -r <rate>        R +10%% r -10%%  sampling Rate in Hz             (default=%d)
--s <scale>       S *2   s /2    time Scale or zoom factor (1-32, default=%d)
--t <trigger>     T +10  t -10   Trigger level (0-255,-1=disabled,default=%d)
--c <colour>      C +1   c -1    trace Colour                    (default=%d)
--m <mode>        M +1   m -1    SVGA graphics Mode (USE CAUTION, default=%d)
--d <dma divisor> D *2   d /2    DMA buffer size divisor  (1,2,4, default=%d)
--p               P  p   toggle  Point mode      (opposite of -l%s)
--l               L  l   toggle  Line  mode      (opposite of -p%s)
--g               G  g   toggle  turn %s Graticule (5 msec major divisions)
+-s <scale>       S *2   s /2    time Scale or zoom: 1,2,4,8,16  (default=%d)
+-t <trigger>     T +10  t -10   Trigger level:0-255,-1=disabled (default=%d)
+-c <colour>      C +1   c -1    Channel 1 trace Colour          (default=%d)
+-m <mode>        M +1   m -1    SVGA graphics Mode USE CAUTION  (default=%d)
+-d <dma divisor> D *2   d /2    DMA buffer size divisor: 1,2,4  (default=%d)
+-p               P  p   toggle  Point mode, opposite of -l      %s
+-l               L  l   toggle  Line  mode, opposite of -p      %s
+-g               G  g   toggle  turn %s Graticule of 5 msec major divisions
 -b               B  b   toggle  %s Behind instead of in front of %s
 -v               V  v   toggle  turn %s Verbose keypress option log to stdout
                  <space>        pause the display until another key is pressed
@@ -199,10 +198,9 @@ parse_args(int argc, char **argv)
       break;
     case 's':
       scale = strtol(optarg, NULL, 0);
+      scale &= 0x000f;
       if (scale < 1)
 	scale = 1;
-      if (scale > 32)
-	scale = 32;
       break;
     case 'p':
       point_mode = 1;
@@ -390,12 +388,12 @@ handle_key()
     CLEAR;
     break;
   case 'S':
-    if (scale < 16) {		/* double the scale (zoom) */
-      scale <<= 1;	
+    if (scale <= 8) {		/* double the scale (zoom) */
+      scale <<= 1;
       CLEAR;
     }
     break;
-  case 's':	
+  case 's':
     if (scale > 1) {		/* half the scale */
       scale >>= 1;
       CLEAR;
@@ -451,7 +449,7 @@ handle_key()
       init_sound_card(0);
     }
     break;
-  case 'L':		
+  case 'L':
   case 'l':
   case 'P':
   case 'p':
@@ -471,7 +469,7 @@ handle_key()
   case 'v':
     verbose = !verbose;		/* verbose log on/off */
     break;
-  case ' ':		
+  case ' ':
     while (vga_getkey() <= 0)	/* pause until key pressed */
       ;
     break;
@@ -492,20 +490,20 @@ static inline void
 get_data()
 {
   static unsigned char datum[2], datem;
-			
+
   if (trigger != -1) {		/* trigger enabled */
     if (trigger > 128) {
       datum[0] = 255;		/* positive trigger, look for rising edge */
-      do {		
-	datem = datum[0];	/* remember previous sample */
-	read(snd, datum, channels);
+      do {
+	datem = datum[0];	/* remember previous sample, read channel(s) */
+	read(snd, datum , channels);
       } while ((handle_key() <= 0)
 	       && ((datum[0] < trigger) || (datem > trigger)));
     } else {
       datum[0] = 0;		/* negative trigger, look for falling edge */
       do {
-	datem = datum[0];	/* remember previous sample */
-	read(snd, &datum, channels);
+	datem = datum[0];	/* remember previous sample, read channel(s) */
+	read(snd, datum, channels);
       } while ((handle_key() <= 0)
 	       && ((datum[0] > trigger) || (datem < trigger)));
     }
@@ -513,41 +511,43 @@ get_data()
     handle_key();
   }
   /* now get the real data */
-  read(snd, buffer + 1, (h_points * channels / scale - 2));
+  read(snd, buffer + channels, (h_points * channels / scale - 2));
 }
 
 /* graph the data */
 static inline void
 graph_data()
 {
-  static int i, j;
+  static int i, j, k;
 
   if (point_mode) {
     for (j = 0 ; j < channels ; j++) {
       for (i = 1 ; i < (h_points / scale - 1) ; i++) {
+	k = i * channels + j;	/* calc this once for efficiency */
 	vga_setcolor(0);	/* erase previous dot */
 	vga_drawpixel(i * scale,
-		      old[i * channels + j] + offset);
+		      old[k] + offset);
 	vga_setcolor(colour + j); /* draw dot */
 	vga_drawpixel(i * scale,
-		      buffer[i * channels + j] + offset);
-	old[i * channels + j] = buffer[i * channels + j];
+		      buffer[k] + offset);
+	old[k] = buffer[k];
       }
     }
   } else {			/* line mode */
     for (j = 0 ; j < channels ; j++) {
       for (i = 1 ; i < (h_points / scale - 2) ; i++) {
+	k = i * channels + j;	/* calc this once for efficiency */
 	vga_setcolor(0);	/* erase previous line */
 	vga_drawline(i * scale,
-		     old[i * channels + j] + offset,
+		     old[k] + offset,
 		     i * scale + scale,
-		     old[i * channels + j + channels] + offset);
+		     old[k + channels] + offset);
 	vga_setcolor(colour + j); /* draw line */
 	vga_drawline(i * scale,
-		     buffer[i * channels + j] + offset,
+		     buffer[k] + offset,
 		     i * scale + scale,
-		     buffer[i * channels + j + channels] + offset);
-	old[i * channels + j] = buffer[i * channels + j];
+		     buffer[k + channels] + offset);
+	old[k] = buffer[k];
       }
       old[i * channels + j] = buffer[i * channels + j];
     }
@@ -575,7 +575,7 @@ main(int argc, char **argv)
     if (behind) {
       draw_graticule();		/* plot data on top of graticule */
       graph_data();
-    } else {		
+    } else {
       graph_data();		/* plot graticule on top of data */
       draw_graticule();
     }
