@@ -5,7 +5,7 @@
  *
  * [x]oscope --- Use Linux's /dev/dsp (a sound card) as an oscilloscope
  *
- * @(#)$Id: oscope.c,v 1.43 1996/02/04 04:00:49 twitham Exp $
+ * @(#)$Id: oscope.c,v 1.44 1996/02/04 08:49:15 twitham Exp $
  *
  * Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
@@ -262,6 +262,8 @@ handle_key(unsigned char c)
   static int scaler[] = {1,2,5,10,20,50,100,200};
   static int *maxscaler = &scaler[7];	/* the last one */
   static int *pscaler = scaler;
+  static int *mscaler = scaler;
+  static int *dscaler = scaler;
   static Signal *p;
 
   p = &ch[scope.select];
@@ -269,7 +271,7 @@ handle_key(unsigned char c)
     save(c);
     draw_text(1);
     return;
-  } else if (c >= 'a' && c <= 'z' && scope.select > 1 && actual >= 44000) {
+  } else if (c >= 'a' && c <= 'z' && scope.select > 1) {
     recall(c);
     draw_text(1);
     return;
@@ -287,17 +289,23 @@ handle_key(unsigned char c)
     clear();
     break;
   case ']':
-    if (p->div > 1)		/* double scale */
-      p->div >>= 1;
+    if (dscaler > scaler)	/* increase scale */
+      p->div = *(--dscaler);
     else
-      p->mult <<= 1;
+      mscaler++;
+    if (mscaler > maxscaler)
+      mscaler = maxscaler;
+    p->mult = *mscaler;
     clear();
     break;
   case '[':
-    if (p->mult > 1)		/* half scale */
-      p->mult >>= 1;
+    if (mscaler > scaler)	/* decrease scale */
+      p->mult = *(--mscaler);
     else
-      p->div <<= 1;
+      dscaler++;
+    if (dscaler > maxscaler)
+      dscaler = maxscaler;
+    p->div = *dscaler;
     clear();
     break;
   case '}':
@@ -474,7 +482,6 @@ get_data()
 {
   static unsigned char datum[2], prev, *buff;
   int i = 0;
-
 				/* flush the sound card's buffer */
   check_status(ioctl(snd, SNDCTL_DSP_RESET), __LINE__);
   read(snd, junk, SAMPLESKIP);	/* toss some possibly invalid samples */
@@ -485,14 +492,14 @@ get_data()
 	prev = datum[scope.trigch]; /* remember previous, read channels */
 	read(snd, datum, 2);
       } while (((i++ < h_points)) &&
-	       ((datum[scope.trigch] < scope.trig) || (prev > scope.trig)));
+	       ((datum[scope.trigch] < scope.trig) || (prev >= scope.trig)));
     } else {
       datum[scope.trigch] = 0;	/* look for falling edge */
       do {
 	prev = datum[scope.trigch]; /* remember previous, read channels */
 	read(snd, datum, 2);
       } while (((i++ < h_points)) &&
-	       ((datum[scope.trigch] > scope.trig) || (prev < scope.trig)));
+	       ((datum[scope.trigch] > scope.trig) || (prev <= scope.trig)));
     }
   }
   if (i > h_points)		/* haven't triggered within the screen */
