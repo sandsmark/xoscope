@@ -1,7 +1,7 @@
 /*
- * @(#)$Id: oscope.c,v 1.70 1999/09/02 01:24:01 twitham Exp $
+ * @(#)$Id: oscope.c,v 1.71 2000/02/26 16:03:17 twitham Exp $
  *
- * Copyright (C) 1996 - 1999 Tim Witham <twitham@quiknet.com>
+ * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
  * (see the files README and COPYING for more details)
  *
@@ -343,23 +343,25 @@ handle_key(unsigned char c)
     clear();
     break;
   case '(':
-    if (scope.run)		/* decrease sample rate */
+    if (scope.run) {		/* decrease sample rate */
       if (scope.rate < 16500)
 	resetsoundcard(8000);
       else if (scope.rate < 33000)
 	resetsoundcard(11025);
       else
 	resetsoundcard(22050);
+    }
     clear();
     break;
   case ')':
-    if (scope.run)		/* increase sample rate */
+    if (scope.run) {		/* increase sample rate */
       if (scope.rate > 16500)
 	resetsoundcard(44100);
       else if (scope.rate > 9500)
 	resetsoundcard(22050);
       else
 	resetsoundcard(11025);
+    }
     clear();
     break;
   case '<':
