@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 1.7 1996/01/28 23:41:24 twitham Exp $
+ * @(#)$Id: display.c,v 1.8 1996/01/29 04:37:14 twitham Exp $
  *
  * Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
@@ -138,15 +138,29 @@ void
 draw_text()
 {
 #if defined XSCOPE || defined HAVEVGAMISC
-  char speed[20];
+  static char string[20];
+  static int i;
 
-  VGA_WRITE(running ? "RUN " : "STOP",
-	    col(68), row(15),  font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
-  if (verbose) {
-    VGA_WRITE(error,  col(0), row(0),  font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
+  for (i = 0 ; i < channels ; i++) {
+    sprintf(string, "channel %d", i+1);
+    VGA_WRITE(string, col(68), row(i*5 + 5),
+	      font, ch[i].color, TEXT_BG, ALIGN_LEFT);
+    sprintf(string, "scale: %d", ch[i].scale);
+    VGA_WRITE(string, col(68), row(i*5 + 6),
+	      font, ch[i].color, TEXT_BG, ALIGN_LEFT);
+    sprintf(string, "pos: %d", ch[i].pos);
+    VGA_WRITE(string, col(68), row(i*5 + 7),
+	      font, ch[i].color, TEXT_BG, ALIGN_LEFT);
   }
-  sprintf(speed, "%5d us/div", 44000000 / sampling / scope.scale);
-  VGA_WRITE(speed, col(39), row(25), font, TEXT_FG, TEXT_BG, ALIGN_CENTER);
+  VGA_WRITE(running ? "RUN " : "STOP",
+	    col(0), row(15), font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
+  if (verbose) {
+    VGA_WRITE(error,  col(0), row(0), font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
+  }
+  sprintf(string, "%d S/s", actual);
+  VGA_WRITE(string, col(40), row(4)-1, font, TEXT_FG, TEXT_BG, ALIGN_CENTER);
+  sprintf(string, "%d us/div", 44000000 / actual / scope.scale);
+  VGA_WRITE(string, col(40), row(25), font, TEXT_FG, TEXT_BG, ALIGN_CENTER);
 #endif
 }
 
@@ -199,7 +213,7 @@ draw_graticule()
 
   if (graticule) {
 
-    /* cross-hairs */
+    /* cross-hairs every 5 divisions */
     for (i = 320 ; i < h_points - 100 ; i += 220) {
       VGA_DRAWLINE(i, offset-160, i, offset+160);
     }
@@ -219,9 +233,10 @@ draw_graticule()
       }
     }
     /* a tick mark where the trigger level is */
-    if (trigger > -1)
-      VGA_DRAWLINE(100, offset+trigger-128, 105, offset+trigger-128);
-
+    if (trigger > -1) {
+      i = offset + trigger + ch[0].pos - 128;
+      VGA_DRAWLINE(100, i, 110, i);
+    }
   }
 }
 
@@ -229,40 +244,49 @@ draw_graticule()
 static inline void
 draw_data()
 {
-  static int i, j;
+  static int i, j, off;
+  static Signal *p;
 
   if (point_mode < 2) {
     for (j = 0 ; j < channels ; j++) {
+      p = &ch[j];
+      off = offset + p->pos;
+      VGA_SETCOLOR(p->color);
+      VGA_DRAWLINE(90, off, 100, off);
       for (i = 0 ; i <= (h_points - 200) / scope.scale ; i++) {
 	if (point_mode == 0) {
 	  VGA_SETCOLOR(color[0]);	/* erase previous dot */
 	  VGA_DRAWPIXEL(i * scope.scale + 100,
-			offset + ch[j].old[i]);
+			off + p->old[i]);
 	}
-	VGA_SETCOLOR(ch[j].color); /* draw dot */
+	VGA_SETCOLOR(p->color); /* draw dot */
 	VGA_DRAWPIXEL(i * scope.scale + 100,
-		      offset + ch[j].data[i]);
-	ch[j].old[i] = ch[j].data[i];
+		      off + p->data[i]);
+	p->old[i] = p->data[i];
       }
     }
   } else {			/* line mode, a little slower */
     for (j = 0 ; j < channels ; j++) {
+      p = &ch[j];
+      off = offset + p->pos;
+      VGA_SETCOLOR(p->color);
+      VGA_DRAWLINE(90, off, 100, off);
       for (i = 0 ; i <= (h_points - 200) / scope.scale - 1 ; i++) {
 	if (point_mode == 2) {
 	  VGA_SETCOLOR(color[0]);	/* erase previous line */
 	  VGA_DRAWLINE(i * scope.scale + 100,
-		       offset + ch[j].old[i],
+		       off + p->old[i],
 		       i * scope.scale + scope.scale + 100,
-		       offset + ch[j].old[i + 1]);
+		       off + p->old[i + 1]);
 	}
-	VGA_SETCOLOR(ch[j].color); /* draw line */
+	VGA_SETCOLOR(p->color); /* draw line */
 	VGA_DRAWLINE(i * scope.scale + 100,
-		     offset + ch[j].data[i],
+		     off + p->data[i],
 		     i * scope.scale + scope.scale + 100,
-		     offset + ch[j].data[i + 1]);
-	ch[j].old[i] = ch[j].data[i];
+		     off + p->data[i + 1]);
+	p->old[i] = p->data[i];
       }
-      ch[j].old[i] = ch[j].data[i];
+      p->old[i] = p->data[i];
     }
   }
 #ifdef XSCOPE
@@ -301,7 +325,7 @@ redisplay(Widget w, int new_width, int new_height, void *data) {
     ? new_width - (new_width - 200) % 44
     : 640;
   v_points = new_height > 480 ? new_height : 480;
-  offset = v_points / 2;
+  offset = v_points / 2 + 1;
   clear();
   draw_text();
 }
@@ -354,7 +378,7 @@ init_screen(int firsttime)
   v_points = vga_getydim();
   h_points = vga_getxdim();
 #endif
-  offset = v_points / 2;
+  offset = v_points / 2 + 1;
   clear();
   draw_graticule();
 }

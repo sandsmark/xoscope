@@ -5,7 +5,7 @@
  *
  * [x]scope --- Use Linux's /dev/dsp (a sound card) as an oscilloscope
  *
- * @(#)$Id: oscope.c,v 1.30 1996/01/28 23:41:18 twitham Exp $
+ * @(#)$Id: oscope.c,v 1.31 1996/01/29 04:38:17 twitham Exp $
  *
  * Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
@@ -227,10 +227,10 @@ init_scope()
   scope.gcolor = color[4];
   scope.tcolor = color[2];
   for (i = 0 ; i < CHANNELS ; i++) {
-    memset(ch[i].data, 128, MAXWID);
-    memset(ch[i].old, 128, MAXWID);
+    memset(ch[i].data, 0, MAXWID);
+    memset(ch[i].old, 0, MAXWID);
     ch[i].scale = 1;
-    ch[i].pos = 128;
+    ch[i].pos = 0;
     ch[i].mode = 0;
     ch[i].color = color[channelcolor[i]];
   }
@@ -274,14 +274,34 @@ handle_key(unsigned char c)
   case 0:
   case -1:			/* no key pressed */
     break;
-  case '1':
-  case '2':			/* single or dual channel mode */
-  case '3':			/* single or dual channel mode */
-  case '4':			/* single or dual channel mode */
+  case '`':			/* single or dual channel mode */
     channels++;
     if (channels > 4)
       channels = 1;
     init_sound_card(0);
+    clear();
+    break;
+  case '1':
+  case '2':
+  case '3':
+  case '4':
+    ch[c - '1'].pos += 8;
+    clear();
+    break;
+  case '!':
+    ch[0].pos -= 8;
+    clear();
+    break;
+  case '@':
+    ch[1].pos -= 8;
+    clear();
+    break;
+  case '#':
+    ch[2].pos -= 8;
+    clear();
+    break;
+  case '$':
+    ch[3].pos -= 8;
     clear();
     break;
   case 'R':
@@ -426,30 +446,6 @@ handle_key(unsigned char c)
     show_info(c);		/* show keypress and result on stdout */
 }
 
-char
-add(char a, char b)
-{
-  static int t;
-  t = (int)a + (int)b;
-  if (t > 127)
-    return(127);
-  if (t < -128)
-    return(-128);
-  return(t);
-}
-
-char
-sub(char a, char b)
-{
-  static int t;
-  t = (int)a - (int)b;
-  if (t > 127)
-    return(127);
-  if (t < -128)
-    return(-128);
-  return(t);
-}
-
 /* get data from sound card */
 inline void
 get_data()
@@ -487,8 +483,8 @@ get_data()
     ch[0].data[c] = (int)(*buff) - 128;
     buff += (channels > 1);
     ch[1].data[c] = (int)(*buff++) - 128;
-    ch[2].data[c] = add(ch[0].data[c], ch[1].data[c]);
-    ch[3].data[c] = sub(ch[0].data[c], ch[1].data[c]);
+    ch[2].data[c] = ch[0].data[c] + ch[1].data[c];
+    ch[3].data[c] = ch[0].data[c] - ch[1].data[c];
   }
 }
 
