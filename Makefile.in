@@ -1,4 +1,4 @@
-# Makefile.in generated automatically by automake 1.4 from Makefile.am
+# Makefile.in generated automatically by automake 1.4-p4 from Makefile.am
 
 # Copyright (C) 1994, 1995-8, 1999 Free Software Foundation, Inc.
 # This Makefile.in is free software; the Free Software Foundation
@@ -10,7 +10,7 @@
 # even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 # PARTICULAR PURPOSE.
 
-# @(#)$Id: Makefile.in,v 1.10 2003/06/30 08:29:13 baccala Exp $
+# @(#)$Id: Makefile.in,v 1.11 2004/11/04 19:47:32 baccala Exp $
 
 # Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
 
@@ -65,10 +65,15 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
+host_alias = @host_alias@
+host_triplet = @host@
 CC = @CC@
 GTK_CFLAGS = @GTK_CFLAGS@
 GTK_CONFIG = @GTK_CONFIG@
 GTK_LIBS = @GTK_LIBS@
+HAVE_LIB = @HAVE_LIB@
+LIB = @LIB@
+LTLIB = @LTLIB@
 MAKEINFO = @MAKEINFO@
 OSCOPE = @OSCOPE@
 PACKAGE = @PACKAGE@
@@ -137,31 +142,31 @@ DEFS = @DEFS@ -I. -I$(srcdir) -I.
 CPPFLAGS = @CPPFLAGS@
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
-@COMEDI_TRUE@xoscope_OBJECTS =  oscope.o file.o func.o fft.o realfft.o \
-@COMEDI_TRUE@display.o proscope.o bitscope.o sc_linux.o ser_unix.o \
-@COMEDI_TRUE@comedi.o com_gtk.o gr_gtk.o sc_linux_gtk.o
 @COMEDI_FALSE@xoscope_OBJECTS =  oscope.o file.o func.o fft.o realfft.o \
 @COMEDI_FALSE@display.o proscope.o bitscope.o sc_linux.o ser_unix.o \
 @COMEDI_FALSE@com_gtk.o gr_gtk.o sc_linux_gtk.o
-@COMEDI_TRUE@@GTK_FALSE@xoscope_DEPENDENCIES = 
-@COMEDI_FALSE@@GTK_TRUE@xoscope_DEPENDENCIES =  \
-@COMEDI_FALSE@@GTK_TRUE@bitscope-glade-src/support.o \
-@COMEDI_FALSE@@GTK_TRUE@bitscope-glade-src/interface.o \
-@COMEDI_FALSE@@GTK_TRUE@bitscope-glade-src/callbacks.o
-@COMEDI_FALSE@@GTK_FALSE@xoscope_DEPENDENCIES = 
-@COMEDI_TRUE@@GTK_TRUE@xoscope_DEPENDENCIES =  \
-@COMEDI_TRUE@@GTK_TRUE@bitscope-glade-src/support.o \
-@COMEDI_TRUE@@GTK_TRUE@bitscope-glade-src/interface.o \
-@COMEDI_TRUE@@GTK_TRUE@bitscope-glade-src/callbacks.o \
-@COMEDI_TRUE@@GTK_TRUE@comedi-glade-src/interface.o \
-@COMEDI_TRUE@@GTK_TRUE@comedi-glade-src/callbacks.o
-xoscope_LDFLAGS = 
-@COMEDI_TRUE@oscope_OBJECTS =  oscope.o file.o func.o fft.o realfft.o \
+@COMEDI_TRUE@xoscope_OBJECTS =  oscope.o file.o func.o fft.o realfft.o \
 @COMEDI_TRUE@display.o proscope.o bitscope.o sc_linux.o ser_unix.o \
-@COMEDI_TRUE@comedi.o gr_com.o gr_vga.o
+@COMEDI_TRUE@comedi.o com_gtk.o gr_gtk.o sc_linux_gtk.o
+@GTK_TRUE@@COMEDI_FALSE@xoscope_DEPENDENCIES =  \
+@GTK_TRUE@@COMEDI_FALSE@bitscope-glade-src/support.o \
+@GTK_TRUE@@COMEDI_FALSE@bitscope-glade-src/interface.o \
+@GTK_TRUE@@COMEDI_FALSE@bitscope-glade-src/callbacks.o
+@GTK_FALSE@@COMEDI_TRUE@xoscope_DEPENDENCIES = 
+@GTK_TRUE@@COMEDI_TRUE@xoscope_DEPENDENCIES =  \
+@GTK_TRUE@@COMEDI_TRUE@bitscope-glade-src/support.o \
+@GTK_TRUE@@COMEDI_TRUE@bitscope-glade-src/interface.o \
+@GTK_TRUE@@COMEDI_TRUE@bitscope-glade-src/callbacks.o \
+@GTK_TRUE@@COMEDI_TRUE@comedi-glade-src/interface.o \
+@GTK_TRUE@@COMEDI_TRUE@comedi-glade-src/callbacks.o
+@GTK_FALSE@@COMEDI_FALSE@xoscope_DEPENDENCIES = 
+xoscope_LDFLAGS = 
 @COMEDI_FALSE@oscope_OBJECTS =  oscope.o file.o func.o fft.o realfft.o \
 @COMEDI_FALSE@display.o proscope.o bitscope.o sc_linux.o ser_unix.o \
 @COMEDI_FALSE@gr_com.o gr_vga.o
+@COMEDI_TRUE@oscope_OBJECTS =  oscope.o file.o func.o fft.o realfft.o \
+@COMEDI_TRUE@display.o proscope.o bitscope.o sc_linux.o ser_unix.o \
+@COMEDI_TRUE@comedi.o gr_com.o gr_vga.o
 oscope_LDADD = $(LDADD)
 oscope_DEPENDENCIES = 
 oscope_LDFLAGS = 
@@ -185,13 +190,14 @@ NROFF = nroff
 HEADERS =  $(noinst_HEADERS)
 
 DIST_COMMON =  README ./stamp-h.in AUTHORS COPYING ChangeLog INSTALL \
-Makefile.am Makefile.in NEWS TODO acconfig.h aclocal.m4 config.h.in \
-configure configure.in install-sh missing mkinstalldirs operl.in
+Makefile.am Makefile.in NEWS TODO acconfig.h aclocal.m4 config.guess \
+config.h.in config.sub configure configure.in install-sh missing \
+mkinstalldirs operl.in
 
 
 DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
 
-TAR = gtar
+TAR = tar
 GZIP_ENV = --best
 DIST_SUBDIRS =  bitscope-glade-src comedi-glade-src
 DEP_FILES =  .deps/bitscope.P .deps/com_gtk.P .deps/comedi.P \
@@ -215,7 +221,7 @@ Makefile: $(srcdir)/Makefile.in  $(top_builddir)/config.status $(BUILT_SOURCES)
 $(ACLOCAL_M4):  configure.in 
 	cd $(srcdir) && $(ACLOCAL)
 
-config.status: $(srcdir)/configure $(CONFIG_STATUS_DEPENDENCIES)
+config.status: $(srcdir)/configure.in $(CONFIG_STATUS_DEPENDENCIES)
 	$(SHELL) ./config.status --recheck
 $(srcdir)/configure: $(srcdir)/configure.in $(ACLOCAL_M4) $(CONFIGURE_DEPENDENCIES)
 	cd $(srcdir) && $(AUTOCONF)

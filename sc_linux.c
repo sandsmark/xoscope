@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: sc_linux.c,v 1.24 2003/06/19 07:20:59 baccala Exp $
+ * @(#)$Id: sc_linux.c,v 1.25 2004/11/04 19:47:35 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -26,7 +26,7 @@
 #include <sys/ioctl.h>
 #include <sys/soundcard.h>
 #include "oscope.h"		/* program defaults */
-#if HAVE_LIBESD
+#ifdef HAVE_LIBESD
 #include <esd.h>
 #endif
 
@@ -37,7 +37,11 @@ static int snd = -2;		/* file descriptor for /dev/dsp */
 static int esd = -2;		/* file descriptor for ESD */
 
 static int dma = 4;		/* 1, 2 or 4 */
+
+#ifdef HAVE_LIBESD
 static int esdblock = 0;	/* 1 to block ESD; 0 to non-block */
+static int esdrecord = 0;	/* 1 to use ESD record mode; 0 to use ESD monitor mode */
+#endif
 
 static int sc_chans = 0;
 static int sound_card_rate = DEF_R;	/* sampling rate of sound card */
@@ -52,8 +56,11 @@ static int trigch;
 
 static char * snd_errormsg1 = NULL;
 static char * snd_errormsg2 = NULL;
+
+#ifdef HAVE_LIBESD
 static char * esd_errormsg1 = NULL;
 static char * esd_errormsg2 = NULL;
+#endif
 
 /* This function is defined as do-nothing and weak, meaning it can be
  * overridden by the linker without error.  It's used for the X
@@ -65,6 +72,9 @@ static char * esd_errormsg2 = NULL;
 
 void sc_gtk_option_dialog() __attribute__ ((weak));
 void sc_gtk_option_dialog() {}
+
+void esd_gtk_option_dialog() __attribute__ ((weak));
+void esdsc_gtk_option_dialog() {}
 
 /* close the sound device */
 static void
@@ -87,7 +97,7 @@ check_status_ioctl(int d, int request, void *argp, int line)
   }
 }
 
-#if HAVE_LIBESD
+#ifdef HAVE_LIBESD
 
 /* close ESD */
 static void
@@ -108,8 +118,15 @@ open_ESD(void)
   esd_errormsg1 = NULL;
   esd_errormsg2 = NULL;
 
-  if ((esd = esd_monitor_stream(ESD_BITS8|ESD_STEREO|ESD_STREAM|ESD_MONITOR,
-				ESD_DEFAULT_RATE, NULL, progname)) <= 0) {
+  if (esdrecord) {
+    esd = esd_record_stream_fallback(ESD_BITS8|ESD_STEREO|ESD_STREAM|ESD_RECORD,
+				     ESD_DEFAULT_RATE, NULL, progname);
+  } else {
+    esd = esd_monitor_stream(ESD_BITS8|ESD_STEREO|ESD_STREAM|ESD_MONITOR,
+                             ESD_DEFAULT_RATE, NULL, progname);
+  }
+
+  if (esd <= 0) {
     esd_errormsg1 = "opening " ESDDEVICE;
     esd_errormsg2 = strerror(errno);
     return 0;
@@ -177,7 +194,7 @@ reset_sound_card(void)
   int parm;
   static char junk[SAMPLESKIP];
 
-#if HAVE_LIBESD
+#ifdef HAVE_LIBESD
   if (esd >= 0) {
 
     close_ESD();
@@ -202,6 +219,8 @@ reset_sound_card(void)
   }
 }
 
+#ifdef HAVE_LIBESD
+
 static int esd_nchans(void)
 {
   /* ESD always has two channels, right? */
@@ -210,6 +229,8 @@ static int esd_nchans(void)
 
   return (esd >= 0) ? 2 : 0;
 }
+
+#endif
 
 static int sc_nchans(void)
 {
@@ -287,11 +308,17 @@ reset(void)
 {
   reset_sound_card();
 
+#ifdef HAVE_LIBESD
   left_sig.rate = esd >= 0 ? ESD_DEFAULT_RATE : sound_card_rate;
+  right_sig.rate = esd >= 0 ? ESD_DEFAULT_RATE : sound_card_rate;
+#else
+  left_sig.rate = sound_card_rate;
+  right_sig.rate = sound_card_rate;
+#endif
+
   left_sig.num = 0;
   left_sig.frame ++;
 
-  right_sig.rate = esd >= 0 ? ESD_DEFAULT_RATE : sound_card_rate;
   right_sig.num = 0;
   right_sig.frame ++;
 }
@@ -310,7 +337,11 @@ get_data()
   else return (0);
 
   /* minimum samples needed */
+#ifdef HAVE_LIBESD
   k = samples(esd >= 0 ? ESD_DEFAULT_RATE : sound_card_rate);
+#else
+  k = samples(sound_card_rate);
+#endif
 
   if (!in_progress) {
     /* Discard excess samples so we can keep our time snapshot close
@@ -403,6 +434,8 @@ static char * snd_status_str(int i)
   return NULL;
 }
 
+#ifdef HAVE_LIBESD
+
 static char * esd_status_str(int i)
 {
   switch (i) {
@@ -415,6 +448,51 @@ static char * esd_status_str(int i)
   }
   return NULL;
 }
+
+/* ESD option key 1 (*) - toggle Record mode */
+
+static int option1_esd(void)
+{
+  if(esdrecord)
+    esdrecord = 0;
+  else
+    esdrecord = 1;
+
+  return 1;
+}
+
+static char * option1str_esd(void)
+{
+  static char string[16];
+
+  sprintf(string, "RECORD:%d", esdrecord);
+  return string;
+}
+
+static int esd_set_option(char *option)
+{
+  if (sscanf(option, "esdrecord=%d", &esdrecord) == 1) {
+    return 1;
+  } else {
+    return 0;
+  }
+}
+
+static char * esd_save_option(int i)
+{
+  static char buf[32];
+
+  switch (i) {
+  case 1:
+    snprintf(buf, sizeof(buf), "esdrecord=%d", esdrecord);
+    return buf;
+
+  default:
+    return NULL;
+  }
+}
+
+#endif
 
 /* soundcard option key 1 (*) - toggle DMA mode */
 
@@ -468,7 +546,7 @@ static char * sc_save_option(int i)
   }
 }
 
-#if HAVE_LIBESD
+#ifdef HAVE_LIBESD
 DataSrc datasrc_esd = {
   "ESD",
   esd_nchans,
@@ -480,13 +558,13 @@ DataSrc datasrc_esd = {
   fd,
   get_data,
   esd_status_str,
-  NULL,  /* option1 */
-  NULL,  /* option1str */
+  option1_esd,  /* option1 */
+  option1str_esd,  /* option1str */
   NULL,  /* option2, */
   NULL,  /* option2str, */
-  NULL,  /* set_option */
-  NULL,  /* save_option */
-  NULL,  /* gtk_options */
+  esd_set_option,  /* set_option */
+  esd_save_option,  /* save_option */
+  esd_gtk_option_dialog,  /* gtk_options */
 };
 #endif
 

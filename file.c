@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: file.c,v 1.25 2003/06/17 22:52:32 baccala Exp $
+ * @(#)$Id: file.c,v 1.26 2004/11/04 19:47:33 baccala Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -246,8 +246,8 @@ writefile(char *filename)
     perror(error);
     return;
   }
-  fprintf(file, "# %s, version %s, %dx%d
-#
+  fprintf(file, "# %s, version %s, %dx%d\n\
+#\n\
 # -D %s\n", progname, version, h_points, v_points, datasrc->name);
 
   if (datasrc->save_option != NULL) {
@@ -256,14 +256,14 @@ writefile(char *filename)
     }
   }
 
-  fprintf(file, "# -a %d
-# -s %d/%d
-# -t %d:%d:%d
-# -l %d:%d:%d
-# -c %d
-# -m %d
-# -p %d
-# -g %d
+  fprintf(file, "# -a %d\n\
+# -s %d/%d\n\
+# -t %d:%d:%d\n\
+# -l %d:%d:%d\n\
+# -c %d\n\
+# -m %d\n\
+# -p %d\n\
+# -g %d\n\
 %s%s",
 	  scope.select + 1,
 	  scope.scale, scope.div,

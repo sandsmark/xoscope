@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.c,v 1.92 2003/06/19 07:20:59 baccala Exp $
+ * @(#)$Id: oscope.c,v 1.93 2004/11/04 19:47:33 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -22,16 +22,21 @@
 /* global program structures */
 Scope scope;
 
-extern DataSrc datasrc_esd, datasrc_sc, datasrc_ps, datasrc_bs;
-#if HAVE_LIBCOMEDI
+extern DataSrc datasrc_sc, datasrc_ps, datasrc_bs;
+#ifdef HAVE_LIBESD
+extern DataSrc datasrc_esd;
+#endif
+#ifdef HAVE_LIBCOMEDI
 extern DataSrc datasrc_comedi;
 #endif
 
 DataSrc *datasrcs[] = {
-#if HAVE_LIBCOMEDI
+#ifdef HAVE_LIBCOMEDI
   &datasrc_comedi,
 #endif
+#ifdef HAVE_LIBESD
   &datasrc_esd,
+#endif
   &datasrc_sc,
   &datasrc_ps,
   &datasrc_bs
@@ -66,26 +71,26 @@ usage(int error)
 
   where = error ? stderr : stdout;
 
-  fprintf(where, "usage: %s [options] [file]
-
-Startup Options  Description (defaults)               version %s
--h               this Help message and exit
--D <datasrc>     select named data source (COMEDI/Soundcard/ESD/Bitscope/etc)
--o <option>      specify data source specific options
--# <code>        #=1-%d, code=pos[.bits][:scale[:func#, mem a-z or cmd]] (0:1/1)
--a <channel>     set the Active channel: 1-%d                  (%d)
--s <scale>       time Scale: 1/2000-1000/1 where 1=1ms/div    (%d/1)
--t <trigger>     Trigger level[:type[:channel]]               (%s)
--l <cursors>     cursor Line positions: first[:second[:on?]]  (%s)
--c <color>       graticule Color: 0-15                        (%d)
--m <mode>        video Mode (size): 0,1,2,3                   (%d)
--f <font name>   the Font name as-in %s
--p <type>        Plot mode: 0/1=point, 2/3=line, 4/5=step     (%d)
--g <style>       Graticule: 0=none,  1=minor, 2=major         (%d)
--i <min interv>  Minimum display update interval (ms)         (50)
--b               %s Behind instead of in front of %s
--v               turn Verbose key help display %s
-file             %s file to load to restore settings and memory
+  fprintf(where, "usage: %s [options] [file]\n\
+\n\
+Startup Options  Description (defaults)               version %s\n\
+-h               this Help message and exit\n\
+-D <datasrc>     select named data source (COMEDI/Soundcard/ESD/Bitscope/etc)\n\
+-o <option>      specify data source specific options\n\
+-# <code>        #=1-%d, code=pos[.bits][:scale[:func#, mem a-z or cmd]] (0:1/1)\n\
+-a <channel>     set the Active channel: 1-%d                  (%d)\n\
+-s <scale>       time Scale: 1/2000-1000/1 where 1=1ms/div    (%d/1)\n\
+-t <trigger>     Trigger level[:type[:channel]]               (%s)\n\
+-l <cursors>     cursor Line positions: first[:second[:on?]]  (%s)\n\
+-c <color>       graticule Color: 0-15                        (%d)\n\
+-m <mode>        video Mode (size): 0,1,2,3                   (%d)\n\
+-f <font name>   the Font name as-in %s\n\
+-p <type>        Plot mode: 0/1=point, 2/3=line, 4/5=step     (%d)\n\
+-g <style>       Graticule: 0=none,  1=minor, 2=major         (%d)\n\
+-i <min interv>  Minimum display update interval (ms)         (50)\n\
+-b               %s Behind instead of in front of %s\n\
+-v               turn Verbose key help display %s\n\
+file             %s file to load to restore settings and memory\n\
 ",
 	  progname, version, CHANNELS, CHANNELS, DEF_A,
 	  DEF_S, DEF_T, DEF_L,
