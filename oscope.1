@@ -1,11 +1,10 @@
-.\" Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
+.\" @(#)$Id: oscope.1,v 1.7 1996/04/21 02:26:59 twitham Exp $
+.\"
 .\" Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
 .\"
 .\" (see the files README and COPYING for more details)
-.\"
-.\" @(#)$Id: oscope.1,v 1.6 1996/03/10 02:45:25 twitham Exp $
 
-.TH OSCOPE 1 "April 1  1996" "Linux" "User Commands"
+.TH OSCOPE 1 "June 1  1996" "Linux" "User Commands"
 .SH NAME
 oscope xoscope \- Digital Oscilloscope for /dev/dsp
 .SH SYNOPSIS
@@ -125,6 +124,17 @@ Increase/Decrease the math function of the selected channel.  Not
 available on channel 1 & 2.
 
 .TP 0.5i
+.B $
+Show the result of an external math command on the selected channel.
+You are prompted for the command.  The command must accept samples of
+channel 1 & 2 on stdin and write a new signal to stdout.  See
+oscope.perl and oscopefft.c in the distribution for examples of
+external math filter commands.  Not available on channel 1 & 2 or if
+your
+.B oscope
+can't display text.
+
+.TP 0.5i
 .B A-Z
 Store the currently selected channel into the corresponding memory
 buffer.  This is only available when the sampling rate is 44000.
@@ -139,7 +149,7 @@ channel.  Not available on channel 1 & 2.
 .B Xoscope
 adds mouse controls around the edges of the scope area.  These are
 color coded and should be self-explanatory.  They perform the same
-functions as the corresponding keyboard commands above.
+functions as the equivalent keyboard commands above.
 
 .PP
 .SH "COMMAND\-LINE OPTIONS"
@@ -149,35 +159,38 @@ an X toolkit option.
 
 .TP 0.5i
 .B -h
-Produce a usage message showing these startup options with their
+Produce a Help usage message showing these startup options with their
 default values, then exit.
 
 .TP 0.5i
 .B -# <code>
-Specify the startup conditions of the channel.  # is a channel number
+Specify the startup conditions of each channel.  # is a channel number
 from 1 to 8.  Code can have up to four fields, separated by colons:
-position[:scale[:function#[:visible]]].  Position is the number of
-pixels above (positive) or below (negative) the center of the display.
-Scale is a valid scaling factor from 1/200 to 200.  Function number is
-the math function to perform on the channel or the memory letter to
-recall to the channel.  Visible should be 0 to hide the channel.
+position[:scale[:function #, memory letter, or external command]].
+Position is the number of pixels above (positive) or below (negative)
+the center of the display.  Scale is a valid scaling factor from 1/200
+to 200, expressed as a fraction.  The third field may contain a
+built-in math function number, memory letter, or external math command
+to run on the channel.  This field doesn't affect channel 1 & 2.
+Using these options makes the channel visible unless position begins
+with a '+', in which case the channel is hidden.
 
 .TP 0.5i
 .B -a <channel>
-Specify the selected, or active, channel.
+Specify the selected, or Active, channel.
 
 .TP 0.5i
 .B -r <rate>
-Specify the sampling rate in samples per second.  Current valid values
+Specify the sampling Rate in samples per second.  Current valid values
 are 8800, 22000, or 44000.
 
 .TP 0.5i
 .B -s <scale>
-Sets the time scale factor, 1, 2, 5, 10, 20, 100, or 200.
+Sets the time Scale factor, 1, 2, 5, 10, 20, 100, or 200.
 
 .TP 0.5i
 .B -t <trigger>
-Sets the initial trigger conditions.  Trigger can have up to three
+Sets the initial Trigger conditions.  Trigger can have up to three
 fields, separated by colons: position[:type[:channel]].  Position is
 the number of pixels above (positive) or below (negative) the center
 of the display.  Type is a number indicating the kind of trigger, 0 =
@@ -185,11 +198,11 @@ none, 1 = rising edge, 2 = falling edge.  Channel should be 1 or 2.
 
 .TP 0.5i
 .B -c <color>
-Sets the graticule color, 0 - 15.
+Sets the graticule Color, 0 - 15.
 
 .TP 0.5i
 .B -m <mode>
-Sets the graphics mode to use on the console.  For
+Sets the graphics Mode to use on the console.  For
 .B xoscope,
 use the more flexible -geometry instead.  0 = 640x480x16, 1 =
 800x600x16, 2 = 1024x768x16, 3 = 1280x1024x16.
@@ -199,7 +212,7 @@ modes!
 
 .TP 0.5i
 .B -d <dma divisor>
-Sets the divisor for DMA buffer size, 1, 2, or 4.  The kernel sound
+Sets the Divisor for DMA buffer size, 1, 2, or 4.  The kernel sound
 driver will divide it's DMA buffer by this factor.  The value 4
 usually gives the fastest display rate.
 
@@ -207,7 +220,7 @@ usually gives the fastest display rate.
 .B -f
 Font to use.  For
 .B oscope,
-these are listed in /usr/lib/kbd/consolfonts.  For
+these are listed in /usr/lib/kbd/consolefonts.  For
 .B xoscope,
 they're the output of xlsfonts.  The default should work best.
 
@@ -223,11 +236,12 @@ major divisions.
 
 .TP 0.5i
 .B -b
-Whether the graticule is drawn behind or in front of the signals.
+Whether the graticule is drawn Behind or in front of the signals.
 
 .B file
 The name of a file to load upon startup.  This should be a file
 previously saved by 
+.B oscope.
 
 .SH EXAMPLES
 .TP 0.5i
@@ -240,10 +254,10 @@ Also channel 3 and 4 are made visible to show the FFT of channel 1 and
 2 respectively at a reduced scale of 1/100.
 
 .TP 0.5i
-.B oscope oscope.osp
+.B xoscope oscope.dat
 
-This runs oscope, loading settings and memory buffers from a
-previously saved data file called "oscope.osp".
+This runs xoscope, loading settings and memory buffers from a
+previously saved data file called "oscope.dat".
 
 .SH FILES
 .B Oscope
@@ -252,12 +266,12 @@ comment header which holds the current settings of
 .B oscope.
 Loading the file causes these saved settings to be restored.
 
-To record your signals permanently first Store them into memory
-buffers, optionally recall them to channels, and then Save the file.
+To record your signals permanently first store them into memory
+buffers, optionally recall them to channels, and then save the file.
 All non-empty memory buffers are written to a column of the file
 following the comment header.  Columns are separated by tab
-characters.  These are stored back in to the memory buffers when the
-file is loaded.  Simply recall them to channels to view them.
+characters.  These are stored back into the memory buffers when the
+file is later loaded.  Simply recall them to channels to view them.
 .P
 
 This format could also be read by some spreadsheet or plotting
@@ -266,44 +280,58 @@ programs.  For example, the
 command
 .P
 
-plot "oscope.osp" using 0:1, "oscope.osp" using 0:2
+plot "oscope.dat" using 0:1, "oscope.dat" using 0:2
 .P
 
-would plot the first and second columns of the "oscope.osp" data file.
+would plot the first and second columns of the "oscope.dat" data file.
 
 .SH PORTABILITY
 .B Oscope
 was written specifically for Linux, and uses the Linux sound driver
 and svgalib or libsx plotting routines.  You need a sound card capable
-of 44000 Hz sampling via the Linux kernel sound drivers.
+of 44000 Hz sampling via the Linux kernel sound drivers.  It would
+probably be possible to port this to other systems by hacking oscope.c
+and display.c.
 
-.SH BUGS/LIMITATIONS
+Enhancements that could be added: 16 bit sampling, single shot mode,
+envelope mode, X-Y mode, and log scales and window functions for the
+FFT.  If you really want a Spectrum Analyzer with more options, get
+"freq" by Philip VanBaren.
+
+.SH LIMITATIONS
 .PP
-This should be considered BETA software.  It was basically written for
-fun but should actually be useful for audio frequencies only.
-
 Because it uses svgalib,
 .B oscope
-must be run as root or setuid to root.
+must be run as root or be setuid to root.
 .B xoscope
 doesn't have this restriction.
 
-The display may not be able to keep up when you give it too much to
-plot, depending on your sound card, graphics card, and processor
-speed.  Floating point math is used only by the FFT, so a math
-coprocessor shouldn't make much difference.  To optimize refresh
-speed, hide all unneeded channels, use point or point accumulate mode,
-zoom in on Sec/Div as much as possible, and turn off the graticule.
-
-You have to use an external mixer program to select the input source
+You must use an external mixer program to select the input source
 device, level, etc.  Since these unknowns affect the amplitude, there
 is no reference to voltage on the Y axis; it is in fact, unknown.
 Instead you're given the scale in pixels per sample unit.
 
-Enhancements that could be added: 16 bit sampling, single shot mode,
-envelope mode, log scales and window functions for the FFT.  If you
-really want a Spectrum Analyzer with more options, get "freq" by
-Philip VanBaren.
+The display may not be able to keep up if you give it too much to
+plot, depending on your sound card, graphics card, and processor
+speed.  External math commands are particularly expensive since the
+kernel must then spread the available CPU cycles across multiple
+processes.  Floating point math is used only by the FFT, so a math
+coprocessor shouldn't make much difference.  To maximize refresh
+speed, hide all unneeded channels, use point or point accumulate mode,
+zoom in on Sec/Div as much as possible, and turn off the graticule.
+
+The automatic measurements count zero crossings and divide to
+determine the frequency and period.  If these zero crossings are not
+"regularly-periodic", these measurements could be invalid.  It also
+understands how to measure the built-in FFT functions by locating the
+peak frequency.
+
+Your sound card is most-likely AC coupled so you will never see any DC
+offset.  You probably can't get DC coupling by just shorting the input
+capacitors on your sound card.
+
+.SH BUGS
+None known.
 
 .SH AUTHOR
 .B Oscope
