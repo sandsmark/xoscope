@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: gr_sx.c,v 1.10 1997/05/01 04:46:42 twitham Exp $
+ * @(#)$Id: gr_sx.c,v 1.11 1997/05/02 06:01:11 twitham Exp $
  *
  * Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -23,7 +23,7 @@ Widget plot[5];			/* plot menu */
 Widget grat[6];			/* graticule menu */
 Widget colormenu[17];		/* color menu */
 Widget xwidg[9];		/* extra horizontal widgets */
-Widget mwidg[56];		/* memory / math widgets */
+Widget mwidg[57];		/* memory / math widgets */
 Widget cwidg[CHANNELS];		/* channel button widgets */
 Widget ywidg[15];		/* vertical widgets */
 Widget **math;			/* math menu */
@@ -185,6 +185,16 @@ dismiss(Widget w, void *data)
   CloseWindow();
 }
 
+/* run an external command */
+void
+runextern(Widget w, void *data)
+{
+  strcpy(command[scope.select], (char *)data);
+  ch[scope.select].func = FUNCEXT;
+  ch[scope.select].mem = EXTSTART;
+  clear();
+}
+
 /* slurp the manual page into a window */
 void
 help(Widget w, void *data)
@@ -269,11 +279,13 @@ fix_widgets()
   SetBgColor(mwidg[0], ch[scope.select].color);
   SetBgColor(mwidg[27], ch[scope.select].color);
   SetBgColor(mwidg[28], ch[scope.select].color);
-  SetBgColor(mwidg[55], ch[scope.select].color);
+  SetBgColor(mwidg[29], ch[scope.select].color);
+  SetBgColor(mwidg[56], ch[scope.select].color);
   SetWidgetState(mwidg[27], scope.select > 1);
-  SetWidgetState(mwidg[55], scope.select > 1);
+  SetWidgetState(mwidg[28], scope.select > 1);
+  SetWidgetState(mwidg[56], scope.select > 1);
   for (i = 0 ; i < 26 ; i++) {
-    SetBgColor(mwidg[i + 29], mem[i].color);
+    SetBgColor(mwidg[i + 30], mem[i].color);
     if (i > 22)
       SetWidgetState(mwidg[i + 1], 0);
   }
@@ -408,23 +420,25 @@ init_widgets()
 
   /* bottom rows of widgets */
   mwidg[0]  = MakeLabel(" Store ");
-  mwidg[28] = MakeLabel(" Recall");
+  mwidg[29] = MakeLabel(" Recall");
   SetWidgetPos(mwidg[0],  PLACE_UNDER, draw_widget, NO_CARE, NULL);
-  SetWidgetPos(mwidg[28],  PLACE_UNDER, mwidg[0], NO_CARE, NULL);
+  SetWidgetPos(mwidg[29],  PLACE_UNDER, mwidg[0], NO_CARE, NULL);
   for (i = 0 ; i < 26 ; i++) {
     sprintf(error, "%c", i + 'A');
     mwidg[i + 1] = MakeButton(error, hit_key, &alphabet[i]);
     SetWidgetPos(mwidg[i + 1], PLACE_UNDER, draw_widget,
 		 PLACE_RIGHT, mwidg[i]);
     sprintf(error, "%c", i + 'a');
-    mwidg[i + 29] = MakeButton(error, hit_key, &alphabet[i + 26]);
-    SetWidgetPos(mwidg[i + 29], PLACE_UNDER, mwidg[0],
-		 PLACE_RIGHT, mwidg[i + 28]);
+    mwidg[i + 30] = MakeButton(error, hit_key, &alphabet[i + 26]);
+    SetWidgetPos(mwidg[i + 30], PLACE_UNDER, mwidg[0],
+		 PLACE_RIGHT, mwidg[i + 29]);
   }
-  mwidg[27] = MakeMenu(  "Math     ");
-  mwidg[55] = MakeButton("Extern...", hit_key, "$");
+  mwidg[27] = MakeMenu(  "Math");
+  mwidg[28] = MakeButton("XY", runextern, "xy");
+  mwidg[56] = MakeButton("Extern...", hit_key, "$");
   SetWidgetPos(mwidg[27],  PLACE_UNDER, draw_widget, PLACE_RIGHT, mwidg[26]);
-  SetWidgetPos(mwidg[55],  PLACE_UNDER, mwidg[27], PLACE_RIGHT, mwidg[54]);
+  SetWidgetPos(mwidg[28],  PLACE_UNDER, draw_widget, PLACE_RIGHT, mwidg[27]);
+  SetWidgetPos(mwidg[56],  PLACE_UNDER, mwidg[27], PLACE_RIGHT, mwidg[55]);
 
   j = funccount - 4;
   if ((math = malloc(sizeof(Widget *) * j)) == NULL)
@@ -452,7 +466,7 @@ init_widgets()
   }
 
   for (i = 0 ; i < 26 ; i++) {
-    SetBgColor(mwidg[i + 29], color[0]);
+    SetBgColor(mwidg[i + 30], color[0]);
   }
 
   SetBgColor(draw_widget, color[0]);
