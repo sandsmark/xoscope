@@ -1,4 +1,4 @@
-# @(#)$Id: Makefile,v 1.8 1996/01/31 07:40:37 twitham Exp $
+# @(#)$Id: Makefile,v 1.9 1996/01/31 07:55:06 twitham Exp $
 
 # Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
 # Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
@@ -59,7 +59,7 @@ xoscope:	$(X11_OBJ)
 install: oscope
 	cp -p *oscope $(PREFIX)/bin
 	chmod u+s $(PREFIX)/bin/oscope
-	cp oscope.1 $(PREFIX)/man/man1/oscope.1
+	cp *.1 $(PREFIX)/man/man1
 
 clean:
 	$(RM) *oscope *.o core *~
