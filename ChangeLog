@@ -1,6 +1,48 @@
+2000-06-28  Tim Witham  <twitham@quiknet.com>
+
+	* oscope.lsm, README, Makefile, TODO, TODO.old: For 1.7.
+
+	* count.dat: New file.
+
+	* display.c:
+	Draw screen before opening sound device to give user a clue what's
+	going on if it blocks waiting for ESD sound (? TRIGGER ?).
+
+	* gr_gtk.c:
+	Fixed bug: mouse click context (e.g. memory selection) was wrong for
+	arbitrary window sizes due to integer division rounding errors.
+
+2000-05-20  Tim Witham  <twitham@quiknet.com>
+
+	* oscope.1, oscope.c, file.c:
+	Added manually-positioned measuring cursors.
+
+	* config.h: *** empty log message ***
+
+	* gr_gtk.c, display.c, func.c, oscope.h:
+	Added manually-positioned measuring cursors.
+
+2000-04-21  Tim Witham  <twitham@quiknet.com>
+
+	* display.c:
+	Scaled LA down so all 16 bits fit on the display at 1/1 default scale.
+
+2000-04-08  Tim Witham  <twitham@quiknet.com>
+
+	* gr_gtk.c, oscope.1, file.c, oscope.h, oscope.c, display.c:
+	Added logic analyzer display.  The least significant bits of a channel
+	can be displayed as ditial lines.  The number of bits shown can be
+	increased and decreased with the ~/` key.  Zero bits draws the signal
+	as one analog line as before.
+
+2000-03-24  Tim Witham  <twitham@quiknet.com>
+
+	* sc_linux.c:
+	Fixed off-by-one error so silence has level 0 instead of -1.
+
 2000-03-05  Tim Witham  <twitham@quiknet.com>
 
-	* README, oscope.lsm, oscope.1, oscope.h, Makefile, config.h, file.c, audio.dat, proscope.dat:
+	* ChangeLog, README, oscope.lsm, oscope.1, oscope.h, Makefile, config.h, file.c, audio.dat, proscope.dat:
 	For 1.6.
 
 	* com_gtk.h: Eliminate compiler warning caused by dimensionless arrays.

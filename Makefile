@@ -1,4 +1,4 @@
-# @(#)$Id: Makefile,v 1.24 2000/03/05 23:03:58 twitham Rel $
+# @(#)$Id: Makefile,v 1.25 2000/06/28 21:47:54 twitham Rel $
 
 # Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
 
@@ -92,7 +92,7 @@ LDFLAGS	= -s $(ESDLDFLAGS) $(DFLAGS)
 # nothing should need changed below here
 ############################################################
 
-VER	= 1.6
+VER	= 1.7
 SRC	= oscope.c file.c func.c fft.c realfft.c display.c proscope.c
 VGA_SRC = $(SRC) sc_linux.c ser_unix.c gr_com.c gr_vga.c
 SX_SRC	= $(SRC) sc_linux.c ser_unix.c gr_com.c gr_sx.c freq.c dirlist.c

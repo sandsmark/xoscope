@@ -12,6 +12,14 @@ v1.2: DONE.  Use space bar to select `wait' mode, then the first
 trigger event will `stop' the scope.
 
 
+4	make drawing area mouse aware	(Jeff_Tranter@Mitel.Com)
+
+	Be able to drag signals up and down for example.
+
+v1.6: Under GTK+, left-click will select a channel and right-click
+is a context-sensitive pop-up menu.
+
+
 5	clean up the cluttered screen	(twitham@pcocd2.intel.com)
 
 	Tough to do unless I invent a smarter menu-driven interface.
@@ -22,6 +30,11 @@ trigger event will `stop' the scope.
 v1.2: DONE.  Just hit the `?' key to toggle.
 
 v1.3: now shows oscope version number.
+
+v1.5: GTK+ version now has an easy to use menu interface.
+
+v1.6: GTK+ now has context-sensitive pop-up tearable menus.
+
 
 
 6	X-Y mode			(Grant_Siemers@ccm.fm.intel.com)
@@ -185,9 +198,41 @@ v1.5: GTK+ port works great.  Apparently GTK+ is being ported to
 non-unix's so someday this may simplify ports to other OSs.
 
 
+26	sound pipe input device		(james@albion.glarp.com)
+
+	James Feeney suggested a variation to #18: the ability to send
+	an audio file or command output into a running oscope process.
+	This may be doable through /dev/dsp if it could be opened
+	non-exclusively.  Oscope or the player process would need to
+	work with the current sample rate instead of each trying to
+	set it.  Or this could be done through a named pipe (FIFO) in
+	the filesystem.  It can already sort of be done through the
+	external command interface.  A command could just disregard
+	the input and send a new signal in to one of Channel 3 - 8.
+
+v1.6: this is best done via ESD which lets many processes share the
+sound device.  Just esdplay (or whatever) a file through esd while
+xoscope is monitoring the sound.
+
+
+27	time/frequency and amplitude cursors	(twitham@pcocd2.intel.com)
+
+	Cursors similar to Radio Shack's ProbeScope software would be
+	useful.  A key could toggle them on/off like freq does, then
+	the keyboard would have an alternate layout to move them.  Of
+	course mouse support, #4, would be nicest.  The display could
+	replace the auto-measurements in this mode.
+
+v1.7: DONE.  Even with mouse support under GTK+!  They're positioned
+with Ctrl-keys, and ' turns them on/off, " resets them.
+
+
 29	Port to the GTK+ user interface on X.	(twitham@quiknet.com)
 
 v1.5: DONE.  Supports GTK+ 1.0 or higher.  Future releases will
 require GTK+ 1.2 or higher so that fancier things can be done in the
 menubar.  GTK+ versions less than 1.2 will no longer be supported
 after this release.
+
+v1.6: GTK+ 1.2 or better now required.  The drawing area is now
+context-sensitive to mouse clicks.

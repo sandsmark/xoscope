@@ -18,13 +18,9 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 	(see the file COPYING for more details)
 
-Latest official version is available by anonymous ftp at:
+Latest official version and more is available at:
 
-		ftp://sunsite.unc.edu/pub/Linux/apps/circuits/
-
-The latest version and more is available at:
-
-		http://xoscope.bstc.net/
+		http://xoscope.sourceforge.net/
 
 
 	SUMMARY:
@@ -40,26 +36,19 @@ device at:
 This device is also known as osziFOX and you may be able to get more
 information on and pictures of it at:
 
-	http://www.wtt-germany.com/index.html
-
-http://xoscope.bstc.net/ may have pre-built binary releases and RPMs
-of xoscope.  You may want to try one if you're in a hurry or if you
-have problems building this from source.
+	http://www.wtt-germany.com/
 
 
-	NEW for 1.6 (see also the files ChangeLog and TODO):
+	NEW for 1.7 (see also the files ChangeLog and TODO):
 
-* EsounD (Enlightened Sound Daemon) support.  Esd is common with Gnome
-  and allows xoscope to share a sound device with other programs or
-  across a network.  So xoscope can now see your MP3s playing on xmms!
+* Logic Analyzer display mode.  Instead of drawing one analog line,
+  multiple digital bit lines are drawn.  Hit ` or ~ to decrease or
+  increase the number of bits shown.
 
-* GTK+ 1.2 or better is now required to build the xoscope X11 client:
-
-  + Oft-used menus can be "torn-off" and kept available.
-
-  + Context-sensitive pop-up menus for selecting channel, scale,
-    position, memory store and recall, plot mode, trigger, etc.
-
+* Manually-positioned measurement cursors.  Hit ' to turn them on, "
+  to reset them, and Ctrl-d/f/e/r to move them.  Under GTK+, left
+  click positions one cursor and middle click sets the other.  Right
+  click always brings up the context-sensitive menu.
 
 	WHAT YOU NEED:
 
@@ -144,9 +133,9 @@ If you don't install as root, you will need to become root and:
 
 * chown root oscope
 
-* chmod u+s oscope
-
 * chmod go-w oscope
+
+* chmod u+s oscope
 
 since the svgalib can only be started by root.  xoscope doesn't
 require any special permissions.
@@ -181,7 +170,7 @@ x*oscope was developed specifically for Linux on:
  - Linux kernel 1.2.10	and later on:	2.2.12
  - gcc 2.6.3				egcs 2.91.66
  - svgalib 1.2.9			1.4.0
- - libsx 1.1				GTK+ 1.0.6
+ - libsx 1.1				GTK+ 1.2.5
  - SoundBlaster 16
  - ATI Win Turbo 2MB VRAM
  - 32MB RAM				96MB RAM
@@ -235,7 +224,7 @@ work.  And to Sam Vincent (svincent@cs.sonoma.edu) for svasync.zip
 which made the serial connection to ProbeScope possible.
 
 Dave J. Andruczyk <dave@techdev.buffalostate.edu> for the initial
-tweaks to make a connection EsounD.
+tweaks to make a connection to EsounD.
 
 
 	DISCLAIMER:
