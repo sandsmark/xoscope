@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: file.c,v 1.7 1997/05/01 04:44:53 twitham Exp $
+ * @(#)$Id: file.c,v 1.8 1997/05/03 05:43:12 twitham Exp $
  *
  * Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -42,12 +42,13 @@ handle_opt(int opt, char *optarg)
     break;
   case 's':			/* scale (zoom) */
   case 'S':
-    scope.scale = limit(strtol(optarg, NULL, 0), 1, 200);
+    scope.scale = limit(strtol(p = optarg, NULL, 0), 1, 100);
+    if ((q = strchr(p, '/')) != NULL)
+      scope.div = limit(strtol(++q, NULL, 0), 1, 100);
     break;
   case 't':			/* trigger */
   case 'T':
-      p = optarg;
-      scope.trig = limit(strtol(p, NULL, 0) + 128, 0, 255);
+      scope.trig = limit(strtol(p = optarg, NULL, 0) + 128, 0, 255);
       if ((q = strchr(p, ':')) != NULL) {
 	scope.trige = limit(strtol(++q, NULL, 0), 0, 2);
 	p = q;
@@ -114,11 +115,11 @@ handle_opt(int opt, char *optarg)
       }
       s->pos = limit(-strtol(p, NULL, 0), -1280, 1280);
       if ((q = strchr(p, ':')) != NULL) {
-	s->mult = limit(strtol(++q, NULL, 0), 1, 200);
+	s->mult = limit(strtol(++q, NULL, 0), 1, 100);
 	p = q;
       }
       if ((q = strchr(p, '/')) != NULL) {
-	s->div = limit(strtol(++q, NULL, 0), 1, 200);
+	s->div = limit(strtol(++q, NULL, 0), 1, 100);
 	p = q;
       }
       if ((q = strchr(p, ':')) != NULL) {
@@ -168,7 +169,7 @@ writefile(char *filename)
 #
 # -a %d
 # -r %d
-# -s %d
+# -s %d/%d
 # -t %d:%d:%c
 # -c %d
 # -m %d
@@ -178,8 +179,8 @@ writefile(char *filename)
 %s%s",
 	  progname, version, h_points, v_points,
 	  scope.select + 1,
-	  actual,
-	  scope.scale,
+	  scope.rate,
+	  scope.scale, scope.div,
 	  scope.trig - 128, scope.trige, scope.trigch + 'x',
 	  scope.color,
 	  scope.size,
