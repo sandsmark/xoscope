@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.c,v 1.63 1997/05/31 19:37:04 twitham Exp $
+ * @(#)$Id: oscope.c,v 1.64 1997/05/31 21:21:07 twitham Exp $
  *
  * Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -18,7 +18,7 @@
 #include "file.h"		/* file I/O functions */
 #include "proscope.h"		/* ProbeScope (serial) functions */
 
-/* global program variables */
+/* global program structures */
 Scope scope;
 Channel ch[CHANNELS];
 
@@ -31,7 +31,6 @@ char buffer[MAXWID * 2];	/* buffer for stereo sound data */
 char junk[SAMPLESKIP];		/* junk data buffer */
 int v_points;			/* pixels in vertical axis */
 int h_points;			/* pixels in horizontal axis */
-int verbose;
 int offset;			/* vertical pixel offset to zero line */
 int clip = 0;			/* whether we're maxed out or not */
 char *filename;			/* default file name */
@@ -49,15 +48,15 @@ usage()
 
   fprintf(stderr, "usage: %s "
 	  "[-h]
-[-#<code>] ... [-a #] [-r<rate>] [-s<scale>] [-t<trigger>] [-c<color>]
-[-m<mode>] [-d<dma>] [-f<font>] [-p<type>] [-g<style>] [-b] [-v] [file]
+[-#<code>] ... [-a #] [-r<rate>] [-s<scale>] [-t<trigger>] [-c<color>] [-d<dma>]
+[-m<mode>] [-f<font>] [-p<type>] [-g<style>] [-b] [-v] [-x] [-z] [file]
 
 Startup Options  Description (defaults)               version %s
 -h               this Help message and exit
 -# <code>        #=1-%d, code=pos[:scale[:func#, mem letter, or cmd]] (0:1/1)
 -a <channel>     set the Active channel: 1-%d                  (%d)
 -r <rate>        sampling Rate in Hz: 8800,11000,22000,44000  (%d)
--s <scale>       time Scale: 1/20-1000, 1 = 1ms/div           (%d/1)
+-s <scale>       time Scale: 1/20-1000 where 1=1ms/div        (%d/1)
 -t <trigger>     Trigger level[:type[:channel]]               (%s)
 -c <color>       graticule Color: 0-15                        (%d)
 -m <mode>        video mode (size): 0,1,2,3                   (%d)
@@ -67,6 +66,8 @@ Startup Options  Description (defaults)               version %s
 -g <style>       Graticule: 0=none,  1=minor, 2=major         (%d)
 -b               %s Behind instead of in front of %s
 -v               turn %s Verbose key help display
+-x               turn Sound Card input device %s
+-z               turn ProbeScope input device %s
 file             %s file to load to restore settings and memory
 ",
 	  progname, version, CHANNELS, CHANNELS, DEF_A,
@@ -75,7 +76,7 @@ file             %s file to load to restore settings and memory
 	  fonts,		/* the font method for the display */
 	  scope.mode,
 	  scope.grat, def[DEF_B], def[!DEF_B],
-	  onoff[DEF_V], progname);
+	  onoff[DEF_V], onoff[!DEF_X], onoff[!DEF_Z], progname);
   exit(1);
 }
 
@@ -85,8 +86,8 @@ parse_args(int argc, char **argv)
 {
   const char     *flags = "Hh"
     "1:2:3:4:5:6:7:8:"
-    "a:r:s:t:c:m:d:f:p:g:bv"
-    "A:R:S:T:C:M:D:F:P:G:BV";
+    "a:r:s:t:c:m:d:f:p:g:bvxyz"
+    "A:R:S:T:C:M:D:F:P:G:BVXYZ";
   int c;
 
   while ((c = getopt(argc, argv, flags)) != EOF) {
@@ -121,6 +122,8 @@ init_scope()
   scope.color = DEF_C;
   scope.select = DEF_A - 1;
   scope.verbose = DEF_V;
+  snd = !DEF_X;
+  ps.found = !DEF_Z;
 }
 
 /* initialize the signals */
@@ -349,8 +352,16 @@ handle_key(unsigned char c)
     break;
   case '@':			/* load file */
     if ((s = GetFile(NULL)) != NULL) {
+      close_sound_card();
       readfile(s);
-      resetsoundcard();
+      if (snd) {
+	open_sound_card(scope.dma);
+	resetsoundcard();
+      }
+      if (ps.found) {
+	init_probescope();
+	init_serial();
+      }
     }
     break;
   case '#':			/* save file */
@@ -460,10 +471,14 @@ main(int argc, char **argv)
       filename = argv[optind];
       readfile(filename);
     }
-  open_sound_card(scope.dma);
-  resetsoundcard();
-  init_probescope();
-  init_serial();
+  if (snd) {
+    open_sound_card(scope.dma);
+    resetsoundcard();
+  }
+  if (ps.found) {
+    init_probescope();
+    init_serial();
+  }
   mainloop();			/* to display.c */
   cleanup();
   exit(0);

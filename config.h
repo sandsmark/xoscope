@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: config.h,v 1.8 1997/05/24 23:36:27 twitham Exp $
+ * @(#)$Id: config.h,v 1.9 1997/05/31 21:23:49 twitham Exp $
  *
  * Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -25,6 +25,8 @@
 #define DEF_G	2		/* 0,1,2 (2) */
 #define DEF_B	0		/* 0,1 (0) */
 #define DEF_V	0		/* 0,1 (0) */
+#define DEF_X	0		/* 0,1 (0) don't use sound card? */
+#define DEF_Z	0		/* 0,1 (0) don't search for ProbeScope? */
 
 /* maximum screen width, also max number of samples in memory at once (1600) */
 #define MAXWID		1600
@@ -37,7 +39,7 @@
 #define CHANNELS	8
 
 /* colors of the channels; see colors in gr_sx.c ({2,3,5,6,14,1,4,15}) */
-#define CHANNELCOLOR	{2,3,5,6,14,1,4,15}
+#define CHANNELCOLOR	{2,3,14,6,5,1,4,15}
 
 /* text foreground color (color[15]) */
 #define TEXT_FG		color[15]

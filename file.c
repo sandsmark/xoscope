@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: file.c,v 1.11 1997/05/27 04:36:42 twitham Exp $
+ * @(#)$Id: file.c,v 1.12 1997/05/31 21:20:58 twitham Exp $
  *
  * Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -16,6 +16,7 @@
 #include "oscope.h"		/* program defaults */
 #include "display.h"		/* display routines */
 #include "func.h"		/* signal math functions */
+#include "proscope.h"		/* probescope */
 
 /* force num to stay within the range lo - hi */
 int
@@ -93,6 +94,16 @@ handle_opt(int opt, char *optarg)
   case 'v':			/* verbose display */
   case 'V':
     scope.verbose = !DEF_V;
+    break;
+  case 'x':			/* sound card */
+  case 'X':
+  case 'y':
+  case 'Y':
+    snd = DEF_X;
+    break;
+  case 'z':			/* ProbeScope */
+  case 'Z':
+    ps.found = DEF_Z;
     break;
   case 'a':			/* Active (selected) channel */
   case 'A':
@@ -173,23 +184,25 @@ writefile(char *filename)
 # -s %d/%d
 # -t %d:%d:%c
 # -c %d
-# -m %d
 # -d %d
+# -m %d
 # -p %d
 # -g %d
-%s%s",
+%s%s%s%s",
 	  progname, version, h_points, v_points,
 	  scope.select + 1,
 	  scope.rate,
 	  scope.scale, scope.div,
 	  scope.trig - 128, scope.trige, scope.trigch + 'x',
 	  scope.color,
-	  scope.size,
 	  scope.dma,
+	  scope.size,
 	  scope.mode,
 	  scope.grat,
 	  scope.behind ? "# -b\n" : "",
-	  scope.verbose ? "# -v\n" : "");
+	  scope.verbose ? "# -v\n" : "",
+	  snd ? "" : "# -x\n",
+	  ps.found ? "" : "# -z\n");
   for (i = 0 ; i < CHANNELS ; i++) {
     p = &ch[i];
     fprintf(file, "# -%d %s%d:%d/%d:", i + 1, p->show ? "" : "+",
