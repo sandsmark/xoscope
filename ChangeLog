@@ -1,8 +1,107 @@
+2000-03-05  Tim Witham  <twitham@quiknet.com>
+
+	* README, oscope.lsm, oscope.1, oscope.h, Makefile, config.h, file.c, audio.dat, proscope.dat:
+	For 1.6.
+
+	* com_gtk.h: Eliminate compiler warning caused by dimensionless arrays.
+
+	* oscope.c: Fix command halting and a few minor enhancements.
+
+	* func.c:
+	Fixed bug: switching from external to memory didn't halt external.
+
+	* gr_gtk.c:
+	Added way-cool context-sensitive pop-up menus.  Also added DMA menu.
+
+2000-03-04  Tim Witham  <twitham@quiknet.com>
+
+	* func.c: Added EXTSTOP for shutting down external commands.
+
+	* gr_gtk.c:
+	Enhanced external math dialog with combo box of pre-defined commands.
+
+2000-03-03  Tim Witham  <twitham@quiknet.com>
+
+	* com_gtk.c:
+	Added fixing_widgets boolean which prevents infinite event loops.
+
+	* display.c:
+	Draw text above and below the graticule once a second in case it got
+	scribbled through by the signals.
+
+2000-03-01  Tim Witham  <twitham@quiknet.com>
+
+	* sc_linux.c:
+	Use the otherwise useless DMA to control whether the esd is opened to
+	block (4) or not (2 or 1).  Also, copy only the samples that were
+	successfully read, leaving the rest of the buffer from last run.
+	Should probably warn the user when such underruns are happening.
+
+2000-02-26  Tim Witham  <twitham@quiknet.com>
+
+	* gr_gtk.c:
+	Invented finditem to eliminate redundant menu string code and make it
+	possible to loop over sequences of menu items.  Used this to check
+	correct radio buttons and check buttons in memory and math menus.
+
+	* gr_gtk.c:
+	Put radio buttons and check boxes in the menus and wrote fix_widgets
+	to update them, like when the keyboard interface changes things.
+
+	* oscope.c: Fixed bug: stdout was getting closed accidentally.
+
+	* sc_linux.c: Don't try the ioctl's when using ESD!.
+
+	* sc_linux.c:
+	Enhanced ESD support to fall back to /dev/dsp if the esd connect fails.
+
+	* oscope.c:
+	Fixed warnings: suggest explicit braces to avoid ambiguous `else'
+
+	* Makefile, sc_linux.c:
+	Added compile-time option to support ESD instead of /dev/dsp.
+
+1999-09-01  Tim Witham  <twitham@quiknet.com>
+
+	* sc_sb.c, sc_linux.c, oscope.c:
+	Linux 2.2's sound driver apparently can't be reset multiple times.
+	So, to adjust the sound rate, we now close and reopen the device.
+	This does away with set_sound_card and reset_sound_card is enhanced to
+	do the close and open and reset all the settings.
+
+1999-08-28  Tim Witham  <twitham@quiknet.com>
+
+	* ser_unix.c:
+	Can now detect a WAITING! ProbeScope or one sending any acceptable
+	verions of the synchronization byte, from 0x7c to 0x7f.
+
+	* xy_gtk.c, gr_gtk.c:
+	Switched from 1.0 menu factory to 1.2 item factory.  Made the menus
+	tear-off-able.
+
+	* xy.c, com_gtk.c:
+	Changed from a timeout to idle function to maximize refresh rate while
+	interactive load changes.
+
+	* display.c:
+	Replaced data_good flag with smarter erase_data one.  This gets rid of
+	the bogus "blip" that it was seeing when changing sample rates.
+
+	* sc_linux.c:
+	Fixed 2 bugs: Changing the sample rate on the sound card wasn't
+	working.  Turns out it needs a reset after changing the rate, at least
+	on my 2.0.36 drivers.  Also, the delay position was not working on
+	falling edge trigger.
+
 1999-08-26  Tim Witham  <twitham@quiknet.com>
+
+	* ChangeLog: 1.5 released.
+
+	* oscope.lsm, README: For 1.5.
 
 	* proscope.dat, audio.dat, oscope.dat, com_gtk.h: New file.
 
-	* oscope.lsm, README, Makefile, oscope.1, config.h, TODO, TODO.old, file.c, display.h, oscope.h, ofreq.ini:
+	* Makefile, oscope.1, config.h, TODO, TODO.old, file.c, display.h, oscope.h, ofreq.ini:
 	For 1.5.
 
 	* oscope.c:
