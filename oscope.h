@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.h,v 1.12 1996/02/02 07:11:15 twitham Exp $
+ * @(#)$Id: oscope.h,v 1.13 1996/02/03 04:08:13 twitham Exp $
  *
  * Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
@@ -57,13 +57,9 @@
 #define MSECREFRESH	10
 
 /* global program variables */
-extern int mode;
-extern int dma;
-extern int plot_mode;
 extern int verbose;
 extern char *progname;
 extern char error[256];
-extern char *def[];
 extern int quit_key_pressed;
 extern int snd;
 extern char buffer[MAXWID * 2];
@@ -72,10 +68,11 @@ extern int v_points;
 extern int h_points;
 extern int offset;
 extern int actual;
-extern short mult[];
-extern short divi[];
 
 typedef struct Scope {		/* The oscilloscope */
+  short mode;
+  short size;
+  int dma;
   short run;
   short scale;
   int rate;
@@ -90,7 +87,8 @@ extern Scope scope;
 typedef struct Signal {		/* The signals (channels) */
   short data[MAXWID];
   short old[MAXWID];
-  short scale;
+  short mult;
+  short div;
   short pos;
   short color;
   short show;
@@ -106,4 +104,7 @@ void
 get_data();
 
 void
-handle_key(unsigned char c);
+measure_data(Signal *);
+
+void
+handle_key(unsigned char);

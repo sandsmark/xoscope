@@ -5,7 +5,7 @@
  *
  * [x]oscope --- Use Linux's /dev/dsp (a sound card) as an oscilloscope
  *
- * @(#)$Id: oscope.c,v 1.38 1996/02/02 07:10:37 twitham Exp $
+ * @(#)$Id: oscope.c,v 1.39 1996/02/03 04:08:07 twitham Exp $
  *
  * Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
@@ -62,22 +62,11 @@
 /* global program defaults, defined in oscope.h (see also) */
 Scope scope;
 Signal ch[CHANNELS];
-int mode = DEF_M;
-int dma = DEF_D;
-int plot_mode = DEF_P;
-int graticule = DEF_G;
-int behind = DEF_G;
 int verbose = DEF_V;
 
 /* extra global variable definitions */
 char *progname;			/* the program's name, autoset via argv[0] */
 char error[256];		/* buffer for "one-line" error messages */
-char *def[] = {
-  "on",				/* used by -g/-v in usage message */
-  "off",
-  "graticule",			/* used by -b in usage message */
-  "signal",
-};
 int quit_key_pressed = 0;	/* set by handle_key() */
 int snd;			/* file descriptor for sound device */
 char buffer[MAXWID * 2];	/* buffer for sound data */
@@ -86,16 +75,21 @@ int v_points;			/* points in vertical axis */
 int h_points;			/* points in horizontal axis */
 int offset;			/* vertical offset */
 int actual;			/* actual sampling rate */
-short mult[] = {1,1,1,1,1,1,2,4,8,16,32};
-short divi[] = {32,16,8,4,2,1,1,1,1,1,1};
 
 /* display command usage on standard error and exit */
 void
 usage()
 {
+  static char *def[] = {
+    "on",				/* used by -g/-v in usage message */
+    "off",
+    "graticule",			/* used by -b in usage message */
+    "signal",
+  };
+
   fprintf(stderr, "usage: %s "
 	  "[-r<rate>] [-s<scale>] [-t<trigger>] [-c<colour>]
-             [-m<mode>] [-d<dma divisor>] [-f font] [-p] [-g] [-b] [-v]
+[-m<mode>] [-d<dma divisor>] [-f font] [-p] [-g] [-b] [-v]
 
 Startup Options  Description (defaults)
 -r <rate>        sampling Rate in Hz             (%d)
@@ -112,9 +106,9 @@ Startup Options  Description (defaults)
 ",
 	  progname,
 	  DEF_R, DEF_S, DEF_T,
-	  DEF_C, mode, dma,
+	  DEF_C, scope.size, scope.dma,
 	  fonts(),		/* the font method for the display */
-	  plot_mode,
+	  scope.mode,
 	  def[scope.grat], def[scope.behind + 2], def[!scope.behind + 2],
 	  def[verbose]);
   exit(1);
@@ -151,17 +145,17 @@ parse_args(int argc, char **argv)
       scope.color = strtol(optarg, NULL, 0);
       break;
     case 'm':			/* video mode */
-      mode = strtol(optarg, NULL, 0);
+      scope.size = strtol(optarg, NULL, 0);
       break;
     case 'd':			/* dma diviisor */
-      dma = strtol(optarg, NULL, 0);
-      dma &= 0x0007;
+      scope.dma = strtol(optarg, NULL, 0);
+      scope.dma &= 0x0007;
       break;
     case 'f':			/* font name */
       strcpy(fontname, optarg);
       break;
     case 'p':			/* point mode */
-      plot_mode = strtol(optarg, NULL, 0);
+      scope.mode = strtol(optarg, NULL, 0);
       break;
     case 'g':			/* graticule on/off */
       scope.grat = !scope.grat;
@@ -197,6 +191,9 @@ check_status(int status, int line)
 void
 init_scope()
 {
+  scope.size = DEF_M;
+  scope.dma = DEF_D;
+  scope.mode = DEF_P;
   scope.scale = DEF_S;
   scope.rate = DEF_R;
   scope.trig = DEF_T;
@@ -216,7 +213,8 @@ init_channels()
   for (i = 0 ; i < CHANNELS ; i++) {
     memset(ch[i].data, 0, MAXWID);
     memset(ch[i].old, 0, MAXWID);
-    ch[i].scale = 5;
+    ch[i].mult = 1;
+    ch[i].div = 1;
     ch[i].pos = 0;
     ch[i].color = color[channelcolor[i]];
     ch[i].show = (i < 2);
@@ -247,7 +245,7 @@ init_sound_card(int firsttime)
   check_status(ioctl(snd, SOUND_PCM_WRITE_BITS, &parm), __LINE__);
 
   /* set DMA buffer size */
-  check_status(ioctl(snd, SOUND_PCM_SUBDIVIDE, &dma), __LINE__);
+  check_status(ioctl(snd, SOUND_PCM_SUBDIVIDE, &(scope.dma)), __LINE__);
 
   /* set sampling rate */
   check_status(ioctl(snd, SOUND_PCM_WRITE_RATE, &scope.rate), __LINE__);
@@ -278,11 +276,17 @@ handle_key(unsigned char c)
     clear();
     break;
   case 'r':
-    ch[scope.select].scale++;
+    if (ch[scope.select].div > 1)
+      ch[scope.select].div >>= 1;
+    else
+      ch[scope.select].mult <<= 1;
     clear();
     break;
   case 'f':
-    ch[scope.select].scale--;
+    if (ch[scope.select].mult > 1)
+      ch[scope.select].mult >>= 1;
+    else
+      ch[scope.select].div <<= 1;
     clear();
     break;
   case 'u':
@@ -363,21 +367,21 @@ handle_key(unsigned char c)
       scope.color = 15;
     break;
   case '.':
-    if (dma < 3) {		/* double dma */
-      dma <<= 1;
+    if (scope.dma < 3) {		/* double dma */
+      scope.dma <<= 1;
       init_sound_card(0);
     }
     break;
   case ',':
-    if (dma > 1) {		/* half dma */
-      dma >>= 1;
+    if (scope.dma > 1) {		/* half dma */
+      scope.dma >>= 1;
       init_sound_card(0);
     }
     break;
   case 'p':
-    plot_mode++;		/* point, point accumulate, line, line acc. */
-    if (plot_mode > 3)
-      plot_mode = 0;
+    scope.mode++;		/* point, point accumulate, line, line acc. */
+    if (scope.mode > 3)
+      scope.mode = 0;
     clear();
     break;
   case '[':
@@ -412,7 +416,7 @@ handle_key(unsigned char c)
 }
 
 /* auto-measurements */
-static inline void
+void
 measure_data(Signal *sig) {
   static int i, j, prev;
   int first = 0, last = 0, count = 0;

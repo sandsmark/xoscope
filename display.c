@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 1.16 1996/02/02 07:11:03 twitham Exp $
+ * @(#)$Id: display.c,v 1.17 1996/02/03 04:08:02 twitham Exp $
  *
  * Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
@@ -164,7 +164,7 @@ draw_text(int all)
 	      font, TEXT_FG, TEXT_BG, ALIGN_RIGHT);
 
     VGA_WRITE("(p)", 100, 62, font, KEY_FG, TEXT_BG, ALIGN_LEFT);
-    VGA_WRITE(strings[plot_mode],
+    VGA_WRITE(strings[scope.mode],
 	      100+8*3, 62, font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
 
     VGA_WRITE("(9)               (0)", col(40), 62,
@@ -186,7 +186,7 @@ draw_text(int all)
       sprintf(string, "(%d)", i + 1);
       VGA_WRITE(string, col(7), row(j), font, KEY_FG, TEXT_BG, ALIGN_LEFT);
 
-      sprintf(string, "Scale: %d/%d", mult[ch[i].scale], divi[ch[i].scale]);
+      sprintf(string, "Scale: %d/%d", ch[i].mult, ch[i].div);
       VGA_WRITE(string, 0, row(j + 1), font, l, TEXT_BG, ALIGN_LEFT);
 
       sprintf(string, "Pos. : %d", -(ch[i].pos));
@@ -196,6 +196,7 @@ draw_text(int all)
 		font, l, TEXT_BG, ALIGN_LEFT);
 
       if (scope.select == i) {
+	VGA_SETCOLOR(ch[scope.select].color);
 	VGA_DRAWLINE(0, row(j), col(11), row(j));
 	VGA_DRAWLINE(col(11), row(j), col(11), row(j+4));
 	VGA_DRAWLINE(0, row(j+4), col(11), row(j+4));
@@ -257,10 +258,9 @@ void
 show_info(unsigned char c) {
   if (verbose) {
     sprintf(error, "%1c %5dHz:  -r %5d  -s %2d  -t %3d  -c %2d  -m %2d  "
-	    "-d %1d  %2s  %2s  %2s%s",
-	    c, actual,
-	    scope.rate, scope.scale, scope.trig, scope.color, mode, dma,
-	    plot_mode ? "-p" : "-l",
+	    "-d %1d  -p %1d  %2s  %2s%s",
+	    c, actual, scope.rate, scope.scale, scope.trig,
+	    scope.color, scope.size, scope.dma, scope.mode,
 
 	    /* reverse logic if these booleans are on by default in oscope.h */
 #if DEF_G
@@ -337,21 +337,21 @@ draw_data()
   static int i, j, off;
   static Signal *p;
 
-  if (plot_mode < 2) {		/* point / point accumulate */
+  if (scope.mode < 2) {		/* point / point accumulate */
     for (j = 0 ; j < CHANNELS ; j++) {
       p = &ch[j];
       if (p->show) {
 	off = offset + p->pos;
 	VGA_SETCOLOR(p->color);
 	for (i = 0 ; i <= (h_points - 200) / scope.scale ; i++) {
-	  if (plot_mode == 0) {	/* erase previous dots */
+	  if (scope.mode == 0) {	/* erase previous dots */
 	    VGA_SETCOLOR(color[0]);
 	    VGA_DRAWPIXEL(i * scope.scale + 100,
-			  off - p->old[i] * mult[p->scale] / divi[p->scale]);
+			  off - p->old[i] * p->mult / p->div);
 	    VGA_SETCOLOR(p->color); /* draw dots */
 	  }
 	  VGA_DRAWPIXEL(i * scope.scale + 100,
-			off - p->data[i] * mult[p->scale] / divi[p->scale]);
+			off - p->data[i] * p->mult / p->div);
 	  p->old[i] = p->data[i];
 	}
 	VGA_DRAWLINE(90, off, 100, off);
@@ -365,18 +365,18 @@ draw_data()
 	off = offset + p->pos;
 	VGA_SETCOLOR(p->color);
 	for (i = 0 ; i < (h_points - 200) / scope.scale ; i++) {
-	  if (plot_mode == 2) {	/* erase previous lines */
+	  if (scope.mode == 2) {	/* erase previous lines */
 	    VGA_SETCOLOR(color[0]);
 	    VGA_DRAWLINE(i * scope.scale + 100,
-			 off - p->old[i] * mult[p->scale] / divi[p->scale],
+			 off - p->old[i] * p->mult / p->div,
 			 i * scope.scale + 100 + scope.scale,
-			 off - p->old[i + 1] * mult[p->scale] / divi[p->scale]);
+			 off - p->old[i + 1] * p->mult / p->div);
 	    VGA_SETCOLOR(p->color); /* draw lines */
 	  }
 	  VGA_DRAWLINE(i * scope.scale + 100,
-		       off - p->data[i] * mult[p->scale] / divi[p->scale],
+		       off - p->data[i] * p->mult / p->div,
 		       i * scope.scale + 100 + scope.scale,
-		       off - p->data[i + 1] * mult[p->scale] / divi[p->scale]);
+		       off - p->data[i + 1] * p->mult / p->div);
 	  p->old[i] = p->data[i];
 	}
 	VGA_DRAWLINE(90, off, 100, off);
@@ -398,6 +398,9 @@ animate(void *data)
     get_data();
     draw_text(0);
   }
+  funcarray[ch[2].func](2);
+  funcarray[ch[3].func](3);
+  measure_data(&ch[scope.select]);
   if (scope.behind) {
     draw_graticule();		/* plot data on top of graticule */
     draw_data();
@@ -449,8 +452,8 @@ init_screen(int firsttime)
 
   if (firsttime) {
 #ifdef XOSCOPE
-    h_points = XX[mode];
-    v_points = XY[mode];
+    h_points = XX[scope.size];
+    v_points = XY[scope.size];
     w[0] = MakeDrawArea(h_points, v_points, redisplay, NULL);
     SetKeypressCB(w[0], keys_x11);
     ShowDisplay();
@@ -472,7 +475,7 @@ init_screen(int firsttime)
 #endif
   }
 #ifndef XOSCOPE
-  vga_setmode(screen_modes[mode]);
+  vga_setmode(screen_modes[scope.size]);
   v_points = vga_getydim();
   h_points = vga_getxdim();
 #endif
