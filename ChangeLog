@@ -1,3 +1,103 @@
+Sun May  4 21:31:56 1997  Tim Witham  <twitham@pcocd2.intel.com>
+
+	* sc_linux.c: Fixed bug that caused sound to fail to open.
+
+	* TODO, oscope.lsm, README, config.h, sc_sb.c: For 1.3.
+
+	* display.h: Exported the init_widgets function to oscope.c
+
+	* oscope.h: Exported some init functions for file.c.
+
+	* oscope.1, sc_linux.c, display.c, file.c:
+	Removed the ability to change DMA on the fly since it requires closing
+	and reopening the device; I want to open once and keep it open.
+
+	* gr_sx.c: Tossed loadfile and savefile; just hit_keys instead.
+
+	* func.c: Set signal colors to 0 on initialization.
+
+	* file.c:
+	Reinitialize everything before loading a file.  This is to clear all
+	memories and functions so they're not still around after the load.
+
+Sat May  3 16:15:57 1997  Tim Witham  <twitham@pcocd2.intel.com>
+
+	* func.h, func.c, oscope.h, oscope.c, file.c, gr_sx.c:
+	Moved command and pid into the channel structure.  Removed some unused
+	variables from header files.
+
+	* sc_sb.c: Updated for 1.3 again.
+
+	* oscope.1: Fixed -s docs.
+
+	* sc_linux.c, oscope.h:
+	Moved buffer and junk into sc_linux.c, the only place they're used.
+
+	* oscope.c, sc_linux.c:
+	Improved the way the sound card gets reset.  Eliminated the `actual'
+	global var; scope.rate now holds the actual sample rate correctly.
+
+	* file.c: Enhanced -s to allow fractional values, using new scope.div.
+
+	* display.c: Fixed bug in the bounds limit of the delay calculation.
+
+Fri May  2 06:01:11 1997  Tim Witham  <twitham@pcocd2.intel.com>
+
+	* gr_sx.c: Added an XY button to make xy easier to start.
+
+	* display.c:
+	Added a bogus math warning message when Channel 1 and 2 are at
+	different sample rates.
+
+	* oscope.h, display.c, oscope.c:
+	Added scope.div.  This allows skipping of samples to see more time.
+
+Thu May  1 04:49:25 1997  Tim Witham  <twitham@pcocd2.intel.com>
+
+	* sc_linux.c, oscope.1, func.h, oscope.h, gr_sx.c, func.c, display.c, file.c, oscope.c:
+	Major internal changes: Left and Right sound inputs are no longer
+	"hard-wired" to the 1st and 2nd displays.  This was implemented as
+	follows: The 8 displays were changed to new Channel stuctures.  There
+	are now 34 static Signal structures: 23 memories, left input, right
+	input, one reserved, and 8 functions.  One element of the Channel
+	structure points to the Signal structure being displayed by that
+	Channel.  Some appropriate display, control, and file I/O tweaks were
+	made to support all this.  Several former limitations are now lifted.
+
+	* Makefile: Added some DJGPP lines, renamed some files.
+
+Tue Apr 29 05:08:18 1997  Tim Witham  <twitham@pcocd2.intel.com>
+
+	* sc_sb.c:
+	Tossed commented junk.  Updated for 1.3.  Still doesn't work.
+
+Sat Apr 26 01:55:03 1997  Tim Witham  <twitham@pcocd2.intel.com>
+
+	* display.c:
+	Enhanced draw_data to work with arbitrary sample rates.  It does this
+	by determining which sample, if any, should be plotted at each time
+	position on the display.
+
+	* sc_sb.c: Initial revision
+
+Sun Feb 23 05:24:40 1997  Tim Witham  <twitham@pcocd2.intel.com>
+
+	* gr_grx.c: Initial revision
+
+	* file.c:
+	Fixed b and v option initializations to use #defines from config.h
+
+Sun Nov 17 22:34:21 1996  Tim Witham  <twitham@pcocd2.intel.com>
+
+	* oscope.c:
+	Moved sound-card specifics to sc_linux.c to make porting easier.
+
+	* sc_linux.c: Initial revision
+
+Sat Oct 12 16:12:05 1996  Tim Witham  <twitham@pcocd2.intel.com>
+
+	* ChangeLog: 1.2 released.
+
 Sat Oct 12 16:08:24 1996  Tim Witham  <twitham@pcocd2.intel.com>
 
 	* oscope.lsm, README, README.freq51, Makefile: For 1.2.
