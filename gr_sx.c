@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: gr_sx.c,v 1.2 1996/03/01 04:27:08 twitham Exp $
+ * @(#)$Id: gr_sx.c,v 1.3 1996/03/02 06:51:07 twitham Exp $
  *
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -20,16 +20,19 @@
 Widget draw_widget;		/* scope drawing area */
 Widget file[4];			/* file menu */
 Widget plot[5];			/* plot menu */
-Widget grat[4];			/* graticule menu */
-Widget x[7];			/* extra horizontal widgets */
-Widget y[30];			/* vertical widgets */
-Widget c[CHANNELS];		/* channel button widgets */
+Widget grat[5];			/* graticule menu */
+Widget colormenu[17];		/* graticule menu */
+Widget xwidg[7];		/* extra horizontal widgets */
+Widget mwidg[54];
+Widget cwidg[CHANNELS];		/* channel button widgets */
+Widget ywidg[15];		/* vertical widgets */
 Widget **math;			/* math menu */
-int **matharray;		/* indexes of math functions */
+int **intarray;		/* indexes of math functions */
 int XX[] = {640,800,1024,1280};
 int XY[] = {480,600, 768,1024};
 XFont font;
 int color[16];
+char *alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 char *colors[] = {		/* X colors similar to 16 console colors */
   "black",			/* 0 */
   "blue",
@@ -38,8 +41,8 @@ char *colors[] = {		/* X colors similar to 16 console colors */
   "red",			/* 4 */
   "magenta",
   "orange",			/* 6 */
-  "gray75",
-  "gray25",			/* 8 */
+  "gray66",
+  "gray33",			/* 8 */
   "blue4",
   "green4",			/* 10 */
   "cyan4",
@@ -65,6 +68,10 @@ VGA_WRITE(char *s, short x, short y, XFont f, short fg, short bg, char p)
 /* callback to redisplay the drawing area; snap to a graticule division */
 void
 redisplay(Widget w, int new_width, int new_height, void *data) {
+  static int i = 2, h, v;
+
+  h = h_points;
+  v = v_points;
   h_points = new_width > 640
     ? new_width - (new_width - 200) % 44
     : 640;
@@ -72,8 +79,10 @@ redisplay(Widget w, int new_width, int new_height, void *data) {
     ? new_height - (new_height - 160) % 64
     : 480;
   offset = v_points / 2;
-  clear();
-  draw_text(1);
+  if (h != h_points || v != v_points)
+    ClearDrawArea();
+  /* redo text later after widget redraws have settled down */
+  AddTimeOut(200, draw_text, &i);
 }
 
 /* callback for keypress events on the scope drawing area */
@@ -126,8 +135,13 @@ void
 graticule(Widget w, void *data)
 {
   char *c = (char *)data;
+  int i;
 
-  scope.grat = *c - '0';
+  i = *c - '0';
+  if (i < 2)
+    scope.behind = i;
+  else
+    scope.grat = i - 2;
   clear();
 }
 
@@ -137,7 +151,7 @@ mathselect(Widget w, void *data)
   int *c = (int *)data;
 
   if (scope.select > 1) {
-    ch[scope.select].func = *c;
+    ch[scope.select].func = *c + 3;
     clear();
   }
 }
@@ -206,12 +220,13 @@ cleanup_x11()
 {
   int i;
 
-  for (i = 0 ; i < funccount - 3 ; i++) {
-    free(math[i]);
-    free(matharray[i]);
+  for (i = 0 ; i < (funccount > 19 ? funccount - 3 : 16) ; i++) {
+    if (i < funccount - 3)
+      free(math[i]);
+    free(intarray[i]);
   }
   free(math);
-  free(matharray);
+  free(intarray);
   FreeFont(font);
 }
 
@@ -225,32 +240,55 @@ fix_widgets()
   for (i = 0 ; i < 4 ; i++) {
     SetMenuItemChecked(plot[i + 1], scope.mode == i);
   }
+  SetMenuItemChecked(grat[1], !scope.behind);
+  SetMenuItemChecked(grat[2], scope.behind);
   for (i = 0 ; i < 3 ; i++) {
-    SetMenuItemChecked(grat[i + 1], scope.grat == i);
+    SetMenuItemChecked(grat[i + 3], scope.grat == i);
   }
-
+  for (i = 0 ; i < 16 ; i++) {
+    SetMenuItemChecked(colormenu[i + 1], scope.color == i);
+  }
   for (i = 0 ; i < funccount - 3 ; i++) {
     SetMenuItemChecked(*math[i], ch[scope.select].func == i + 3);
   }
+  for (i = 0 ; i < 26 ; i++) {
+    SetBgColor(mwidg[0], ch[scope.select].color);
+    SetBgColor(mwidg[27], scope.select > 1
+	       ? ch[scope.select].color : color[15]);
+    if (mem[i] != NULL)
+      SetBgColor(mwidg[i + 28], memcolor[i]);
+    SetLabel(mwidg[0], actual >= 44000 ? "Store " : "");
+  }
 
-  SetBgColor(y[2], ch[scope.trigch].color);
-  SetBgColor(y[3], ch[scope.trigch].color);
-  SetBgColor(y[4], ch[scope.trigch].color);
-  SetBgColor(y[5], ch[scope.trigch].color);
+  SetLabel(xwidg[4], scope.run ? "Stop" : "Run");
 
-  SetLabel(y[3], scope.trigch ? "2" : "1");
-  SetLabel(y[4], tilt[scope.trige]);
-  SetLabel(y[8], ch[scope.select].show ? "Hide" : "Show");
-  SetLabel(y[13], scope.select > 1 ? "Math" : "");
+  SetBgColor(ywidg[2], ch[scope.trigch].color);
+  SetBgColor(ywidg[3], ch[scope.trigch].color);
+  SetBgColor(ywidg[4], ch[scope.trigch].color);
+  SetBgColor(ywidg[5], ch[scope.trigch].color);
+
+  SetLabel(ywidg[3], scope.trigch ? "2" : "1");
+  SetLabel(ywidg[4], tilt[scope.trige]);
+  SetLabel(ywidg[8], ch[scope.select].show ? "Hide" : "Show");
+  SetLabel(ywidg[13], scope.select > 1 ? "Math" : "");
 
   for (i = 0 ; i < 3 ; i++) {
-    SetBgColor(y[i + 7], ch[scope.select].color);
-    SetBgColor(y[i + 12], ch[scope.select].color);
+    SetBgColor(ywidg[i + 7], ch[scope.select].color);
+    SetBgColor(ywidg[i + 12], ch[scope.select].color);
   }
   for (i = 0 ; i < CHANNELS ; i++) {
-    SetFgColor(c[i], ch[i].show ? color[0] : ch[i].color);
-    SetBgColor(c[i], ch[i].show ? ch[i].color : color[0]);
+    SetFgColor(cwidg[i], ch[i].show ? color[0] : ch[i].color);
+    SetBgColor(cwidg[i], ch[i].show ? ch[i].color : color[0]);
   }
+}
+
+void
+setcolor(Widget w, void *data)
+{
+  int *c = (int *)data;
+
+  scope.color = *c;
+  draw_text(1);
 }
 
 /* initialize all the widgets, called by init_screen in display.c */
@@ -259,7 +297,7 @@ init_widgets()
 {
   static char *s[] = {" 1  ", " 2  ", " 3  ", " 4  ",
 		      " 5  ", " 6  ", " 7  ", " 8  "};
-  int i;
+  int i, j;
 
   /* top row of widgets */
   file[0] = MakeMenu(" File ");
@@ -273,28 +311,29 @@ init_widgets()
   plot[3] = MakeMenuItem(plot[0], "Line", plotmode, "2");
   plot[4] = MakeMenuItem(plot[0], "Line Accumulate", plotmode, "3");
 
-  x[0] = MakeButton("<", hit_key, "(");
-  grat[0] = MakeMenu(" Graticule ");
-  grat[1] = MakeMenuItem(grat[0], "None", graticule, "0");
-  grat[2] = MakeMenuItem(grat[0], "Minor Divisions", graticule, "1");
-  grat[3] = MakeMenuItem(grat[0], "Minor & Major", graticule, "2");
-  x[1] = MakeButton(">", hit_key, ")");
+  colormenu[0] = MakeMenu("Color");
 
-  x[2] = MakeButton(" Refresh ", hit_key, "\n");
-  x[3] = MakeButton(" < ", hit_key, "9");
-  x[4] = MakeLabel("Sec/Div");
-  x[5] = MakeButton(" > ", hit_key, "0");
-  x[6] = MakeButton(" Run/Stop ", hit_key, " ");
+  grat[0] = MakeMenu(" Graticule ");
+  grat[1] = MakeMenuItem(grat[0], "In Front", graticule, "0");
+  grat[2] = MakeMenuItem(grat[0], "Behind", graticule, "1");
+  grat[3] = MakeMenuItem(grat[0], "None", graticule, "2");
+  grat[4] = MakeMenuItem(grat[0], "Minor Divisions", graticule, "3");
+  grat[5] = MakeMenuItem(grat[0], "Minor & Major", graticule, "4");
+
+  xwidg[0] = MakeButton(" Refresh ", hit_key, "\n");
+  xwidg[1] = MakeButton(" < ", hit_key, "9");
+  xwidg[2] = MakeLabel("Sec/Div");
+  xwidg[3] = MakeButton(" > ", hit_key, "0");
+  xwidg[4] = MakeButton("Stop", hit_key, " ");
 
   SetWidgetPos(plot[0], PLACE_RIGHT, file[0], NO_CARE, NULL);
-  SetWidgetPos(x[0], PLACE_RIGHT, plot[0], NO_CARE, NULL);
-  SetWidgetPos(grat[0], PLACE_RIGHT, x[0], NO_CARE, NULL);
-  SetWidgetPos(x[1], PLACE_RIGHT, grat[0], NO_CARE, NULL);
-  SetWidgetPos(x[2], PLACE_RIGHT, x[1], NO_CARE, NULL);
-  SetWidgetPos(x[3], PLACE_RIGHT, x[2], NO_CARE, NULL);
-  SetWidgetPos(x[4], PLACE_RIGHT, x[3], NO_CARE, NULL);
-  SetWidgetPos(x[5], PLACE_RIGHT, x[4], NO_CARE, NULL);
-  SetWidgetPos(x[6], PLACE_RIGHT, x[5], NO_CARE, NULL);
+  SetWidgetPos(grat[0], PLACE_RIGHT, plot[0], NO_CARE, NULL);
+  SetWidgetPos(colormenu[0], PLACE_RIGHT, grat[0], NO_CARE, NULL);
+  SetWidgetPos(xwidg[0], PLACE_RIGHT, colormenu[0], NO_CARE, NULL);
+  SetWidgetPos(xwidg[1], PLACE_RIGHT, xwidg[0], NO_CARE, NULL);
+  SetWidgetPos(xwidg[2], PLACE_RIGHT, xwidg[1], NO_CARE, NULL);
+  SetWidgetPos(xwidg[3], PLACE_RIGHT, xwidg[2], NO_CARE, NULL);
+  SetWidgetPos(xwidg[4], PLACE_RIGHT, xwidg[3], NO_CARE, NULL);
 
   /* the drawing area for the scope */
   h_points = XX[scope.size];
@@ -304,68 +343,96 @@ init_widgets()
   SetWidgetPos(draw_widget, PLACE_UNDER, file[0], NO_CARE, NULL);
 
   /* right column of widgets */
-  y[0] = MakeButton("Help", help, NULL);
+  ywidg[0] = MakeButton("Help", help, NULL);
 
-  y[1] = MakeLabel("Trig");
-  y[2] = MakeButton(" /\\ ", hit_key, "=");
-  y[3] = MakeButton("<", hit_key, "_");
-  y[4] = MakeButton(">", hit_key, "+");
-  y[5] = MakeButton(" \\/ ", hit_key, "-");
+  ywidg[1] = MakeLabel("Trig");
+  ywidg[2] = MakeButton(" /\\ ", hit_key, "=");
+  ywidg[3] = MakeButton("<", hit_key, "_");
+  ywidg[4] = MakeButton(">", hit_key, "+");
+  ywidg[5] = MakeButton(" \\/ ", hit_key, "-");
 
-  y[6] = MakeLabel("Pos.");
-  y[7] = MakeButton(" /\\ ", hit_key, "}");
-  y[8] = MakeButton("Hide", hit_key, "\t");
-  y[9] = MakeButton(" \\/ ", hit_key, "{");
+  ywidg[6] = MakeLabel("Pos.");
+  ywidg[7] = MakeButton(" /\\ ", hit_key, "}");
+  ywidg[8] = MakeButton("Hide", hit_key, "\t");
+  ywidg[9] = MakeButton(" \\/ ", hit_key, "{");
 
-  y[10] = MakeLabel("Chan");
+  ywidg[10] = MakeLabel("Chan");
 
-  SetWidgetPos(y[0],  PLACE_RIGHT, draw_widget, NO_CARE, NULL);
-  SetWidgetPos(y[1],  PLACE_RIGHT, draw_widget, PLACE_UNDER, y[0]);
-  SetWidgetPos(y[2],  PLACE_RIGHT, draw_widget, PLACE_UNDER, y[1]);
-  SetWidgetPos(y[3],  PLACE_RIGHT, draw_widget, PLACE_UNDER, y[2]);
-  SetWidgetPos(y[4],  PLACE_RIGHT, y[3], PLACE_UNDER, y[2]);
-  SetWidgetPos(y[5],  PLACE_RIGHT, draw_widget, PLACE_UNDER, y[4]);
-  SetWidgetPos(y[6],  PLACE_RIGHT, draw_widget, PLACE_UNDER, y[5]);
-  SetWidgetPos(y[7],  PLACE_RIGHT, draw_widget, PLACE_UNDER, y[6]);
-  SetWidgetPos(y[8],  PLACE_RIGHT, draw_widget, PLACE_UNDER, y[7]);
-  SetWidgetPos(y[9],  PLACE_RIGHT, draw_widget, PLACE_UNDER, y[8]);
-  SetWidgetPos(y[10],  PLACE_RIGHT, draw_widget, PLACE_UNDER, y[9]);
+  SetWidgetPos(ywidg[0],  PLACE_RIGHT, draw_widget, NO_CARE, NULL);
+  SetWidgetPos(ywidg[1],  PLACE_RIGHT, draw_widget, PLACE_UNDER, ywidg[0]);
+  SetWidgetPos(ywidg[2],  PLACE_RIGHT, draw_widget, PLACE_UNDER, ywidg[1]);
+  SetWidgetPos(ywidg[3],  PLACE_RIGHT, draw_widget, PLACE_UNDER, ywidg[2]);
+  SetWidgetPos(ywidg[4],  PLACE_RIGHT, ywidg[3], PLACE_UNDER, ywidg[2]);
+  SetWidgetPos(ywidg[5],  PLACE_RIGHT, draw_widget, PLACE_UNDER, ywidg[4]);
+  SetWidgetPos(ywidg[6],  PLACE_RIGHT, draw_widget, PLACE_UNDER, ywidg[5]);
+  SetWidgetPos(ywidg[7],  PLACE_RIGHT, draw_widget, PLACE_UNDER, ywidg[6]);
+  SetWidgetPos(ywidg[8],  PLACE_RIGHT, draw_widget, PLACE_UNDER, ywidg[7]);
+  SetWidgetPos(ywidg[9],  PLACE_RIGHT, draw_widget, PLACE_UNDER, ywidg[8]);
+  SetWidgetPos(ywidg[10],  PLACE_RIGHT, draw_widget, PLACE_UNDER, ywidg[9]);
   
   for (i = 0 ; i < CHANNELS ; i++) {
-    c[i] = MakeButton(s[i], hit_key, &s[i][1]);
-    SetWidgetPos(c[i],  PLACE_RIGHT, draw_widget,
-		 PLACE_UNDER, i ? c[i - 1] : y[10]);
+    cwidg[i] = MakeButton(s[i], hit_key, &s[i][1]);
+    SetWidgetPos(cwidg[i],  PLACE_RIGHT, draw_widget,
+		 PLACE_UNDER, i ? cwidg[i - 1] : ywidg[10]);
   }
 
-  y[11] = MakeLabel("Scal");
-  y[12] = MakeButton(" /\\ ", hit_key, "]");
-  y[13] = MakeMenu("Math");
-  y[14] = MakeButton(" \\/ ", hit_key, "[");
+  ywidg[11] = MakeLabel("Scal");
+  ywidg[12] = MakeButton(" /\\ ", hit_key, "]");
+  ywidg[13] = MakeMenu("Math");
+  ywidg[14] = MakeButton(" \\/ ", hit_key, "[");
 
-  SetWidgetPos(y[11],  PLACE_RIGHT, draw_widget, PLACE_UNDER, c[CHANNELS - 1]);
-  SetWidgetPos(y[12],  PLACE_RIGHT, draw_widget, PLACE_UNDER, y[11]);
-  SetWidgetPos(y[13],  PLACE_RIGHT, draw_widget, PLACE_UNDER, y[12]);
-  SetWidgetPos(y[14],  PLACE_RIGHT, draw_widget, PLACE_UNDER, y[13]);
+  SetWidgetPos(ywidg[11],  PLACE_RIGHT, draw_widget,
+	       PLACE_UNDER, cwidg[CHANNELS - 1]);
+  SetWidgetPos(ywidg[12],  PLACE_RIGHT, draw_widget, PLACE_UNDER, ywidg[11]);
+  SetWidgetPos(ywidg[13],  PLACE_RIGHT, draw_widget, PLACE_UNDER, ywidg[12]);
+  SetWidgetPos(ywidg[14],  PLACE_RIGHT, draw_widget, PLACE_UNDER, ywidg[13]);
 
-  if ((math = malloc(sizeof(Widget *) * (funccount - 3))) == NULL)
+  mwidg[0]  = MakeLabel("Store ");
+  mwidg[27] = MakeLabel("Recall");
+  SetWidgetPos(mwidg[0],  PLACE_UNDER, draw_widget, NO_CARE, NULL);
+  SetWidgetPos(mwidg[27],  PLACE_UNDER, mwidg[0], NO_CARE, NULL);
+  for (i = 0 ; i < 26 ; i++) {
+    sprintf(error, "%c", i + 'A');
+    mwidg[i + 1] = MakeButton(error, hit_key, &alphabet[i]);
+    SetWidgetPos(mwidg[i + 1], PLACE_UNDER, draw_widget,
+		 PLACE_RIGHT, mwidg[i]);
+    sprintf(error, "%c", i + 'a');
+    mwidg[i + 28] = MakeButton(error, hit_key, &alphabet[i + 26]);
+    SetWidgetPos(mwidg[i + 28], PLACE_UNDER, mwidg[0],
+		 PLACE_RIGHT, mwidg[i + 27]);
+  }
+
+  j = funccount - 3;
+  if ((math = malloc(sizeof(Widget *) * j)) == NULL)
     nomalloc(__LINE__);
-  if ((matharray = malloc(sizeof(int *) * (funccount - 3))) == NULL)
+  if ((intarray = malloc(sizeof(int *) * (j > 16 ? j : 16))) == NULL)
     nomalloc(__LINE__);
-  for (i = 0 ; i < funccount - 3 ; i++) {
-    if ((math[i] = malloc(sizeof(Widget))) == NULL)
+  for (i = 0 ; i < (j > 16 ? j : 16) ; i++) {
+    if ((intarray[i] = malloc(sizeof(int))) == NULL)
       nomalloc(__LINE__);
-    if ((matharray[i] = malloc(sizeof(int))) == NULL)
-      nomalloc(__LINE__);
-    *matharray[i] = i + 3;
-    *math[i] = MakeMenuItem(y[13], funcnames[3 + i], mathselect, matharray[i]);
+    *intarray[i] = i;
+    if (i < j) {
+      if ((math[i] = malloc(sizeof(Widget))) == NULL)
+	nomalloc(__LINE__);
+      *math[i] = MakeMenuItem(ywidg[13], funcnames[3 + i],
+			      mathselect, intarray[i]);
+    }
   }
 
   ShowDisplay();
 
   for (i = 0 ; i < 16 ; i++) {
     color[i] = GetNamedColor(colors[i]);
+    colormenu[i + 1] = MakeMenuItem(colormenu[0], colors[i],
+				    setcolor, intarray[i]);
   }
+
+  for (i = 0 ; i < 26 ; i++) {
+    SetBgColor(mwidg[i + 28], color[0]);
+  }
+
+  SetBgColor(draw_widget, color[0]);
   font = GetFont(fontname);
   SetWidgetFont(draw_widget, font);
-  SetBgColor(draw_widget, color[0]);
+  ClearDrawArea();
 }
