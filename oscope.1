@@ -1,12 +1,12 @@
-.\" @(#)$Id: oscope.1,v 1.14 1997/05/04 20:15:55 twitham Rel1_3 $
+.\" @(#)$Id: oscope.1,v 1.15 1997/06/11 02:35:54 twitham Rel $
 .\"
 .\" Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
 .\"
 .\" (see the files README and COPYING for more details)
 
-.TH OSCOPE 1 "May  4  1997" "Linux" "User Commands"
+.TH OSCOPE 1 "June  10  1997" "Linux" "User Commands"
 .SH NAME
-oscope xoscope \- Digital Oscilloscope for /dev/dsp
+oscope xoscope \- Digital Oscilloscope via Sound Card and/or ProbeScope
 .SH SYNOPSIS
 oscope [oscope options] [file]
 .br
@@ -15,28 +15,32 @@ xoscope [X toolkit options] [oscope options] [file]
 .SH DESCRIPTION
 
 .B Oscope
-is a digital real-time oscilloscope. It graphically displays amplitude
-as a function of time. The input is via a sound card using the kernel
-sound device /dev/dsp.
+is a digital real-time oscilloscope. It graphically displays signal
+amplitude as a function of time. The input is via a sound card and/or
+a serial port connected to a Radio Shack ProbeScope, Cat. No. 22-310.
+Either or both input devices may be used at the same time.  Signals
+may be displayed, saved, recalled, and manipulated by math functions.
+.P
+
+Some of the controls below apply only to the sound card and are
+labeled as such.
+.B Oscope
+has no physical control over the ProbeScope which is controlled by
+its' own switches and built-in menus.  Please refer to your Radio
+Shack ProbeScope Owner's Manual for operating instructions.
 
 .PP
-.SH "RUN\-TIME CONTROLS"
-.PP
+.SH "RUN\-TIME KEYBOARD CONTROLS"
 
 .B Oscope
 is an interactive program and can be completely controlled from the
-keyboard at run-time.  In verbose help mode, each available key is
-shown on the screen in (parentheses), assuming your
-.B oscope
-can display text (see
-.B Limitations
-below).  The following single key commands are available:
+keyboard at run-time.  In verbose key help mode, each available key is
+shown on the screen in (parentheses).  The following single key
+commands are available:
 
 .TP 0.5i
 .B ?
-Toggle verbose help key display mode.  This has no effect if your
-.B oscope
-can't display text.
+Toggle verbose key help display mode.
 
 .TP 0.5i
 .B Escape
@@ -44,33 +48,64 @@ Immediately quit the program.
 
 .TP 0.5i
 .B @
-Load a previously saved file.  You are prompted for the filename
-unless your
-.B oscope
-can't display text.  In that case, the filename used is the one given
-on the command line, or a default name.
+Load a previously saved file.  You are prompted for the filename.
 
 .TP 0.5i
 .B #
 Save current settings and memory buffers to a file that can be loaded
-later.  If your
-.B oscope
-can display text, you are prompted for the filename and asked for
-confirmation to overwrite if it already exists.  Otherwise,
-.B oscope
-unconditionally overwrites the filename given on the command line, or
-a default name.
+later.  You are prompted for the filename and asked for confirmation
+to overwrite if it already exists.
 
 .TP 0.5i
 .B Enter
 Clear and refresh the entire screen.
 
 .TP 0.5i
+.B ^
+Toggle the ProbeScope input device on/off.  The ProbeScope is turned
+on only if it is found active on a serial port.  This may be useful if
+the ProbeScope wasn't detected at startup.  See the
+.B ENVIRONMENT
+section below for more details.
+
+.TP 0.5i
+.B &
+Toggle the sound card input device on/off.
+
+.TP 0.5i
+.B *
+Cycle the sound card DMA divisor: 4, 2, 1.  The sound driver will
+divide it's DMA buffer by this factor.  The value 4 usually gives the
+fastest display rate.
+
+.TP 0.5i
+.B (/)
+Decrease/increase the sound card sampling rate.
+
+.TP 0.5i
+.B 9/0
+Increase/decrease the Sec/Div horizontal time scale (zoom out/in on
+time).
+
+.TP 0.5i
+.B -/=
+Decrease/increase the sound card trigger level.
+
+.TP 0.5i
+.B _
+Toggle the sound card trigger channel: X or Y.
+
+.TP 0.5i
+.B +
+Cycle the sound card trigger type: automatic, rising edge, or falling
+edge.
+
+.TP 0.5i
 .B Space
-Cycle the sampling mode: run, wait, stop.  Run mode continuously
-acquires and displays samples after trigger events.  Wait mode waits
-for the first trigger event and displays only the first set of
-samples; this is "single-shot" mode.  Stop mode suspends the data
+Cycle the trigger mode of the sound card: run, wait, stop.  Run mode
+continuously acquires and displays samples after trigger events.  Wait
+mode waits for the first trigger event and displays only the first set
+of samples; this is "single-shot" mode.  Stop mode suspends the data
 acquisition and displays the current samples.
 
 .TP 0.5i
@@ -80,26 +115,6 @@ accumulate.  In the accumulate modes, all samples stay on the screen;
 use
 .B Enter
 to clear them.
-
-.TP 0.5i
-.B 9/0
-Increase/decrease the Sec/Div horizontal time scale (zoom out/in).
-
-.TP 0.5i
-.B (/)
-Decrease/increase the sampling rate.
-
-.TP 0.5i
-.B -/=
-Decrease/increase the trigger level.
-
-.TP 0.5i
-.B _
-Toggle the trigger channel: X or Y.
-
-.TP 0.5i
-.B +
-Cycle the trigger type: automatic, rising edge, or falling edge.
 
 .TP 0.5i
 .B ,
@@ -117,14 +132,15 @@ Decrease/increase the graticule color.
 .TP 0.5i
 .B 1\-8
 Select the corresponding display channel.  Auto-measurements are
-displayed for the channel.  Because Channel 1 and 2 are used as input
-to the math functions, they can't be used to do math.  By default,
-they are connected to the Left (X) and Right (Y) sound channels, as
-controlled by an external mixer program.  Channel 1 and 2 can also be
-used to display memory buffers for doing math on memory.  Channel 3
-through 8 are not restricted and can be used for any purpose.  The
-remaining single key commands operate on the currently selected
-channel:
+displayed for the channel.  Channel 1 and 2 are used as input to the
+math functions so they can't be used to do math.  By default, they are
+connected to the Left (X) and Right (Y) sound channels, as controlled
+by an external mixer program.  Channel 1 and 2 can also be used to
+display memory buffers or ProbeScope (Z) input for doing math on
+memory or ProbeScope signals respectively.  Channel 3 through 8 are
+not restricted and can be used for any purpose.  By default, the
+ProbeScope (Z) input is connected to Channel 3.  The remaining single
+key commands operate on the currently selected channel:
 
 .TP 0.5i
 .B Tab
@@ -149,22 +165,20 @@ Show the result of an external math command on the selected channel.
 You are prompted for the command.  The command must accept samples of
 channel 1 & 2 on stdin and write a new signal to stdout.  See operl,
 offt.c and xy.c in the distribution for examples of external math
-filter commands.  Not available on channel 1 & 2 or if your
-.B oscope
-can't display text.
+filter commands.  Not available on channel 1 & 2.
 
 .TP 0.5i
 .B A-W
 Store the currently selected channel into the corresponding memory
 buffer.  Buffer X, Y and Z can't be used because they're reserved as
-the Left (X) and Right (Y) sound inputs, and for future use (Z).
+the Left (X) and Right (Y) sound inputs and ProbeScope (Z) input.
 
 .TP 0.5i
 .B a-z
-Display the corresponding memory buffer or input device on the
+Recall the corresponding memory buffer or input device to the
 currently selected channel.  Buffer X is the Left sound input, Y is
-the Right sound input, and Z is reserved for future use.  The rest of
-the buffers are available for signal memory.
+the Right sound input, and Z is ProbeScope input.  The rest of the
+buffers are available for signal memory.
 
 .PP
 .SH "MOUSE CONTROLS"
@@ -176,22 +190,24 @@ functions as the equivalent keyboard commands above.
 .PP
 .SH "COMMAND\-LINE OPTIONS"
 
-All these options may also be capitalized in case they conflict with
-an X toolkit option.
+The command-line options define the startup state of
+.B oscope
+and have reasonable defaults.  All options may be capitalized in case
+they conflict with an X toolkit option.
 
 .TP 0.5i
 .B -h
-Produce a Help usage message showing these startup options with their
-default values, then exit.
+Help usage message showing these startup options with their default
+values, then exit.
 
 .TP 0.5i
 .B -# <code>
-Specify the startup conditions of each channel.  # is a channel number
-from 1 to 8.  Code can have up to four fields, separated by colons:
+Startup conditions of each channel.  # is a channel number from 1 to
+8.  Code can have up to four fields, separated by colons:
 position[:scale[:function #, memory letter, or external command]].
 Position is the number of pixels above (positive) or below (negative)
-the center of the display.  Scale is a valid scaling factor from 1/100
-to 100, expressed as a fraction.  The third field may contain a
+the center of the display.  Scale is a valid scaling factor from 1/50
+to 50, expressed as a fraction.  The third field may contain a
 built-in math function number, memory letter, or external math command
 to run on the channel.  Using these options makes the channel visible
 unless position begins with a '+', in which case the channel is
@@ -199,45 +215,46 @@ hidden.
 
 .TP 0.5i
 .B -a <channel>
-Specify the selected, or Active, channel.
+Active, or selected, channel.
 
 .TP 0.5i
 .B -r <rate>
-Specify the sampling Rate in samples per second.  Current valid values
+Sound card sampling Rate in samples per second.  Current valid values
 are 8800, 11000, 22000, or 44000.
 
 .TP 0.5i
 .B -s <scale>
-Sets the time Scale factor from 1/100 to 100 expressed as a fraction.
+Time Scale factor from 1/20 to 1000 expressed as a fraction where 1/1
+is 1 ms/div.
 
 .TP 0.5i
 .B -t <trigger>
-Sets the initial Trigger conditions.  Trigger can have up to three
-fields, separated by colons: position[:type[:channel]].  Position is
-the number of pixels above (positive) or below (negative) the center
-of the display.  Type is a number indicating the kind of trigger, 0 =
+Sound card Trigger conditions.  Trigger can have up to three fields,
+separated by colons: position[:type[:channel]].  Position is the
+number of pixels above (positive) or below (negative) the center of
+the display.  Type is a number indicating the kind of trigger, 0 =
 automatic, 1 = rising edge, 2 = falling edge.  Channel should be x or
 y.
 
 .TP 0.5i
 .B -c <color>
-Sets the graticule Color, 0 - 15.
+Graticule Color, 0 - 15.
+
+.TP 0.5i
+.B -d <dma divisor>
+Divisor for sound card DMA: 1, 2, or 4.  The sound driver will divide
+it's DMA buffer by this factor.  The value 4 usually gives the fastest
+display rate.
 
 .TP 0.5i
 .B -m <mode>
-Sets the graphics Mode to use on the console.  For
+Graphics Mode to use.  For
 .B xoscope,
 use the more flexible -geometry instead.  0 = 640x480x16, 1 =
 800x600x16, 2 = 1024x768x16, 3 = 1280x1024x16.
 .B WARNING:
 not all modes are supported by all video cards; don't use unsupported
 modes!
-
-.TP 0.5i
-.B -d <dma divisor>
-Sets the Divisor for DMA buffer size, 1, 2, or 4.  The kernel sound
-driver will divide it's DMA buffer by this factor.  The value 4
-usually gives the fastest display rate.
 
 .TP 0.5i
 .B -f
@@ -265,9 +282,18 @@ Whether the graticule is drawn Behind or in front of the signals.
 .B -v
 Whether the Verbose key help is displayed.
 
+.TP 0.5i
+.B -x
+Whether the sound card input device (XY) is turned on.
+
+.TP 0.5i
+.B -z
+Whether the ProbeScope input device (Z) is turned on.
+
+.TP 0.5i
 .B file
 The name of a file to load upon startup.  This should be a file
-previously saved by 
+previously saved by
 .B oscope.
 
 .SH EXAMPLES
@@ -319,14 +345,45 @@ would plot the first and second columns of the "oscope.dat" data file.
 The path to use when looking for external math commands.  If unset,
 the built-in default is used.
 
+.TP 0.5i
+.B PROBESCOPE
+The serial device your ProbeScope is connected to.  If no ProbeScope
+is found here, some known serial devices are checked.  If unset,
+"/dev/probescope" is used.  /dev/probescope could be a symbolic link
+to the real device such as /dev/ttyS1.
+
 .SH LIMITATIONS
+The sound card should be capable of 44000 Hz sampling via the sound
+drivers.  You must use an external mixer program to select the input
+source device, level, etc.  Since these unknowns affect the amplitude,
+there is no reference to voltage on the Y axis; it is in fact,
+unknown.  Instead you're given the scale in pixels per sample unit.
+Note that the ProbeScope doesn't have this limitation.  ProbeScope
+signals have a real voltage label on the Y axis.
+
+Signal math is only valid if Channel 1 and 2 contain signals of the
+same sampling rate.
+.B It is up to you to make sure this is the case.  Doing math on signals
+.B of different sample rates will produce incorrect results!
+
+The automatic measurements count zero crossings and divide to
+determine the frequency and period.  If these zero crossings are not
+"regularly-periodic", these measurements could be invalid.
 .B Oscope
-was written specifically for Linux, and uses the Linux sound driver
-and svgalib or libsx plotting routines.  You need a sound card capable
-of 44000 Hz sampling via the Linux kernel sound drivers.  If
-.B oscope
-was built without libvgamisc or libsx, then it won't be able to
-display any text which will make it difficult to use.
+does understand how to measure the built-in FFT functions by locating
+the peak frequency.
+
+Your sound card is most-likely AC coupled so you will never see any DC
+offset.  You probably can't get DC coupling by just shorting the input
+capacitors on your sound card.  Use ProbeScope to see DC offsets.
+
+The display may not be able to keep up if you give it too much to
+plot, depending on your sound card, graphics card, and processor
+speed.  External math commands are particularly expensive since the
+kernel must then split the available CPU cycles across multiple
+processes.  To maximize refresh speed, hide all unneeded channels, use
+point or point accumulate mode, zoom in on Sec/Div as much as
+possible, and turn off the graticule.
 
 Because it uses svgalib,
 .B oscope
@@ -334,42 +391,13 @@ must be run as root or be setuid to root.
 .B xoscope
 doesn't have this restriction.
 
-You must use an external mixer program to select the input source
-device, level, etc.  Since these unknowns affect the amplitude, there
-is no reference to voltage on the Y axis; it is in fact, unknown.
-Instead you're given the scale in pixels per sample unit.
-
-Signal math only works correctly if Channel 1 and 2 contain signals
-with the same sampling rate.
-.B It is up to you to make sure this is the case.  Doing math on signals
-.B of different sample rates will produce incorrect results!
-
-The display may not be able to keep up if you give it too much to
-plot, depending on your sound card, graphics card, and processor
-speed.  External math commands are particularly expensive since the
-kernel must then split the available CPU cycles across multiple
-processes.  Floating point math is used only by the FFT, so a math
-coprocessor shouldn't make much difference.  To maximize refresh
-speed, hide all unneeded channels, use point or point accumulate mode,
-zoom in on Sec/Div as much as possible, and turn off the graticule.
-
-The automatic measurements count zero crossings and divide to
-determine the frequency and period.  If these zero crossings are not
-"regularly-periodic", these measurements could be invalid.  It does,
-however, understand how to measure the built-in FFT functions by
-locating the peak frequency.
-
-Your sound card is most-likely AC coupled so you will never see any DC
-offset.  You probably can't get DC coupling by just shorting the input
-capacitors on your sound card.
-
 .SH BUGS
 Probably.
 
 .SH AUTHOR
 .B Oscope
-was written by Tim Witham (twitham@pcocd2.intel.com), based on the
-original "scope" by Jeff Tranter (Jeff_Tranter@Mitel.COM).
+was written by Tim Witham (twitham@pcocd2.intel.com), originally based
+on "scope" by Jeff Tranter (Jeff_Tranter@Mitel.COM).
 .B Oscope
 is released under the conditions of the GNU General Public License.
 See the files README and COPYING in the distribution for details.
