@@ -1,7 +1,6 @@
 /*
- * @(#)$Id: func.c,v 1.5 1996/02/17 21:20:04 twitham Exp $
+ * @(#)$Id: func.c,v 1.6 1996/02/24 04:29:17 twitham Exp $
  *
- * Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
  * (see oscope.c and the file COPYING for more details)
@@ -23,14 +22,14 @@
 /* !!! The function names, the first three are special */
 char *funcnames[] =
 {
-  "Left  In",
-  "Right In",
+  "Left  Mix",
+  "Right Mix",
   "Memory  ",
+  "FFT. 1  ",
+  "FFT. 2  ",
   "Sum  1+2",
   "Diff 1-2",
   "Avg. 1,2",
-  "FFT. 1  ",
-  "FFT. 2  ",
 };
 
 /* The total number of functions */
@@ -176,11 +175,11 @@ void (*funcarray[])(int) =
   NULL,
   NULL,
   NULL,
+  fft1,
+  fft2,
   sum,
   diff,
   avg,
-  fft1,
-  fft2
 };
 
 /* Initialize math, called once by main at startup */
@@ -232,17 +231,16 @@ measure_data(Signal *sig) {
 
   sig->min = 0;
   sig->max = 0;
-  sig->time = -1;
-  prev = 0;
+  prev = 1;
   for (i = 0 ; i < h_points ; i++) {
     j = sig->data[i];
-    if (j < sig->min)
+    if (j < sig->min)		/* minimum */
       sig->min = j;
-    if (j > sig->max) {
+    if (j > sig->max) {		/* maximum */
       sig->max = j;
       max = i;
     }
-    if ((j > 0 && prev <= 0) || (j < 0 && prev >= 0)) {
+    if (j > 0 && prev <= 0) {	/* locate and count rising edges */
       if (!first)
 	first = i;
       last = i;
@@ -250,13 +248,15 @@ measure_data(Signal *sig) {
     }
     prev = j;
   }
-  if (sig->func > 5) {
-    sig->min = max;
+  if (sig->func == 3 || sig->func == 4) { /* time/freq from peak FFT */
     sig->time = 1000000 / (actual / 2 / 440 * max);
     sig->freq = actual / 2 * max / 440;
-  } else if (count > 2) {
-    i = 1000000 / actual * 2 * (last - first) / (count - 2);
+  } else if (count > 1) {	/* wave: period = length / # periods */
+    i = 1000000 * (last - first) / (count - 1) / actual;
     sig->time = i;
     sig->freq = i > 1 ? 1000000 / i : i;
+  } else {			/* couldn't measure */
+    sig->time = 0;
+    sig->freq = 0;
   }
 }
