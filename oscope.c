@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.c,v 1.76 2000/07/03 18:18:14 twitham Exp $
+ * @(#)$Id: oscope.c,v 1.77 2000/07/03 23:01:29 twitham Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -449,6 +449,9 @@ handle_key(unsigned char c)
   case '^':
     if (ps.found || bs.found) {	/* toggle Serial Scope on/off */
       ps.found = bs.found = 0;
+      funcnames[0] = "Left  Mix";
+      funcnames[1] = "Right Mix";
+      funcnames[2] = "ProbeScope";
     } else {
       init_probescope();
       init_serial();

@@ -1,4 +1,4 @@
-# @(#)$Id: Makefile,v 1.26 2000/07/03 18:18:14 twitham Exp $
+# @(#)$Id: Makefile,v 1.27 2000/07/03 23:01:29 twitham Exp $
 
 # Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
 
@@ -55,7 +55,7 @@ CC	= gcc
 # compiler flags; -DLIBPATH sets default value of OSCOPEPATH env variable
 COMMON	= '-DLIBPATH="$(LIBPATH)"' '-DVER="$(VER)"' $(ESDCFLAGS)\
 	'-DPROBESCOPE="$(PROBESCOPE)"' '-DBITSCOPE="$(BITSCOPE)"'\
-	$(DFLAGS) -Wall -m486 -O3
+	$(DFLAGS) -Wall -m486 -O3 $(EFLAGS)
 
 # !! we'll assume you want to use GTK+ to build xoscope, but...
 CFLAGS = $(COMMON) `gtk-config --cflags`

@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: bitscope.c,v 1.1 2000/07/03 18:18:14 twitham Exp $
+ * @(#)$Id: bitscope.c,v 1.2 2000/07/03 23:01:29 twitham Exp $
  *
  * Copyright (C) 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -30,6 +30,7 @@ bs_cmd(int fd, char *cmd)
   char c;
 
   j = strlen(cmd);
+  PSDEBUG("bs_cmd: %s\n", cmd);
   for (i = 0; i < j; i++) {
     if (write(fd, cmd + i, 1) == 1) {
       k = 10;
@@ -158,19 +159,19 @@ bs_init(int fd)
   if (snd) handle_key('&');	/* turn off sound card and probescope */
   bs.found = 1; ps.found = 0;
   bs.version = strtol(bs.bcid + 2, NULL, 10);
-/*    mem[23].rate = mem[24].rate = mem[25].rate = 25000000; */
+  mem[23].rate = mem[24].rate = mem[25].rate = 25000000;
 
   bs_getregs(fd, bs.r);		/* get and reset registers */
-  bs.r[7] = TRIGEDGE | TRIGEDGEF2T | LOWER16BNC | TRIGCOMPARE | TRIGANALOG;
-  bs.r[14] = PRIMARY(RANGE1200 | CHANNELA | ZZCLK)
-    | SECONDARY(RANGE1200 | CHANNELB | ZZCLK);
   bs.volts = 2400;		/* !!! attenuation should be tweakable */
+  bs.r[3] = bs.r[4] = 0;
   bs.r[5] = 0;
   bs.r[6] = 127;		/*  scope.trig; ? */
-  bs.r[3] = bs.r[4] = 0;
-  bs.r[8] = SIMPLE;		/* TIMEBASE;  */
-  SETWORD(&bs.r[11], 16383);
-  bs.r[13] = 1;
+  bs.r[7] = TRIGEDGE | TRIGEDGEF2T | LOWER16BNC | TRIGCOMPARE | TRIGANALOG;
+  bs.r[8] = SIMPLE;		/* SIMPLE; TIMEBASE; TIMEBASECHOP */
+  SETWORD(&bs.r[11], 2);
+  bs.r[13] = 0;
+  bs.r[14] = PRIMARY(RANGE1200 | CHANNELA | ZZCLK)
+    | SECONDARY(RANGE1200 | CHANNELB | ZZCLK);
   bs.r[15] = 0;			/* max samples per dump (256) */
   bs_putregs(fd, bs.r);
 }
@@ -182,9 +183,6 @@ idscope(int probescope)
   int c, byte = 0, try = 0;
 
   flush_serial();
-  funcnames[0] = "Left  Mix";
-  funcnames[1] = "Right Mix";
-  funcnames[2] = "ProbeScope";
   if (probescope) {
     while (byte < 300 && try < 75) { /* give up in 7.5ms */
       if ((c = getonebyte()) < 0) {
@@ -203,7 +201,7 @@ idscope(int probescope)
       strncpy(bs.bcid, error + 1, sizeof(bs.bcid));
       bs.bcid[8] = '\0';
       bs_init(bs.fd);
-      funcnames[0] = "Channel A"; /* relabel */
+      funcnames[0] = "Channel A"; /* relabel XYZ */
       funcnames[1] = "Channel B";
       funcnames[2] = "Logic An.";
       return(2);		/* BitScope found! */
@@ -216,25 +214,32 @@ int
 bs_getdata(int fd)
 {
   static unsigned char buffer[MAXWID * 2], *buff;
-  int i, j;
+  static int i, j = 0, k, n;
 
   if (!fd) return(0);		/* device open? */
-  if (!bs_io(fd, ">T", buffer) < 0)
+  if (!bs_io(fd, "[e]@", buffer))
+    return(0);
+  bs.r[14] = (bs.r[14] & 0xfb) | (!j << 2); /* attempt to ALT dual trace */
+  sprintf(error, "[%x]sT", bs.r[14]);
+  if (!bs_io(fd, error, buffer))
     return(0);
   fprintf(stderr, "%s", buffer);
-  if (!bs_io(fd, "S", buffer) < 0)
-    return(0);
-  buff = buffer;
   i = 0;
-  while (*buff != '\0') {
-    if (*buff == '\r' || *buff == '\n')
-      buff++;
-    else {
-      j = strtol(buff, NULL, 16);
-      mem[23].data[i] = (j & 0xff) - 128;
-      mem[25].data[i++] = ((j & 0xff00) >> 8) - 128;
-      buff += 5;
+  for (k = 0; k < 1; k++) {	/* snag multiple S dumps ? */
+    if (!bs_io(fd, "S", buffer))
+      return(0);
+    buff = buffer;
+    while (*buff != '\0') {
+      if (*buff == '\r' || *buff == '\n')
+	buff++;
+      else {
+	n = strtol(buff, NULL, 16);
+	mem[23 + j].data[i] = (n & 0xff) - 128;
+	mem[25].data[i++] = ((n & 0xff00) >> 8) - 128;
+	buff += 5;
+      }
     }
   }
+  j = !j;
   return(1);
 }

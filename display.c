@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 1.58 2000/07/03 18:18:14 twitham Exp $
+ * @(#)$Id: display.c,v 1.59 2000/07/03 23:01:29 twitham Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -346,11 +346,13 @@ draw_graticule()
   };
 
   /* marks where the physical ProbeScope display ends */
-  i = 31 * 44000 * scope.scale / (mem[25].rate * scope.div) + 100;
-  if (i > h_points - 100) i = h_points - 100;
-  SetColor(mem[25].color);
-  DrawLine(i, 70, i, 80);
-  DrawLine(i, v_points - 70, i, v_points - 80);
+  if (ps.found) {
+    i = 31 * 44000 * scope.scale / (mem[25].rate * scope.div) + 100;
+    if (i > h_points - 100) i = h_points - 100;
+    SetColor(mem[25].color);
+    DrawLine(i, 70, i, 80);
+    DrawLine(i, v_points - 70, i, v_points - 80);
+  }
 
   /* a mark where the trigger level is, if the triggered channel is shown */
   i = -1;
@@ -434,7 +436,7 @@ draw_data()
       mult = p->mult;
       div = p->div;
       off = offset + p->pos;
-      num = 100 * p->signal->rate * scope.div / scope.scale / 440;
+      num = 10 * p->signal->rate * scope.div / scope.scale / 44;
 
       if (!p->bits)		/* analog display mode: draw one line */
 	start = end = -1;
