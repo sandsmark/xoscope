@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 1.28 1996/04/21 02:20:35 twitham Rel1_0 $
+ * @(#)$Id: display.c,v 1.29 1996/07/12 02:56:43 twitham Exp $
  *
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -397,23 +397,36 @@ draw_graticule()
 static inline void
 draw_data()
 {
-  static int i, j, off;
+  static int i, j, off, delay, old = 0;
   static Signal *p;
 
+  /* interpolate a line between the sample just before and after trigger */
+  off = 100 - scope.scale;	/* then shift all samples horizontally */
+  if (scope.trige) {		/* to place time zero at trigger */
+    p = &ch[scope.trigch];
+    if ((i = p->data[0]) == (j = p->data[1])) /* avoid divide by zero */
+      i++;			/* solve "y = y0 + x * slope" for x to get: */
+    delay = 100 - ((scope.trig - 128 - i) * scope.scale / (j - i));
+    if (delay < off)
+      delay = old;		/* may be out of range if user just tweaked */
+    if (delay > 100)		/* trigger but we're using old data */
+      delay = old;
+  } else			/* no trigger, leave delay as it was */
+    delay = old;
   if (scope.mode < 2) {		/* point / point accumulate */
     for (j = 0 ; j < CHANNELS ; j++) {
       p = &ch[j];
       if (p->show) {
 	off = offset + p->pos;
 	VGA_SETCOLOR(p->color);
-	for (i = 0 ; i <= (h_points - 200) / scope.scale ; i++) {
+	for (i = 1 ; i <= (h_points - 200) / scope.scale ; i++) {
 	  if (scope.mode == 0) { /* erase previous dots */
 	    VGA_SETCOLOR(color[0]);
-	    VGA_DRAWPIXEL(i * scope.scale + 100,
+	    VGA_DRAWPIXEL(i * scope.scale + old,
 			  off - p->old[i] * p->mult / p->div);
 	    VGA_SETCOLOR(p->color); /* draw dots */
 	  }
-	  VGA_DRAWPIXEL(i * scope.scale + 100,
+	  VGA_DRAWPIXEL(i * scope.scale + delay,
 			off - p->data[i] * p->mult / p->div);
 	  p->old[i] = p->data[i];
 	}
@@ -427,18 +440,18 @@ draw_data()
       if (p->show) {
 	off = offset + p->pos;
 	VGA_SETCOLOR(p->color);
-	for (i = 0 ; i < (h_points - 200) / scope.scale ; i++) {
+	for (i = 1 ; i < (h_points - 200) / scope.scale ; i++) {
 	  if (scope.mode == 2) { /* erase previous lines */
 	    VGA_SETCOLOR(color[0]);
-	    VGA_DRAWLINE(i * scope.scale + 100,
+	    VGA_DRAWLINE(i * scope.scale + old,
 			 off - p->old[i] * p->mult / p->div,
-			 i * scope.scale + 100 + scope.scale,
+			 i * scope.scale + old + scope.scale,
 			 off - p->old[i + 1] * p->mult / p->div);
 	    VGA_SETCOLOR(p->color); /* draw lines */
 	  }
-	  VGA_DRAWLINE(i * scope.scale + 100,
+	  VGA_DRAWLINE(i * scope.scale + delay,
 		       off - p->data[i] * p->mult / p->div,
-		       i * scope.scale + 100 + scope.scale,
+		       i * scope.scale + delay + scope.scale,
 		       off - p->data[i + 1] * p->mult / p->div);
 	  p->old[i] = p->data[i];
 	}
@@ -448,6 +461,7 @@ draw_data()
       }
     }
   }
+  old = delay;
 #ifdef XOSCOPE
   SyncDisplay();
 #endif
