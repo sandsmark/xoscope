@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: func.c,v 1.19 2000/03/04 21:39:59 twitham Exp $
+ * @(#)$Id: func.c,v 1.20 2000/03/05 22:54:42 twitham Rel $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -50,10 +50,7 @@ Signal mem[34];
 void
 recall(char c)
 {
-  static int i;
-
-  i = c - 'a';
-  ch[scope.select].signal = &mem[i];
+  ch[scope.select].signal = &mem[c - 'a'];
   ch[scope.select].func = c >= 'x' ? c - 'x' : FUNCMEM;
   ch[scope.select].mem = c;
 }
@@ -282,13 +279,13 @@ do_math()
   static int i, j;
 
   for (i = 2 ; i < CHANNELS ; i++) {
+    if (ch[i].pid && ch[i].func != FUNCEXT) { /* external needs halted */
+      j = ch[i].mem;
+      ch[i].mem = EXTSTOP;
+      pipeto(i);
+      ch[i].mem = j;
+    }
     if ((ch[i].show || scope.select == i) && *funcarray[ch[i].func] != NULL) {
-      if (ch[i].pid && ch[i].func != FUNCEXT) {
-	j = ch[i].mem;
-	ch[i].mem = EXTSTOP;
-	pipeto(i);
-	ch[i].mem = j;
-      }
       ch[i].signal = &mem[26+i];
       ch[i].signal->rate = ch[0].signal->rate;
       funcarray[ch[i].func](i);
