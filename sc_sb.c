@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: sc_sb.c,v 1.7 1997/06/07 21:33:02 twitham Rel $
+ * @(#)$Id: sc_sb.c,v 1.8 1998/09/24 01:00:48 twitham Rel $
  *
  * Copyright (C) 1997 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -59,7 +59,7 @@ open_sound_card(int dma)
   } else {
     printf("using soundcard at 0x%x.\n", i);
     snd = 1;
-    set_sound_card(44000, 2, 8);
+    set_sound_card(44100, 2, 8);
   }
 }
 

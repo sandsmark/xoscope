@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: func.c,v 1.17 1997/05/27 03:24:40 twitham Rel $
+ * @(#)$Id: func.c,v 1.18 1998/09/24 01:00:25 twitham Rel $
  *
  * Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -265,7 +265,7 @@ init_math()
   static int i;
 
   for (i = 0 ; i < 34 ; i++) {
-    mem[i].rate = 44000;
+    mem[i].rate = 44100;
     memset(mem[i].data, 0, MAXWID * sizeof(short));
     mem[i].color = 0;
   }

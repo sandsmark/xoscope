@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: fft.c,v 1.3 1996/07/27 05:43:18 twitham Rel $
+ * @(#)$Id: fft.c,v 1.4 1998/09/24 00:59:07 twitham Rel $
  *
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -21,7 +21,7 @@
 #define fftlen			FFTLEN
 #define freq_scalefactor	1
 #define freq_base		0
-#define SampleRate		44000
+#define SampleRate		44100
 #define shift			0
 
 /* for the fft function: x position to bin number map, and data buffer */
