@@ -1,4 +1,4 @@
-# @(#)$Id: Makefile,v 1.17 1996/10/12 07:51:37 twitham Rel1_2 $
+# @(#)$Id: Makefile,v 1.18 1996/10/12 08:09:19 twitham Rel1_2 $
 
 # Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
 
@@ -92,5 +92,5 @@ dist:
 		oscope-$(VER) )
 
 release:	clean
-	rcs -N$(REL): -s$(REL) *
-	co -M *
+	-rcs -N$(REL): -s$(REL) *
+	-co -M *
