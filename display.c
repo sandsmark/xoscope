@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 1.39 1997/05/02 04:06:36 twitham Exp $
+ * @(#)$Id: display.c,v 1.40 1997/05/02 05:16:36 twitham Exp $
  *
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -248,14 +248,20 @@ draw_text(int all)
 
   /* always draw the dynamic text */
   sprintf(string, "Period of %6d us = %5d Hz", p->time,  p->freq);
-  vga_write(string, col(40), row(0), font, p->color, TEXT_BG, ALIGN_CENTER);
+  vga_write(string, h_points/2, row(0), font, p->color, TEXT_BG, ALIGN_CENTER);
   
   sprintf(string, " Max:%3d - Min:%4d = %3d Pk-Pk ",
 	  p->max, p->min, p->max - p->min);
-  vga_write(string, col(40), row(1), font, p->color, TEXT_BG, ALIGN_CENTER);
+  vga_write(string, h_points/2, row(1), font, p->color, TEXT_BG, ALIGN_CENTER);
 
-  vga_write(triggered ? " Triggered " : "? TRIGGER ?", col(40), row(3),
+  vga_write(triggered ? " Triggered " : "? TRIGGER ?", h_points/2, row(3),
 	    font, ch[scope.trigch].color, TEXT_BG, ALIGN_CENTER);
+
+  if (ch[0].signal->rate != ch[1].signal->rate) {
+    sprintf(string, "WARNING: math(%d,%d) is bogus!",
+	    ch[0].signal->rate, ch[1].signal->rate);
+    vga_write(string, h_points/2, row(2), font, KEY_FG, TEXT_BG, ALIGN_CENTER);
+  }
 }
 
 /* clear the display and redraw all text */
