@@ -5,7 +5,7 @@
  *
  * [x]oscope --- Use Linux's /dev/dsp (a sound card) as an oscilloscope
  *
- * @(#)$Id: oscope.c,v 1.40 1996/02/03 06:52:35 twitham Exp $
+ * @(#)$Id: oscope.c,v 1.41 1996/02/03 08:30:30 twitham Exp $
  *
  * Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
@@ -262,6 +262,15 @@ handle_key(unsigned char c)
   static Signal *p;
 
   p = &ch[scope.select];
+  if (c >= 'A' && c <= 'Z') {
+    save(c);
+    draw_text(1);
+    return;
+  } else if (c >= 'a' && c <= 'z' && scope.select > 1) {
+    recall(c);
+    draw_text(1);
+    return;
+  }
   switch (c) {
   case 0:
   case -1:			/* no key pressed */
@@ -304,7 +313,7 @@ handle_key(unsigned char c)
     if (scope.select > 1) {	/* cycle math function */
       p->func++;
       if (p->func >= funccount)
-	p->func = 2;
+	p->func = 3;
       clear();
     }
     break;
@@ -351,7 +360,7 @@ handle_key(unsigned char c)
     scope.scale  = *pscaler;
     clear();
     break;
-  case 'o':
+  case '=':
     if (scope.trig < 0)		/* enable the trigger at half scale */
       scope.trig = 120;
     scope.trig += 8;		/* increase trigger */
@@ -359,18 +368,18 @@ handle_key(unsigned char c)
       scope.trig = -1;		/* disable trigger when it leaves the scale */
     clear();
     break;
-  case 'l':
+  case '-':
     if (scope.trig < 0)		/* enable the trigger at half scale */
       scope.trig = 136;
     scope.trig -= 8;		/* decrease trigger */
     clear();
     break;
-  case '=':
+  case ')':
     scope.color++;		/* increase color */
     if (scope.color > 15)
       scope.color = 0;
     break;
-  case '-':
+  case '(':
     scope.color--;		/* decrease color */
     if (scope.color < 0)
       scope.color = 15;
@@ -387,7 +396,7 @@ handle_key(unsigned char c)
       init_sound_card(0);
     }
     break;
-  case 'p':
+  case '\'':
     scope.mode++;		/* point, point accumulate, line, line acc. */
     if (scope.mode > 3)
       scope.mode = 0;

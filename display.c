@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 1.18 1996/02/03 06:52:43 twitham Exp $
+ * @(#)$Id: display.c,v 1.19 1996/02/03 08:30:25 twitham Exp $
  *
  * Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
@@ -96,6 +96,11 @@ font_t font;			/* pointer to the font structure */
 void
 cleanup()
 {
+  int i;
+
+  for (i = 0 ; i < 26 ; i++) {
+    free(mem[i]);
+  }
 #ifdef XOSCOPE
   FreeFont(font);
 #else
@@ -156,15 +161,19 @@ draw_text(int all)
     VGA_WRITE("(Enter)", col(73), 0, font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
     VGA_WRITE("Refresh", col(80), 0, font, TEXT_FG, TEXT_BG, ALIGN_RIGHT);
 
-    VGA_WRITE("([)", col(71), row(1), font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
+    VGA_WRITE("(&)", col(71), row(1), font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
     VGA_WRITE("Graticule", col(80), row(1),
 	      font, TEXT_FG, TEXT_BG, ALIGN_RIGHT);
 
-    VGA_WRITE("(])", col(71), row(2), font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
+    VGA_WRITE("(*)", col(71), row(2), font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
     VGA_WRITE(scope.behind ? "Behind   " : "In Front ", col(80), row(2),
 	      font, TEXT_FG, TEXT_BG, ALIGN_RIGHT);
 
-    VGA_WRITE("(p)", 100, 62, font, KEY_FG, TEXT_BG, ALIGN_LEFT);
+    VGA_WRITE("(()      ())", col(80), row(3),
+	      font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
+    VGA_WRITE("Color", col(76), row(3), font, TEXT_FG, TEXT_BG, ALIGN_RIGHT);
+
+    VGA_WRITE("(')", 100, 62, font, KEY_FG, TEXT_BG, ALIGN_LEFT);
     VGA_WRITE(strings[scope.mode],
 	      100 + 8 * 3, 62, font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
 
@@ -205,17 +214,17 @@ draw_text(int all)
     }
 
     /* below graticule */
-    VGA_WRITE("(r)", 0, row(25), font, KEY_FG, TEXT_BG, ALIGN_LEFT);
+    VGA_WRITE("(])", 0, row(25), font, KEY_FG, TEXT_BG, ALIGN_LEFT);
     VGA_WRITE("   Scale Up", col(3), row(25),
 	      font, p->color, TEXT_BG, ALIGN_LEFT);
-    VGA_WRITE("(f)", 0, row(26), font,KEY_FG, TEXT_BG, ALIGN_LEFT);
+    VGA_WRITE("([)", 0, row(26), font,KEY_FG, TEXT_BG, ALIGN_LEFT);
     VGA_WRITE("   Scale Down", col(3), row(26),
 	      font, p->color, TEXT_BG, ALIGN_LEFT);
 
-    VGA_WRITE("(u)", 0, row(27), font,KEY_FG, TEXT_BG, ALIGN_LEFT);
+    VGA_WRITE("(})", 0, row(27), font,KEY_FG, TEXT_BG, ALIGN_LEFT);
     VGA_WRITE("Position Up", col(3), row(27),
 	      font, p->color, TEXT_BG, ALIGN_LEFT);
-    VGA_WRITE("(j)", 0, row(28), font,KEY_FG, TEXT_BG, ALIGN_LEFT);
+    VGA_WRITE("({)", 0, row(28), font,KEY_FG, TEXT_BG, ALIGN_LEFT);
     VGA_WRITE("Position Down", col(3), row(28),
 	      font, p->color, TEXT_BG, ALIGN_LEFT);
 
@@ -227,16 +236,34 @@ draw_text(int all)
 	    i > 999 ? 'm' : 'u');
     VGA_WRITE(string, col(40), row(25), font, TEXT_FG, TEXT_BG, ALIGN_CENTER);
 
-    VGA_WRITE("(l)               (o)", col(40), row(27),
+    VGA_WRITE("(-)               (+)", col(40), row(27),
 	      font, KEY_FG, TEXT_BG, ALIGN_CENTER);
     sprintf(string, "Trigger: %d", scope.trig - 128);
     VGA_WRITE(scope.trig > -1 ? string : "No Trigger", col(40), row(27),
 	      font, TEXT_FG, TEXT_BG, ALIGN_CENTER);
+
+    VGA_WRITE("(A-Z)", col(74), row(27), font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
+    VGA_WRITE("Save  ", col(80), row(27), font, p->color, TEXT_BG, ALIGN_RIGHT);
+
+    if (scope.select > 1) {
+      VGA_WRITE("(a-z)", col(74), row(28),
+		font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
+      VGA_WRITE("Recall", col(80), row(28),
+		font, p->color, TEXT_BG, ALIGN_RIGHT);
+    }
+
+    for (i = 0 ; i < 26 ; i++) {
+      if (mem[i] != NULL) {
+	sprintf(string, "%c", i + 'a');
+	VGA_WRITE(string, col(27 + i), row(28),
+		  font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
+      }
+    }
   }
 
   /* always draw the dynamic text */
   i = 1000000 / actual * p->time;
-  sprintf(string, "Period of %5d us = %5d Hz ", i,  i > 1 ? 1000000/i : i);
+  sprintf(string, "Period of %6d us = %5d Hz ", i,  i > 1 ? 1000000/i : i);
   VGA_WRITE(string, col(40), row(0), font, p->color, TEXT_BG, ALIGN_CENTER);
   
   sprintf(string, "Max:%3d - Min:%4d = %3d Pk-Pk",
@@ -403,8 +430,10 @@ animate(void *data)
     get_data();
     draw_text(0);
   }
-  funcarray[ch[2].func](2);
-  funcarray[ch[3].func](3);
+  if (ch[2].func > 2)
+    funcarray[ch[2].func](2);
+  if (ch[3].func > 2)
+    funcarray[ch[3].func](3);
   measure_data(&ch[scope.select]);
   if (scope.behind) {
     draw_graticule();		/* plot data on top of graticule */

@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: func.c,v 1.1 1996/02/02 07:10:43 twitham Exp $
+ * @(#)$Id: func.c,v 1.2 1996/02/03 08:30:37 twitham Exp $
  *
  * Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
@@ -11,13 +11,15 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include "oscope.h"
 
-/* The function names */
+/* The function names, the first three are special */
 char *funcnames[] =
 {
   "Left In",
   "Right In",
+  "Memory",
   "Sum  1+2",
   "Diff 1-2",
   "Avg. 1,2",
@@ -25,6 +27,37 @@ char *funcnames[] =
 
 /* The total number of functions */
 int funccount = sizeof(funcnames) / sizeof(char *);
+
+/* The pointers to the signal memories */
+short *mem[26] = {
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+  NULL, NULL, NULL, NULL, NULL, NULL
+};
+
+/* store the currently selected signal to the given memory register */
+void
+save(char c)
+{
+  static int i;
+
+  i = c - 'A';
+  if (mem[i] == NULL)
+    mem[i] = malloc(MAXWID);
+  memcpy(mem[i], ch[scope.select].data, MAXWID);
+}
+
+/* recall given memory register to the currently selected signal */
+void
+recall(char c)
+{
+  static int i;
+
+  i = c - 'a';
+  if (mem[i] != NULL)
+    memcpy(ch[scope.select].data, mem[i], MAXWID);
+  ch[scope.select].func = 2;
+}
 
 /* The functions; they take one arg: the channel # to store results in */
 
@@ -73,6 +106,7 @@ avg(int num)
 /* Array of the functions */
 void (*funcarray[])(int) =
 {
+  NULL,
   NULL,
   NULL,
   sum,
