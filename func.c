@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: func.c,v 1.9 1996/04/16 04:16:51 twitham Exp $
+ * @(#)$Id: func.c,v 1.10 1996/04/21 02:31:20 twitham Rel1_0 $
  *
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -20,17 +20,15 @@
 #include "oscope.h"
 #include "fft.h"
 #include "display.h"
-
-/* must be shorter than minimum screen width and multiple of 2 */
-#define FFTLEN	512
+#include "func.h"
 
 /* !!! The function names, the first four are special */
 char *funcnames[] =
 {
   "Left  Mix",
   "Right Mix",
-  "Memory  ",
   "External",
+  "Memory  ",
   "FFT. 1  ",
   "FFT. 2  ",
   "Sum  1+2",
@@ -38,7 +36,7 @@ char *funcnames[] =
   "Avg. 1,2",
 };
 
-/* the total number of functions */
+/* the total number of "functions" */
 int funccount = sizeof(funcnames) / sizeof(char *);
 
 /* the pointers to the signal memories */
@@ -68,7 +66,7 @@ recall(char c)
   i = c - 'a';
   if (mem[i] != NULL) {
     memcpy(ch[scope.select].data, mem[i], MAXWID * sizeof(short));
-    ch[scope.select].func = 2;
+    ch[scope.select].func = FUNCMEM;
     ch[scope.select].mem = c;
   }
 }
@@ -103,7 +101,7 @@ pipeto(int num)
   static int i, j;
   static int to[CHANNELS][2], from[CHANNELS][2]; /* pipes to/from the child */
 
-  if (ch[num].mem == 1) {
+  if (ch[num].mem == EXTSTART) {
     if (pid[num] > 0) {		/* close previous command pipes */
       close(to[num][1]);
       close(from[num][0]);	/* and reap the child process */
@@ -128,7 +126,7 @@ pipeto(int num)
       close(to[num][0]);
       close(from[num][1]);
       execlp("/bin/sh", "sh", "-c", command[num], NULL);
-      sprintf(error, "%s: child can't exec /bin/sh -c '%s'",
+      sprintf(error, "%s: child can't exec /bin/sh -c \"%s\"",
 	      progname, command[num]);
       perror(error);
       exit(1);
@@ -138,9 +136,9 @@ pipeto(int num)
       return;
     }
     message(command[num], ch[num].color);
-    ch[num].mem = 2;
+    ch[num].mem = EXTRUN;
   }
-  if (ch[num].mem == 2) {	/* write to / read from child process */
+  if (ch[num].mem == EXTRUN) {	/* write to / read from child process */
     a = ch[0].data;
     b = ch[1].data;
     c = ch[num].data;
@@ -154,14 +152,27 @@ pipeto(int num)
 	j++;
     }
     if (j) {
-      sprintf(error, "%d pipe read/write errors from '%s'", i, command[num]);
+      sprintf(error, "%d pipe read/write errors from \"%s\"", i, command[num]);
       perror(error);
-      ch[num].mem = 0;
+      ch[num].mem = EXTSTOP;
     }
   }
 }
 
 /* !!! The functions; they take one arg: the channel # to store results in */
+
+/* Fast Fourier Transform of channel sig */
+void
+fft1(int num)
+{
+  fft(ch[0].data, ch[num].data);
+}
+
+void
+fft2(int num)
+{
+  fft(ch[1].data, ch[num].data);
+}
 
 /* The sum of the two channels */
 void
@@ -208,58 +219,13 @@ avg(int num)
   }
 }
 
-/* Fast Fourier Transform of channel sig */
-static inline void
-fft(int num, int sig)
-{
-  static int i, bri;
-  static long re, im, root, mask, it;
-  static short *a, *b;
-
-  a = fftdata;
-  b = ch[sig].data;
-  for(i = 0 ; i < MAXWID ; i++) {
-    *a++=((long)(*b++)  * 32767) >> 7;
-  }
-  RealFFT(fftdata);
-  a = ch[num].data;
-  for (i = 0 ; i < h_points ; i++) {
-    if (xmap[i] > -1) {
-      bri = BitReversed[xmap[i]];
-      re = fftdata[bri];
-      im = fftdata[bri + 1];
-      it = (re * re + im * im);
-      root = 32;
-      do {			/* Square root code */
-	mask = it / root;
-	root=(root + mask) >> 1;
-      } while (abs(root - mask) > 1);
-      a[i] = root;
-    } else {
-      a[i] = a[i - 1];
-    }
-  }
-}
-
-void
-fft1(int num)
-{
-  fft(num, 0);
-}
-
-void
-fft2(int num)
-{
-  fft(num, 1);
-}
-
 /* !!! Array of the functions, the first three should be NULL */
 void (*funcarray[])(int) =
 {
   NULL,				/* left */
   NULL,				/* right */
+  pipeto,			/* external math commands */
   NULL,				/* memory */
-  pipeto,			/* external commands */
   fft1,
   fft2,
   sum,
@@ -276,15 +242,7 @@ init_math()
   for (i = 0 ; i < CHANNELS ; i++) {
     strcpy(command[i], COMMAND);
   }
-  for (i = 0 ; i < MAXWID ; i++) {
-    fftdata[i] = 0;
-    xmap[i]=floor((double)i / 440.0 * FFTLEN / 2.0 + 0.5);
-    if(xmap[i] >= FFTLEN / 2)	/* don't display these uncomputed bins */
-      xmap[i] = -1;
-    if(xmap[i] == xmap[i-1])	/* duplicate bin */
-      xmap[i] = -1;
-  }
-  InitializeFFT(FFTLEN);
+  init_fft();
 }
 
 /* Perform any math on the software channels, called many times by main loop */
@@ -294,7 +252,8 @@ do_math()
   static int i;
 
   for (i = 2 ; i < CHANNELS ; i++) {
-    if ((scope.select == i || ch[i].show) && (ch[i].func > 2))
+    if ((ch[i].show || scope.select == i)
+	&& (ch[i].func > FUNCMEM || ch[i].func == FUNCEXT))
       funcarray[ch[i].func](i);
   }
 }
@@ -336,7 +295,7 @@ measure_data(Signal *sig) {
     }
     prev = j;
   }
-  if (sig->func == 4 || sig->func == 5) { /* frequency from peak FFT */
+  if (sig->func == FUNCFFT1 || sig->func == FUNCFFT2) { /* freq from peak FFT */
     if ((sig->freq = actual * max / 880) > 0)
       sig->time = 1000000 / sig->freq;
     else
