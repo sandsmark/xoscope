@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: bitscope.c,v 1.13 2000/07/17 21:36:36 twitham Exp $
+ * @(#)$Id: bitscope.c,v 1.14 2000/07/18 03:02:02 twitham Exp $
  *
  * Copyright (C) 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -62,7 +62,8 @@ bs_cmd(int fd, char *cmd)
 int
 bs_read(int fd, char *buf, int n)
 {
-  int i = 0, j, k = n + 10;
+//  int i = 0, j, k = n + 10;
+  int i = 0, j, k = n + 500;
 
   while (n) {
     if ((j = serial_read(fd, buf + i, n)) < 1) {
@@ -98,16 +99,14 @@ bs_io(int fd, char *in, char *out)
   switch (in[strlen(in) - 1]) {
   case 'T':
     return bs_read(fd, out, 6);
-  case 'S':			/* DDAA, per sample + newlines per 16 */
-    return bs_read_async(fd, R15 * 5 + (R15 / 16) + 1);
   case 'M':
     if (bs.version >= 110)
       return bs_read_async(fd, R15 * 2);
-    break;
   case 'A':
     if (bs.version >= 110)
       return bs_read_async(fd, R15);
-    break;
+  case 'S':			/* DDAA, per sample + newlines per 16 */
+    return bs_read_async(fd, R15 * 5 + (R15 / 16) + 1);
   case 'P':
     if (bs.version >= 110)
       return bs_read(fd, out, 14);
@@ -172,6 +171,33 @@ bs_putregs(int fd, unsigned char *reg)
   return(1);
 }
 
+void
+bs_flush_serial()
+{
+  int c, byte = 0;
+
+  c = 10;			/* clear serial FIFO */
+  while ((byte < sizeof(bs.buf)) && c--) {
+    byte += serial_read(bs.fd, bs.buf, sizeof(bs.buf) - byte);
+    usleep(1);
+  }
+}
+
+void
+bs_changerate(int fd, int dir)
+{
+  unsigned char buf[10];
+
+  bs_flush_serial();
+  if (dir > 0)
+    bs.r[13] = bs.r[13] ? bs.r[13] / 2 : 128; /* TB	time base */
+  else if (dir < 0)
+    bs.r[13] = bs.r[13] ? bs.r[13] * 2 : 1;
+  mem[23].rate = mem[24].rate = mem[25].rate = 1250000 / (19 + 3 * (R13 + 1));
+  sprintf(buf, "[d]@[%x]s", bs.r[13]);
+  bs_cmd(fd, buf);
+}
+
 /* initialize previously identified BitScope FD */
 void
 bs_init(int fd)
@@ -194,7 +220,6 @@ bs_init(int fd)
   in_progress = 0;
   bs.version = strtol(bs.bcid + 2, NULL, 10);
   mem[23].rate = mem[24].rate = mem[25].rate = 25000000;
-  mem[23].rate = mem[24].rate = mem[25].rate = 50000;
 
   bs_getregs(fd, bs.r);		/* get and reset registers */
   bs.r[3] = bs.r[4] = 0;
@@ -214,7 +239,8 @@ bs_init(int fd)
 
   bs.r[20] = 1;			/* PRETD	pre trigger delay */
   SETWORD(&bs.r[11], 16319);	/* PTD		post trigger delay */
-  bs.r[13] = 1;			/* TB		time base */
+  bs.r[13] = 1;
+  bs_changerate(fd, 0);
 
   bs.r[14] = PRIMARY(RANGE1200 | CHANNELA | ZZCLK)
     | SECONDARY(RANGE1200 | CHANNELB | ZZCLK);
@@ -261,11 +287,7 @@ idscope(int probescope)
       PSDEBUG("%d\n", byte);
     }
   } else {			/* identify bitscope */
-    c = 10;			/* clear serial FIFO */
-    while ((byte < sizeof(bs.buf)) && c--) {
-      byte += serial_read(bs.fd, bs.buf, sizeof(bs.buf) - byte);
-      usleep(1);
-    }
+    bs_flush_serial();
     if (bs_io(bs.fd, "?", bs.buf) && bs.buf[1] == 'B' && bs.buf[2] == 'C') {
       strncpy(bs.bcid, bs.buf + 1, sizeof(bs.bcid));
       bs.bcid[8] = '\0';
@@ -320,7 +342,7 @@ bs_getdata(int fd)
 	  k = 0;
 	  in_progress = 0;
 	} else {		/* still need more, start another */
-	  bs_io(fd, bs.version >= 110 ? "M" : "S", buffer);
+	  bs_io(fd, "M", buffer);
 	}
       }
     }
@@ -334,8 +356,7 @@ bs_getdata(int fd)
     if (!bs_io(fd, error, buffer))
       return(0);
     fprintf(stderr, "%s", buffer);
-    if (!bs_io(fd, bs.version >= 110 ? "M" : "S", buffer))
-      return(0);
+    bs_io(fd, "M", buffer);
     k = 0;
     in_progress = 1;
   }

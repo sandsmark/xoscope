@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: bitscope.h,v 1.5 2000/07/14 02:32:56 twitham Exp $
+ * @(#)$Id: bitscope.h,v 1.6 2000/07/18 03:02:02 twitham Exp $
  *
  * Copyright (C) 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -11,6 +11,7 @@
 
 /* BitScope serial data protocol bit definitions */
 
+#define R13	(bs.r[13] ? bs.r[13] : 256)
 #define R15	(bs.r[15] ? bs.r[15] : 256)
 
 /* Spock Option Byte (R7) */
@@ -72,3 +73,4 @@ extern BitScope bs;
 
 extern int idscope();
 extern int bs_getdata();
+extern void bs_changerate();

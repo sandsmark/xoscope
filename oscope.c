@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.c,v 1.85 2000/07/14 02:32:56 twitham Exp $
+ * @(#)$Id: oscope.c,v 1.86 2000/07/18 03:02:02 twitham Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -403,8 +403,8 @@ handle_key(unsigned char c)
     break;
   case '(':
     if (bs.found)
-      break;
-    if (scope.run) {		/* decrease sample rate */
+      bs_changerate(bs.fd, -1);
+    else if (scope.run) {	/* decrease sample rate */
       if (scope.rate < 16500)
 	resetsoundcard(8000);
       else if (scope.rate < 33000)
@@ -417,8 +417,8 @@ handle_key(unsigned char c)
     break;
   case ')':
     if (bs.found)
-      break;
-    if (scope.run) {		/* increase sample rate */
+      bs_changerate(bs.fd, 1);
+    else if (scope.run) {	/* increase sample rate */
       if (scope.rate > 16500)
 	resetsoundcard(44100);
       else if (scope.rate > 9500)
