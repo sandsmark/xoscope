@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: offt.c,v 1.1 1996/04/21 02:17:57 twitham Exp $
+ * @(#)$Id: offt.c,v 1.2 1996/04/21 03:11:51 twitham Rel1_0 $
  *
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -23,7 +23,7 @@
  *
  * 0: FFT *one* signal from stdin.  Use this only at the end of a pipe
  *    that has already split oscope's two signals down to one signal.
- *    For example: oscope.perl '$x * $y' | fft 0
+ *    For example: oscope.perl '$x * $y' | oscope.fft 0
  * 
  * 1: FFT of channel 1
  * 
