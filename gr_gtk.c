@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: gr_gtk.c,v 1.9 1999/08/24 03:03:22 twitham Exp $
+ * @(#)$Id: gr_gtk.c,v 1.10 1999/08/25 03:01:51 twitham Exp $
  *
  * Copyright (C) 1996 - 1999 Tim Witham <twitham@quiknet.com>
  *
@@ -18,15 +18,9 @@
 #include "display.h"
 #include "func.h"
 #include "file.h"
+#include "com_gtk.h"
 
-GtkWidget *window;
-GtkWidget *drawing_area;	/* scope drawing area */
-GdkPixmap *pixmap = NULL;
-GdkRectangle update_rect;
-GdkGC *gc;
-GtkWidget *menubar;
 /*  GtkWidget *filemenu; */
-GtkWidget *vbox;
 /*  GtkWidget *hbox; */
 /*  GtkWidget *table; */
 /*  GtkWidget *table2; */
@@ -45,58 +39,13 @@ char my_filename[FILENAME_MAX] = "";
 GdkFont *font;
 char fontname[80] = DEF_FX;
 char fonts[] = "xlsfonts";
-GdkColor gdkcolor[16];
-int color[16];
 char *alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-char *colors[] = {		/* X colors similar to 16 console colors */
-  "black",			/* 0 */
-  "blue",
-  "green",			/* 2 */
-  "cyan",
-  "red",			/* 4 */
-  "magenta",
-  "orange",			/* 6 */
-  "gray66",
-  "gray33",			/* 8 */
-  "blue4",
-  "green4",			/* 10 */
-  "cyan4",
-  "red4",			/* 12 */
-  "magenta4",
-  "yellow",			/* 14 */
-  "white"
-};
-
-void
-ClearDrawArea ()
-{
-  gdk_draw_rectangle(pixmap,
-		     drawing_area->style->black_gc,
-		     TRUE,
-		     0, 0,
-		     drawing_area->allocation.width,
-		     drawing_area->allocation.height);
-}
 
 void
 clear_display()
 {
   ClearDrawArea();
 }
-
-void
-AddTimeOut(unsigned long interval, int (*func)(), void *data) {
-  gtk_timeout_add((guint32)interval,
-		  (GtkFunction)func,
-		  (gpointer)data);
-}
-
-void
-delete_event(GtkWidget *widget, GdkEvent *event, gpointer data)
-{
-  gtk_main_quit ();
-}
-
 
 /* Create a new backing pixmap of the appropriate size */
 static gint
@@ -128,52 +77,6 @@ configure_event (GtkWidget *widget, GdkEventConfigure *event)
     draw_text();
   once = 1;
   return TRUE;
-}
-
-/* Refill the screen from the backing pixmap */
-static gint
-expose_event(GtkWidget *widget, GdkEventExpose *event)
-{
-  gdk_draw_pixmap(widget->window,
-		  widget->style->fg_gc[GTK_WIDGET_STATE(widget)],
-		  pixmap,
-		  event->area.x, event->area.y,
-		  event->area.x, event->area.y,
-		  event->area.width, event->area.height);
-
-  return FALSE;
-}
-
-static gint
-key_press_event(GtkWidget *widget, GdkEventKey *event)
-{
-  handle_key(event->string[0]);
-  return TRUE;
-}
-
-int
-OpenDisplay(int argc, char *argv[])
-{
-  gtk_init(&argc, &argv);
-  return(argc);
-}
-
-void
-DrawPixel(int x, int y)
-{
-  gdk_draw_point(pixmap, gc, x, y);
-}
-
-void
-DrawLine(int x1, int y1, int x2, int y2)
-{
-  gdk_draw_line(pixmap, gc, x1, y1, x2, y2);
-}
-
-void
-SetColor(int c)
-{
-  gdk_gc_set_foreground(gc, &gdkcolor[c]);
 }
 
 void
@@ -291,19 +194,14 @@ ExternCommand()
   gtk_signal_connect_object(GTK_OBJECT(cancel), "clicked",
 			    GTK_SIGNAL_FUNC(gtk_widget_destroy),
 			    GTK_OBJECT(window));
+  GTK_WIDGET_SET_FLAGS(run, GTK_CAN_DEFAULT);
+  gtk_widget_grab_default(run);
   gtk_widget_show(run);
   gtk_widget_show(cancel);
   gtk_widget_show(label);
   gtk_widget_show(command);
   gtk_widget_show(window);
   /*    gtk_grab_add(window); */
-}
-
-void SyncDisplay() {
-  update_rect.x  = update_rect.y = 0;
-  update_rect.width = drawing_area->allocation.width;
-  update_rect.height = drawing_area->allocation.height;
-  gtk_widget_draw(drawing_area, &update_rect);
 }
 
 /* a GTK text writer similar to libvgamisc's vga_write */
@@ -521,13 +419,6 @@ help(GtkWidget *w, void *data)
   gtk_widget_show (window);
 }
 
-/* simple button callback that just hits the given key */
-void
-hit_key(GtkWidget *w, gpointer data)
-{
-  handle_key(((char *)data)[0]);
-}
-
 void
 cleanup_display()
 {
@@ -552,7 +443,6 @@ get_main_menu(GtkWidget *window, GtkWidget ** menubar)
     {"<Main>/File/<separator>", NULL, NULL, NULL},
     {"<Main>/File/Quit", NULL, hit_key, "\e"},
 
-    {"<Main>/Channel/Hide Show", "\t", hit_key, "\t"},
     {"<Main>/Channel/Select/Channel 1", "1", hit_key, "1"},
     {"<Main>/Channel/Select/Channel 2", "2", hit_key, "2"},
     {"<Main>/Channel/Select/Channel 3", "3", hit_key, "3"},
@@ -563,6 +453,7 @@ get_main_menu(GtkWidget *window, GtkWidget ** menubar)
     {"<Main>/Channel/Select/Channel 8", "8", hit_key, "8"},
     {"<Main>/Channel/<separator>", NULL, NULL, NULL},
 
+    {"<Main>/Channel/Hide Show", "\t", hit_key, "\t"},
     {"<Main>/Channel/Scale/up", "}", hit_key, "}"},
     {"<Main>/Channel/Scale/down", "{", hit_key, "{"},
     {"<Main>/Channel/Scale/<separator>", NULL, NULL, NULL},
@@ -603,12 +494,15 @@ get_main_menu(GtkWidget *window, GtkWidget ** menubar)
     {"<Main>/Channel/Position/-128", NULL, setposition, "-i"},
     {"<Main>/Channel/Position/-144", NULL, setposition, "-j"},
     {"<Main>/Channel/Position/-160", NULL, setposition, "-k"},
-
     {"<Main>/Channel/<separator>", NULL, NULL, NULL},
 
-    {"<Main>/Channel/Math/Next Function", ";", hit_key, ";"},
-    {"<Main>/Channel/Math/Prev Function", ":", hit_key, ":"},
+    {"<Main>/Channel/Math/Prev Function", ";", hit_key, ";"},
+    {"<Main>/Channel/Math/Next Function", ":", hit_key, ":"},
     {"<Main>/Channel/Math/<separator>", NULL, NULL, NULL},
+    {"<Main>/Channel/Math/External Command...", "$", hit_key, "$"},
+    {"<Main>/Channel/Math/XY", NULL, runextern, "xy"},
+    {"<Main>/Channel/Math/<separator>", NULL, NULL, NULL},
+
 /* this will need hacked if functions are added / changed in func.c */
     {"<Main>/Channel/Math/Inv. 1", NULL, mathselect, "0"},
     {"<Main>/Channel/Math/Inv. 2", NULL, mathselect, "1"},
@@ -617,9 +511,6 @@ get_main_menu(GtkWidget *window, GtkWidget ** menubar)
     {"<Main>/Channel/Math/Avg. 1,2", NULL, mathselect, "4"},
     {"<Main>/Channel/Math/FFT. 1", NULL, mathselect, "5"},
     {"<Main>/Channel/Math/FFT. 2", NULL, mathselect, "6"},
-
-    {"<Main>/Channel/External Command...", "$", hit_key, "$"},
-    {"<Main>/Channel/<separator>", NULL, NULL, NULL},
 
     {"<Main>/Channel/Store/Mem A", "A", hit_key, "A"},
     {"<Main>/Channel/Store/Mem B", "B", hit_key, "B"},
@@ -644,6 +535,7 @@ get_main_menu(GtkWidget *window, GtkWidget ** menubar)
     {"<Main>/Channel/Store/Mem U", "U", hit_key, "U"},
     {"<Main>/Channel/Store/Mem V", "V", hit_key, "V"},
     {"<Main>/Channel/Store/Mem W", "W", hit_key, "W"},
+
     {"<Main>/Channel/Recall/Mem A", "a", hit_key, "a"},
     {"<Main>/Channel/Recall/Mem B", "b", hit_key, "b"},
     {"<Main>/Channel/Recall/Mem C", "c", hit_key, "c"},
@@ -786,10 +678,10 @@ init_widgets()
   v_points = XY[scope.size];
 
   window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-  gtk_signal_connect(GTK_OBJECT (window), "delete_event",
-		     GTK_SIGNAL_FUNC (delete_event), NULL);
+  gtk_signal_connect(GTK_OBJECT(window), "delete_event",
+		     GTK_SIGNAL_FUNC(delete_event), NULL);
   gtk_signal_connect(GTK_OBJECT(window),"key_press_event",
-		     (GtkSignalFunc) key_press_event, NULL);
+		     GTK_SIGNAL_FUNC(key_press_event), NULL);
 
   vbox = gtk_vbox_new(FALSE, 0);
   gtk_container_add(GTK_CONTAINER(window), vbox);
@@ -801,9 +693,9 @@ init_widgets()
   drawing_area = gtk_drawing_area_new();
   gtk_drawing_area_size(GTK_DRAWING_AREA(drawing_area), h_points, v_points);
   gtk_signal_connect(GTK_OBJECT(drawing_area), "expose_event",
-		     (GtkSignalFunc) expose_event, NULL);
+		     GTK_SIGNAL_FUNC(expose_event), NULL);
   gtk_signal_connect(GTK_OBJECT(drawing_area),"configure_event",
-		     (GtkSignalFunc) configure_event, NULL);
+		     GTK_SIGNAL_FUNC(configure_event), NULL);
 
 /* This stuff was an attempt to be like the libsx interface.  It
    almost works, but because I can't figure out how to color code the
