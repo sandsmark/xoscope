@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 1.56 2000/05/20 23:43:33 twitham Exp $
+ * @(#)$Id: display.c,v 1.57 2000/06/28 21:31:31 twitham Rel $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -563,4 +563,6 @@ init_screen()
   }
   fix_widgets();
   offset = v_points / 2;
+  draw_text(1);
+  clear();
 }
