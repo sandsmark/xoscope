@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: com_gtk.c,v 1.1 1999/08/25 03:03:17 twitham Rel $
+ * @(#)$Id: com_gtk.c,v 1.2 1999/08/29 02:07:57 twitham Exp $
  *
  * Copyright (C) 1996 - 1999 Tim Witham <twitham@quiknet.com>
  *
@@ -77,7 +77,8 @@ DrawLine(int x1, int y1, int x2, int y2)
   gdk_draw_line(pixmap, gc, x1, y1, x2, y2);
 }
 
-void SyncDisplay()
+void
+SyncDisplay()
 {
   update_rect.x  = update_rect.y = 0;
   update_rect.width = drawing_area->allocation.width;
@@ -87,9 +88,11 @@ void SyncDisplay()
 
 void
 AddTimeOut(unsigned long interval, int (*func)(), void *data) {
-  gtk_timeout_add((guint32)interval,
-		  (GtkFunction)func,
-		  (gpointer)data);
+  static int done = 0;
+
+  if (done) return;
+  gtk_idle_add((GtkFunction)func, (gpointer)data);
+  done = 1;
 }
 
 /* set up some common event handlers */

@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: xy.c,v 1.3 1999/08/25 02:59:20 twitham Rel $
+ * @(#)$Id: xy.c,v 1.4 1999/08/29 02:09:17 twitham Rel $
  *
  * Copyright (C) 1996 - 1999 Tim Witham <twitham@quiknet.com>
  *
@@ -29,7 +29,7 @@
 #include "config.h"
 #include "display.h"
 
-int mode = 0, quit_key_pressed = 0, h_points = 640;
+int mode = 2, quit_key_pressed = 0, h_points = 640;
 
 /* handle single key commands */
 void
@@ -85,7 +85,7 @@ animate(void *data)
   }
   SyncDisplay();
   AddTimeOut(MSECREFRESH, animate, NULL);
-  return(0);
+  return TRUE;
 }
 
 int
