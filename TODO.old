@@ -263,3 +263,15 @@ after this release.
 
 v1.6: GTK+ 1.2 or better now required.  The drawing area is now
 context-sensitive to mouse clicks.
+
+31	Parallel port support (several people)
+
+	Use the parallel port as a digital input device.  This would
+	be nice with the new logic analyzer display of version 1.7.
+	http://www.circlemud.org/~jelson/software/parapin should make
+	this easier.  Polling from user space would not guarantee a
+	consistent sample rate.  More ideally, there would be a kernel
+	module device driver to do the sampling regularly and make the
+	bytes available through a file similar to /dev/dsp.
+
+v1.10: DONE.  RTAI required.

@@ -20,6 +20,9 @@
 v1.1: I made a hardware solution for amplifying x10 probes.  See
 HARDWARE and buff.*.  16-bit would still be useful though.
 
+v1.10: COMEDI data source handles 16-bit devices, though math may
+still need to be fixed to avoid overflow
+
 
 3	envelope mode			(Jeff_Tranter@Mitel.Com)
 
@@ -40,6 +43,9 @@ HARDWARE and buff.*.  16-bit would still be useful though.
 
 	You could hide 1 and 2 and use an external command as input.
 	Also allows you to trigger when 1 equals 2 or whatever.
+
+	Problem - how to handle things like the Bitscope that
+	_have_ to have a trigger.  See #33.
 
 
 9	show pre-trigger samples	(twitham@pcocd2.intel.com)
@@ -66,6 +72,8 @@ v1.6: GTK+ interface now has a combo box of useful commands.
 	many folks could actually do this?
 
 v1.4: ProbeScope voltage is labeled correctly, no calibration needed.
+
+v1.10: COMEDI voltage is labeled correctly, no calibration needed.
 
 
 12	channel colors			(Grant_Siemers@ccm.fm.intel.com)
@@ -146,12 +154,58 @@ and believe this will work nicely.
 	looking forward to using BitScope with xoscope on Linux.
 
 
-31	Parallel port support (several people)
+32	Improved display handling
 
-	Use the parallel port as a digital input device.  This would
-	be nice with the new logic analyzer display of version 1.7.
-	http://www.circlemud.org/~jelson/software/parapin should make
-	this easier.  Polling from user space would not guarantee a
-	consistent sample rate.  More ideally, there would be a kernel
-	module device driver to do the sampling regularly and make the
-	bytes available through a file similar to /dev/dsp.
+	Right now, the graticule (display grid) is re-drawn every time
+	the data changes.  Under X Windows, the display code could be
+	implemented using a bitmask to prevent the signal lines from
+	drawing over the graticule when it is in "over" mode.  In
+	"under" mode, the inverse bitmask could be used to "draw"
+	the signal lines only where the graticule is, using the
+	color of the graticule.  End result should be more efficient
+	X Windows performance.
+
+	On a psuedo-color (or svgalib) display, signal lines could
+	be drawn using reserved bits in a custom colormap,
+	removing the need for any special graticule handling at all.
+
+	Code could be smarter about figuring out which x-coordinates
+	have been erased, and only re-draw signal lines for those
+	coordinates, instead of redrawing entire signal lines.
+
+	Don't have to use backing pixmap unless we're in accumulate mode.
+
+
+33	Multi-threading
+
+	Some of the data sources (like Bitscope) tend to block and wait
+	for serial line operations.  An easy way to avoid this would be
+	to implement a multi-threaded data source interface, where the
+	data collection thread ran independant from the display thread.
+	Main problem I see here is synchronization between the main
+	thread and the data collection thread, especially at the end
+	of a sweep - you have to signal the main thread that data
+	is ready, then wait until everything in the main thread is
+	done processing the data before starting a second sweep.
+
+
+34	16-bit and digital triggering
+
+	Triggering code currently works well for 8-bit triggering
+	(the original soundcard design), but for 16-bit sources
+	and digital sources, not so well.  How to scale the trigger
+	values for 16-bit sources, and do something intellegent
+	with digital triggering sources?
+
+
+35	Completely convert to GTK
+
+	Currently, we're only using GTK a little bit, and still have
+	a bunch of nuisance problems in the display handling code.
+	Having to support VGA basically defeats the purpose of
+	having a GUI library, so probably ditch svgalib compeletely,
+	implement the center display window as a widget, and everything
+	else is done with Glade.  Probably call this "xoscope 2",
+	because not only would it look at lot different, it'd now
+	be built around a widget, that should be put in a shared library,
+	that could be used in other applications.
