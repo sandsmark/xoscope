@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: gr_gtk.c,v 1.1 1998/08/22 05:17:01 twitham Exp $
+ * @(#)$Id: gr_gtk.c,v 1.2 1998/08/22 17:22:21 twitham Exp $
  *
  * Copyright (C) 1996 - 1998 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -22,8 +22,11 @@ GtkWidget *drawing_area;		/* scope drawing area */
 GdkPixmap *pixmap = NULL;
 GdkRectangle update_rect;
 GdkGC *gc;
+GtkWidget *menubar;
+GtkWidget *filemenu;
+GtkWidget *vbox;
 
-GtkWidget file[4];			/* file menu */
+GtkWidget *file[4];			/* file menu */
 GtkWidget plot[5];			/* plot menu */
 GtkWidget grat[6];			/* graticule menu */
 GtkWidget colormenu[17];		/* color menu */
@@ -72,17 +75,31 @@ ClearDrawArea ()
 }
 
 void
+clear_display()
+{
+  ClearDrawArea();
+}
+
+void
 AddTimeOut(unsigned long interval, int (*func)(), void *data) {
   gtk_timeout_add((guint32)interval,
 		  (GtkFunction)func,
 		  (gpointer)data);
 }
 
+void
+delete_event (GtkWidget *widget, GdkEvent *event, gpointer data)
+{
+  gtk_main_quit ();
+}
+
+
 /* Create a new backing pixmap of the appropriate size */
 static gint
 configure_event (GtkWidget *widget, GdkEventConfigure *event)
 {
-  static int i = 2, h, v, once = 0;
+/*   static int i = 2; */
+  static int h, v, once = 0;
 
   if (pixmap)
     gdk_pixmap_unref(pixmap);
@@ -240,7 +257,7 @@ vga_write(char *s, short x, short y, void *f, short fg, short bg, char p)
   gdk_draw_rectangle(pixmap,
 		     drawing_area->style->black_gc,
 		     TRUE,
-		     x, y + 1, w, 15);
+		     x, y + 2, w, 16);
 
   gdk_draw_string(pixmap, font, gc, x, y + 16, s);
   return(1);
@@ -264,30 +281,25 @@ keys(GtkWidget w, char *input, int up_or_down, void *data)
 
 /* menu option callbacks */
 void
-plotmode(GtkWidget w, void *data)
+plotmode(GtkWidget *w, gpointer data)
 {
-  char *c = (char *)data;
-
-  scope.mode = *c - '0';
+  scope.mode = ((char *)data)[0] - '0';
   clear();
 }
 
 void
-runmode(GtkWidget w, void *data)
+runmode(GtkWidget *w, gpointer data)
 {
-  char *c = (char *)data;
-
-  scope.run = *c - '0';
+  scope.run = ((char *)data)[0] - '0';
   clear();
 }
 
 void
-graticule(GtkWidget w, void *data)
+graticule(GtkWidget *w, gpointer data)
 {
-  char *c = (char *)data;
   int i;
 
-  i = *c - '0';
+  i = ((char *)data)[0] - '0';
   if (i < 2)
     scope.behind = i;
   else
@@ -296,7 +308,7 @@ graticule(GtkWidget w, void *data)
 }
 
 void
-setcolor(GtkWidget w, void *data)
+setcolor(GtkWidget *w, gpointer data)
 {
   int *c = (int *)data;
 
@@ -317,14 +329,14 @@ mathselect(GtkWidget w, void *data)
 
 /* close the window */
 void
-dismiss(GtkWidget w, void *data)
+dismiss(GtkWidget *w, gpointer data)
 {
 /*   CloseWindow(); */
 }
 
 /* run an external command */
 void
-runextern(GtkWidget w, void *data)
+runextern(GtkWidget *w, gpointer data)
 {
   strcpy(ch[scope.select].command, (char *)data);
   ch[scope.select].func = FUNCEXT;
@@ -369,11 +381,9 @@ help(GtkWidget w, void *data)
 
 /* simple button callback that just hits the given key */
 void
-hit_key(GtkWidget w, void *data)
+hit_key(GtkWidget *w, gpointer data)
 {
-  char *c = (char *)data;
-
-  handle_key(*c);
+  handle_key(((char *)data)[0]);
 }
 
 void
@@ -453,36 +463,86 @@ fix_widgets()
 /*   } */
 }
 
+void
+get_main_menu(GtkWidget *window, GtkWidget ** menubar)
+{
+  static GtkMenuEntry menu_items[] =
+  {
+/*     {"<Main>/File/New", "<control>N", print_hello, NULL}, */
+    {"<Main>/File/Open...", "<control>O", hit_key, "@"},
+    {"<Main>/File/Save...", "<control>S", hit_key, "#"},
+/*     {"<Main>/File/Save as", NULL, NULL, NULL}, */
+    {"<Main>/File/<separator>", NULL, NULL, NULL},
+    {"<Main>/File/Quit", "<control>Q", hit_key, "\e"},
+    {"<Main>/Plot Mode/Point", NULL, plotmode, "0"},
+    {"<Main>/Plot Mode/Point Accumulate", NULL, plotmode, "1"},
+    {"<Main>/Plot Mode/Line", NULL, plotmode, "2"},
+    {"<Main>/Plot Mode/Line Accumulate", NULL, plotmode, "3"},
+    {"<Main>/Graticule/In Front", NULL, graticule, "0"},
+    {"<Main>/Graticule/Behind", NULL, graticule, "1"},
+    {"<Main>/File/<separator>", NULL, NULL, NULL},
+    {"<Main>/Graticule/None", NULL, graticule, "2"},
+    {"<Main>/Graticule/Minor Divisions", NULL, graticule, "3"},
+    {"<Main>/Graticule/Minor & Major", NULL, graticule, "4"},
+    {"<Main>/Refresh", NULL, hit_key, "\n"},
+    {"<Main>/ < ", NULL, hit_key, "9"},
+    {"<Main>/<", NULL, hit_key, "("},
+    {"<Main>/>", NULL, hit_key, ")"},
+    {"<Main>/ > ", NULL, hit_key, "0"},
+    {"<Main>/SC", NULL, hit_key, "&"},
+    {"<Main>/PS", NULL, hit_key, "^"},
+    {"<Main>/Run", NULL, runmode, "1"},
+    {"<Main>/Wait", NULL, runmode, "2"},
+    {"<Main>/Stop", NULL, runmode, "0"},
+    {"<Main>/ ? ", NULL, hit_key, "?"},
+  };
+  int nmenu_items = sizeof(menu_items) / sizeof(menu_items[0]);
+
+  GtkMenuFactory *factory;
+  GtkMenuFactory *subfactory;
+
+  factory = gtk_menu_factory_new(GTK_MENU_FACTORY_MENU_BAR);
+  subfactory = gtk_menu_factory_new(GTK_MENU_FACTORY_MENU_BAR);
+
+  gtk_menu_factory_add_subfactory(factory, subfactory, "<Main>");
+  gtk_menu_factory_add_entries(factory, menu_items, nmenu_items);
+  gtk_window_add_accelerator_table(GTK_WINDOW(window), subfactory->table);
+
+  if (menubar)
+    *menubar = subfactory->widget;
+}
+
 /* initialize all the widgets, called by init_screen in display.c */
 void
 init_widgets()
 {
   int i;
+  GtkWidget *menubar;
 
   window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-  /*   button = gtk_button_new_with_label("Hello World"); */
-  /*   gtk_signal_connect (GTK_OBJECT (button), "clicked", */
-  /* 		      GTK_SIGNAL_FUNC (hello), NULL); */
-  /*   gtk_signal_connect_object (GTK_OBJECT (button), "clicked", */
-  /* 			     GTK_SIGNAL_FUNC (gtk_widget_destroy), */
-  /* 			     GTK_OBJECT (window)); */
+  gtk_signal_connect(GTK_OBJECT (window), "delete_event",
+		     GTK_SIGNAL_FUNC (delete_event), NULL);
+
+  vbox = gtk_vbox_new(FALSE, 0);
+  gtk_container_border_width(GTK_CONTAINER(vbox), 1);
+  gtk_container_add(GTK_CONTAINER(window), vbox);
+  gtk_widget_show(vbox);
+
+  get_main_menu(window, &menubar);
+  gtk_box_pack_start(GTK_BOX(vbox), menubar, FALSE, TRUE, 0);
+  gtk_widget_show(menubar);
 
   drawing_area = gtk_drawing_area_new();
   /*   gtk_drawing_area_size(drawing_area, h_points, v_points); */
-  gtk_drawing_area_size(drawing_area, 640, 480);
-  gtk_signal_connect(GTK_OBJECT (drawing_area), "expose_event",
+  gtk_drawing_area_size(GTK_DRAWING_AREA(drawing_area), 640, 480);
+  gtk_signal_connect(GTK_OBJECT(drawing_area), "expose_event",
 		     (GtkSignalFunc) expose_event, NULL);
   gtk_signal_connect(GTK_OBJECT(drawing_area),"configure_event",
 		     (GtkSignalFunc) configure_event, NULL);
   gtk_signal_connect(GTK_OBJECT(window),"key_press_event",
 		     (GtkSignalFunc) key_press_event, NULL);
-/*   gtk_widget_set_events(drawing_area, GDK_EXPOSURE_MASK */
-/* 			| GDK_LEAVE_NOTIFY_MASK */
-/* 			| GDK_BUTTON_PRESS_MASK */
-/* 			| GDK_POINTER_MOTION_MASK */
-/* 			| GDK_POINTER_MOTION_HINT_MASK */
-/* 			| GDK_KEY_PRESS_MASK); */
-  gtk_container_add(GTK_CONTAINER (window), drawing_area);
+/*   gtk_container_add(GTK_CONTAINER (window), drawing_area); */
+  gtk_box_pack_start(GTK_BOX(vbox), drawing_area, TRUE, TRUE, 0);
 
   gtk_widget_show(drawing_area);
   gtk_widget_show(window);
@@ -505,53 +565,7 @@ init_widgets()
 /* 		      " 5  ", " 6  ", " 7  ", " 8  "}; */
 /*   int i, j; */
 
-/*   /* top row of widgets */
-/*   file[0] = MakeMenu("File"); */
-/*   file[1] = MakeMenuItem(file[0], "Load...", hit_key, "@"); */
-/*   file[2] = MakeMenuItem(file[0], "Save...", hit_key, "#"); */
-/*   file[3] = MakeMenuItem(file[0], "Quit", hit_key, "\e"); */
-
-/*   plot[0] = MakeMenu("Plot Mode"); */
-/*   plot[1] = MakeMenuItem(plot[0], "Point", plotmode, "0"); */
-/*   plot[2] = MakeMenuItem(plot[0], "Point Accumulate", plotmode, "1"); */
-/*   plot[3] = MakeMenuItem(plot[0], "Line", plotmode, "2"); */
-/*   plot[4] = MakeMenuItem(plot[0], "Line Accumulate", plotmode, "3"); */
-
 /*   colormenu[0] = MakeMenu("Color"); */
-
-/*   grat[0] = MakeMenu("Graticule"); */
-/*   grat[1] = MakeMenuItem(grat[0], "In Front", graticule, "0"); */
-/*   grat[2] = MakeMenuItem(grat[0], "Behind", graticule, "1"); */
-/*   grat[3] = MakeMenuItem(grat[0], "None", graticule, "2"); */
-/*   grat[4] = MakeMenuItem(grat[0], "Minor Divisions", graticule, "3"); */
-/*   grat[5] = MakeMenuItem(grat[0], "Minor & Major", graticule, "4"); */
-
-/*   xwidg[0] = MakeButton("Refresh", hit_key, "\n"); */
-/*   xwidg[1] = MakeButton(" < ", hit_key, "9"); */
-/*   xwidg[2] = MakeButton("<", hit_key, "("); */
-/*   xwidg[3] = MakeButton(">", hit_key, ")"); */
-/*   xwidg[4] = MakeButton(" > ", hit_key, "0"); */
-/*   xwidg[5] = MakeButton("SC", hit_key, "&"); */
-/*   xwidg[6] = MakeButton("PS", hit_key, "^"); */
-/*   xwidg[7] = MakeButton("Run", runmode, "1"); */
-/*   xwidg[8] = MakeButton("Wait", runmode, "2"); */
-/*   xwidg[9] = MakeButton("Stop", runmode, "0"); */
-/*   xwidg[10] = MakeButton(" ? ", hit_key, "?"); */
-
-/*   SetWidgetPos(plot[0], PLACE_RIGHT, file[0], NO_CARE, NULL); */
-/*   SetWidgetPos(grat[0], PLACE_RIGHT, plot[0], NO_CARE, NULL); */
-/*   SetWidgetPos(colormenu[0], PLACE_RIGHT, grat[0], NO_CARE, NULL); */
-/*   SetWidgetPos(xwidg[0], PLACE_RIGHT, colormenu[0], NO_CARE, NULL); */
-/*   SetWidgetPos(xwidg[1], PLACE_RIGHT, xwidg[0], NO_CARE, NULL); */
-/*   SetWidgetPos(xwidg[2], PLACE_RIGHT, xwidg[1], NO_CARE, NULL); */
-/*   SetWidgetPos(xwidg[3], PLACE_RIGHT, xwidg[2], NO_CARE, NULL); */
-/*   SetWidgetPos(xwidg[4], PLACE_RIGHT, xwidg[3], NO_CARE, NULL); */
-/*   SetWidgetPos(xwidg[5], PLACE_RIGHT, xwidg[4], NO_CARE, NULL); */
-/*   SetWidgetPos(xwidg[6], PLACE_RIGHT, xwidg[5], NO_CARE, NULL); */
-/*   SetWidgetPos(xwidg[7], PLACE_RIGHT, xwidg[6], NO_CARE, NULL); */
-/*   SetWidgetPos(xwidg[8], PLACE_RIGHT, xwidg[7], NO_CARE, NULL); */
-/*   SetWidgetPos(xwidg[9], PLACE_RIGHT, xwidg[8], NO_CARE, NULL); */
-/*   SetWidgetPos(xwidg[10], PLACE_RIGHT, xwidg[9], NO_CARE, NULL); */
 
 /*   /* the drawing area for the scope */
   h_points = XX[scope.size];
@@ -660,12 +674,6 @@ init_widgets()
 /*   font = GetFont(fontname); */
   font = gdk_font_load(fontname);
 /*   SetWidgetFont(drawing_area, font); */
-  ClearDrawArea();
-}
-
-void
-clear_display()
-{
   ClearDrawArea();
 }
 
