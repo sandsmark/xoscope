@@ -1,15 +1,15 @@
 /*
- * @(#)$Id: oscope.h,v 1.19 1996/02/22 06:23:21 twitham Exp $
+ * @(#)$Id: oscope.h,v 1.20 1996/03/02 07:00:01 twitham Exp $
  *
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
- * (see oscope.c and the file COPYING for more details)
+ * (see the files README and COPYING for more details)
  *
- * This file defines the programs global variables and structures
+ * This file defines the program's global variables and structures
  *
  */
 
-/* Use -DNOVGAMISC if you don't have libvgamisc from the g3fax kit */
+/* -DNOVGAMISC from the Makefile causes HAVEVGAMISC to be undefined */
 #ifndef NOVGAMISC
 #define HAVEVGAMISC
 #endif
@@ -69,3 +69,6 @@ get_data();
 
 void
 handle_key(unsigned char);
+
+void
+parse_args(int argc, char **argv);
