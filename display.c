@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 1.1 1996/01/23 07:52:07 twitham Exp $
+ * @(#)$Id: display.c,v 1.2 1996/01/25 05:27:16 twitham Exp $
  *
  * Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
@@ -20,11 +20,8 @@
 char fontname[80] = DEF_FX;
 Widget w[1];
 XFont font;
-char x11_key = '\0';
 int XX[] = {320,640,640,640,800,1024,1280};
 int XY[] = {200,200,350,480,480, 480, 480};
-void
-animate(void *data);
 #else
 char fontname[80] = DEF_F;
 int screen_modes[] = {		/* allowed modes */
@@ -163,12 +160,77 @@ draw_graticule()
   }
 }
 
+/* graph the data on the display */
+static inline void
+draw_data()
+{
+  static int i, j, k;
+
+  if (point_mode) {
+    for (j = 0 ; j < channels ; j++) {
+      for (i = 1 ; i < (h_points / scale - 1) ; i++) {
+	k = i * channels + j;	/* calc this offset once for efficiency */
+	VGA_SETCOLOR(BLACK);	/* erase previous dot */
+	VGA_DRAWPIXEL(i * scale,
+		      old[k] + offset);
+	VGA_SETCOLOR(colour + j); /* draw dot */
+	VGA_DRAWPIXEL(i * scale,
+		      buffer[k] + offset);
+	old[k] = buffer[k];
+      }
+    }
+  } else {			/* line mode, a little slower */
+    for (j = 0 ; j < channels ; j++) {
+      for (i = 1 ; i < (h_points / scale - 2) ; i++) {
+	k = i * channels + j;	/* calc this offset once for efficiency */
+	VGA_SETCOLOR(BLACK);	/* erase previous line */
+	VGA_DRAWLINE(i * scale,
+		     old[k] + offset,
+		     i * scale + scale,
+		     old[k + channels] + offset);
+	VGA_SETCOLOR(colour + j); /* draw line */
+	VGA_DRAWLINE(i * scale,
+		     buffer[k] + offset,
+		     i * scale + scale,
+		     buffer[k + channels] + offset);
+	old[k] = buffer[k];
+      }
+      old[i * channels + j] = buffer[i * channels + j];
+    }
+  }
+#ifdef XSCOPE
+  SyncDisplay();
+#endif
+}
+
+/* get and plot one screen full of data and draw the graticule */
+static inline void
+animate(void *data)
+{
+  if (running) {
+    get_data();
+    if (behind) {
+      draw_graticule();		/* plot data on top of graticule */
+      draw_data();
+    } else {
+      draw_data();		/* plot graticule on top of data */
+      draw_graticule();
+    }
+  }
+#ifdef XSCOPE
+  AddTimeOut(5, animate, NULL);
+  if (quit_key_pressed) {
+    cleanup();
+    exit(0);
+  }
+#endif
+}
+
 #ifdef XSCOPE
 /* callback to redisplay the X11 screen */
 void
-redisplay(Widget w, int new_width, int new_height, void * data) {
+redisplay(Widget w, int new_width, int new_height, void *data) {
   draw_text();
-  animate(NULL);
 }
 
 /* callback for keypress events on the X11 screen */
@@ -217,77 +279,12 @@ init_screen(int firsttime)
   draw_graticule();
 }
 
-/* graph the data on the display */
-static inline void
-draw_data()
-{
-  static int i, j, k;
-
-  if (point_mode) {
-    for (j = 0 ; j < channels ; j++) {
-      for (i = 1 ; i < (h_points / scale - 1) ; i++) {
-	k = i * channels + j;	/* calc this offset once for efficiency */
-	VGA_SETCOLOR(BLACK);	/* erase previous dot */
-	VGA_DRAWPIXEL(i * scale,
-		      old[k] + offset);
-	VGA_SETCOLOR(colour + j); /* draw dot */
-	VGA_DRAWPIXEL(i * scale,
-		      buffer[k] + offset);
-	old[k] = buffer[k];
-      }
-    }
-  } else {			/* line mode, a little slower */
-    for (j = 0 ; j < channels ; j++) {
-      for (i = 1 ; i < (h_points / scale - 2) ; i++) {
-	k = i * channels + j;	/* calc this offset once for efficiency */
-	VGA_SETCOLOR(BLACK);	/* erase previous line */
-	VGA_DRAWLINE(i * scale,
-		     old[k] + offset,
-		     i * scale + scale,
-		     old[k + channels] + offset);
-	VGA_SETCOLOR(colour + j); /* draw line */
-	VGA_DRAWLINE(i * scale,
-		     buffer[k] + offset,
-		     i * scale + scale,
-		     buffer[k + channels] + offset);
-	old[k] = buffer[k];
-      }
-      old[i * channels + j] = buffer[i * channels + j];
-    }
-  }
-#ifdef XSCOPE
-  SyncDisplay();
-#endif
-}
-
-/* get and plot one screen full of data and draw the graticule */
-void
-animate(void *data)
-{
-  if (running) {
-    get_data();
-    if (behind) {
-      draw_graticule();		/* plot data on top of graticule */
-      draw_data();
-    } else {
-      draw_data();		/* plot graticule on top of data */
-      draw_graticule();
-    }
-  }
-#ifdef XSCOPE
-  AddTimeOut(0, animate, NULL);
-  if (quit_key_pressed) {
-    cleanup();
-    exit(0);
-  }
-#endif
-}
-
 /* loop until finished */
 void
 mainloop()
 {
 #ifdef XSCOPE
+  animate(NULL);
   MainLoop();
 #else
   while (!quit_key_pressed) {
