@@ -1,10 +1,10 @@
-.\" @(#)$Id: oscope.1,v 1.12 1997/05/01 04:48:36 twitham Exp $
+.\" @(#)$Id: oscope.1,v 1.13 1997/05/03 06:06:18 twitham Exp $
 .\"
 .\" Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
 .\"
 .\" (see the files README and COPYING for more details)
 
-.TH OSCOPE 1 "May  1  1997" "Linux" "User Commands"
+.TH OSCOPE 1 "May  3  1997" "Linux" "User Commands"
 .SH NAME
 oscope xoscope \- Digital Oscilloscope for /dev/dsp
 .SH SYNOPSIS
@@ -195,8 +195,8 @@ Specify the startup conditions of each channel.  # is a channel number
 from 1 to 8.  Code can have up to four fields, separated by colons:
 position[:scale[:function #, memory letter, or external command]].
 Position is the number of pixels above (positive) or below (negative)
-the center of the display.  Scale is a valid scaling factor from 1/200
-to 200, expressed as a fraction.  The third field may contain a
+the center of the display.  Scale is a valid scaling factor from 1/100
+to 100, expressed as a fraction.  The third field may contain a
 built-in math function number, memory letter, or external math command
 to run on the channel.  Using these options makes the channel visible
 unless position begins with a '+', in which case the channel is
@@ -213,7 +213,7 @@ are 8800, 11000, 22000, or 44000.
 
 .TP 0.5i
 .B -s <scale>
-Sets the time Scale factor, 1, 2, 5, 10, 20, 100, or 200.
+Sets the time Scale factor from 1/100 to 100 expressed as a fraction.
 
 .TP 0.5i
 .B -t <trigger>
@@ -346,8 +346,8 @@ Instead you're given the scale in pixels per sample unit.
 
 Signal math only works correctly if Channel 1 and 2 contain signals
 with the same sampling rate.
-.B It is up to you to make sure this is true.  Doing math on signals of
-.B different sample rates will produce incorrect results!
+.B It is up to you to make sure this is the case.  Doing math on signals
+.B of different sample rates will produce incorrect results!
 
 The display may not be able to keep up if you give it too much to
 plot, depending on your sound card, graphics card, and processor
