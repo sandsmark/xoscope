@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: config.h,v 1.2 1996/03/02 07:02:41 twitham Exp $
+ * @(#)$Id: config.h,v 1.3 1996/03/10 01:50:18 twitham Exp $
  *
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -12,9 +12,10 @@
  */
 
 /* program defaults for the command-line options */
+#define DEF_A	1		/* 1-8 (1) */
 #define DEF_R	44000		/* 8800,22000,44000 (44000) */
 #define DEF_S	1		/* 1,2,5,10,20,50,100,200 (1) */
-#define DEF_T	0		/* -128 - 127, 255 = disable (0) */
+#define DEF_T	"0:1:1"		/* -128-127:0,1,2:1,2 ("0:1:1") */
 #define DEF_C	4		/* 0-16 (4) */
 #define DEF_M	0		/* 0,1,2 (0) */
 #define DEF_D	4		/* 1,2,4 (4) */
@@ -51,3 +52,6 @@
 
 /* bourne shell command for X11 Help ("man xoscope 2>&1") */
 #define HELPCOMMAND	"man xoscope 2>&1"
+
+/* default file name */
+#define FILENAME	"oscope.osp"
