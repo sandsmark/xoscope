@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: file.c,v 1.13 1997/06/07 21:38:15 twitham Rel $
+ * @(#)$Id: file.c,v 1.14 1997/08/29 04:52:09 twitham Exp $
  *
  * Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -39,7 +39,7 @@ handle_opt(int opt, char *optarg)
   switch (opt) {
   case 'r':			/* sample rate */
   case 'R':
-    scope.rate = limit(strtol(optarg, NULL, 0), 8800, 44000);
+    scope.rate = limit(strtol(optarg, NULL, 0), 8000, 44100);
     break;
   case 's':			/* scale (zoom) */
   case 'S':
