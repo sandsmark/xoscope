@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 1.46 1997/05/31 19:37:15 twitham Exp $
+ * @(#)$Id: display.c,v 1.47 1997/06/07 21:29:46 twitham Exp $
  *
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -206,7 +206,9 @@ draw_text(int all)
       vga_write(string, col(3), row(28),
 		font, mem[25].color, TEXT_BG, ALIGN_LEFT);
 
-      vga_write("(9)(()                       ())(0)", col(40), row(26),
+      vga_write("(9)              (0)", col(40), row(25),
+		font, KEY_FG, TEXT_BG, ALIGN_CENTER);
+      vga_write("(()              ())", col(40), row(26),
 		font, KEY_FG, TEXT_BG, ALIGN_CENTER);
 
       vga_write("(A-Z)", col(73), row(27), font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
@@ -236,8 +238,7 @@ draw_text(int all)
     sprintf(string, "%d %cs/div", i > 999 ? i / 1000 : i, i > 999 ? 'm' : 'u');
     vga_write(string, col(40), row(25), font, TEXT_FG, TEXT_BG, ALIGN_CENTER);
 
-    sprintf(string, "%d S/s * %d / %d", p->signal->rate,
-	    scope.scale, scope.div);
+    sprintf(string, "%d S/s", p->signal->rate);
     vga_write(string, col(40), row(26), font, p->color, TEXT_BG, ALIGN_CENTER);
 
     sprintf(string, "%d Hz/div FFT", scope.div * p->signal->rate / 1000
@@ -298,10 +299,10 @@ draw_text(int all)
   }
 
   if (ps.found) {		/* ProbeScope on ? */
-    sprintf(string, "%s%4.2f V %s    ", ps.flags & PS_OVERFLOW ? "/\\"
+    sprintf(string, "%s%4.2f V %s      ", ps.flags & PS_OVERFLOW ? "/\\"
 	    : ps.flags & PS_UNDERFLOW ? "\\/ " : "",
 	    (float)ps.dvm * (float)ps.volts / 100,
-	    ps.coupling);
+	    ps.coupling ? ps.coupling : "?");
     vga_write(string, 100, row(27), font, mem[25].color, TEXT_BG, ALIGN_LEFT);
   }
 }
