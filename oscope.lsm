@@ -1,24 +1,23 @@
 Begin3
 Title: [x]oscope - Digital Oscilloscope for /dev/dsp
-Version: 0.5
-Entered-date: 01APR96
+Version: 1.0
+Entered-date: 24APR96
 Description: [x]oscope is a digital 44kHz oscilloscope for /dev/dsp.
 	Includes oscope for SVGA console display and xoscope, an X11 client.
-	Features include real-time 8-bit sampling of 2 channels at 44kHz,
-	5 us/div to 5 ms/div time scale, signal scaling and positioning,
-	5 automatic measurements, math functions including sum, diff, avg, fft,
-	26 memory buffers, 8 simultaneous displays (2 hardware, 6 sofware).
+	Features include 8-bit sampling of 2 channels at 44kHz, 5 us/div to
+	5 ms/div time scale, 5 automatic measurements, built-in and external
+	math functions including sum, diff, avg, and FFT, 26 memory buffers,
+	8 simultaneous signal displays, and file save/load.
 Keywords: sound, graphics, oscilloscope, circuits
-Author: Jeff_Tranter@Mitel.COM (Jeff Tranter)
-	twitham@pcocd2.intel.com (Tim Witham)
+Author: twitham@pcocd2.intel.com (Tim Witham)
 Maintained-by: twitham@pcocd2.intel.com (Tim Witham)
 Primary-site: sunsite.unc.edu /pub/linux/apps/circuits
-	31940 oscope-0.5.tar.gz
-	1172 oscope.lsm
+	43kB oscope-1.0.tar.gz
+	1090 oscope.lsm
 Platforms: Needs a kernel supported sound card that can do 8800Hz - 44kHz,
 	"libsx" from the "libsx" package to build the xoscope X11 client,
 	"libvga" from the "svgalib" package to build console-based oscope,
-	"libvgamisc" from Mitch D'Souza's "g3vga" package to add console text,
-	and a mixing program to select input source and level (cam, xmix, ...)
+	"libvgamisc" from the "g3vga" package to add console text,
+	and a mixing program to select input source and level
 Copying-policy: GPL
 End
