@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: gr_sx.c,v 1.13 1997/05/04 20:15:05 twitham Rel1_3 $
+ * @(#)$Id: gr_sx.c,v 1.14 1997/05/28 05:40:44 twitham Exp $
  *
  * Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -22,7 +22,7 @@ Widget file[4];			/* file menu */
 Widget plot[5];			/* plot menu */
 Widget grat[6];			/* graticule menu */
 Widget colormenu[17];		/* color menu */
-Widget xwidg[9];		/* extra horizontal widgets */
+Widget xwidg[10];		/* extra horizontal widgets */
 Widget mwidg[57];		/* memory / math widgets */
 Widget cwidg[CHANNELS];		/* channel button widgets */
 Widget ywidg[15];		/* vertical widgets */
@@ -155,7 +155,7 @@ mathselect(Widget w, void *data)
   int *c = (int *)data;
 
   if (scope.select > 1) {
-    ch[scope.select].func = *c + 4;
+    ch[scope.select].func = *c + FUNC0;
     clear();
   }
 }
@@ -226,8 +226,8 @@ cleanup_display()
 {
   int i;
 
-  for (i = 0 ; i < (funccount > 19 ? funccount - 4 : 16) ; i++) {
-    if (i < funccount - 4)
+  for (i = 0 ; i < (funccount > 16 + FUNC0 ? funccount - FUNC0 : 16) ; i++) {
+    if (i < funccount - FUNC0)
       if (math && math[i]) free(math[i]);
     if (intarray && intarray[i]) free(intarray[i]);
   }
@@ -254,8 +254,8 @@ fix_widgets()
   for (i = 0 ; i < 16 ; i++) {
     SetMenuItemChecked(colormenu[i + 1], scope.color == i);
   }
-  for (i = 0 ; i < funccount - 4 ; i++) {
-    SetMenuItemChecked(*math[i], ch[scope.select].func == i + 4);
+  for (i = 0 ; i < funccount - FUNC0 ; i++) {
+    SetMenuItemChecked(*math[i], ch[scope.select].func == i + FUNC0);
   }
 
   SetBgColor(mwidg[0], ch[scope.select].color);
@@ -307,12 +307,12 @@ init_widgets()
   int i, j;
 
   /* top row of widgets */
-  file[0] = MakeMenu(" File ");
+  file[0] = MakeMenu("File");
   file[1] = MakeMenuItem(file[0], "Load...", hit_key, "@");
   file[2] = MakeMenuItem(file[0], "Save...", hit_key, "#");
   file[3] = MakeMenuItem(file[0], "Quit", hit_key, "\e");
 
-  plot[0] = MakeMenu(" Plot Mode ");
+  plot[0] = MakeMenu("Plot Mode");
   plot[1] = MakeMenuItem(plot[0], "Point", plotmode, "0");
   plot[2] = MakeMenuItem(plot[0], "Point Accumulate", plotmode, "1");
   plot[3] = MakeMenuItem(plot[0], "Line", plotmode, "2");
@@ -320,14 +320,14 @@ init_widgets()
 
   colormenu[0] = MakeMenu("Color");
 
-  grat[0] = MakeMenu(" Graticule ");
+  grat[0] = MakeMenu("Graticule");
   grat[1] = MakeMenuItem(grat[0], "In Front", graticule, "0");
   grat[2] = MakeMenuItem(grat[0], "Behind", graticule, "1");
   grat[3] = MakeMenuItem(grat[0], "None", graticule, "2");
   grat[4] = MakeMenuItem(grat[0], "Minor Divisions", graticule, "3");
   grat[5] = MakeMenuItem(grat[0], "Minor & Major", graticule, "4");
 
-  xwidg[0] = MakeButton(" Refresh ", hit_key, "\n");
+  xwidg[0] = MakeButton("Refresh", hit_key, "\n");
   xwidg[1] = MakeButton(" < ", hit_key, "9");
   xwidg[2] = MakeButton("<", hit_key, "(");
   xwidg[3] = MakeButton(">", hit_key, ")");
@@ -335,7 +335,8 @@ init_widgets()
   xwidg[5] = MakeButton("Run", runmode, "1");
   xwidg[6] = MakeButton("Wait", runmode, "2");
   xwidg[7] = MakeButton("Stop", runmode, "0");
-  xwidg[8] = MakeButton("?", hit_key, "?");
+  xwidg[8] = MakeButton("PS", hit_key, "%");
+  xwidg[9] = MakeButton(" ? ", hit_key, "?");
 
   SetWidgetPos(plot[0], PLACE_RIGHT, file[0], NO_CARE, NULL);
   SetWidgetPos(grat[0], PLACE_RIGHT, plot[0], NO_CARE, NULL);
@@ -349,6 +350,7 @@ init_widgets()
   SetWidgetPos(xwidg[6], PLACE_RIGHT, xwidg[5], NO_CARE, NULL);
   SetWidgetPos(xwidg[7], PLACE_RIGHT, xwidg[6], NO_CARE, NULL);
   SetWidgetPos(xwidg[8], PLACE_RIGHT, xwidg[7], NO_CARE, NULL);
+  SetWidgetPos(xwidg[9], PLACE_RIGHT, xwidg[8], NO_CARE, NULL);
 
   /* the drawing area for the scope */
   h_points = XX[scope.size];
@@ -424,7 +426,7 @@ init_widgets()
   SetWidgetPos(mwidg[28],  PLACE_UNDER, draw_widget, PLACE_RIGHT, mwidg[27]);
   SetWidgetPos(mwidg[56],  PLACE_UNDER, mwidg[27], PLACE_RIGHT, mwidg[55]);
 
-  j = funccount - 4;
+  j = funccount - FUNC0;
   if ((math = malloc(sizeof(Widget *) * j)) == NULL)
     nomalloc(__FILE__, __LINE__);
   if ((intarray = malloc(sizeof(int *) * (j > 16 ? j : 16))) == NULL)
@@ -436,7 +438,7 @@ init_widgets()
     if (i < j) {
       if ((math[i] = malloc(sizeof(Widget))) == NULL)
 	nomalloc(__FILE__, __LINE__);
-      *math[i] = MakeMenuItem(mwidg[27], funcnames[4 + i],
+      *math[i] = MakeMenuItem(mwidg[27], funcnames[FUNC0 + i],
 			      mathselect, intarray[i]);
     }
   }
