@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 1.24 1996/02/17 21:19:58 twitham Exp $
+ * @(#)$Id: display.c,v 1.25 1996/02/22 06:25:46 twitham Exp $
  *
  * Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
@@ -38,6 +38,7 @@ VGA_WRITE(char *s, short x, short y, XFont f, short fg, short bg, char p)
   DrawText(s, x, y + FontHeight(f));
   return(1);
 }
+
 #else
 
 #include <vga.h>
@@ -53,6 +54,7 @@ VGA_WRITE(char *s, short x, short y, XFont f, short fg, short bg, char p)
 
 #endif
 
+int triggered = 0;		/* whether we've triggered or not */
 int color[16];
 char *colors[] = {		/* X colors similar to 16 console colors */
   "black",			/* 0 */
@@ -143,6 +145,11 @@ draw_text(int all)
     "Line",
     "Line Accum."
   };
+  static char *trigs[] = {
+    "No",
+    "Rising",
+    "Falling"
+  };
 
   p = &ch[scope.select];
   if (all) {			/* everything */
@@ -152,9 +159,8 @@ draw_text(int all)
     VGA_WRITE("Quit", col(5), 0, font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
 
     VGA_WRITE("(Tab)", 0, row(1), font, KEY_FG, TEXT_BG, ALIGN_LEFT);
-    sprintf(string, "Channel %d %s", scope.select + 1,
-	    p->show ? "Visible" : "HIDDEN ");
-    VGA_WRITE(string, col(5), row(1), font, p->color, TEXT_BG, ALIGN_LEFT);
+    VGA_WRITE(p->show ? "Visible" : "HIDDEN ", col(5), row(1),
+	      font, p->color, TEXT_BG, ALIGN_LEFT);
 
     VGA_WRITE("(Enter)", col(70), 0, font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
     VGA_WRITE("Refresh", col(77), 0, font, TEXT_FG, TEXT_BG, ALIGN_RIGHT);
@@ -165,9 +171,8 @@ draw_text(int all)
 
     VGA_WRITE("(_)(-)                      (=)(+)", col(40), row(2),
 	      font, KEY_FG, TEXT_BG, ALIGN_CENTER);
-    sprintf(string, "%s Trigger @ %d",
-	    scope.trige ? "Rising" : "Falling", scope.trig - 128);
-    VGA_WRITE(scope.trig > -1 ? string : "No Trigger", col(40), row(2),
+    sprintf(string, "%s Trigger @ %d", trigs[scope.trige], scope.trig - 128);
+    VGA_WRITE(string, col(40), row(2),
 	      font, ch[scope.trigch].color, TEXT_BG, ALIGN_CENTER);
 
     VGA_WRITE("(*)", col(70), row(2), font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
@@ -198,11 +203,11 @@ draw_text(int all)
       VGA_WRITE(string, col(69 * (i / 4) + 7), row(j),
 		font, KEY_FG, TEXT_BG, ALIGN_LEFT);
 
-      sprintf(string, "Scale: %d/%d", ch[i].mult, ch[i].div);
+      sprintf(string, "Pos. :%4d", -(ch[i].pos));
       VGA_WRITE(string, col(69 * (i / 4)), row(j + 1),
 		font, k, TEXT_BG, ALIGN_LEFT);
 
-      sprintf(string, "Pos. : %d", -(ch[i].pos));
+      sprintf(string, "Scale:%d/%d", ch[i].mult, ch[i].div);
       VGA_WRITE(string, col(69 * (i / 4)), row(j + 2),
 		font, k, TEXT_BG, ALIGN_LEFT);
 
@@ -226,38 +231,33 @@ draw_text(int all)
 
     /* below graticule */
     VGA_WRITE("({)        (})", 0, row(25), font,KEY_FG, TEXT_BG, ALIGN_LEFT);
-    VGA_WRITE("Position", col(3), row(25),
-	      font, p->color, TEXT_BG, ALIGN_LEFT);
+    VGA_WRITE("Position", col(3), row(25), font, p->color, TEXT_BG, ALIGN_LEFT);
 
     VGA_WRITE("([)        (])", 0, row(26), font, KEY_FG, TEXT_BG, ALIGN_LEFT);
-    VGA_WRITE(" Scale  ", col(3), row(26),
-	      font, p->color, TEXT_BG, ALIGN_LEFT);
+    VGA_WRITE("Scale", col(4), row(26), font, p->color, TEXT_BG, ALIGN_LEFT);
 
     VGA_WRITE("(,)        (.)", 0, row(28), font, KEY_FG, TEXT_BG, ALIGN_LEFT);
     sprintf(string, "DMA:%d", scope.dma);
     VGA_WRITE(string, col(4), row(28), font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
 
-    VGA_WRITE("(9)               (0)", col(40), row(26),
-	      font, KEY_FG, TEXT_BG, ALIGN_CENTER);
     i = 44000000 / actual / scope.scale;
     sprintf(string, "%d %cs/div",
 	    i > 999 ? i / 1000 : i,
 	    i > 999 ? 'm' : 'u');
-    VGA_WRITE(string, col(40), row(25),
-	      font, TEXT_FG, TEXT_BG, ALIGN_CENTER);
+    VGA_WRITE(string, col(40), row(25), font, TEXT_FG, TEXT_BG, ALIGN_CENTER);
+
+    VGA_WRITE("(9)                 (0)", col(40), row(26),
+	      font, KEY_FG, TEXT_BG, ALIGN_CENTER);
+    sprintf(string, "%d S/s * %d", actual, scope.scale);
+    VGA_WRITE(string, col(40), row(26), font, TEXT_FG, TEXT_BG, ALIGN_CENTER);
 
     i = actual / 20 / scope.scale;
     sprintf(string, "%d Hz/div", i);
-    VGA_WRITE(string, col(40), row(26),
-	      font, TEXT_FG, TEXT_BG, ALIGN_CENTER);
-
-    sprintf(string, "%d S/s * %d", actual, scope.scale);
     VGA_WRITE(string, col(40), row(27), font, TEXT_FG, TEXT_BG, ALIGN_CENTER);
 
     if (actual >= 44000) {
       VGA_WRITE("(A-Z)", col(72), row(27), font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
-      VGA_WRITE("Save  ", col(78), row(27),
-		font, p->color, TEXT_BG, ALIGN_RIGHT);
+      VGA_WRITE("Save", col(76), row(27), font, p->color, TEXT_BG, ALIGN_RIGHT);
     }
 
     if (scope.select > 1) {
@@ -296,7 +296,7 @@ draw_text(int all)
 #endif
 }
 
-/* clear the display and redraw any text */
+/* clear the display and redraw all text */
 void
 clear()
 {
@@ -308,58 +308,27 @@ clear()
   draw_text(1);
 }
 
-/* if verbose mode, show current parameter settings on standard out */
-void
-show_info(unsigned char c) {
-  if (verbose) {
-    sprintf(error, "%1c %5dHz:  -r %5d  -s %2d  -t %3d  -c %2d  -m %2d  "
-	    "-d %1d  -p %1d  %2s  %2s%s",
-	    c, actual, scope.rate, scope.scale, scope.trig,
-	    scope.color, scope.size, scope.dma, scope.mode,
-
-	    /* reverse logic if these booleans are on by default in oscope.h */
-#if DEF_G
-	    scope.grat ? "" : "-g",
-#else
-	    scope.grat ? "-g" : "",
-#endif
-
-#if DEF_B
-	    scope.behind ? "" : "-b",
-#else
-	    scope.behind ? "-b" : "",
-#endif
-
-#if DEF_V
-	    verbose ? "" : "  -v"
-#else
-	    verbose ? "  -v" : ""
-#endif
-	    );
-    printf("%s\n", error);
-  }
-}
-
 /* if graticule mode, draw graticule, always draw frame */
 static inline void
 draw_graticule()
 {
   static int i, j;
+  static int tilt[] = {
+    0, -10, 10
+  };
 
   /* a mark where the trigger level is */
-  if (scope.trig > -1) {
-    i = scope.trigch;
-    j = offset + ch[i].pos + (128 - scope.trig) * ch[i].mult / ch[i].div;
-    VGA_SETCOLOR(ch[i].color);
-    VGA_DRAWLINE(90, j + (scope.trige ? -10 : 10),
-		 110, j + (scope.trige ? 10 : -10));
-  }
+  i = scope.trigch;
+  j = offset + ch[i].pos + (128 - scope.trig) * ch[i].mult / ch[i].div;
+  VGA_SETCOLOR(ch[i].color);
+  VGA_DRAWLINE(90, j + tilt[scope.trige], 110, j - tilt[scope.trige]);
 
-  VGA_SETCOLOR(color[scope.color]);
-  VGA_DRAWLINE(100, 80, h_points-100, 80);
-  VGA_DRAWLINE(100, v_points - 80, h_points-100, v_points - 80);
+  /* the frame */
+  VGA_SETCOLOR(clip ? ch[clip - 1].color : color[scope.color]);
+  VGA_DRAWLINE(100, 80, h_points - 100, 80);
+  VGA_DRAWLINE(100, v_points - 80, h_points - 100, v_points - 80);
   VGA_DRAWLINE(100, 80, 100, v_points - 80);
-  VGA_DRAWLINE(h_points-100, 80, h_points-100, v_points - 80);
+  VGA_DRAWLINE(h_points - 100, 80, h_points - 100, v_points - 80);
 
   if (scope.grat) {
 
@@ -375,15 +344,15 @@ draw_graticule()
     }
 
     /* vertical dotted lines */
-    for (i = 144 ; i < h_points-100 ; i += 44) {
-      for (j = 800 ; j < (v_points - 80) * 10 ; j += 64) {
+    for (i = 144 ; i < h_points - 100 ; i += 44) {
+      for (j = 864 ; j < (v_points - 80) * 10 ; j += 64) {
 	VGA_DRAWPIXEL(i, j / 10);
       }
     }
 
     /* horizontal dotted lines */
-    for (i = 80 ; i < v_points - 80 ; i += 32) {
-      for (j = 1088 ; j < (h_points-100) * 10 ; j += 88) {
+    for (i = 112 ; i < v_points - 80 ; i += 32) {
+      for (j = 1088 ; j < (h_points - 100) * 10 ; j += 88) {
 	VGA_DRAWPIXEL(j / 10, i);
       }
     }
