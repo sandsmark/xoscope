@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: xy.c,v 1.1 1996/10/04 05:14:02 twitham Exp $
+ * @(#)$Id: xy.c,v 1.2 1996/10/06 06:43:50 twitham Rel $
  *
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -29,13 +29,27 @@
 #include <libsx.h>
 #include "config.h"
 
+Widget quit;			/* quit button */
+Widget plot[5];			/* plot menu */
 Widget draw_widget;		/* xy drawing area */
 int bg, fg, mode = 0, quit_key_pressed = 0, h_points = 640;
 
-/* callback to redisplay the drawing area; snap to a graticule division */
+
+/* clear the drawing area and reset the menu check marks */
+void
+clear()
+{
+  int i;
+  for (i = 0 ; i < 4 ; i++) {
+    SetMenuItemChecked(plot[i + 1], mode == i);
+  }
+  ClearDrawArea();
+}
+
+/* callback to redisplay the drawing area */
 void
 redisplay(Widget w, int new_width, int new_height, void *data) {
-  ClearDrawArea();
+  clear();
 }
 
 /* callback for keypress events on the drawing area */
@@ -54,19 +68,36 @@ keys(Widget w, char *input, int up_or_down, void *data)
       break;
     case '\r':			/* Enter */
     case '\n':
-      ClearDrawArea();
+      clear();
       break;
     case '!':
       mode++;			/* point, point accumulate, line, line acc. */
       if (mode > 3)
 	mode = 0;
-      ClearDrawArea();
+      clear();
       break;
     }
 }
 
+/* quit button callback */
+void
+dismiss(Widget w, void *data)
+{
+  quit_key_pressed = 1;
+}
+
+/* plot mode menu callback */
+void
+plotmode(Widget w, void *data)
+{
+  char *c = (char *)data;
+
+  mode = *c - '0';
+  clear();
+}
+
 /* get and plot one screen full of data */
-static inline void
+void
 animate(void *data)
 {
   static short x, y, z = 0, X, Y, buff[sizeof(short)];
@@ -76,7 +107,7 @@ animate(void *data)
     exit(0);
 
   if (!(mode % 2))
-    ClearDrawArea();
+    clear();
   for (j = 0 ; j < h_points ; j++) {
     /* Read two shorts from stdin (channel 1 & 2 */
     if ((i = read(0, buff, sizeof(short))) != sizeof(short))
@@ -107,14 +138,26 @@ main(int argc, char **argv)	/* main program */
     exit(1);
   if (argc > 1)
     h_points = strtol(argv[1], NULL, 0);
+
+  quit = MakeButton("Quit", dismiss, NULL);
+
+  plot[0] = MakeMenu(" Plot Mode ");
+  plot[1] = MakeMenuItem(plot[0], "Point", plotmode, "0");
+  plot[2] = MakeMenuItem(plot[0], "Point Accumulate", plotmode, "1");
+  plot[3] = MakeMenuItem(plot[0], "Line", plotmode, "2");
+  plot[4] = MakeMenuItem(plot[0], "Line Accumulate", plotmode, "3");
+  SetWidgetPos(plot[0], PLACE_RIGHT, quit, NO_CARE, NULL);
+
   draw_widget = MakeDrawArea(256, 256, redisplay, NULL);
   SetKeypressCB(draw_widget, keys);
+  SetWidgetPos(draw_widget, PLACE_UNDER, quit, NO_CARE, NULL);
+
   ShowDisplay();
   bg = GetNamedColor("black");
   fg = GetNamedColor("white");
   SetBgColor(draw_widget, bg);
   SetFgColor(draw_widget, fg);
-  ClearDrawArea();
+  clear();
   animate(NULL);
   MainLoop();
   exit(0);
