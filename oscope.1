@@ -1,0 +1,151 @@
+.\" This file Copyright (C) 1994 Jeff Tranter
+.\" (Jeff_Tranter@Mitel.COM)
+.\" It may be distributed under the GNU Public License, version 2, or
+.\" any higher version.  See section COPYING of the GNU Public license
+.\" for conditions under which this file may be redistributed.
+.TH SCOPE 1 "April 12  1994" "Linux" "User Commands"
+.SH NAME
+scope \- Software Oscilloscope
+.SH SYNOPSIS
+
+scope -r<rate> -m<mode> -c<colour> -d<dma divisor> -t<trigger> -p -l -g -v
+
+.SH DESCRIPTION
+
+.B Scope
+is a simple software emulation of an oscilloscope. It graphically
+displays voltage as a function of time. The input is via a sound
+card using the kernel sound device /dev/dsp.
+
+The svgalib library is used to implement a real-time waveform
+display.
+
+.PP
+.SH "COMMAND\-LINE OPTIONS"
+.TP 0.5i
+.B -r <rate>
+Specify the sampling rate in samples per second. The upper and lower
+limits depend on the sound card you have; the default is
+8000.
+
+.TP 0.5i
+.B -m <mode>
+Sets the graphics to use. The modes are listed in the svgalib header
+file "vga.h". The default mode is 4 -- 640x480 with 16 colours. If
+you select a graphics mode with a vertical resolution of less than 255
+you may not be able to display the entire waveform. Don't use graphics
+modes that are not supported by your monitor.
+
+.TP 0.5i
+.B -c <colour>
+Sets the trace colour. The colours available depend on the graphics
+mode selected. The default is 2 -- green (just like a real
+oscilloscope).
+
+.TP 0.5i
+.B -d <dma divisor>
+Sets the divisor for DMA buffer size. Valid numbers are 1, 2, or 4.
+The kernel sound driver will divide it's DMA buffer by this factor.
+The default value of 4 usually gives the fastest display rate.
+
+.TP 0.5i
+.B -t <trigger>
+Sets the trigger level. The scope will wait until it receives a signal
+greater than this level. It should be in the range 0 .. 255. The
+default is to run without waiting for a trigger. Note that the top of
+the display is 0, the bottom is 255, and the midpoint is 128.
+
+You cannot quit using "Q" while waiting for a trigger (use Control-C
+instead). You cannot change the trigger level unless it was enabled
+from the command line.
+
+.TP 0.5i
+.B -p (point mode)
+.TP 0.5i
+.B -l (line mode)
+These options are mutually exclusive. In point mode (-p) the graph is
+shown as individual data points. In line mode (-l) the points are
+joined using lines. Line mode gives a better display, but is somewhat
+slower than point mode. The default is line mode.
+
+.TP 0.5i
+.B -g
+Enables a graticule (a frame around the waveform). This slows down the
+display a little bit. If trigger is enabled, a small tick mark is
+shown on the graticule corresponding to the trigger level.
+
+.TP 0.5i
+.B -v
+Runs
+.B scope
+in verbose mode. Extra information is displayed on standard
+output.
+
+.PP
+.SH "RUN\-TIME CONTROLS"
+.PP
+
+While the program is running, it accepts the following single key commands:
+
+.PP
+q/Q - quit the program
+.PP
+R/r - increase/decrease sampling rate 10%
+.PP
+T/t - increase/decrease trigger level 10 units
+.PP
+l/p - go to line/point mode
+.PP
+C/c - increment/decrement colour used
+.PP
+G/g - enable/disable graticule
+.PP
+<space> - pause the display until another key is pressed
+
+.SH EXAMPLES
+.TP 0.5i
+.B scope -r 44000 -l -v
+
+This runs
+.B scope
+at a 44kHz sampling rate, in line mode, with verbose output.
+
+.SH PORTABILITY
+.B Scope
+was written specifically for Linux, and uses the Linux sound driver
+and svgalib plotting routines. Obviously you need a sound card, VGA
+graphics, and the Linux kernel sound drivers.
+
+.SH BUGS/LIMITATIONS
+.PP
+
+This should be considered ALPHA software.  It was basically written
+for fun rather than as a useful tool. It has a few known bugs, and it
+really needs a better user interface. Unfortunately, adding anything
+to the display (controls, etc...) would slow it down considerably.
+
+Because it uses svgalib,
+.B scope
+must be run as root or setuid to root.
+
+The display will probably not be able to keep up at higher sampling
+rates, depending on your sound card, graphics card, and processor
+speed. No floating point math is used, so a math coprocessor doesn't
+make any difference.
+
+You have to use an external mixer program to select the input source
+device, level, etc... (if you use a microphone the default should
+work).
+
+I can think of a bunch of enhancements that might be fun to add: 16
+bit and stereo sampling, single shot mode, envelope mode, spectrum
+analyzer (FFT) mode, graphical controls (mouse), graticule, and
+storage mode (with waveform save/load), but it would probably run too
+slowly.
+
+.SH AUTHOR
+.B Scope
+was written by Jeff Tranter (Jeff_Tranter@Mitel.COM).
+.B Scope
+is released under the conditions of the GNU General Public License.
+See the file COPYING and notes in the source code for details.
