@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.c,v 1.64 1997/05/31 21:21:07 twitham Exp $
+ * @(#)$Id: oscope.c,v 1.65 1997/06/07 21:41:23 twitham Exp $
  *
  * Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -40,16 +40,16 @@ extern void close_sound_card();
 extern int set_sound_card();
 extern int reset_sound_card();
 
-/* display command usage on standard error and exit */
+/* display command usage on stdout or stderr and exit */
 void
-usage()
+usage(int error)
 {
   static char *def[] = {"graticule", "signal"}, *onoff[] = {"on", "off"};
+  FILE *where;
 
-  fprintf(stderr, "usage: %s "
-	  "[-h]
-[-#<code>] ... [-a #] [-r<rate>] [-s<scale>] [-t<trigger>] [-c<color>] [-d<dma>]
-[-m<mode>] [-f<font>] [-p<type>] [-g<style>] [-b] [-v] [-x] [-z] [file]
+  where = error ? stderr : stdout;
+
+  fprintf(where, "usage: %s [options] [file]
 
 Startup Options  Description (defaults)               version %s
 -h               this Help message and exit
@@ -59,25 +59,25 @@ Startup Options  Description (defaults)               version %s
 -s <scale>       time Scale: 1/20-1000 where 1=1ms/div        (%d/1)
 -t <trigger>     Trigger level[:type[:channel]]               (%s)
 -c <color>       graticule Color: 0-15                        (%d)
--m <mode>        video mode (size): 0,1,2,3                   (%d)
--d <dma divisor> DMA buffer size divisor: 1,2,4               (%d)
--f <font name>   The font name as-in %s
+-d <dma divisor> sound card DMA buffer size divisor: 1,2,4    (%d)
+-m <mode>        video Mode (size): 0,1,2,3                   (%d)
+-f <font name>   the Font name as-in %s
 -p <type>        Plot mode: 0=point, 1=accum, 2=line, 3=accum (%d)
 -g <style>       Graticule: 0=none,  1=minor, 2=major         (%d)
 -b               %s Behind instead of in front of %s
--v               turn %s Verbose key help display
--x               turn Sound Card input device %s
--z               turn ProbeScope input device %s
+-v               turn Verbose key help display %s
+-x               turn sound card (XY) input device %s
+-z               turn ProbeScope (Z)  input device %s
 file             %s file to load to restore settings and memory
 ",
 	  progname, version, CHANNELS, CHANNELS, DEF_A,
 	  DEF_R, DEF_S, DEF_T,
-	  DEF_C, scope.size, scope.dma,
+	  DEF_C, scope.dma, scope.size,
 	  fonts,		/* the font method for the display */
 	  scope.mode,
 	  scope.grat, def[DEF_B], def[!DEF_B],
 	  onoff[DEF_V], onoff[!DEF_X], onoff[!DEF_Z], progname);
-  exit(1);
+  exit(error);
 }
 
 /* handle command line options */
@@ -320,9 +320,9 @@ handle_key(unsigned char c)
     break;
   case '(':
     if (scope.run)		/* decrease sample rate */
-      if (scope.rate <= 11000)
+      if (scope.rate < 16500)
 	setsoundcard(8800);
-      else if (scope.rate <= 22000)
+      else if (scope.rate < 33000)
 	setsoundcard(11000);
       else
 	setsoundcard(22000);
@@ -330,9 +330,9 @@ handle_key(unsigned char c)
     break;
   case ')':
     if (scope.run)		/* increase sample rate */
-      if (scope.rate >= 22000)
+      if (scope.rate > 16500)
 	setsoundcard(44000);
-      else if (scope.rate >= 11000)
+      else if (scope.rate > 9900)
 	setsoundcard(22000);
       else
 	setsoundcard(11000);
@@ -451,7 +451,6 @@ handle_key(unsigned char c)
 int
 main(int argc, char **argv)
 {
-
   progname = strrchr(argv[0], '/');
   if (progname == NULL)
     progname = argv[0];		/* global for error messages, usage */
