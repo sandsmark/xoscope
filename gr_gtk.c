@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: gr_gtk.c,v 1.7 1999/08/21 05:56:27 twitham Exp $
+ * @(#)$Id: gr_gtk.c,v 1.8 1999/08/21 21:33:50 twitham Exp $
  *
  * Copyright (C) 1996 - 1998 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -25,20 +25,20 @@ GdkPixmap *pixmap = NULL;
 GdkRectangle update_rect;
 GdkGC *gc;
 GtkWidget *menubar;
-GtkWidget *filemenu;
+/*  GtkWidget *filemenu; */
 GtkWidget *vbox;
-GtkWidget *hbox;
-GtkWidget *table;
-GtkWidget *table2;
-GtkStyle *mystyle;
+/*  GtkWidget *hbox; */
+/*  GtkWidget *table; */
+/*  GtkWidget *table2; */
+/*  GtkStyle *mystyle; */
 
-GtkWidget colormenu[17];	/* color menu */
-GtkWidget xwidg[11];		/* extra horizontal widgets */
-GtkWidget *mwidg[57];		/* memory / math widgets */
-GtkWidget *cwidg[CHANNELS];	/* channel button widgets */
-GtkWidget *ywidg[15];		/* vertical widgets */
-GtkWidget **math;		/* math menu */
-int **intarray;			/* indexes of math functions */
+/*  GtkWidget colormenu[17]; */
+/*  GtkWidget xwidg[11]; */
+/*  GtkWidget *mwidg[57]; */
+/*  GtkWidget *cwidg[CHANNELS]; */
+/*  GtkWidget *ywidg[15]; */
+/*  GtkWidget **math; */
+/*  int **intarray; */
 int XX[] = {640,800,1024,1280};
 int XY[] = {480,600, 768,1024};
 char my_filename[FILENAME_MAX];
@@ -231,7 +231,7 @@ savefile_ok_sel(GtkWidget *w, GtkFileSelection *fs)
     savefile(my_filename);
 }
 
-/* get a file name */
+/* get a file name for load (0) or save (1) */
 void
 LoadSaveFile(int save)
 {
@@ -317,7 +317,7 @@ nomalloc(char *file, int line)
   exit(1);
 }
 
-/* a libsx text writer similar to libvgamisc's vga_write */
+/* a GTK text writer similar to libvgamisc's vga_write */
 int
 vga_write(char *s, short x, short y, void *f, short fg, short bg, char p)
 {
@@ -344,16 +344,6 @@ vga_write(char *s, short x, short y, void *f, short fg, short bg, char p)
 void
 redisplay(GtkWidget w, int new_width, int new_height, void *data)
 {
-}
-
-/* callback for keypress events on the scope drawing area */
-void
-keys(GtkWidget w, char *input, int up_or_down, void *data)
-{
-/*   if (!up_or_down)		/* 0 press, 1 release */
-/*     return; */
-/*   if (input[1] == '\0')		/* single character to handle */
-/*     handle_key(input[0]); */
 }
 
 /* menu option callbacks */
@@ -387,21 +377,41 @@ graticule(GtkWidget *w, gpointer data)
 void
 setcolor(GtkWidget *w, gpointer data)
 {
-  int *c = (int *)data;
-
-  scope.color = *c;
+  scope.color = ((char *)data)[0] - 'a';
   draw_text(1);
 }
 
 void
-mathselect(GtkWidget w, void *data)
+mathselect(GtkWidget *w, gpointer data)
 {
-  int *c = (int *)data;
-
   if (scope.select > 1) {
-    ch[scope.select].func = *c + FUNC0;
+    ch[scope.select].func = ((char *)data)[0] - '0' + FUNC0;
     clear();
   }
+}
+
+void
+setscale(GtkWidget *w, gpointer data)
+{
+  int scale[] = {0, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000};
+
+  ch[scope.select].mult = scale[((char *)data)[0] - '0'];
+  ch[scope.select].div = scale[((char *)data)[1] - '0'];
+  clear();
+}
+
+void
+setposition(GtkWidget *w, gpointer data)
+{
+  if (((char *)data)[0] == 'T') {
+    scope.trig = 256 - (((char *)data)[1] - 'a') * 8;
+  } else if (((char *)data)[0] == 't') {
+    scope.trig = (((char *)data)[1] - 'a') * 8;
+  } else {
+    ch[scope.select].pos = (((char *)data)[0] == '-' ? 1 : -1)
+      * (((char *)data)[1] - 'a') * 16;
+  }
+  clear();
 }
 
 /* close the window */
@@ -466,90 +476,12 @@ hit_key(GtkWidget *w, gpointer data)
 void
 cleanup_display()
 {
-  int i;
-
-  for (i = 0 ; i < (funccount > 16 + FUNC0 ? funccount - FUNC0 : 16) ; i++) {
-    if (i < funccount - FUNC0)
-      if (math && math[i]) free(math[i]);
-    if (intarray && intarray[i]) free(intarray[i]);
-  }
-  if (math) free(math);
-  if (intarray) free(intarray);
-/*   if (font) FreeFont(font); */
 }
 
 /* set current state colors, labels, and check marks on widgets */
 void
 fix_widgets()
 {
-/*   mystyle = gtk_widget_get_style(cwidg[0]); */
-
-  mystyle = gtk_style_new();
-  gtk_widget_set_name(cwidg[0], "foo");
-  mystyle->fg_gc[0] = gc;
-  mystyle->fg_gc[1] = gc;
-  mystyle->fg_gc[2] = gc;
-  mystyle->fg_gc[3] = gc;
-  mystyle->fg_gc[4] = gc;
-  gtk_widget_set_style(cwidg[0], mystyle);
-  gtk_widget_queue_draw(cwidg[0]);
-
-/*   int i; */
-/*   char *tilt[] = {"-", "/", "\\"}; */
-
-/*   for (i = 0 ; i < 4 ; i++) { */
-/*     SetMenuItemChecked(plot[i + 1], scope.mode == i); */
-/*   } */
-/*   SetMenuItemChecked(grat[1], !scope.behind); */
-/*   SetMenuItemChecked(grat[2], scope.behind); */
-/*   for (i = 0 ; i < 3 ; i++) { */
-/*     SetMenuItemChecked(grat[i + 3], scope.grat == i); */
-/*   } */
-/*   for (i = 0 ; i < 16 ; i++) { */
-/*     SetMenuItemChecked(colormenu[i + 1], scope.color == i); */
-/*   } */
-/*   for (i = 0 ; i < funccount - FUNC0 ; i++) { */
-/*     SetMenuItemChecked(*math[i], ch[scope.select].func == i + FUNC0); */
-/*   } */
-
-/*   SetBgColor(mwidg[0], ch[scope.select].color); */
-/*   SetBgColor(mwidg[27], ch[scope.select].color); */
-/*   SetBgColor(mwidg[28], ch[scope.select].color); */
-/*   SetBgColor(mwidg[29], ch[scope.select].color); */
-/*   SetBgColor(mwidg[56], ch[scope.select].color); */
-/*   SetWidgetState(mwidg[27], scope.select > 1); */
-/*   SetWidgetState(mwidg[28], scope.select > 1); */
-/*   SetWidgetState(mwidg[56], scope.select > 1); */
-/*   for (i = 0 ; i < 26 ; i++) { */
-/*     SetBgColor(mwidg[i + 30], mem[i].color); */
-/*     if (i > 22) { */
-/*       SetBgColor(mwidg[i + 1], mem[i].color); */
-/*       SetWidgetState(mwidg[i + 1], 0); */
-/*     } */
-/*   } */
-
-/*   SetWidgetState(xwidg[7], scope.run != 1); */
-/*   SetWidgetState(xwidg[8], scope.run != 2); */
-/*   SetWidgetState(xwidg[9], scope.run != 0); */
-
-/*   SetBgColor(ywidg[2], ch[scope.trigch].color); */
-/*   SetBgColor(ywidg[3], ch[scope.trigch].color); */
-/*   SetBgColor(ywidg[4], ch[scope.trigch].color); */
-/*   SetBgColor(ywidg[5], ch[scope.trigch].color); */
-/*   SetBgColor(ywidg[7], ch[scope.select].color); */
-/*   SetBgColor(ywidg[8], ch[scope.select].color); */
-/*   SetBgColor(ywidg[11], ch[scope.select].color); */
-/*   SetBgColor(ywidg[12], ch[scope.select].color); */
-/*   SetBgColor(ywidg[14], ch[scope.select].color); */
-
-/*   SetLabel(ywidg[3], scope.trigch ? "Y" : "X"); */
-/*   SetLabel(ywidg[4], tilt[scope.trige]); */
-/*   SetLabel(ywidg[14], ch[scope.select].show ? "Hide" : "Show"); */
-
-/*   for (i = 0 ; i < CHANNELS ; i++) { */
-/*     SetFgColor(cwidg[i], ch[i].show ? color[0] : ch[i].color); */
-/*     SetBgColor(cwidg[i], ch[i].show ? ch[i].color : color[0]); */
-/*   } */
 }
 
 void
@@ -558,31 +490,211 @@ get_main_menu(GtkWidget *window, GtkWidget ** menubar)
   static GtkMenuEntry menu_items[] =
   {
 /*     {"<Main>/File/New", "<control>N", print_hello, NULL}, */
-    {"<Main>/File/Open...", "<control>O", hit_key, "@"},
-    {"<Main>/File/Save...", "<control>S", hit_key, "#"},
+    {"<Main>/File/Open...", "@", hit_key, "@"},
+    {"<Main>/File/Save...", "#", hit_key, "#"},
 /*     {"<Main>/File/Save as", NULL, NULL, NULL}, */
     {"<Main>/File/<separator>", NULL, NULL, NULL},
-    {"<Main>/File/Quit", "<control>Q", hit_key, "\e"},
-    {"<Main>/Plot Mode/Point", NULL, plotmode, "0"},
-    {"<Main>/Plot Mode/Point Accumulate", NULL, plotmode, "1"},
-    {"<Main>/Plot Mode/Line", NULL, plotmode, "2"},
-    {"<Main>/Plot Mode/Line Accumulate", NULL, plotmode, "3"},
-    {"<Main>/Graticule/In Front", NULL, graticule, "0"},
-    {"<Main>/Graticule/Behind", NULL, graticule, "1"},
-    {"<Main>/Graticule/<separator>", NULL, NULL, NULL},
-    {"<Main>/Graticule/None", NULL, graticule, "2"},
-    {"<Main>/Graticule/Minor Divisions", NULL, graticule, "3"},
-    {"<Main>/Graticule/Minor & Major", NULL, graticule, "4"},
-    {"<Main>/Refresh", NULL, hit_key, "\n"},
+    {"<Main>/File/Quit", NULL, hit_key, "\e"},
+
+    {"<Main>/Channel/Hide Show", "\t", hit_key, "\t"},
+    {"<Main>/Channel/Select/Channel 1", "1", hit_key, "1"},
+    {"<Main>/Channel/Select/Channel 2", "2", hit_key, "2"},
+    {"<Main>/Channel/Select/Channel 3", "3", hit_key, "3"},
+    {"<Main>/Channel/Select/Channel 4", "4", hit_key, "4"},
+    {"<Main>/Channel/Select/Channel 5", "5", hit_key, "5"},
+    {"<Main>/Channel/Select/Channel 6", "6", hit_key, "6"},
+    {"<Main>/Channel/Select/Channel 7", "7", hit_key, "7"},
+    {"<Main>/Channel/Select/Channel 8", "8", hit_key, "8"},
+    {"<Main>/Channel/<separator>", NULL, NULL, NULL},
+
+    {"<Main>/Channel/Scale/up", "}", hit_key, "}"},
+    {"<Main>/Channel/Scale/down", "{", hit_key, "{"},
+    {"<Main>/Channel/Scale/<separator>", NULL, NULL, NULL},
+    {"<Main>/Channel/Scale/50", NULL, setscale, "61"},
+    {"<Main>/Channel/Scale/20", NULL, setscale, "51"},
+    {"<Main>/Channel/Scale/10", NULL, setscale, "41"},
+    {"<Main>/Channel/Scale/5", NULL, setscale, "31"},
+    {"<Main>/Channel/Scale/2", NULL, setscale, "21"},
+    {"<Main>/Channel/Scale/1", NULL, setscale, "11"},
+/* How the ? do you put a / in a menu ? Just use \ until I figure it out. */
+    {"<Main>/Channel/Scale/1\\2", NULL, setscale, "12"},
+    {"<Main>/Channel/Scale/1\\5", NULL, setscale, "13"},
+    {"<Main>/Channel/Scale/1\\10", NULL, setscale, "14"},
+    {"<Main>/Channel/Scale/1\\20", NULL, setscale, "15"},
+    {"<Main>/Channel/Scale/1\\50", NULL, setscale, "16"},
+
+    {"<Main>/Channel/Position/up", "]", hit_key, "]"},
+    {"<Main>/Channel/Position/down", "[", hit_key, "["},
+    {"<Main>/Channel/Position/<separator>", NULL, NULL, NULL},
+    {"<Main>/Channel/Position/160", NULL, setposition, " k"},
+    {"<Main>/Channel/Position/144", NULL, setposition, " j"},
+    {"<Main>/Channel/Position/128", NULL, setposition, " i"},
+    {"<Main>/Channel/Position/112", NULL, setposition, " h"},
+    {"<Main>/Channel/Position/96", NULL, setposition, " g"},
+    {"<Main>/Channel/Position/80", NULL, setposition, " f"},
+    {"<Main>/Channel/Position/64", NULL, setposition, " e"},
+    {"<Main>/Channel/Position/48", NULL, setposition, " d"},
+    {"<Main>/Channel/Position/32", NULL, setposition, " c"},
+    {"<Main>/Channel/Position/16", NULL, setposition, " b"},
+    {"<Main>/Channel/Position/0", NULL, setposition, " a"},
+    {"<Main>/Channel/Position/-16", NULL, setposition, "-b"},
+    {"<Main>/Channel/Position/-32", NULL, setposition, "-c"},
+    {"<Main>/Channel/Position/-48", NULL, setposition, "-d"},
+    {"<Main>/Channel/Position/-64", NULL, setposition, "-e"},
+    {"<Main>/Channel/Position/-80", NULL, setposition, "-f"},
+    {"<Main>/Channel/Position/-96", NULL, setposition, "-g"},
+    {"<Main>/Channel/Position/-112", NULL, setposition, "-h"},
+    {"<Main>/Channel/Position/-128", NULL, setposition, "-i"},
+    {"<Main>/Channel/Position/-144", NULL, setposition, "-j"},
+    {"<Main>/Channel/Position/-160", NULL, setposition, "-k"},
+
+    {"<Main>/Channel/<separator>", NULL, NULL, NULL},
+
+    {"<Main>/Channel/Math/Next Function", ";", hit_key, ";"},
+    {"<Main>/Channel/Math/Prev Function", ":", hit_key, ":"},
+    {"<Main>/Channel/Math/<separator>", NULL, NULL, NULL},
+/* this will need hacked if functions are added / changed in func.c */
+    {"<Main>/Channel/Math/Inv. 1", NULL, mathselect, "0"},
+    {"<Main>/Channel/Math/Inv. 2", NULL, mathselect, "1"},
+    {"<Main>/Channel/Math/Sum  1+2", NULL, mathselect, "2"},
+    {"<Main>/Channel/Math/Diff 1-2", NULL, mathselect, "3"},
+    {"<Main>/Channel/Math/Avg. 1,2", NULL, mathselect, "4"},
+    {"<Main>/Channel/Math/FFT. 1", NULL, mathselect, "5"},
+    {"<Main>/Channel/Math/FFT. 2", NULL, mathselect, "6"},
+
+    {"<Main>/Channel/External Command", "$", hit_key, "$"},
+    {"<Main>/Channel/<separator>", NULL, NULL, NULL},
+
+    {"<Main>/Channel/Store/Mem A", "A", hit_key, "A"},
+    {"<Main>/Channel/Store/Mem B", "B", hit_key, "B"},
+    {"<Main>/Channel/Store/Mem C", "C", hit_key, "C"},
+    {"<Main>/Channel/Store/Mem D", "D", hit_key, "D"},
+    {"<Main>/Channel/Store/Mem E", "E", hit_key, "E"},
+    {"<Main>/Channel/Store/Mem F", "F", hit_key, "F"},
+    {"<Main>/Channel/Store/Mem G", "G", hit_key, "G"},
+    {"<Main>/Channel/Store/Mem H", "H", hit_key, "H"},
+    {"<Main>/Channel/Store/Mem I", "I", hit_key, "I"},
+    {"<Main>/Channel/Store/Mem J", "J", hit_key, "J"},
+    {"<Main>/Channel/Store/Mem K", "K", hit_key, "K"},
+    {"<Main>/Channel/Store/Mem L", "L", hit_key, "L"},
+    {"<Main>/Channel/Store/Mem M", "M", hit_key, "M"},
+    {"<Main>/Channel/Store/Mem N", "N", hit_key, "N"},
+    {"<Main>/Channel/Store/Mem O", "O", hit_key, "O"},
+    {"<Main>/Channel/Store/Mem P", "P", hit_key, "P"},
+    {"<Main>/Channel/Store/Mem Q", "Q", hit_key, "Q"},
+    {"<Main>/Channel/Store/Mem R", "R", hit_key, "R"},
+    {"<Main>/Channel/Store/Mem S", "S", hit_key, "S"},
+    {"<Main>/Channel/Store/Mem T", "T", hit_key, "T"},
+    {"<Main>/Channel/Store/Mem U", "U", hit_key, "U"},
+    {"<Main>/Channel/Store/Mem V", "V", hit_key, "V"},
+    {"<Main>/Channel/Store/Mem W", "W", hit_key, "W"},
+    {"<Main>/Channel/Recall/Mem A", "a", hit_key, "a"},
+    {"<Main>/Channel/Recall/Mem B", "b", hit_key, "b"},
+    {"<Main>/Channel/Recall/Mem C", "c", hit_key, "c"},
+    {"<Main>/Channel/Recall/Mem D", "d", hit_key, "d"},
+    {"<Main>/Channel/Recall/Mem E", "e", hit_key, "e"},
+    {"<Main>/Channel/Recall/Mem F", "f", hit_key, "f"},
+    {"<Main>/Channel/Recall/Mem G", "g", hit_key, "g"},
+    {"<Main>/Channel/Recall/Mem H", "h", hit_key, "h"},
+    {"<Main>/Channel/Recall/Mem I", "i", hit_key, "i"},
+    {"<Main>/Channel/Recall/Mem J", "j", hit_key, "j"},
+    {"<Main>/Channel/Recall/Mem K", "k", hit_key, "k"},
+    {"<Main>/Channel/Recall/Mem L", "l", hit_key, "l"},
+    {"<Main>/Channel/Recall/Mem M", "m", hit_key, "m"},
+    {"<Main>/Channel/Recall/Mem N", "n", hit_key, "n"},
+    {"<Main>/Channel/Recall/Mem O", "o", hit_key, "o"},
+    {"<Main>/Channel/Recall/Mem P", "p", hit_key, "p"},
+    {"<Main>/Channel/Recall/Mem Q", "q", hit_key, "q"},
+    {"<Main>/Channel/Recall/Mem R", "r", hit_key, "r"},
+    {"<Main>/Channel/Recall/Mem S", "s", hit_key, "s"},
+    {"<Main>/Channel/Recall/Mem T", "t", hit_key, "t"},
+    {"<Main>/Channel/Recall/Mem U", "u", hit_key, "u"},
+    {"<Main>/Channel/Recall/Mem V", "v", hit_key, "v"},
+    {"<Main>/Channel/Recall/Mem W", "w", hit_key, "w"},
+    {"<Main>/Channel/Recall/Left Mix", "x", hit_key, "x"},
+    {"<Main>/Channel/Recall/Right Mix", "y", hit_key, "y"},
+    {"<Main>/Channel/Recall/ProbeScope", "z", hit_key, "z"},
+
+    {"<Main>/Trigger/Channel 1,2", "_", hit_key, "_"},
+    {"<Main>/Trigger/Auto,Rising,Falling", "+", hit_key, "+"},
+    {"<Main>/Trigger/<separator>", NULL, NULL, NULL},
+    {"<Main>/Trigger/Position up", "=", hit_key, "="},
+    {"<Main>/Trigger/Position down", "-", hit_key, "-"},
+    {"<Main>/Trigger/Position Positive/120", NULL, setposition, "Tb"},
+    {"<Main>/Trigger/Position Positive/112", NULL, setposition, "Tc"},
+    {"<Main>/Trigger/Position Positive/104", NULL, setposition, "Td"},
+    {"<Main>/Trigger/Position Positive/96", NULL, setposition, "Te"},
+    {"<Main>/Trigger/Position Positive/88", NULL, setposition, "Tf"},
+    {"<Main>/Trigger/Position Positive/80", NULL, setposition, "Tg"},
+    {"<Main>/Trigger/Position Positive/72", NULL, setposition, "Th"},
+    {"<Main>/Trigger/Position Positive/64", NULL, setposition, "Ti"},
+    {"<Main>/Trigger/Position Positive/56", NULL, setposition, "Tj"},
+    {"<Main>/Trigger/Position Positive/48", NULL, setposition, "Tk"},
+    {"<Main>/Trigger/Position Positive/40", NULL, setposition, "Tl"},
+    {"<Main>/Trigger/Position Positive/32", NULL, setposition, "Tm"},
+    {"<Main>/Trigger/Position Positive/24", NULL, setposition, "Tn"},
+    {"<Main>/Trigger/Position Positive/16", NULL, setposition, "To"},
+    {"<Main>/Trigger/Position Positive/8", NULL, setposition, "Tp"},
+    {"<Main>/Trigger/Position Positive/0", NULL, setposition, "Tq"},
+    {"<Main>/Trigger/Position Negative/0", NULL, setposition, "tq"},
+    {"<Main>/Trigger/Position Negative/-8", NULL, setposition, "tp"},
+    {"<Main>/Trigger/Position Negative/-16", NULL, setposition, "to"},
+    {"<Main>/Trigger/Position Negative/-24", NULL, setposition, "tn"},
+    {"<Main>/Trigger/Position Negative/-32", NULL, setposition, "tm"},
+    {"<Main>/Trigger/Position Negative/-40", NULL, setposition, "tl"},
+    {"<Main>/Trigger/Position Negative/-48", NULL, setposition, "tk"},
+    {"<Main>/Trigger/Position Negative/-56", NULL, setposition, "tj"},
+    {"<Main>/Trigger/Position Negative/-64", NULL, setposition, "ti"},
+    {"<Main>/Trigger/Position Negative/-72", NULL, setposition, "th"},
+    {"<Main>/Trigger/Position Negative/-80", NULL, setposition, "tg"},
+    {"<Main>/Trigger/Position Negative/-88", NULL, setposition, "tf"},
+    {"<Main>/Trigger/Position Negative/-96", NULL, setposition, "te"},
+    {"<Main>/Trigger/Position Negative/-104", NULL, setposition, "td"},
+    {"<Main>/Trigger/Position Negative/-112", NULL, setposition, "tc"},
+    {"<Main>/Trigger/Position Negative/-120", NULL, setposition, "tb"},
+    {"<Main>/Trigger/Position Negative/-128", NULL, setposition, "ta"},
+
+    {"<Main>/Scope/Refresh", NULL, hit_key, "\n"},
+    {"<Main>/Scope/Plot Mode/Point", NULL, plotmode, "0"},
+    {"<Main>/Scope/Plot Mode/Point Accumulate", NULL, plotmode, "1"},
+    {"<Main>/Scope/Plot Mode/Line", NULL, plotmode, "2"},
+    {"<Main>/Scope/Plot Mode/Line Accumulate", NULL, plotmode, "3"},
+    {"<Main>/Scope/Graticule/Color/black", NULL, setcolor, "a"},
+    {"<Main>/Scope/Graticule/Color/blue", NULL, setcolor, "b"},
+    {"<Main>/Scope/Graticule/Color/green", NULL, setcolor, "c"},
+    {"<Main>/Scope/Graticule/Color/cyan", NULL, setcolor, "d"},
+    {"<Main>/Scope/Graticule/Color/red", NULL, setcolor, "e"},
+    {"<Main>/Scope/Graticule/Color/magenta", NULL, setcolor, "f"},
+    {"<Main>/Scope/Graticule/Color/orange", NULL, setcolor, "g"},
+    {"<Main>/Scope/Graticule/Color/gray66", NULL, setcolor, "h"},
+    {"<Main>/Scope/Graticule/Color/gray33", NULL, setcolor, "i"},
+    {"<Main>/Scope/Graticule/Color/blue4", NULL, setcolor, "j"},
+    {"<Main>/Scope/Graticule/Color/green4", NULL, setcolor, "k"},
+    {"<Main>/Scope/Graticule/Color/cyan4", NULL, setcolor, "l"},
+    {"<Main>/Scope/Graticule/Color/red4", NULL, setcolor, "m"},
+    {"<Main>/Scope/Graticule/Color/magenta4", NULL, setcolor, "n"},
+    {"<Main>/Scope/Graticule/Color/yellow", NULL, setcolor, "o"},
+    {"<Main>/Scope/Graticule/Color/white", NULL, setcolor, "p"},
+    {"<Main>/Scope/Graticule/<separator>", NULL, NULL, NULL},
+    {"<Main>/Scope/Graticule/In Front", NULL, graticule, "0"},
+    {"<Main>/Scope/Graticule/Behind", NULL, graticule, "1"},
+    {"<Main>/Scope/Graticule/<separator>", NULL, NULL, NULL},
+    {"<Main>/Scope/Graticule/None", NULL, graticule, "2"},
+    {"<Main>/Scope/Graticule/Minor Divisions", NULL, graticule, "3"},
+    {"<Main>/Scope/Graticule/Minor & Major", NULL, graticule, "4"},
+
     {"<Main>/<<", NULL, hit_key, "9"},
     {"<Main>/<", NULL, hit_key, "("},
     {"<Main>/>", NULL, hit_key, ")"},
     {"<Main>/>> ", NULL, hit_key, "0"},
+
     {"<Main>/SC", NULL, hit_key, "&"},
     {"<Main>/PS", NULL, hit_key, "^"},
+
     {"<Main>/Run", NULL, runmode, "1"},
     {"<Main>/Wait", NULL, runmode, "2"},
     {"<Main>/Stop", NULL, runmode, "0"},
+
     {"<Main>/?", NULL, hit_key, "?"},
     {"<Main>/Help", NULL, hit_key, "?"},
   };
@@ -597,10 +709,10 @@ get_main_menu(GtkWidget *window, GtkWidget ** menubar)
 
   gtk_menu_factory_add_subfactory(factory, subfactory, "<Main>");
   gtk_menu_factory_add_entries(factory, menu_items, nmenu_items);
-  gtk_window_add_accelerator_table(GTK_WINDOW(window), subfactory->table);
+/*    gtk_window_add_accelerator_table(GTK_WINDOW(window), subfactory->table); */
 
   menu_path = gtk_menu_factory_find(factory,  "<Main>/Help");
-  gtk_menu_item_right_justify(menu_path->widget);
+  gtk_menu_item_right_justify(GTK_MENU_ITEM(menu_path->widget));
 
   if (menubar)
     *menubar = subfactory->widget;
@@ -612,7 +724,7 @@ init_widgets()
 {
   int i;
   GtkWidget *menubar;
-  static char *s[] = {"1", "2", "3", "4", "5", "6", "7", "8"};
+/*    static char *s[] = {"1", "2", "3", "4", "5", "6", "7", "8"}; */
 
   h_points = XX[scope.size];
   v_points = XY[scope.size];
@@ -637,115 +749,125 @@ init_widgets()
   gtk_signal_connect(GTK_OBJECT(drawing_area),"configure_event",
 		     (GtkSignalFunc) configure_event, NULL);
 
-  table2 = gtk_table_new(21, 2, FALSE);
+/* This stuff was an attempt to be like the libsx interface.  It
+   almost works, but because I can't figure out how to color code the
+   widgets and because they steal keyboard focus, I've opted to put
+   everything in the menubar instead.  -twitham, 1999/08/21 */
 
-  ywidg[1] = gtk_label_new("Trig");
-  gtk_table_attach_defaults(GTK_TABLE(table2), ywidg[1], 0, 2, 0, 1);
+/*    table2 = gtk_table_new(21, 2, FALSE); */
 
-  ywidg[2] = gtk_button_new_with_label("/\\");
-  gtk_table_attach_defaults(GTK_TABLE(table2), ywidg[2], 0, 2, 1, 2);
-  gtk_signal_connect(GTK_OBJECT(ywidg[2]), "clicked",
-		     GTK_SIGNAL_FUNC(hit_key), "=");
+/*    ywidg[1] = gtk_label_new("Trig"); */
+/*    gtk_table_attach_defaults(GTK_TABLE(table2), ywidg[1], 0, 2, 0, 1); */
 
-  ywidg[3] = gtk_button_new_with_label("<");
-  gtk_table_attach_defaults(GTK_TABLE(table2), ywidg[3], 0, 1, 2, 3);
-  gtk_signal_connect(GTK_OBJECT(ywidg[3]), "clicked",
-		     GTK_SIGNAL_FUNC(hit_key), "_");
+/*    ywidg[2] = gtk_button_new_with_label("/\\"); */
+/*    gtk_table_attach_defaults(GTK_TABLE(table2), ywidg[2], 0, 2, 1, 2); */
+/*    gtk_signal_connect(GTK_OBJECT(ywidg[2]), "clicked", */
+/*  		     GTK_SIGNAL_FUNC(hit_key), "="); */
 
-  ywidg[4] = gtk_button_new_with_label(">");
-  gtk_table_attach_defaults(GTK_TABLE(table2), ywidg[4], 1, 2, 2, 3);
-  gtk_signal_connect(GTK_OBJECT(ywidg[4]), "clicked",
-		     GTK_SIGNAL_FUNC(hit_key), "+");
+/*    ywidg[3] = gtk_button_new_with_label("<"); */
+/*    gtk_table_attach_defaults(GTK_TABLE(table2), ywidg[3], 0, 1, 2, 3); */
+/*    gtk_signal_connect(GTK_OBJECT(ywidg[3]), "clicked", */
+/*  		     GTK_SIGNAL_FUNC(hit_key), "_"); */
 
-  ywidg[5] = gtk_button_new_with_label("\\/");
-  gtk_table_attach_defaults(GTK_TABLE(table2), ywidg[5], 0, 2, 3, 4);
-  gtk_signal_connect(GTK_OBJECT(ywidg[5]), "clicked",
-		     GTK_SIGNAL_FUNC(hit_key), "-");
+/*    ywidg[4] = gtk_button_new_with_label(">"); */
+/*    gtk_table_attach_defaults(GTK_TABLE(table2), ywidg[4], 1, 2, 2, 3); */
+/*    gtk_signal_connect(GTK_OBJECT(ywidg[4]), "clicked", */
+/*  		     GTK_SIGNAL_FUNC(hit_key), "+"); */
 
-  ywidg[6] = gtk_label_new("Scal");
-  gtk_table_attach_defaults(GTK_TABLE(table2), ywidg[6], 0, 2, 4, 5);
+/*    ywidg[5] = gtk_button_new_with_label("\\/"); */
+/*    gtk_table_attach_defaults(GTK_TABLE(table2), ywidg[5], 0, 2, 3, 4); */
+/*    gtk_signal_connect(GTK_OBJECT(ywidg[5]), "clicked", */
+/*  		     GTK_SIGNAL_FUNC(hit_key), "-"); */
 
-  ywidg[7] = gtk_button_new_with_label("/\\");
-  gtk_table_attach_defaults(GTK_TABLE(table2), ywidg[7], 0, 2, 5, 6);
-  gtk_signal_connect(GTK_OBJECT(ywidg[7]), "clicked",
-		     GTK_SIGNAL_FUNC(hit_key), "}");
+/*    ywidg[6] = gtk_label_new("Scal"); */
+/*    gtk_table_attach_defaults(GTK_TABLE(table2), ywidg[6], 0, 2, 4, 5); */
 
-  ywidg[8] = gtk_button_new_with_label("\\/");
-  gtk_table_attach_defaults(GTK_TABLE(table2), ywidg[8], 0, 2, 6, 7);
-  gtk_signal_connect(GTK_OBJECT(ywidg[8]), "clicked",
-		     GTK_SIGNAL_FUNC(hit_key), "{");
+/*    ywidg[7] = gtk_button_new_with_label("/\\"); */
+/*    gtk_table_attach_defaults(GTK_TABLE(table2), ywidg[7], 0, 2, 5, 6); */
+/*    gtk_signal_connect(GTK_OBJECT(ywidg[7]), "clicked", */
+/*  		     GTK_SIGNAL_FUNC(hit_key), "}"); */
 
-  ywidg[9] = gtk_label_new("Chan");
-  gtk_table_attach_defaults(GTK_TABLE(table2), ywidg[9], 0, 2, 7, 8);
+/*    ywidg[8] = gtk_button_new_with_label("\\/"); */
+/*    gtk_table_attach_defaults(GTK_TABLE(table2), ywidg[8], 0, 2, 6, 7); */
+/*    gtk_signal_connect(GTK_OBJECT(ywidg[8]), "clicked", */
+/*  		     GTK_SIGNAL_FUNC(hit_key), "{"); */
 
-  for (i = 0 ; i < CHANNELS ; i++) {
-    cwidg[i] = gtk_button_new_with_label(&s[i][0]);
-    gtk_table_attach_defaults(GTK_TABLE(table2), cwidg[i], 0, 2, i + 8, i + 9);
-    gtk_widget_show(cwidg[i]);
-    gtk_signal_connect(GTK_OBJECT(cwidg[i]), "clicked",
-		       GTK_SIGNAL_FUNC(hit_key), &s[i][0]);
-  }
+/*    ywidg[9] = gtk_label_new("Chan"); */
+/*    gtk_table_attach_defaults(GTK_TABLE(table2), ywidg[9], 0, 2, 7, 8); */
 
-  ywidg[10] = gtk_label_new("Pos.");
-  gtk_table_attach_defaults(GTK_TABLE(table2), ywidg[10], 0, 2, 16, 17);
+/*    for (i = 0 ; i < CHANNELS ; i++) { */
+/*      cwidg[i] = gtk_button_new_with_label(&s[i][0]); */
+/*      gtk_table_attach_defaults(GTK_TABLE(table2), cwidg[i], 0, 2, i + 8, i + 9); */
+/*      gtk_widget_show(cwidg[i]); */
+/*      gtk_signal_connect(GTK_OBJECT(cwidg[i]), "clicked", */
+/*  		       GTK_SIGNAL_FUNC(hit_key), &s[i][0]); */
+/*    } */
 
-  ywidg[11] = gtk_button_new_with_label("/\\");
-  gtk_table_attach_defaults(GTK_TABLE(table2), ywidg[11], 0, 2, 17, 18);
-  gtk_signal_connect(GTK_OBJECT(ywidg[11]), "clicked",
-		     GTK_SIGNAL_FUNC(hit_key), "]");
+/*    ywidg[10] = gtk_label_new("Pos."); */
+/*    gtk_table_attach_defaults(GTK_TABLE(table2), ywidg[10], 0, 2, 16, 17); */
 
-  ywidg[12] = gtk_button_new_with_label("\\/");
-  gtk_table_attach_defaults(GTK_TABLE(table2), ywidg[12], 0, 2, 18, 19);
-  gtk_signal_connect(GTK_OBJECT(ywidg[12]), "clicked",
-		     GTK_SIGNAL_FUNC(hit_key), "[");
+/*    ywidg[11] = gtk_button_new_with_label("/\\"); */
+/*    gtk_table_attach_defaults(GTK_TABLE(table2), ywidg[11], 0, 2, 17, 18); */
+/*    gtk_signal_connect(GTK_OBJECT(ywidg[11]), "clicked", */
+/*  		     GTK_SIGNAL_FUNC(hit_key), "]"); */
 
-  ywidg[13] = gtk_label_new("");
-  gtk_table_attach_defaults(GTK_TABLE(table2), ywidg[13], 0, 2, 19, 20);
+/*    ywidg[12] = gtk_button_new_with_label("\\/"); */
+/*    gtk_table_attach_defaults(GTK_TABLE(table2), ywidg[12], 0, 2, 18, 19); */
+/*    gtk_signal_connect(GTK_OBJECT(ywidg[12]), "clicked", */
+/*  		     GTK_SIGNAL_FUNC(hit_key), "["); */
 
-  ywidg[14] = gtk_button_new_with_label("Hide");
-  gtk_table_attach_defaults(GTK_TABLE(table2), ywidg[14], 0, 2, 20, 21);
-  gtk_signal_connect(GTK_OBJECT(ywidg[14]), "clicked",
-		     GTK_SIGNAL_FUNC(hit_key), "\t");
+/*    ywidg[13] = gtk_label_new(""); */
+/*    gtk_table_attach_defaults(GTK_TABLE(table2), ywidg[13], 0, 2, 19, 20); */
 
-  for (i = 1 ; i < 15 ; i++) {
-    gtk_widget_show(ywidg[i]);
-  }
+/*    ywidg[14] = gtk_button_new_with_label("Hide"); */
+/*    gtk_table_attach_defaults(GTK_TABLE(table2), ywidg[14], 0, 2, 20, 21); */
+/*    gtk_signal_connect(GTK_OBJECT(ywidg[14]), "clicked", */
+/*  		     GTK_SIGNAL_FUNC(hit_key), "\t"); */
 
-  hbox = gtk_hbox_new(FALSE, 0);
-  gtk_box_pack_start(GTK_BOX(hbox), drawing_area, TRUE, TRUE, 0);
-  gtk_box_pack_start(GTK_BOX(hbox), table2, FALSE, TRUE, 0);
-  gtk_box_pack_start(GTK_BOX(vbox), hbox, TRUE, TRUE, 0);
+/*    for (i = 1 ; i < 15 ; i++) { */
+/*      gtk_widget_show(ywidg[i]); */
+/*    } */
+
+/*    hbox = gtk_hbox_new(FALSE, 0); */
+/*    gtk_box_pack_start(GTK_BOX(hbox), drawing_area, TRUE, TRUE, 0); */
+/*    gtk_box_pack_start(GTK_BOX(hbox), table2, FALSE, TRUE, 0); */
+/*    gtk_box_pack_start(GTK_BOX(vbox), hbox, TRUE, TRUE, 0); */
+/*    gtk_widget_show(drawing_area); */
+/*    gtk_widget_show(table2); */
+/*    gtk_widget_show(hbox); */
+
+/*    table = gtk_table_new(2, 29, FALSE); */
+/*    mwidg[0]  = gtk_label_new(" Store "); */
+/*    mwidg[29]  = gtk_label_new(" Recall"); */
+/*    gtk_table_attach_defaults(GTK_TABLE(table), mwidg[0], 0, 1, 0, 1); */
+/*    gtk_widget_show(mwidg[0]); */
+/*    gtk_table_attach_defaults(GTK_TABLE(table), mwidg[29], 0, 1, 1, 2); */
+/*    gtk_widget_show(mwidg[29]); */
+/*    gtk_widget_show(table); */
+
+/*    for (i = 0 ; i < 26 ; i++) { */
+/*      sprintf(error, "%c", i + 'A'); */
+/*      mwidg[i + 1] = gtk_button_new_with_label(error); */
+/*      gtk_table_attach_defaults(GTK_TABLE(table), mwidg[i + 1], */
+/*  			      i + 1, i + 2, 0, 1); */
+/*      gtk_signal_connect(GTK_OBJECT(mwidg[i + 1]), "clicked", */
+/*  		       GTK_SIGNAL_FUNC(hit_key), &alphabet[i]); */
+/*      gtk_widget_show(mwidg[i + 1]); */
+/*      sprintf(error, "%c", i + 'a'); */
+/*      mwidg[i + 30] = gtk_button_new_with_label(error); */
+/*      gtk_table_attach_defaults(GTK_TABLE(table), mwidg[i + 30], */
+/*  			      i + 1, i + 2, 1, 2); */
+/*      gtk_signal_connect(GTK_OBJECT(mwidg[i + 30]), "clicked", */
+/*  		       GTK_SIGNAL_FUNC(hit_key), &alphabet[i + 26]); */
+/*      gtk_widget_show(mwidg[i + 30]); */
+/*    } */
+
+/*    gtk_box_pack_start(GTK_BOX(vbox), table, FALSE, TRUE, 0); */
+
+				/* end of libsx-like interface */
+
+  gtk_box_pack_start(GTK_BOX(vbox), drawing_area, TRUE, TRUE, 0);
   gtk_widget_show(drawing_area);
-  gtk_widget_show(table2);
-  gtk_widget_show(hbox);
-
-  table = gtk_table_new(2, 29, FALSE);
-  mwidg[0]  = gtk_label_new(" Store ");
-  mwidg[29]  = gtk_label_new(" Recall");
-  gtk_table_attach_defaults(GTK_TABLE(table), mwidg[0], 0, 1, 0, 1);
-  gtk_widget_show(mwidg[0]);
-  gtk_table_attach_defaults(GTK_TABLE(table), mwidg[29], 0, 1, 1, 2);
-  gtk_widget_show(mwidg[29]);
-  gtk_widget_show(table);
-
-  for (i = 0 ; i < 26 ; i++) {
-    sprintf(error, "%c", i + 'A');
-    mwidg[i + 1] = gtk_button_new_with_label(error);
-    gtk_table_attach_defaults(GTK_TABLE(table), mwidg[i + 1],
-			      i + 1, i + 2, 0, 1);
-    gtk_signal_connect(GTK_OBJECT(mwidg[i + 1]), "clicked",
-		       GTK_SIGNAL_FUNC(hit_key), &alphabet[i]);
-    gtk_widget_show(mwidg[i + 1]);
-    sprintf(error, "%c", i + 'a');
-    mwidg[i + 30] = gtk_button_new_with_label(error);
-    gtk_table_attach_defaults(GTK_TABLE(table), mwidg[i + 30],
-			      i + 1, i + 2, 1, 2);
-    gtk_signal_connect(GTK_OBJECT(mwidg[i + 30]), "clicked",
-		       GTK_SIGNAL_FUNC(hit_key), &alphabet[i + 26]);
-    gtk_widget_show(mwidg[i + 30]);
-  }
-
-  gtk_box_pack_start(GTK_BOX(vbox), table, FALSE, TRUE, 0);
   gtk_widget_show(vbox);
   gtk_widget_show(window);
 
@@ -756,61 +878,13 @@ init_widgets()
     gdkcolor[i].pixel = (gulong)(gdkcolor[i].red * 65536 +
 				 gdkcolor[i].green * 256 + gdkcolor[i].blue);
     gdk_color_alloc(gtk_widget_get_colormap(window), &gdkcolor[i]);
-    printf("%d %s %ld:\tr:%d g:%d b:%d\n",
-	   i, colors[i], gdkcolor[i].pixel,
-	   gdkcolor[i].red, gdkcolor[i].green, gdkcolor[i].blue);
+/*      printf("%d %s %ld:\tr:%d g:%d b:%d\n", */
+/*  	   i, colors[i], gdkcolor[i].pixel, */
+/*  	   gdkcolor[i].red, gdkcolor[i].green, gdkcolor[i].blue); */
   }
   gdk_gc_set_background(gc, &gdkcolor[0]);
   SetColor(15);
-
-/*   mystyle = gtk_style_copy(cwidg[0]->style); */
-/*   mystyle = gtk_widget_get_style(cwidg[1]); */
-/*   mystyle->fg_gc[0] = gc; */
-/*   mystyle->fg_gc[1] = gc; */
-/*   mystyle->fg_gc[2] = gc; */
-/*   mystyle->fg_gc[3] = gc; */
-/*   mystyle->fg_gc[4] = gc; */
-/*   gtk_widget_set_style(cwidg[0], mystyle); */
-/*   gtk_widget_queue_resize(cwidg[0]); */
-/*   gtk_widget_queue_draw(cwidg[0]); */
-
-/*   colormenu[0] = MakeMenu("Color"); */
-
-/*   /* bottom rows of widgets */
-
-/*   j = funccount - FUNC0; */
-/*   if ((math = malloc(sizeof(Widget *) * j)) == NULL) */
-/*     nomalloc(__FILE__, __LINE__); */
-/*   if ((intarray = malloc(sizeof(int *) * (j > 16 ? j : 16))) == NULL) */
-/*     nomalloc(__FILE__, __LINE__); */
-/*   for (i = 0 ; i < (j > 16 ? j : 16) ; i++) { */
-/*     if ((intarray[i] = malloc(sizeof(int))) == NULL) */
-/*       nomalloc(__FILE__, __LINE__); */
-/*     *intarray[i] = i; */
-/*     if (i < j) { */
-/*       if ((math[i] = malloc(sizeof(GtkWidget))) == NULL) */
-/* 	nomalloc(__FILE__, __LINE__); */
-/*       *math[i] = MakeMenuItem(mwidg[27], funcnames[FUNC0 + i], */
-/* 			      mathselect, intarray[i]); */
-/*     } */
-/*   } */
-
-/*   ShowDisplay(); */
-
-/*   for (i = 0 ; i < 16 ; i++) { */
-/*     color[i] = GetNamedColor(colors[i]); */
-/*     colormenu[i + 1] = MakeMenuItem(colormenu[0], colors[i], */
-/* 				    setcolor, intarray[i]); */
-/*   } */
-
-/*   for (i = 0 ; i < 26 ; i++) { */
-/*     SetBgColor(mwidg[i + 30], color[0]); */
-/*   } */
-
-/*   SetBgColor(drawing_area, color[0]); */
-/*   font = GetFont(fontname); */
   font = gdk_font_load(fontname);
-/*   SetWidgetFont(drawing_area, font); */
   ClearDrawArea();
 }
 
@@ -820,7 +894,5 @@ mainloop()
 {
   draw_text(1);
   animate(NULL);
-/*   AddTimeOut(MSECREFRESH, animate, NULL); */
-/*   MainLoop(); */
   gtk_main();
 }
