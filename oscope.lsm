@@ -1,19 +1,20 @@
 Begin3
 Title: [x]oscope - Digital Oscilloscope for /dev/dsp
-Version: 1.0
-Entered-date: 24APR96
-Description: [x]oscope is a digital 44kHz oscilloscope for /dev/dsp.
+Version: 1.1
+Entered-date: 03AUG96
+Description: [x]oscope is a digital 44kS/s oscilloscope for /dev/dsp.
 	Includes oscope for SVGA console display and xoscope, an X11 client.
-	Features include 8-bit sampling of 2 channels at 44kHz, 5 us/div to
+	Features include 8-bit sampling of 2 channels at 44kS/s, 5 us/div to
 	5 ms/div time scale, 5 automatic measurements, built-in and external
-	math functions including sum, diff, avg, and FFT, 26 memory buffers,
-	8 simultaneous signal displays, and file save/load.
+	math functions including inverse, sum, diff, avg, and FFT, 26
+	memory buffers, 8 simultaneous signal displays, and file save/load.
 Keywords: sound, graphics, oscilloscope, circuits
 Author: twitham@pcocd2.intel.com (Tim Witham)
 Maintained-by: twitham@pcocd2.intel.com (Tim Witham)
-Primary-site: sunsite.unc.edu /pub/linux/apps/circuits
-	43kB oscope-1.0.tar.gz
-	1090 oscope.lsm
+Primary-site: sunsite.unc.edu /pub/Linux/apps/circuits
+	60kB oscope-1.1.tar.gz
+	1159 oscope.lsm
+Alternate-site: http://www.bobsplace.com/~twitham/oscope/
 Platforms: Needs a kernel supported sound card that can do 8800Hz - 44kHz,
 	"libsx" from the "libsx" package to build the xoscope X11 client,
 	"libvga" from the "svgalib" package to build console-based oscope,
