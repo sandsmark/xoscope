@@ -29,7 +29,7 @@ from xoscope:
 
 * cd freq51/source
 
-* patch < /path/to/oscope-1.2/freq51.patch
+* patch < /path/to/oscope/source/patch.f51
 
 * edit the "DEFINES" line of makefile.srgp_linux if you put your
   ofreq.ini file somewhere other than /usr/local/lib/oscope/ofreq.ini
@@ -90,7 +90,8 @@ Background color: 0,0,0
 This should launch ofreq in a separate window, displaying the FFT of
 channel 1.  Now all the normal keys should work; hit 'h' to display
 what the keys are.  Use '[' to switch the input channel, 'x' and 'y'
-to change the axis scales, etc.
+to change the axis scales, etc.  You will need to hit 'r' and correct
+the sampling rate if you change the sampling rate in xoscope.
 
 That's it!
 
