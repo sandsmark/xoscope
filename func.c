@@ -1,7 +1,7 @@
 /*
- * @(#)$Id: func.c,v 1.18 1998/09/24 01:00:25 twitham Rel $
+ * @(#)$Id: func.c,v 1.19 2000/03/04 21:39:59 twitham Exp $
  *
- * Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
+ * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
  * (see the files README and COPYING for more details)
  *
@@ -88,12 +88,15 @@ pipeto(int num)
   static int to[CHANNELS][2], from[CHANNELS][2]; /* pipes to/from the child */
   static char *path, *oscopepath;
 
-  if (ch[num].mem == EXTSTART) {
+  if (ch[num].mem == EXTSTART || ch[num].mem == EXTSTOP) {
     if (ch[num].pid > 0) {	/* close previous command pipes */
       close(to[num][1]);
       close(from[num][0]);	/* and reap the child process */
       waitpid(ch[num].pid, NULL, 0);
+      ch[num].pid = 0;
     }
+    if (ch[num].mem == EXTSTOP)
+      return;
     if (pipe(to[num]) || pipe(from[num])) { /* get a set of pipes */
       sprintf(error, "%s: can't create pipes", progname);
       perror(error);
@@ -101,8 +104,8 @@ pipeto(int num)
     }
     signal(SIGPIPE, SIG_IGN);
     if ((ch[num].pid = fork()) > 0) { /* parent */
-	close(to[num][0]);
-	close(from[num][1]);
+      close(to[num][0]);
+      close(from[num][1]);
     } else if (ch[num].pid == 0) { /* child */
       close(to[num][1]);
       close(from[num][0]);
@@ -276,10 +279,16 @@ init_math()
 void
 do_math()
 {
-  static int i;
+  static int i, j;
 
   for (i = 2 ; i < CHANNELS ; i++) {
     if ((ch[i].show || scope.select == i) && *funcarray[ch[i].func] != NULL) {
+      if (ch[i].pid && ch[i].func != FUNCEXT) {
+	j = ch[i].mem;
+	ch[i].mem = EXTSTOP;
+	pipeto(i);
+	ch[i].mem = j;
+      }
       ch[i].signal = &mem[26+i];
       ch[i].signal->rate = ch[0].signal->rate;
       funcarray[ch[i].func](i);
