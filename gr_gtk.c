@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: gr_gtk.c,v 1.4 1998/08/23 00:33:46 twitham Exp $
+ * @(#)$Id: gr_gtk.c,v 1.5 1999/08/20 04:50:10 twitham Exp $
  *
  * Copyright (C) 1996 - 1998 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -18,7 +18,7 @@
 #include "file.h"
 
 GtkWidget *window;
-GtkWidget *drawing_area;		/* scope drawing area */
+GtkWidget *drawing_area;	/* scope drawing area */
 GdkPixmap *pixmap = NULL;
 GdkRectangle update_rect;
 GdkGC *gc;
@@ -28,16 +28,19 @@ GtkWidget *vbox;
 GtkWidget *hbox;
 GtkWidget *table;
 GtkWidget *table2;
+GtkStyle *mystyle;
 
-GtkWidget colormenu[17];		/* color menu */
+GtkWidget colormenu[17];	/* color menu */
 GtkWidget xwidg[11];		/* extra horizontal widgets */
 GtkWidget *mwidg[57];		/* memory / math widgets */
 GtkWidget *cwidg[CHANNELS];	/* channel button widgets */
 GtkWidget *ywidg[15];		/* vertical widgets */
-GtkWidget **math;			/* math menu */
+GtkWidget **math;		/* math menu */
+int my_yesno = -1;
 int **intarray;			/* indexes of math functions */
 int XX[] = {640,800,1024,1280};
 int XY[] = {480,600, 768,1024};
+char my_filename[FILENAME_MAX];
 GdkFont *font;
 char fontname[80] = DEF_FX;
 char fonts[] = "xlsfonts";
@@ -88,7 +91,7 @@ AddTimeOut(unsigned long interval, int (*func)(), void *data) {
 }
 
 void
-delete_event (GtkWidget *widget, GdkEvent *event, gpointer data)
+delete_event(GtkWidget *widget, GdkEvent *event, gpointer data)
 {
   gtk_main_quit ();
 }
@@ -121,8 +124,6 @@ configure_event (GtkWidget *widget, GdkEventConfigure *event)
   offset = v_points / 2;
   if (h != h_points || v != v_points)
     ClearDrawArea();
-  /*   /* redo text later after widget redraws have settled down */
-/*   AddTimeOut(200, draw_text, &i); */
   if (once)
     draw_text();
   once = 1;
@@ -160,14 +161,12 @@ OpenDisplay(int argc, char *argv[])
 void
 DrawPixel(int x, int y)
 {
-/*   vga_drawpixel(x, y > 0 ? y : 0); */
   gdk_draw_point(pixmap, gc, x, y);
 }
 
 void
 DrawLine(int x1, int y1, int x2, int y2)
 {
-/*   vga_drawline(x1, y1 > 0 ? y1 : 0, x2, y2 > 0 ? y2 : 0); */
   gdk_draw_line(pixmap, gc, x1, y1, x2, y2);
 }
 
@@ -196,52 +195,77 @@ GetString(char *msg, char *def)
 }
 
 void
-file_ok_sel(GtkWidget *w, GtkFileSelection *fs)
+loadfile_ok_sel(GtkWidget *w, GtkFileSelection *fs)
 {
-  g_print("%s\n", gtk_file_selection_get_filename(GTK_FILE_SELECTION(fs)));
+  strncpy(my_filename, gtk_file_selection_get_filename(fs), FILENAME_MAX);
+  gtk_widget_destroy(GTK_WIDGET(fs));
+  loadfile(my_filename);
 }
 
 void
-destroy(GtkWidget *widget, gpointer data)
+savefile_ok_sel(GtkWidget *w, GtkFileSelection *fs)
 {
-  gtk_main_quit ();
+  strncpy(my_filename, gtk_file_selection_get_filename(fs), FILENAME_MAX);
+  gtk_widget_destroy(GTK_WIDGET(fs));
+  savefile(my_filename);
 }
 
 /* get a file name */
-char *
-GetFile(char *path)
+void
+LoadSaveFile(int save)
 {
   GtkWidget *filew;
 
-  filew = gtk_file_selection_new ("File selection");
-  gtk_signal_connect(GTK_OBJECT(filew), "destroy",
-		     (GtkSignalFunc)destroy, &filew);
+  filew = gtk_file_selection_new(save ? "Save File": "Load File");
+  gtk_signal_connect_object(GTK_OBJECT(filew), "delete_event",
+			    GTK_SIGNAL_FUNC(gtk_widget_destroy),
+			    GTK_OBJECT(filew));
   gtk_signal_connect(GTK_OBJECT(GTK_FILE_SELECTION(filew)->ok_button),
-		     "clicked", (GtkSignalFunc)file_ok_sel, filew);
-  gtk_signal_connect_object(GTK_OBJECT(GTK_FILE_SELECTION(filew)->cancel_button),
-			    "clicked", (GtkSignalFunc)gtk_widget_destroy,
-			    GTK_OBJECT (filew));
-  gtk_file_selection_set_filename(GTK_FILE_SELECTION(filew),
-				  path);
+		     "clicked", save ? GTK_SIGNAL_FUNC(savefile_ok_sel)
+		     : GTK_SIGNAL_FUNC(loadfile_ok_sel),
+		     GTK_OBJECT(filew));
+  gtk_signal_connect_object(GTK_OBJECT(GTK_FILE_SELECTION(filew)
+				       ->cancel_button), "clicked",
+			    GTK_SIGNAL_FUNC(gtk_widget_destroy),
+			    GTK_OBJECT(filew));
+/*   if (path) */
+/*     gtk_file_selection_set_filename(GTK_FILE_SELECTION(filew), */
+/* 				    (gchar *)path); */
   gtk_widget_show(filew);
-
-  return path;
 }
+
+void
+yesno_yes_sel(GtkWidget *w, int *yes)
+{
+  my_yesno = yes;
+  gtk_widget_destroy(GTK_WIDGET(w));
+}
+
 
 /* ask a yes/no question */
 int
 GetYesNo(char *msg)
 {
-/* #ifdef HAVEVGAMISC */
-/*   char *s; */
+  GtkWidget *window, *yes, *no, *label;
 
-/*   s = GetString(msg, ""); */
-/*   if (s && (s[0] == 'y' || s[0] == 'Y')) */
-/*     return(1); */
-/*   return(0); */
-/* #else */
+  window = gtk_dialog_new();
+  yes = gtk_button_new_with_label("Yes");
+  gtk_box_pack_start(GTK_BOX(GTK_DIALOG(window)->action_area), yes,
+		     TRUE, TRUE, 0);
+  no = gtk_button_new_with_label("No");
+  gtk_box_pack_start(GTK_BOX(GTK_DIALOG(window)->action_area), no,
+		     TRUE, TRUE, 0);
+  gtk_widget_show(yes);
+  gtk_widget_show(no);
+  label = gtk_label_new(msg);
+  gtk_box_pack_start(GTK_BOX(GTK_DIALOG(window)->vbox), label, TRUE, TRUE, 0);
+  gtk_widget_show(label);
+  gtk_widget_show(window);
+
+  gtk_grab_add(window);		/* modal */
+  gtk_grab_remove(window);	/* return */
+
   return(1);			/* assume yes?! since we can't prompt */
-/* #endif */
 }
 
 void SyncDisplay() {
@@ -426,6 +450,18 @@ cleanup_display()
 void
 fix_widgets()
 {
+/*   mystyle = gtk_widget_get_style(cwidg[0]); */
+
+  mystyle = gtk_style_new();
+  gtk_widget_set_name(cwidg[0], "foo");
+  mystyle->fg_gc[0] = gc;
+  mystyle->fg_gc[1] = gc;
+  mystyle->fg_gc[2] = gc;
+  mystyle->fg_gc[3] = gc;
+  mystyle->fg_gc[4] = gc;
+  gtk_widget_set_style(cwidg[0], mystyle);
+  gtk_widget_queue_draw(cwidg[0]);
+
 /*   int i; */
 /*   char *tilt[] = {"-", "/", "\\"}; */
 
@@ -506,16 +542,16 @@ get_main_menu(GtkWidget *window, GtkWidget ** menubar)
     {"<Main>/Graticule/Minor Divisions", NULL, graticule, "3"},
     {"<Main>/Graticule/Minor & Major", NULL, graticule, "4"},
     {"<Main>/Refresh", NULL, hit_key, "\n"},
-    {"<Main>/ < ", NULL, hit_key, "9"},
+    {"<Main>/<<", NULL, hit_key, "9"},
     {"<Main>/<", NULL, hit_key, "("},
     {"<Main>/>", NULL, hit_key, ")"},
-    {"<Main>/ > ", NULL, hit_key, "0"},
+    {"<Main>/>> ", NULL, hit_key, "0"},
     {"<Main>/SC", NULL, hit_key, "&"},
     {"<Main>/PS", NULL, hit_key, "^"},
     {"<Main>/Run", NULL, runmode, "1"},
     {"<Main>/Wait", NULL, runmode, "2"},
     {"<Main>/Stop", NULL, runmode, "0"},
-    {"<Main>/ ? ", NULL, hit_key, "?"},
+    {"<Main>/?", NULL, hit_key, "?"},
     {"<Main>/Help", NULL, hit_key, "?"},
   };
   int nmenu_items = sizeof(menu_items) / sizeof(menu_items[0]);
@@ -694,6 +730,17 @@ init_widgets()
   }
   gdk_gc_set_background(gc, &gdkcolor[0]);
   SetColor(15);
+
+/*   mystyle = gtk_style_copy(cwidg[0]->style); */
+/*   mystyle = gtk_widget_get_style(cwidg[1]); */
+/*   mystyle->fg_gc[0] = gc; */
+/*   mystyle->fg_gc[1] = gc; */
+/*   mystyle->fg_gc[2] = gc; */
+/*   mystyle->fg_gc[3] = gc; */
+/*   mystyle->fg_gc[4] = gc; */
+/*   gtk_widget_set_style(cwidg[0], mystyle); */
+/*   gtk_widget_queue_resize(cwidg[0]); */
+/*   gtk_widget_queue_draw(cwidg[0]); */
 
 /*   colormenu[0] = MakeMenu("Color"); */
 
