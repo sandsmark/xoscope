@@ -5,7 +5,7 @@
  *
  * [x]scope --- Use Linux's /dev/dsp (a sound card) as an oscilloscope
  *
- * @(#)$Id: oscope.c,v 1.32 1996/01/30 06:45:27 twitham Exp $
+ * @(#)$Id: oscope.c,v 1.33 1996/01/31 05:50:01 twitham Exp $
  *
  * Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
@@ -88,9 +88,8 @@ int v_points;			/* points in vertical axis */
 int h_points;			/* points in horizontal axis */
 int offset;			/* vertical offset */
 int actual;			/* actual sampling rate */
-int scaler[] = {1,2,5,10,20,50,100,200};
-int *maxscaler = &scaler[7];	/* the last one */
-int *pscaler = scaler;
+short mult[] = {1,1,1,1,1,1,2,4,8,16,32};
+short divi[]  = {32,16,8,4,2,1,1,1,1,1,1};
 
 /* display command usage on standard error and exit */
 void
@@ -169,7 +168,7 @@ parse_args(int argc, char **argv)
     case 'm':			/* video mode */
       mode = strtol(optarg, NULL, 0);
       break;
-    case 'd':			/* dma divisor */
+    case 'd':			/* dma diviisor */
       dma = strtol(optarg, NULL, 0);
       dma &= 0x0007;
       break;
@@ -212,12 +211,10 @@ check_status(int status, int line)
   }
 }
 
-/* initialize the scope and its' signals */
+/* initialize the scope */
 void
 init_scope()
 {
-  int i;
-  int channelcolor[] = CHANNELCOLOR;
   scope.scale = DEF_S;
   scope.rate = DEF_R;
   scope.trig = DEF_T;
@@ -225,10 +222,18 @@ init_scope()
   scope.behind = DEF_B;
   scope.run = 1;
   scope.color = DEF_C;
+}
+
+/* initialize the signals */
+void
+init_channels()
+{
+  int i, channelcolor[] = CHANNELCOLOR;
+
   for (i = 0 ; i < CHANNELS ; i++) {
     memset(ch[i].data, 0, MAXWID);
     memset(ch[i].old, 0, MAXWID);
-    ch[i].scale = 1;
+    ch[i].scale = 5;
     ch[i].pos = 0;
     ch[i].color = color[channelcolor[i]];
   }
@@ -268,11 +273,15 @@ init_sound_card(int firsttime)
 void
 handle_key(unsigned char c)
 {
+  static int scaler[] = {1,2,5,10,20,50,100,200};
+  static int *maxscaler = &scaler[7];	/* the last one */
+  static int *pscaler = scaler;
+
   switch (c) {
   case 0:
   case -1:			/* no key pressed */
     break;
-  case '`':			/* single or dual channel mode */
+  case '\t':
     channels++;
     if (channels > 4)
       channels = 1;
@@ -283,58 +292,58 @@ handle_key(unsigned char c)
   case '2':
   case '3':
   case '4':
-    ch[c - '1'].pos += 8;
+    ch[c - '1'].pos -= 16;
     clear();
     break;
-  case '!':
-    ch[0].pos -= 8;
+  case 'z':
+    ch[0].pos += 16;
     clear();
     break;
-  case '@':
-    ch[1].pos -= 8;
+  case 'x':
+    ch[1].pos += 16;
     clear();
     break;
-  case '#':
-    ch[2].pos -= 8;
+  case 'c':
+    ch[2].pos += 16;
     clear();
     break;
-  case '$':
-    ch[3].pos -= 8;
+  case 'v':
+    ch[3].pos += 16;
     clear();
     break;
   case 'q':
-    ch[0].scale /= 2;
-    clear();
-    break;
-  case 'Q':
-    ch[0].scale *= 2;
+    ch[0].scale++;
     clear();
     break;
   case 'w':
-    ch[1].scale /= 2;
-    clear();
-    break;
-  case 'W':
-    ch[1].scale *= 2;
+    ch[1].scale++;
     clear();
     break;
   case 'e':
-    ch[2].scale /= 2;
-    clear();
-    break;
-  case 'E':
-    ch[2].scale *= 2;
+    ch[2].scale++;
     clear();
     break;
   case 'r':
-    ch[3].scale /= 2;
+    ch[3].scale++;
     clear();
     break;
-  case 'R':
-    ch[3].scale *= 2;
+  case 'a':
+    ch[0].scale--;
     clear();
     break;
-  case 'S':
+  case 's':
+    ch[1].scale--;
+    clear();
+    break;
+  case 'd':
+    ch[2].scale--;
+    clear();
+    break;
+  case 'f':
+    ch[3].scale--;
+    clear();
+    break;
+  case '0':
     if (scope.rate == 8800) {
       scope.rate = 22000;
       check_status(ioctl(snd, SOUND_PCM_SYNC, 0), __LINE__);
@@ -352,7 +361,7 @@ handle_key(unsigned char c)
     scope.scale  = *pscaler;
     clear();
     break;
-  case 's':
+  case '9':
     if (scope.rate == 8800) {
 				/* average samples into each pixel */
     } else if (scope.rate == 22000) {
@@ -370,7 +379,7 @@ handle_key(unsigned char c)
     scope.scale  = *pscaler;
     clear();
     break;
-  case 'T':
+  case 'l':
     if (scope.trig < 0)		/* enable the trigger at half scale */
       scope.trig = 120;
     scope.trig += 8;		/* increase trigger */
@@ -378,69 +387,46 @@ handle_key(unsigned char c)
       scope.trig = -1;		/* disable trigger when it leaves the scale */
     clear();
     break;
-  case 't':
+  case 'o':
     if (scope.trig < 0)		/* enable the trigger at half scale */
       scope.trig = 136;
     scope.trig -= 8;		/* decrease trigger */
     clear();
     break;
-  case 'C':
-    scope.color++;			/* increase color */
+  case '=':
+    scope.color++;		/* increase color */
     if (scope.color > 15)
       scope.color = 0;
     break;
-  case 'c':
+  case '-':
     scope.color--;
-    if (scope.color < 0)		/* decrease color */
+    if (scope.color < 0)	/* decrease color */
       scope.color = 15;
     break;
-  case 'M':
-    if (mode < 6) {
-      mode++;			/* increase video mode */
-      init_screen(0);
-      clear();
-    }
-    break;
-  case 'm':
-    if (mode > 1) {		/* decrease video mode */
-      mode--;
-      init_screen(0);
-      clear();
-    }
-    break;
-  case 'D':
+  case '>':
     if (dma < 3) {		/* double dma */
       dma <<= 1;
       init_sound_card(0);
     }
     break;
-  case 'd':
+  case '<':
     if (dma > 1) {		/* half dma */
       dma >>= 1;
       init_sound_card(0);
     }
     break;
-  case 'L':
-  case 'l':
-  case 'P':
   case 'p':
     point_mode++;		/* point, point accumulate, line, line acc. */
     if (point_mode > 3)
       point_mode = 0;
     clear();
     break;
-  case 'G':
-  case 'g':
+  case '[':
     scope.grat = !scope.grat;	/* graticule on/off */
     clear();
     break;
-  case 'B':
-  case 'b':
+  case ']':
     scope.behind = !scope.behind; /* graticule behind/in front of signal */
-    break;
-  case 'V':
-  case 'v':
-    verbose = !verbose;		/* verbose log on/off */
     draw_text();
     break;
   case ' ':
@@ -448,8 +434,12 @@ handle_key(unsigned char c)
     draw_text();
     c = 0;			/* suppress verbose log */
     break;
-  case '\e':			/* quit */
-    quit_key_pressed = 1;
+  case '\e':		
+    quit_key_pressed = 1;	/* quit */
+    break;
+  case '\r':
+  case '\n':
+    clear();			/* refresh screen */
     break;
   default:
     c = 0;			/* ignore unknown keys */
@@ -513,10 +503,10 @@ main(int argc, char **argv)
 
   argc = opendisplay(argc, argv);
   parse_args(argc, argv);	/* what do you want? */
-  init_sound_card(1);		/* get ready */
-  scope.scale = 1;
-  init_screen(1);
   init_scope();
+  init_screen(1);
+  init_sound_card(1);
+  init_channels();
   show_info(' ');
   mainloop();			/* from display.h */
   cleanup();			/* close sound, back to text mode */
