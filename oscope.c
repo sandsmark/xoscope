@@ -9,7 +9,7 @@
  *
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
- * @(#)$Id: oscope.c,v 1.21 1996/01/19 07:12:34 twitham Exp $
+ * @(#)$Id: oscope.c,v 1.22 1996/01/20 07:25:58 twitham Exp $
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -483,6 +483,7 @@ handle_key()
     vga_write("STOP",  COL(0), ROW(0),  &font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
     while (vga_getkey() <= 0)	/* pause until key pressed */
       ;
+    c = 0;			/* pretend like nothing happened */
     vga_write("RUN ",  COL(0), ROW(0),  &font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
     break;
   case 'q':
@@ -501,30 +502,33 @@ handle_key()
 static inline void
 get_data()
 {
-  static unsigned char datum[2], prev;
+  static unsigned char datum[2], prev, c;
 
+  check_status(ioctl(snd, SNDCTL_DSP_RESET), __LINE__);
+  read(snd, buffer, SAMPLESKIP); /* toss some possibly invalid samples */
   if (trigger > -1) {		/* trigger enabled */
     if (trigger > 128) {
       datum[0] = 255;		/* positive trigger, look for rising edge */
       do {
 	prev = datum[0];	/* remember prev. channel 1, read channel(s) */
 	read(snd, datum , channels);
-      } while ((handle_key() <= 0)
+      } while (((c = handle_key()) <= 0)
 	       && ((datum[0] < trigger) || (prev > trigger)));
     } else {
       datum[0] = 0;		/* negative trigger, look for falling edge */
       do {
 	prev = datum[0];	/* remember prev. channel 1, read channel(s) */
 	read(snd, datum, channels);
-      } while ((handle_key() <= 0)
+      } while (((c = handle_key()) <= 0)
 	       && ((datum[0] > trigger) || (prev < trigger)));
     }
   } else {			/* not triggering */
-    handle_key();
+    c = handle_key();
   }
-  /* now get the real data */
+  if (c > 0)			/* skip again if key exit'd the trigger */
+    read(snd, buffer, SAMPLESKIP);
+  /* now get the real data and discard extra since the screen can't keep up */
   read(snd, buffer + channels, (h_points * channels / scale - 2));
-  check_status(ioctl(snd, SNDCTL_DSP_RESET), __LINE__);
 }
 
 /* graph the data */
