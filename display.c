@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 1.29 1996/07/12 02:56:43 twitham Exp $
+ * @(#)$Id: display.c,v 1.30 1996/07/30 05:42:58 twitham Rel1_1 $
  *
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -41,6 +41,7 @@
 void
 show_data();
 int triggered = 0;		/* whether we've triggered or not */
+int data_good = 1;		/* whether data may be "stale" or not */
 
 #ifdef XOSCOPE
 char fontname[80] = DEF_FX;
@@ -277,7 +278,7 @@ draw_text(int all)
     VGA_WRITE(string, col(40), row(26), font, TEXT_FG, TEXT_BG, ALIGN_CENTER);
 
     i = actual / 20 / scope.scale;
-    sprintf(string, "%d Hz/div", i);
+    sprintf(string, "%d Hz/div FFT", i);
     VGA_WRITE(string, col(40), row(27), font, TEXT_FG, TEXT_BG, ALIGN_CENTER);
 
     if (actual >= 44000) {
@@ -315,6 +316,8 @@ draw_text(int all)
       fix_widgets();
 #endif
     show_data();
+    data_good = 0;		/* data may be bad if user just tweaked S/s */
+    return;			/* show_data will call again to do the rest */
   }
 
   /* always draw the dynamic text */
@@ -397,9 +400,10 @@ draw_graticule()
 static inline void
 draw_data()
 {
-  static int i, j, off, delay, old = 0;
+  static int i, j, off, delay, old = 0, mult, div, mode;
   static Signal *p;
 
+  mode = data_good ?  scope.mode : (scope.mode < 2 ? 0 : 2);
   /* interpolate a line between the sample just before and after trigger */
   off = 100 - scope.scale;	/* then shift all samples horizontally */
   if (scope.trige) {		/* to place time zero at trigger */
@@ -413,21 +417,23 @@ draw_data()
       delay = old;
   } else			/* no trigger, leave delay as it was */
     delay = old;
-  if (scope.mode < 2) {		/* point / point accumulate */
+  if (mode < 2) {		/* point / point accumulate */
     for (j = 0 ; j < CHANNELS ; j++) {
       p = &ch[j];
+      mult = p->mult;		/* precalc for efficiency */
+      div = p->div;
       if (p->show) {
 	off = offset + p->pos;
 	VGA_SETCOLOR(p->color);
 	for (i = 1 ; i <= (h_points - 200) / scope.scale ; i++) {
-	  if (scope.mode == 0) { /* erase previous dots */
+	  if (mode == 0) { /* erase previous dots */
 	    VGA_SETCOLOR(color[0]);
 	    VGA_DRAWPIXEL(i * scope.scale + old,
-			  off - p->old[i] * p->mult / p->div);
+			  off - p->old[i] * mult / div);
 	    VGA_SETCOLOR(p->color); /* draw dots */
 	  }
 	  VGA_DRAWPIXEL(i * scope.scale + delay,
-			off - p->data[i] * p->mult / p->div);
+			off - p->data[i] * mult / div);
 	  p->old[i] = p->data[i];
 	}
 	VGA_DRAWLINE(90, off, 100, off);
@@ -437,22 +443,24 @@ draw_data()
   } else {			/* line / line accumulate */
     for (j = 0 ; j < CHANNELS ; j++) {
       p = &ch[j];
+      mult = p->mult;		/* precalc for efficiency */
+      div = p->div;
       if (p->show) {
 	off = offset + p->pos;
 	VGA_SETCOLOR(p->color);
 	for (i = 1 ; i < (h_points - 200) / scope.scale ; i++) {
-	  if (scope.mode == 2) { /* erase previous lines */
+	  if (mode == 2) { /* erase previous lines */
 	    VGA_SETCOLOR(color[0]);
 	    VGA_DRAWLINE(i * scope.scale + old,
-			 off - p->old[i] * p->mult / p->div,
+			 off - p->old[i] * mult / div,
 			 i * scope.scale + old + scope.scale,
-			 off - p->old[i + 1] * p->mult / p->div);
+			 off - p->old[i + 1] * mult / div);
 	    VGA_SETCOLOR(p->color); /* draw lines */
 	  }
 	  VGA_DRAWLINE(i * scope.scale + delay,
-		       off - p->data[i] * p->mult / p->div,
+		       off - p->data[i] * mult / div,
 		       i * scope.scale + delay + scope.scale,
-		       off - p->data[i + 1] * p->mult / p->div);
+		       off - p->data[i + 1] * mult / div);
 	  p->old[i] = p->data[i];
 	}
 	VGA_DRAWLINE(90, off, 100, off);
@@ -490,6 +498,7 @@ animate(void *data)
   if (scope.run) {
     triggered = get_data();
     show_data();
+    data_good = 1;
   }
 #ifdef XOSCOPE
   if (quit_key_pressed) {
