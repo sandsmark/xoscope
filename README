@@ -1,0 +1,10 @@
+This is "scope", a simple software emulation of an oscilloscope.
+
+See the man page for more information on what the program does and how
+to run it.
+
+Use the included make file to build and install it.
+
+Enjoy,
+
+Jeff Tranter (Jeff_Tranter@Mitel.COM)
