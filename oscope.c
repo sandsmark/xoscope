@@ -160,6 +160,8 @@ void init_data()
 /* draw graticule */
 inline void draw_graticule()
 {
+  float i;
+
   vga_clear();
 
   /* draw a frame */
@@ -168,6 +170,18 @@ inline void draw_graticule()
   vga_drawline(0, offset+256, h_points-1, offset+256);
   vga_drawline(0, offset-1, 0, offset+256);
   vga_drawline(h_points-1, offset, h_points-1, offset+256);
+
+  if (actual) {
+    for (i = 0; i < h_points-1  ; i += ((float)actual / 1000)) {
+      /* draw tick marks at 1 msec intervals */
+      vga_drawline(i, offset, i, offset+5);
+      vga_drawline(i, offset+251, i, offset+256);
+    }
+    for (i = 0; i < h_points-1  ; i += ((float)actual / 100)) {
+      /* draw vertical lines at 10 msec intervals */
+      vga_drawline(i, offset, i, offset+256);
+    }
+  }
 
   /* draw a tick mark where the trigger level is */
   if (trigger != -1) {
@@ -265,12 +279,16 @@ inline void handle_key()
     ioctl(snd, SOUND_PCM_SYNC, 0);
     ioctl(snd, SOUND_PCM_WRITE_RATE, &sampling);
     ioctl(snd, SOUND_PCM_READ_RATE, &actual);
+    if (graticule)
+      draw_graticule();
     break;
   case 'r':
     sampling *= 0.9;
     ioctl(snd, SOUND_PCM_SYNC, 0);
     ioctl(snd, SOUND_PCM_WRITE_RATE, &sampling);
     ioctl(snd, SOUND_PCM_READ_RATE, &actual);
+    if (graticule)
+      draw_graticule();
     break;
   case 'T':
     if (trigger != -1) {
@@ -321,10 +339,8 @@ inline void handle_key()
     }
     break;
   case 'G':
-    if (graticule == 0) {
-      graticule = 1;
-      draw_graticule();
-    }
+    graticule = 1;
+    draw_graticule();
     break;
   case 'g':
     if (graticule == 1) {
