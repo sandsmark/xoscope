@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 1.26 1996/03/02 06:53:54 twitham Exp $
+ * @(#)$Id: display.c,v 1.27 1996/03/10 01:41:37 twitham Exp $
  *
  * Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
@@ -32,18 +32,19 @@
 #define VGA_WRITE(s,x,y,f,fg,bg,p)	;
 #ifdef HAVEVGAMISC
 #include <fontutils.h>
+#include <miscutils.h>
 #undef VGA_WRITE
 #define VGA_WRITE(s,x,y,f,fg,bg,p)	vga_write(s,x,y,&f,fg,bg,p)
 #endif
 
 #endif
 
+void
+show_data();
 int triggered = 0;		/* whether we've triggered or not */
 
 #ifdef XOSCOPE
 char fontname[80] = DEF_FX;
-void
-show_data();
 #else
 char fontname[80] = DEF_F;
 int screen_modes[] = {		/* allowed modes */
@@ -95,6 +96,39 @@ row(int y)
   return ((y - 5) * (v_points - 160) / 20 + 80);
 }
 
+/* get a file name */
+#ifndef XOSCOPE
+char *
+GetFile(char *path)
+{
+#ifdef HAVEVGAMISC
+  char *s;
+
+  s = vga_prompt(col(20), v_points / 2,
+		 40 * 8, 8 + font.font_height, "Filename:",
+		 &font, &font, TEXT_FG, KEY_FG, TEXT_BG, PROMPT_SCROLLABLE);
+  if (s[0] == '\e' || s[0] == '\0')
+    return(NULL);
+  return(s);
+#else
+  return(filename);
+#endif
+}
+#endif
+
+/* draw a temporary one-line message to center of screen */
+void
+message(char *message, int clr)
+{
+#if defined XOSCOPE || defined HAVEVGAMISC
+  VGA_WRITE("                                                  ",
+	    h_points / 2, v_points / 2,
+	    font, clr, TEXT_BG, ALIGN_CENTER);
+  VGA_WRITE(message, h_points / 2, v_points / 2,
+	    font, clr, TEXT_BG, ALIGN_CENTER);
+#endif
+}
+
 /* draw just dynamic or all text to graphics screen */
 void
 draw_text(int all)
@@ -122,8 +156,14 @@ draw_text(int all)
     VGA_WRITE("(Esc)", 0, 0, font, KEY_FG, TEXT_BG, ALIGN_LEFT);
     VGA_WRITE("Quit", col(5), 0, font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
 
-    VGA_WRITE("(Tab)", 0, row(1), font, KEY_FG, TEXT_BG, ALIGN_LEFT);
-    VGA_WRITE(p->show ? "Visible" : "HIDDEN ", col(5), row(1),
+    VGA_WRITE("(@)", col(2), row(1), font, KEY_FG, TEXT_BG, ALIGN_LEFT);
+    VGA_WRITE("Load", col(5), row(1), font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
+
+    VGA_WRITE("(#)", col(2), row(2), font, KEY_FG, TEXT_BG, ALIGN_LEFT);
+    VGA_WRITE("Save", col(5), row(2), font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
+
+    VGA_WRITE("(Tab)", 0, row(3), font, KEY_FG, TEXT_BG, ALIGN_LEFT);
+    VGA_WRITE(p->show ? "Visible" : "HIDDEN ", col(5), row(3),
 	      font, p->color, TEXT_BG, ALIGN_LEFT);
 
     VGA_WRITE("(Enter)", col(70), 0, font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
@@ -389,6 +429,7 @@ draw_data()
 #endif
 }
 
+/* calculate any math and plot the results and the graticule */
 void
 show_data()
 {

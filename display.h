@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.h,v 1.6 1996/03/02 06:59:47 twitham Exp $
+ * @(#)$Id: display.h,v 1.7 1996/03/10 01:41:50 twitham Rel1_1 $
  *
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -10,6 +10,7 @@
  */
 
 extern char fontname[];
+extern int color[];
 
 void
 draw_text();
@@ -31,3 +32,9 @@ clear();
 
 char *
 fonts();
+
+void
+message(char *message, int clr);
+
+char *
+GetFile(char *path);
