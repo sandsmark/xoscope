@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: ser_unix.c,v 1.3 1997/05/30 04:13:23 twitham Rel $
+ * @(#)$Id: ser_unix.c,v 1.4 1999/08/29 02:14:05 twitham Rel $
  *
  * Copyright (C) 1997 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -77,7 +77,7 @@ cleanup_serial()
 int
 findscope(char *dev)
 {
-  int c, byte = 0, try = 0, n = 0;
+  int c, byte = 0, try = 0;
 
   if ((psfd = open(dev, O_RDONLY|O_NDELAY)) < 0) {
     sprintf(error, "%s: can't open device %s", progname, dev);
@@ -102,14 +102,17 @@ findscope(char *dev)
     return(0);
   }
   flush_serial();
-  while (byte < 300 && try < 25) { /* give up in 2.5ms */
+  while (byte < 300 && try < 75) { /* give up in 7.5ms */
     if ((c = getonebyte()) < 0) {
       microsleep(100);		/* try again in 0.1ms */
       try++;
-    } else if (c == 0x7f && ++n > 1)
+    } else if (c > 0x7b)
       return(1);		/* ProbeScope found! */
     else
       byte++;
+#ifdef PSDEBUG
+    printf("%d\t%d\n", try, byte);
+#endif
   }
   if (ioctl(psfd, TCSETA, &svbuf) < 0) {
     sprintf(error, "%s: can't ioctl set device %s", progname, dev);
