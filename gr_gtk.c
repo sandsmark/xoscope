@@ -1,7 +1,7 @@
 /*
- * @(#)$Id: gr_gtk.c,v 1.12 1999/08/29 02:10:47 twitham Exp $
+ * @(#)$Id: gr_gtk.c,v 1.13 2000/02/27 03:56:12 twitham Exp $
  *
- * Copyright (C) 1996 - 1999 Tim Witham <twitham@quiknet.com>
+ * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
  * (see the files README and COPYING for more details)
  *
@@ -18,21 +18,9 @@
 #include "display.h"
 #include "func.h"
 #include "file.h"
+#include "proscope.h"
 #include "com_gtk.h"
 
-/*  GtkWidget *filemenu; */
-/*  GtkWidget *hbox; */
-/*  GtkWidget *table; */
-/*  GtkWidget *table2; */
-/*  GtkStyle *mystyle; */
-
-/*  GtkWidget colormenu[17]; */
-/*  GtkWidget xwidg[11]; */
-/*  GtkWidget *mwidg[57]; */
-/*  GtkWidget *cwidg[CHANNELS]; */
-/*  GtkWidget *ywidg[15]; */
-/*  GtkWidget **math; */
-/*  int **intarray; */
 int XX[] = {640,800,1024,1280};
 int XY[] = {480,600, 768,1024};
 char my_filename[FILENAME_MAX] = "";
@@ -40,6 +28,9 @@ GdkFont *font;
 char fontname[80] = DEF_FX;
 char fonts[] = "xlsfonts";
 char *alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+
+GtkItemFactory *factory;
+extern int fixing_widgets;	/* in com_gtk.c */
 
 void
 clear_display()
@@ -216,7 +207,6 @@ vga_write(char *s, short x, short y, void *f, short fg, short bg, char p)
     x -= w / 2;
   else if (p == ALIGN_RIGHT)
     x -= w;
-  /* there's probably a better way to blank the area with GC attribs? */
   gdk_draw_rectangle(pixmap,
 		     drawing_area->style->black_gc,
 		     TRUE,
@@ -236,6 +226,7 @@ redisplay(GtkWidget w, int new_width, int new_height, void *data)
 void
 plotmode(GtkWidget *w, gpointer data)
 {
+  if (fixing_widgets) return;
   scope.mode = ((char *)data)[0] - '0';
   clear();
 }
@@ -252,6 +243,7 @@ graticule(GtkWidget *w, gpointer data)
 {
   int i;
 
+  if (fixing_widgets) return;
   i = ((char *)data)[0] - '0';
   if (i < 2)
     scope.behind = i;
@@ -265,6 +257,19 @@ setcolor(GtkWidget *w, gpointer data)
 {
   scope.color = ((char *)data)[0] - 'a';
   draw_text(1);
+}
+
+void
+trigger(GtkWidget *w, gpointer data)
+{
+  int i;
+
+  if (fixing_widgets) return;
+  if ((i = ((char *)data)[0] - '0') > 2)
+    scope.trigch = i - 3;
+  else
+    scope.trige = i;
+  clear();
 }
 
 void
@@ -421,7 +426,82 @@ cleanup_display()
 void
 fix_widgets()
 {
-/* I suppose someday I could figure out how to check mark the menus */
+  static const char *cm[] = {
+    "/Channel/Channel 1",
+    "/Channel/Channel 2",
+    "/Channel/Channel 3",
+    "/Channel/Channel 4",
+    "/Channel/Channel 5",
+    "/Channel/Channel 6",
+    "/Channel/Channel 7",
+    "/Channel/Channel 8",
+  }, *pm[] = {
+    "/Scope/Plot Mode/Point",
+    "/Scope/Plot Mode/Point Accumulate",
+    "/Scope/Plot Mode/Line",
+    "/Scope/Plot Mode/Line Accumulate",
+  }, *gm[] = {
+    "/Scope/Graticule/In Front",
+    "/Scope/Graticule/Behind",
+    "/Scope/Graticule/None",
+    "/Scope/Graticule/Minor Divisions",
+    "/Scope/Graticule/Minor & Major",
+  }, *tm[] = {
+    "/Trigger/Channel 1",
+    "/Trigger/Channel 2",
+    "/Trigger/Auto",
+    "/Trigger/Rising",
+    "/Trigger/Falling",
+  };
+
+
+/*    if (fixing_widgets) return; */
+  fixing_widgets = 1;
+  gtk_check_menu_item_set_active
+    (GTK_CHECK_MENU_ITEM
+     (gtk_item_factory_get_item(factory, cm[scope.select])), FALSE);
+  gtk_check_menu_item_set_active
+    (GTK_CHECK_MENU_ITEM
+     (gtk_item_factory_get_item(factory, "/Channel/Show")),
+     ch[scope.select].show);
+
+  gtk_check_menu_item_set_active
+    (GTK_CHECK_MENU_ITEM
+     (gtk_item_factory_get_item(factory, tm[scope.trigch])), TRUE);
+  gtk_check_menu_item_set_active
+    (GTK_CHECK_MENU_ITEM
+     (gtk_item_factory_get_item(factory, tm[scope.trige + 2])), TRUE);
+
+  gtk_check_menu_item_set_active
+    (GTK_CHECK_MENU_ITEM
+     (gtk_item_factory_get_item(factory, pm[scope.mode])), TRUE);
+  gtk_check_menu_item_set_active
+    (GTK_CHECK_MENU_ITEM
+     (gtk_item_factory_get_item(factory, gm[scope.behind])), TRUE);
+  gtk_check_menu_item_set_active
+    (GTK_CHECK_MENU_ITEM
+     (gtk_item_factory_get_item(factory, gm[scope.grat + 2])), TRUE);
+  gtk_check_menu_item_set_active
+    (GTK_CHECK_MENU_ITEM
+     (gtk_item_factory_get_item(factory, "/Scope/SoundCard")), snd);
+  gtk_check_menu_item_set_active
+    (GTK_CHECK_MENU_ITEM
+     (gtk_item_factory_get_item(factory, "/Scope/ProbeScope")), ps.found);
+
+  gtk_check_menu_item_set_active
+    (GTK_CHECK_MENU_ITEM
+     (gtk_item_factory_get_item(factory, "/Help/Keys&Info")), scope.verbose);
+
+  gtk_widget_set_sensitive
+    (GTK_WIDGET
+     (gtk_item_factory_get_item(factory, "/Channel/Math/External Command...")),
+     scope.select > 1);
+  gtk_widget_set_sensitive
+    (GTK_WIDGET
+     (gtk_item_factory_get_item(factory, "/Channel/Math/XY")),
+     scope.select > 1);
+
+  fixing_widgets = 0;
 }
 
 void
@@ -440,16 +520,16 @@ get_main_menu(GtkWidget *window, GtkWidget ** menubar)
 
     {"/Channel", NULL, NULL, 0, "<Branch>"},
     {"/Channel/tear", NULL, NULL, 0, "<Tearoff>"},
-    {"/Channel/Channel 1", NULL, hit_key, (int)"1", NULL},
-    {"/Channel/Channel 2", NULL, hit_key, (int)"2", NULL},
-    {"/Channel/Channel 3", NULL, hit_key, (int)"3", NULL},
-    {"/Channel/Channel 4", NULL, hit_key, (int)"4", NULL},
-    {"/Channel/Channel 5", NULL, hit_key, (int)"5", NULL},
-    {"/Channel/Channel 6", NULL, hit_key, (int)"6", NULL},
-    {"/Channel/Channel 7", NULL, hit_key, (int)"7", NULL},
-    {"/Channel/Channel 8", NULL, hit_key, (int)"8", NULL},
+    {"/Channel/Channel 1", NULL, hit_key, (int)"1", "<RadioItem>"},
+    {"/Channel/Channel 2", NULL, hit_key, (int)"2", "/Channel/Channel 1"},
+    {"/Channel/Channel 3", NULL, hit_key, (int)"3", "/Channel/Channel 2"},
+    {"/Channel/Channel 4", NULL, hit_key, (int)"4", "/Channel/Channel 3"},
+    {"/Channel/Channel 5", NULL, hit_key, (int)"5", "/Channel/Channel 4"},
+    {"/Channel/Channel 6", NULL, hit_key, (int)"6", "/Channel/Channel 5"},
+    {"/Channel/Channel 7", NULL, hit_key, (int)"7", "/Channel/Channel 6"},
+    {"/Channel/Channel 8", NULL, hit_key, (int)"8", "/Channel/Channel 7"},
     {"/Channel/sep", NULL, NULL, 0, "<Separator>"},
-    {"/Channel/Hide Show", NULL, hit_key, (int)"\t", NULL},
+    {"/Channel/Show", NULL, hit_key, (int)"\t", "<CheckItem>"},
 
     {"/Channel/Scale", NULL, NULL, 0, "<Branch>"},
     {"/Channel/Scale/tear", NULL, NULL, 0, "<Tearoff>"},
@@ -566,14 +646,19 @@ get_main_menu(GtkWidget *window, GtkWidget ** menubar)
     {"/Channel/Recall/Mem U", "u", hit_key, (int)"u", NULL},
     {"/Channel/Recall/Mem V", "v", hit_key, (int)"v", NULL},
     {"/Channel/Recall/Mem W", "w", hit_key, (int)"w", NULL},
+    {"/Channel/Recall/sep", NULL, NULL, 0, "<Separator>"},
     {"/Channel/Recall/Left Mix", "x", hit_key, (int)"x", NULL},
     {"/Channel/Recall/Right Mix", "y", hit_key, (int)"y", NULL},
     {"/Channel/Recall/ProbeScope", "z", hit_key, (int)"z", NULL},
 
     {"/Trigger", NULL, NULL, 0, "<Branch>"},
     {"/Trigger/tear", NULL, NULL, 0, "<Tearoff>"},
-    {"/Trigger/Channel 1,2", "_", hit_key, (int)"_", NULL},
-    {"/Trigger/Auto,Rising,Falling", "+", hit_key, (int)"+", NULL},
+    {"/Trigger/Channel 1", NULL, trigger, (int)"3", "<RadioItem>"},
+    {"/Trigger/Channel 2", NULL, trigger, (int)"4", "/Trigger/Channel 1"},
+    {"/Trigger/sep", NULL, NULL, 0, "<Separator>"},
+    {"/Trigger/Auto", NULL, trigger, (int)"0", "<RadioItem>"},
+    {"/Trigger/Rising", NULL, trigger, (int)"1", "/Trigger/Auto"},
+    {"/Trigger/Falling", NULL, trigger, (int)"2", "/Trigger/Rising"},
     {"/Trigger/sep", NULL, NULL, 0, "<Separator>"},
     {"/Trigger/Position up", "=", hit_key, (int)"=", NULL},
     {"/Trigger/Position down", "-", hit_key, (int)"-", NULL},
@@ -614,10 +699,13 @@ get_main_menu(GtkWidget *window, GtkWidget ** menubar)
     {"/Scope", NULL, NULL, 0, "<Branch>"},
     {"/Scope/tear", NULL, NULL, 0, "<Tearoff>"},
     {"/Scope/Refresh", NULL, hit_key, (int)"\n", NULL},
-    {"/Scope/Plot Mode/Point", NULL, plotmode, (int)"0", NULL},
-    {"/Scope/Plot Mode/Point Accumulate", NULL, plotmode, (int)"1", NULL},
-    {"/Scope/Plot Mode/Line", NULL, plotmode, (int)"2", NULL},
-    {"/Scope/Plot Mode/Line Accumulate", NULL, plotmode, (int)"3", NULL},
+    {"/Scope/Plot Mode/tear", NULL, NULL, 0, "<Tearoff>"},
+    {"/Scope/Plot Mode/Point", NULL, plotmode, (int)"0", "<RadioItem>"},
+    {"/Scope/Plot Mode/Point Accumulate", NULL, plotmode, (int)"1", "/Scope/Plot Mode/Point"},
+    {"/Scope/Plot Mode/Line", NULL, plotmode, (int)"2", "/Scope/Plot Mode/Point Accumulate"},
+    {"/Scope/Plot Mode/Line Accumulate", NULL, plotmode, (int)"3", "/Scope/Plot Mode/Line"},
+    {"/Scope/Graticule/tear", NULL, NULL, 0, "<Tearoff>"},
+    {"/Scope/Graticule/Color/tear", NULL, NULL, 0, "<Tearoff>"},
     {"/Scope/Graticule/Color/black", NULL, setcolor, (int)"a", NULL},
     {"/Scope/Graticule/Color/blue", NULL, setcolor, (int)"b", NULL},
     {"/Scope/Graticule/Color/green", NULL, setcolor, (int)"c", NULL},
@@ -635,15 +723,15 @@ get_main_menu(GtkWidget *window, GtkWidget ** menubar)
     {"/Scope/Graticule/Color/yellow", NULL, setcolor, (int)"o", NULL},
     {"/Scope/Graticule/Color/white", NULL, setcolor, (int)"p", NULL},
     {"/Scope/Graticule/sep", NULL, NULL, 0, "<Separator>"},
-    {"/Scope/Graticule/In Front", NULL, graticule, (int)"0", NULL},
-    {"/Scope/Graticule/Behind", NULL, graticule, (int)"1", NULL},
+    {"/Scope/Graticule/In Front", NULL, graticule, (int)"0", "<RadioItem>"},
+    {"/Scope/Graticule/Behind", NULL, graticule, (int)"1", "/Scope/Graticule/In Front"},
     {"/Scope/Graticule/sep", NULL, NULL, 0, "<Separator>"},
-    {"/Scope/Graticule/None", NULL, graticule, (int)"2", NULL},
-    {"/Scope/Graticule/Minor Divisions", NULL, graticule, (int)"3", NULL},
-    {"/Scope/Graticule/Minor & Major", NULL, graticule, (int)"4", NULL},
+    {"/Scope/Graticule/None", NULL, graticule, (int)"2", "<RadioItem>"},
+    {"/Scope/Graticule/Minor Divisions", NULL, graticule, (int)"3", "/Scope/Graticule/None"},
+    {"/Scope/Graticule/Minor & Major", NULL, graticule, (int)"4", "/Scope/Graticule/Minor Divisions"},
     {"/Scope/sep", NULL, NULL, 0, "<Separator>"},
-    {"/Scope/SoundCard On|Off", NULL, hit_key, (int)"&", NULL},
-    {"/Scope/ProbeScope On|Off", NULL, hit_key, (int)"^", NULL},
+    {"/Scope/SoundCard", NULL, hit_key, (int)"&", "<CheckItem>"},
+    {"/Scope/ProbeScope", NULL, hit_key, (int)"^", "<CheckItem>"},
 
     {"/<<", NULL, hit_key, (int)"9", NULL},
     {"/<", NULL, hit_key, (int)"(", NULL},
@@ -654,13 +742,12 @@ get_main_menu(GtkWidget *window, GtkWidget ** menubar)
     {"/Wait", NULL, runmode, (int)"2", NULL},
     {"/Stop", NULL, runmode, (int)"0", NULL},
 
-    {"/_Help", NULL, NULL, 0, "<LastBranch>"},
-    {"/_Help/Keys&Info", NULL, hit_key, (int)"?", NULL},
-    {"/_Help/Manual", NULL, help, 0, NULL},
+    {"/Help", NULL, NULL, 0, "<LastBranch>"},
+    {"/Help/Keys&Info", NULL, hit_key, (int)"?", "<CheckItem>"},
+    {"/Help/Manual", NULL, help, 0, NULL},
   };
   gint nmenu_items = sizeof(menu_items) / sizeof(menu_items[0]);
 
-  GtkItemFactory *factory;
 /*    GtkAccelGroup *accel_group; */
 
 /*    accel_group = gtk_accel_group_new (); */
