@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 1.32 1996/10/05 05:49:52 twitham Exp $
+ * @(#)$Id: display.c,v 1.33 1996/10/05 21:11:58 twitham Exp $
  *
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -130,6 +130,24 @@ GetString(char *msg, char *def)
   return(s);
 #else
   return(NULL);
+#endif
+}
+
+/* ask a yes/no question */
+int
+GetYesNo(char *msg)
+{
+#ifdef HAVEVGAMISC
+  char *s;
+
+  s = vga_prompt(0, v_points / 2,
+		 80 * 8, 8 + font.font_height, msg,
+		 &font, &font, TEXT_FG, KEY_FG, TEXT_BG, PROMPT_SCROLLABLE);
+  if (s[0] == 'y' || s[0] == 'Y')
+    return(1);
+  return(0);
+#else
+  return(1);			/* assume yes?! since we can't prompt */
 #endif
 }
 #endif
