@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 
-# @(#)$Id: Makefile.am,v 1.2 2001/05/09 04:45:52 twitham Rel $
+# @(#)$Id: Makefile.am,v 1.3 2001/05/20 03:00:21 twitham Exp $
 
 # Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
 
@@ -34,7 +34,7 @@ oscope_SOURCES = $(src) gr_com.c gr_vga.c
 offt_SOURCES = offt.c fft.c realfft.c
 
 if GTK
-#SUBDIRS = src
+SUBDIRS = src
 INCLUDES = @GTK_CFLAGS@
 xoscope_SOURCES = $(src) com_gtk.c gr_gtk.c
 xoscope_LDADD = @GTK_LIBS@

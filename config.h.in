@@ -1,6 +1,6 @@
 /* config.h.in.  Generated automatically from configure.in by autoheader.  */
 /*
- * @(#)$Id: config.h.in,v 1.4 2001/05/20 00:12:29 twitham Rel $
+ * @(#)$Id: config.h.in,v 1.5 2001/05/20 03:00:21 twitham Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
