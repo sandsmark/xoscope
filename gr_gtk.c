@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: gr_gtk.c,v 1.14 2000/02/27 07:35:30 twitham Exp $
+ * @(#)$Id: gr_gtk.c,v 1.15 2000/03/04 21:37:26 twitham Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -27,7 +27,6 @@ char my_filename[FILENAME_MAX] = "";
 GdkFont *font;
 char fontname[80] = DEF_FX;
 char fonts[] = "xlsfonts";
-char *alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 
 GtkItemFactory *factory;
 extern int fixing_widgets;	/* in com_gtk.c */
@@ -158,6 +157,19 @@ void
 ExternCommand()
 {
   GtkWidget *window, *label, *command, *run, *cancel;
+  GList *glist = NULL;
+
+  if (fixing_widgets) return;
+
+  glist = g_list_append(glist, "xy");
+  glist = g_list_append(glist, "ofreq");
+  glist = g_list_append(glist, "operl 'abs($x)'");
+  glist = g_list_append(glist, "operl '$x - $x[0]'");
+  glist = g_list_append(glist, "operl '$x / ($y || 1)'");
+  glist = g_list_append(glist, "operl '$x > $y ? $x : $y'");
+  glist = g_list_append(glist, "operl '$t / (44100/2/250) % 2 ? 64 : -64'");
+  glist = g_list_append(glist, "operl 'sin($t * $pi / (44100/2/250)) * 64'");
+  glist = g_list_append(glist, "operl 'cos($t * $pi / (44100/2/250)) * 64'");
 
   window = gtk_dialog_new();
   run = gtk_button_new_with_label("  Run  ");
@@ -169,8 +181,11 @@ ExternCommand()
   label = gtk_label_new("\n  External command and args:  \n");
   gtk_box_pack_start(GTK_BOX(GTK_DIALOG(window)->vbox), label,
 		     TRUE, TRUE, 0);
-  command = gtk_entry_new_with_max_length(256);
-  gtk_entry_set_text(GTK_ENTRY(command), ch[scope.select].command);
+  command = gtk_combo_new();
+  gtk_combo_set_popdown_strings(GTK_COMBO(command), glist);
+  gtk_entry_set_text(GTK_ENTRY(GTK_COMBO(command)->entry),
+		     ch[scope.select].command);
+  gtk_combo_set_value_in_list(GTK_COMBO(command), FALSE, FALSE);
   gtk_box_pack_start(GTK_BOX(GTK_DIALOG(window)->vbox), command,
 		     TRUE, TRUE, 0);
   gtk_signal_connect_object(GTK_OBJECT(window), "delete_event",
@@ -178,7 +193,7 @@ ExternCommand()
 			    GTK_OBJECT(window));
   gtk_signal_connect(GTK_OBJECT(run), "clicked",
 		     GTK_SIGNAL_FUNC(run_sel),
-		     GTK_ENTRY(command));
+		     GTK_ENTRY(GTK_COMBO(command)->entry));
   gtk_signal_connect_object_after(GTK_OBJECT(run), "clicked",
 				  GTK_SIGNAL_FUNC(gtk_widget_destroy),
 				  GTK_OBJECT(window));
@@ -272,12 +287,21 @@ trigger(GtkWidget *w, gpointer data)
   clear();
 }
 
+/* Radio buttons cause 2 events: the deselect and the select.
+   Selecting a built-in after external causes an extraneous command
+   dialog but I can't figure out how to get rid of it.  */
 void
 mathselect(GtkWidget *w, gpointer data)
 {
   if (fixing_widgets) return;
   if (scope.select > 1) {
-    ch[scope.select].func = ((char *)data)[0] - '0' + FUNC0;
+    if (((char *)data)[0] == '$') {
+/*        if (GTK_CHECK_MENU_ITEM */
+/*  	 (gtk_item_factory_get_item */
+/*  	  (factory, "/Channel/Math/External Command..."))->active) */
+	handle_key('$');
+    } else
+      ch[scope.select].func = ((char *)data)[0] - '0' + FUNC0;
     clear();
   }
 }
@@ -303,16 +327,6 @@ setposition(GtkWidget *w, gpointer data)
     ch[scope.select].pos = (((char *)data)[0] == '-' ? 1 : -1)
       * (((char *)data)[1] - 'a') * 16;
   }
-  clear();
-}
-
-/* run an external command */
-void
-runextern(GtkWidget *w, gpointer data)
-{
-  strcpy(ch[scope.select].command, (char *)data);
-  ch[scope.select].func = FUNCEXT;
-  ch[scope.select].mem = EXTSTART;
   clear();
 }
 
@@ -501,11 +515,10 @@ static GtkItemFactoryEntry menu_items[] =
   {"/Channel/Math/Prev Function", ":", hit_key, (int)":", NULL},
   {"/Channel/Math/Next Function", ";", hit_key, (int)";", NULL},
   {"/Channel/Math/sep", NULL, NULL, 0, "<Separator>"},
-  {"/Channel/Math/XY", NULL, runextern, (int)"xy", NULL},
 
   /* this will need hacked if functions are added / changed in func.c */
   {"/Channel/Math/Other", NULL, NULL, 0, "<RadioItem>"},
-  {"/Channel/Math/External Command...", "$", hit_key, (int)"$", "/Channel/Math/Other"},
+  {"/Channel/Math/External Command...", "$", mathselect, (int)"$", "/Channel/Math/Other"},
   {"/Channel/Math/Inv. 1", NULL, mathselect, (int)"0", "/Channel/Math/External Command..."},
   {"/Channel/Math/Inv. 2", NULL, mathselect, (int)"1", "/Channel/Math/Inv. 1"},
   {"/Channel/Math/Sum  1+2", NULL, mathselect, (int)"2", "/Channel/Math/Inv. 2"},
@@ -744,11 +757,11 @@ fix_widgets()
 	(GTK_WIDGET(gtk_item_factory_get_item(factory, r->path)),
 	 scope.select > 1);
     }
-    r = p + 6;
+    r = p + 5;
     gtk_widget_set_sensitive
       (GTK_WIDGET(gtk_item_factory_get_item(factory, r->path)), FALSE);
-    r = scope.select < 2 ? p + 6 : p + 6 + ch[scope.select].func - FUNCMEM;
-    if (r < p + 6) r = p + 6;
+    r = scope.select < 2 ? p + 5 : p + 5 + ch[scope.select].func - FUNCMEM;
+    if (r < p + 5) r = p + 5;
     gtk_check_menu_item_set_active
       (GTK_CHECK_MENU_ITEM(gtk_item_factory_get_item(factory, r->path)), TRUE);
   }
@@ -782,7 +795,7 @@ get_main_menu(GtkWidget *window, GtkWidget ** menubar)
 /*        gtk_accel_group_attach (accel_group, GTK_OBJECT (window)); */
 
   if (menubar)
-    *menubar = gtk_item_factory_get_widget (factory, "<main>");
+    *menubar = gtk_item_factory_get_widget(factory, "<main>");
 }
 
 /* initialize all the widgets, called by init_screen in display.c */
