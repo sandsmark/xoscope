@@ -16,39 +16,9 @@
 int
 main (int argc, char *argv[])
 {
-  GtkWidget *dialog2;
-  GtkWidget *hscale;
-
   gtk_set_locale ();
   gtk_init (&argc, &argv);
-
-  add_pixmap_directory (PACKAGE_DATA_DIR "/pixmaps");
-  add_pixmap_directory (PACKAGE_SOURCE_DIR "/pixmaps");
-
-  /*
-   * The following code was added by Glade to create one of each component
-   * (except popup menus), just so that you see something after building
-   * the project. Delete any components that you don't want shown initially.
-   */
-  dialog2 = create_dialog2 ();
-  gtk_widget_show (dialog2);
-  window = dialog2;
-
-  hscale = lookup_widget(dialog2, "hscale1");
-  gtk_signal_connect (GTK_OBJECT (GTK_RANGE (hscale)->adjustment),
-                      "value_changed", GTK_SIGNAL_FUNC (on_value_changed),
-                      "0");
-  hscale = lookup_widget(dialog2, "hscale2");
-  gtk_signal_connect (GTK_OBJECT (GTK_RANGE (hscale)->adjustment),
-                      "value_changed", GTK_SIGNAL_FUNC (on_value_changed),
-                      "1");
-
-  /* here we need to initially set all the widgets from bs.r */
-
-  /* force pages to update each other to current values */
-  gtk_notebook_set_page(GTK_NOTEBOOK(lookup_widget(dialog2, "notebook1")), 1);
-  gtk_notebook_set_page(GTK_NOTEBOOK(lookup_widget(dialog2, "notebook1")), 0);
-
+  bitscope_dialog ();
   gtk_main ();
   return 0;
 }

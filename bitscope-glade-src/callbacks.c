@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: callbacks.c,v 1.1 2001/05/20 03:00:21 twitham Exp $
+ * @(#)$Id: callbacks.c,v 1.2 2001/05/22 05:11:03 twitham Exp $
  *
  * Copyright (C) 2000 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -24,16 +24,50 @@
 
 #define LU(label)	lookup_widget(GTK_WIDGET(window), label)
 
-
 GtkWidget *window;
 
 gdouble dialog_volts;
 
 void
+bitscope_dialog()
+{
+  GtkWidget *dialog2;
+  GtkWidget *hscale;
+
+  add_pixmap_directory (PACKAGE_DATA_DIR "/pixmaps");
+  add_pixmap_directory (PACKAGE_SOURCE_DIR "/pixmaps");
+
+  /*
+   * The following code was added by Glade to create one of each component
+   * (except popup menus), just so that you see something after building
+   * the project. Delete any components that you don't want shown initially.
+   */
+  dialog2 = create_dialog2 ();
+  gtk_widget_show (dialog2);
+  window = dialog2;
+
+  hscale = lookup_widget(dialog2, "hscale1");
+  gtk_signal_connect (GTK_OBJECT (GTK_RANGE (hscale)->adjustment),
+                      "value_changed", GTK_SIGNAL_FUNC (on_value_changed),
+                      "0");
+  hscale = lookup_widget(dialog2, "hscale2");
+  gtk_signal_connect (GTK_OBJECT (GTK_RANGE (hscale)->adjustment),
+                      "value_changed", GTK_SIGNAL_FUNC (on_value_changed),
+                      "1");
+
+  /* here we need to initially set all the widgets from bs.r */
+
+  /* force pages to update each other to current values */
+  gtk_notebook_set_page(GTK_NOTEBOOK(lookup_widget(dialog2, "notebook1")), 1);
+  gtk_notebook_set_page(GTK_NOTEBOOK(lookup_widget(dialog2, "notebook1")), 0);
+
+}
+
+void
 propagate_changes()
 {
   int x, y;
-  gchar format[] = "\261%.4g V", buffer[128];
+  gchar format[] = "\261%.4g V", buffer[128]; /* char 261: +/- */
   gdouble volts[] = {
     0.130, 0.600,  1.200,  3.160,
     1.300, 6.000, 12.000, 31.600,
@@ -148,10 +182,10 @@ void
 on_ok                                  (GtkButton       *button,
                                         gpointer         user_data)
 {
-  printf("ok\n");
   gtk_signal_emit_by_name(GTK_OBJECT(LU("button2")), "clicked");
-/*    gtk_widget_destroy(LU("dialog2")); */
-  gtk_main_quit();
+  printf("ok\n");
+  gtk_widget_destroy(LU("dialog2"));
+/*    gtk_main_quit(); */
 }
 
 
@@ -181,10 +215,19 @@ on_entry1_changed                      (GtkEditable     *editable,
     if (care > 0 && (s[i] == 'X' || s[i] == 'Y')) care = -1;
     bit <<= 1;
   }
+  printf("text:%s\tcare=%d\tbits=%d\n", s, care, bits);
   gtk_adjustment_set_value(gtk_range_get_adjustment(GTK_RANGE(LU("hscale1"))),
 			   care);
   gtk_adjustment_set_value(gtk_range_get_adjustment(GTK_RANGE(LU("hscale2"))),
 			   bits);
   gtk_entry_set_text(GTK_ENTRY(editable), s);
-  printf("text:%s\tcare=%d\tbits=%d\n", s, care, bits);
+}
+
+gboolean
+on_entry1_focusout                     (GtkWidget       *widget,
+                                        GdkEventFocus   *event,
+                                        gpointer         user_data)
+{
+  gtk_signal_emit_by_name(GTK_OBJECT(LU("entry1")), "activate");
+  return FALSE;
 }

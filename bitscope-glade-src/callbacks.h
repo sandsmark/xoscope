@@ -4,6 +4,9 @@ extern GtkWidget *window;
 extern guchar dialog_r[];
 
 void
+bitscope_dialog();
+
+void
 on_toggled                             (GtkToggleButton *togglebutton,
                                         gpointer         user_data);
 
@@ -29,6 +32,7 @@ void
 on_entry1_changed                      (GtkEditable     *editable,
                                         gpointer         user_data);
 
-void
-on_entry1_changed                      (GtkEditable     *editable,
+gboolean
+on_entry1_focusout                     (GtkWidget       *widget,
+                                        GdkEventFocus   *event,
                                         gpointer         user_data);

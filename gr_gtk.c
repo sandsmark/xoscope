@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: gr_gtk.c,v 1.24 2001/05/06 03:45:16 twitham Rel $
+ * @(#)$Id: gr_gtk.c,v 1.25 2001/05/22 05:11:02 twitham Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -21,6 +21,7 @@
 #include "proscope.h"
 #include "bitscope.h"
 #include "com_gtk.h"
+#include "src/callbacks.h"
 
 int XX[] = {640,800,1024,1280};
 int XY[] = {480,600, 768,1024};
@@ -704,6 +705,8 @@ static GtkItemFactoryEntry menu_items[] =
   {"/Scope/DMA/4 (block)", NULL, dma, (int)"4", "<RadioItem>"},
   {"/Scope/DMA/2 (nonblock)", NULL, dma, (int)"2", "/Scope/DMA/4 (block)"},
   {"/Scope/DMA/1 (nonblock)", NULL, dma, (int)"1", "/Scope/DMA/2 (nonblock)"},
+
+  {"/Bitscope...", NULL, bitscope_dialog, 0, NULL},
 
   {"/<<", NULL, hit_key, (int)"9", NULL},
   {"/<", NULL, hit_key, (int)"(", NULL},

@@ -65,6 +65,7 @@ MAKEINFO = @MAKEINFO@
 OSCOPE = @OSCOPE@
 PACKAGE = @PACKAGE@
 PERL = @PERL@
+RANLIB = @RANLIB@
 VERSION = @VERSION@
 XOSCOPE = @XOSCOPE@
 X_CFLAGS = @X_CFLAGS@
@@ -73,26 +74,34 @@ X_LIBS = @X_LIBS@
 X_PRE_LIBS = @X_PRE_LIBS@
 x_libraries = @x_libraries@
 
-INCLUDES =  	@GTK_CFLAGS@
+INCLUDES = @GTK_CFLAGS@
+
+noinst_LIBRARIES = libbitscope.a
+
+libbitscope_a_SOURCES =  	support.c support.h 	interface.c interface.h 	callbacks.c callbacks.h
 
 
 bin_PROGRAMS = bitscope
 
-bitscope_SOURCES =  	main.c 	support.c support.h 	interface.c interface.h 	callbacks.c callbacks.h
+bitscope_SOURCES = main.c
 
-
-bitscope_LDADD = @GTK_LIBS@
+bitscope_LDADD = @GTK_LIBS@ -L. -lbitscope
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_HEADER = ../config.h
 CONFIG_CLEAN_FILES = 
-PROGRAMS =  $(bin_PROGRAMS)
+LIBRARIES =  $(noinst_LIBRARIES)
 
 
 DEFS = @DEFS@ -I. -I$(srcdir) -I..
 CPPFLAGS = @CPPFLAGS@
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
-bitscope_OBJECTS =  main.o support.o interface.o callbacks.o
+libbitscope_a_LIBADD = 
+libbitscope_a_OBJECTS =  support.o interface.o callbacks.o
+AR = ar
+PROGRAMS =  $(bin_PROGRAMS)
+
+bitscope_OBJECTS =  main.o
 bitscope_DEPENDENCIES = 
 bitscope_LDFLAGS = 
 CFLAGS = @CFLAGS@
@@ -108,8 +117,8 @@ TAR = gtar
 GZIP_ENV = --best
 DEP_FILES =  .deps/callbacks.P .deps/interface.P .deps/main.P \
 .deps/support.P
-SOURCES = $(bitscope_SOURCES)
-OBJECTS = $(bitscope_OBJECTS)
+SOURCES = $(libbitscope_a_SOURCES) $(bitscope_SOURCES)
+OBJECTS = $(libbitscope_a_OBJECTS) $(bitscope_OBJECTS)
 
 all: all-redirect
 .SUFFIXES:
@@ -121,6 +130,36 @@ Makefile: $(srcdir)/Makefile.in  $(top_builddir)/config.status $(BUILT_SOURCES)
 	cd $(top_builddir) \
 	  && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
 
+
+mostlyclean-noinstLIBRARIES:
+
+clean-noinstLIBRARIES:
+	-test -z "$(noinst_LIBRARIES)" || rm -f $(noinst_LIBRARIES)
+
+distclean-noinstLIBRARIES:
+
+maintainer-clean-noinstLIBRARIES:
+
+.s.o:
+	$(COMPILE) -c $<
+
+.S.o:
+	$(COMPILE) -c $<
+
+mostlyclean-compile:
+	-rm -f *.o core *.core
+
+clean-compile:
+
+distclean-compile:
+	-rm -f *.tab.c
+
+maintainer-clean-compile:
+
+libbitscope.a: $(libbitscope_a_OBJECTS) $(libbitscope_a_DEPENDENCIES)
+	-rm -f libbitscope.a
+	$(AR) cru libbitscope.a $(libbitscope_a_OBJECTS) $(libbitscope_a_LIBADD)
+	$(RANLIB) libbitscope.a
 
 mostlyclean-binPROGRAMS:
 
@@ -146,22 +185,6 @@ uninstall-binPROGRAMS:
 	list='$(bin_PROGRAMS)'; for p in $$list; do \
 	  rm -f $(DESTDIR)$(bindir)/`echo $$p|sed 's/$(EXEEXT)$$//'|sed '$(transform)'|sed 's/$$/$(EXEEXT)/'`; \
 	done
-
-.s.o:
-	$(COMPILE) -c $<
-
-.S.o:
-	$(COMPILE) -c $<
-
-mostlyclean-compile:
-	-rm -f *.o core *.core
-
-clean-compile:
-
-distclean-compile:
-	-rm -f *.tab.c
-
-maintainer-clean-compile:
 
 bitscope: $(bitscope_OBJECTS) $(bitscope_DEPENDENCIES)
 	@rm -f bitscope
@@ -267,7 +290,7 @@ install-am: all-am
 install: install-am
 uninstall-am: uninstall-binPROGRAMS
 uninstall: uninstall-am
-all-am: Makefile $(PROGRAMS)
+all-am: Makefile $(LIBRARIES) $(PROGRAMS)
 all-redirect: all-am
 install-strip:
 	$(MAKE) $(AM_MAKEFLAGS) AM_INSTALL_PROGRAM_FLAGS=-s install
@@ -284,41 +307,45 @@ distclean-generic:
 	-rm -f config.cache config.log stamp-h stamp-h[0-9]*
 
 maintainer-clean-generic:
-mostlyclean-am:  mostlyclean-binPROGRAMS mostlyclean-compile \
-		mostlyclean-tags mostlyclean-depend mostlyclean-generic
+mostlyclean-am:  mostlyclean-noinstLIBRARIES mostlyclean-compile \
+		mostlyclean-binPROGRAMS mostlyclean-tags \
+		mostlyclean-depend mostlyclean-generic
 
 mostlyclean: mostlyclean-am
 
-clean-am:  clean-binPROGRAMS clean-compile clean-tags clean-depend \
-		clean-generic mostlyclean-am
+clean-am:  clean-noinstLIBRARIES clean-compile clean-binPROGRAMS \
+		clean-tags clean-depend clean-generic mostlyclean-am
 
 clean: clean-am
 
-distclean-am:  distclean-binPROGRAMS distclean-compile distclean-tags \
-		distclean-depend distclean-generic clean-am
+distclean-am:  distclean-noinstLIBRARIES distclean-compile \
+		distclean-binPROGRAMS distclean-tags distclean-depend \
+		distclean-generic clean-am
 
 distclean: distclean-am
 
-maintainer-clean-am:  maintainer-clean-binPROGRAMS \
-		maintainer-clean-compile maintainer-clean-tags \
-		maintainer-clean-depend maintainer-clean-generic \
-		distclean-am
+maintainer-clean-am:  maintainer-clean-noinstLIBRARIES \
+		maintainer-clean-compile maintainer-clean-binPROGRAMS \
+		maintainer-clean-tags maintainer-clean-depend \
+		maintainer-clean-generic distclean-am
 	@echo "This command is intended for maintainers to use;"
 	@echo "it deletes files that may require special tools to rebuild."
 
 maintainer-clean: maintainer-clean-am
 
-.PHONY: mostlyclean-binPROGRAMS distclean-binPROGRAMS clean-binPROGRAMS \
-maintainer-clean-binPROGRAMS uninstall-binPROGRAMS install-binPROGRAMS \
+.PHONY: mostlyclean-noinstLIBRARIES distclean-noinstLIBRARIES \
+clean-noinstLIBRARIES maintainer-clean-noinstLIBRARIES \
 mostlyclean-compile distclean-compile clean-compile \
-maintainer-clean-compile tags mostlyclean-tags distclean-tags \
-clean-tags maintainer-clean-tags distdir mostlyclean-depend \
-distclean-depend clean-depend maintainer-clean-depend info-am info \
-dvi-am dvi check check-am installcheck-am installcheck install-exec-am \
-install-exec install-data-am install-data install-am install \
-uninstall-am uninstall all-redirect all-am all installdirs \
-mostlyclean-generic distclean-generic clean-generic \
-maintainer-clean-generic clean mostlyclean distclean maintainer-clean
+maintainer-clean-compile mostlyclean-binPROGRAMS distclean-binPROGRAMS \
+clean-binPROGRAMS maintainer-clean-binPROGRAMS uninstall-binPROGRAMS \
+install-binPROGRAMS tags mostlyclean-tags distclean-tags clean-tags \
+maintainer-clean-tags distdir mostlyclean-depend distclean-depend \
+clean-depend maintainer-clean-depend info-am info dvi-am dvi check \
+check-am installcheck-am installcheck install-exec-am install-exec \
+install-data-am install-data install-am install uninstall-am uninstall \
+all-redirect all-am all installdirs mostlyclean-generic \
+distclean-generic clean-generic maintainer-clean-generic clean \
+mostlyclean distclean maintainer-clean
 
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

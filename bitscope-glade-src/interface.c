@@ -673,10 +673,10 @@ create_dialog2 (void)
   GTK_WIDGET_SET_FLAGS (button3, GTK_CAN_DEFAULT);
 
   gtk_signal_connect (GTK_OBJECT (dialog2), "delete_event",
-                      GTK_SIGNAL_FUNC (gtk_main_quit),
+                      GTK_SIGNAL_FUNC (gtk_widget_destroy),
                       NULL);
   gtk_signal_connect (GTK_OBJECT (dialog2), "destroy_event",
-                      GTK_SIGNAL_FUNC (gtk_main_quit),
+                      GTK_SIGNAL_FUNC (gtk_widget_destroy),
                       NULL);
   gtk_signal_connect (GTK_OBJECT (notebook1), "switch_page",
                       GTK_SIGNAL_FUNC (on_notebook1_switch_page),
@@ -720,15 +720,18 @@ create_dialog2 (void)
   gtk_signal_connect (GTK_OBJECT (entry1), "activate",
                       GTK_SIGNAL_FUNC (on_entry1_changed),
                       NULL);
+  gtk_signal_connect (GTK_OBJECT (entry1), "focus_out_event",
+                      GTK_SIGNAL_FUNC (on_entry1_focusout),
+                      NULL);
   gtk_signal_connect (GTK_OBJECT (button1), "clicked",
                       GTK_SIGNAL_FUNC (on_ok),
                       NULL);
   gtk_signal_connect (GTK_OBJECT (button2), "clicked",
                       GTK_SIGNAL_FUNC (on_apply),
                       NULL);
-  gtk_signal_connect (GTK_OBJECT (button3), "clicked",
-                      GTK_SIGNAL_FUNC (gtk_main_quit),
-                      NULL);
+  gtk_signal_connect_object (GTK_OBJECT (button3), "clicked",
+                             GTK_SIGNAL_FUNC (gtk_widget_destroy),
+                             GTK_OBJECT (dialog2));
 
   return dialog2;
 }

@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 
-# @(#)$Id: Makefile.am,v 1.3 2001/05/20 03:00:21 twitham Exp $
+# @(#)$Id: Makefile.am,v 1.4 2001/05/22 05:11:02 twitham Exp $
 
 # Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
 
@@ -37,7 +37,7 @@ if GTK
 SUBDIRS = src
 INCLUDES = @GTK_CFLAGS@
 xoscope_SOURCES = $(src) com_gtk.c gr_gtk.c
-xoscope_LDADD = @GTK_LIBS@
+xoscope_LDADD = @GTK_LIBS@ -Lsrc -lbitscope
 xy_SOURCES = com_gtk.c xy_gtk.c xy.c
 xy_LDADD = @GTK_LIBS@
 else

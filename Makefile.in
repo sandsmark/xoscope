@@ -10,7 +10,7 @@
 # even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 # PARTICULAR PURPOSE.
 
-# @(#)$Id: Makefile.in,v 1.5 2001/05/20 03:00:21 twitham Exp $
+# @(#)$Id: Makefile.in,v 1.6 2001/05/22 05:11:02 twitham Exp $
 
 # Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
 
@@ -73,6 +73,7 @@ MAKEINFO = @MAKEINFO@
 OSCOPE = @OSCOPE@
 PACKAGE = @PACKAGE@
 PERL = @PERL@
+RANLIB = @RANLIB@
 VERSION = @VERSION@
 XOSCOPE = @XOSCOPE@
 X_CFLAGS = @X_CFLAGS@
@@ -107,7 +108,7 @@ offt_SOURCES = offt.c fft.c realfft.c
 @GTK_TRUE@INCLUDES = @GTK_CFLAGS@
 @GTK_TRUE@xoscope_SOURCES = $(src) com_gtk.c gr_gtk.c
 @GTK_FALSE@@LIBSX_TRUE@xoscope_SOURCES = $(src) gr_sx.c gr_com.c
-@GTK_TRUE@xoscope_LDADD = @GTK_LIBS@
+@GTK_TRUE@xoscope_LDADD = @GTK_LIBS@ -Lsrc -lbitscope
 @GTK_FALSE@@LIBSX_TRUE@xoscope_LDADD = @X_LIBS@ @X_PRE_LIBS@ -lsx -lXaw -lXt -lX11
 @GTK_TRUE@xy_SOURCES = com_gtk.c xy_gtk.c xy.c
 @GTK_FALSE@@LIBSX_TRUE@xy_SOURCES = xy_sx.c xy.c

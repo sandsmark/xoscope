@@ -1,15 +1,16 @@
 ## Process this file with automake to produce Makefile.in
 
-INCLUDES = \
-	@GTK_CFLAGS@
+INCLUDES = @GTK_CFLAGS@
 
-bin_PROGRAMS = bitscope
+noinst_LIBRARIES = libbitscope.a
 
-bitscope_SOURCES = \
-	main.c \
+libbitscope_a_SOURCES = \
 	support.c support.h \
 	interface.c interface.h \
 	callbacks.c callbacks.h
 
-bitscope_LDADD = @GTK_LIBS@
+bin_PROGRAMS = bitscope
 
+bitscope_SOURCES = main.c
+
+bitscope_LDADD = @GTK_LIBS@ -L. -lbitscope
