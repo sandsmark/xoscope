@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 1.5 1996/01/28 08:11:19 twitham Exp $
+ * @(#)$Id: display.c,v 1.6 1996/01/28 09:20:09 twitham Exp $
  *
  * Copyright (C) 1994 Jeff Tranter (Jeff_Tranter@Mitel.COM)
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
@@ -15,6 +15,42 @@
 #include <unistd.h>
 #include "scope.h"		/* program defaults */
 #include "display.h"
+
+/* libsx vs. svgalib drawing routines */
+#ifdef XSCOPE
+
+#include <libsx.h>
+#define VGA_DRAWPIXEL	DrawPixel
+#define VGA_DRAWLINE	DrawLine
+#define VGA_SETCOLOR	SetColor
+#define ALIGN_RIGHT	1
+#define ALIGN_LEFT	2
+#define ALIGN_CENTER	3
+int
+VGA_WRITE(char *s, short x, short y, XFont f, short fg, short bg, char p)
+{
+  SetColor(fg);
+  if (p == ALIGN_CENTER)
+    x -= (TextWidth(f, s) / 2);
+  else if (p == ALIGN_RIGHT)
+    x -= (TextWidth(f, s));
+  DrawText(s, x, y + FontHeight(f));
+  return(1);
+}
+#else
+
+#include <vga.h>
+#define VGA_DRAWPIXEL	vga_drawpixel
+#define VGA_DRAWLINE	vga_drawline
+#define VGA_SETCOLOR	vga_setcolor
+#define VGA_WRITE(s,x,y,f,fg,bg,p)	;
+#ifdef HAVEVGAMISC
+#include <fontutils.h>
+#undef VGA_WRITE
+#define VGA_WRITE(s,x,y,f,fg,bg,p)	vga_write(s,x,y,&f,fg,bg,p)
+#endif
+
+#endif
 
 int color[16];
 char *colors[] = {		/* X colors similar to 16 console colors */
@@ -79,17 +115,22 @@ cleanup()
   close(snd);			/* close sound device */
 }
 
-/* how to convert text column (0-79) and row(0-30) to graphics position */
+/* how to convert text column to graphics position */
 int
 col(int x)
 {
-  return (x > 39) ? (h_points - ((80 - x) * 8)) : (x * 8);
+  if (x < 13)			/* left side; absolute */
+    return (x * 8);
+  if (x > 67)			/* right side; absolute */
+    return (h_points - ((80 - x) * 8));
+  return (x * h_points / 80);	/* middle; spread it out proportionally */
 }
 
+/* how to convert text row(0-30) to graphics position */
 int
 row(int y)
 {
-  return y * v_points / 30;
+  return (y * v_points / 30);
 }
 
 /* draw text to graphics screen */
@@ -97,17 +138,15 @@ void
 draw_text()
 {
 #if defined XSCOPE || defined HAVEVGAMISC
+  char speed[20];
+
   VGA_WRITE(running ? "RUN " : "STOP",
-	    col(68), row(14),  font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
-  sprintf(error, "%5d us/div",
-	  (h_points - 200) * 100000 / sampling / scope.scale);
-  VGA_WRITE(error, col(0), row(14), font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
+	    col(68), row(15),  font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
   if (verbose) {
     VGA_WRITE(error,  col(0), row(0),  font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
-  } else {
-    VGA_WRITE("                                                                                ",
-	      col(0), row(0), font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
   }
+  sprintf(speed, "%5d us/div", 44000000 / sampling / scope.scale);
+  VGA_WRITE(speed, col(39), row(25), font, TEXT_FG, TEXT_BG, ALIGN_CENTER);
 #endif
 }
 
