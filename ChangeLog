@@ -1,4 +1,64 @@
-Sat Aug  3 23:10:20 1996  Tim Witham  <twitham@eng.fm.intel.com>
+Sat Oct 12 16:08:24 1996  Tim Witham  <twitham@pcocd2.intel.com>
+
+	* oscope.lsm, README, README.freq51, Makefile: For 1.2.
+
+	* display.c: Turned the Channel headers back on.
+
+Sun Oct  6 06:43:50 1996  Tim Witham  <twitham@pcocd2.intel.com>
+
+	* xy.c: Added quit button and plot mode menu.
+
+	* TODO, Makefile, oscope.1, config.h, oscope.h, x11.c, file.c, oscope.c, display.c:
+	Made the display less verbose by default.  All non-essential text is
+	suppressed.  Hitting '?' toggles the extra text on/off.  -v command
+	line / file option will make the display verbose at startup.
+
+	* oscope.h, oscope.c, x11.c:
+	Enhanced to support the new display-independent display.c.
+
+	* display.h, display.c:
+	Pulled VGA specific code out into new vga.c for easier maintenance.
+	Now this file is completely display independent, leaving it up to the
+	final link to provide all the display-specific functions.
+
+	* vga.c: Initial revision
+
+Sat Oct  5 21:12:45 1996  Tim Witham  <twitham@pcocd2.intel.com>
+
+	* file.c: Overwriting an existing file now requires confirmation.
+
+	* display.c: Added GetYesNo for svgalib.
+
+	* x11.c: Added Run, Wait, Stop buttons to support new single-shot mode.
+
+	* HARDWARE:
+	Added references to and descriptions of new buff2 and pcb files.
+
+	* oscope.1, oscope.c, display.c: Added wait (single-shot) mode.
+
+Fri Oct  4 05:14:02 1996  Tim Witham  <twitham@pcocd2.intel.com>
+
+	* xy.c: Initial revision
+
+	* display.c:
+	Optimized draw_data for at least 2x performance improvement.  The
+	problem was the color was being toggled for each sample in one
+	erase/plot loop.  Now we set color, erase all, set color, plot all.
+
+	* x11.c, func.c:
+	Fixed bug: cleanup could call free on a NULL pointer (seg fault).
+
+Fri Sep  6 03:53:59 1996  Tim Witham  <twitham@pcocd2.intel.com>
+
+	* pcb.ps, pcb.fig, buff2.ps, buff2.fig: Initial revision
+
+Tue Aug  6 04:56:42 1996  Tim Witham  <twitham@pcocd2.intel.com>
+
+	* func.c: Fixed a bug: average didn't work!
+
+Sat Aug  3 23:14:57 1996  Tim Witham  <twitham@pcocd2.intel.com>
+
+	* ChangeLog: 1.1 released.
 
 	* oscope.lsm: For 1.1.
 
@@ -25,17 +85,17 @@ Sat Aug  3 23:10:20 1996  Tim Witham  <twitham@eng.fm.intel.com>
 	* operl:
 	Fixed bug in the delay example; it was being delayed by $x instead of $t.
 
-Tue Jul 30 05:42:58 1996  Tim Witham  <twitham@eng.fm.intel.com>
+Tue Jul 30 05:42:58 1996  Tim Witham  <twitham@pcocd2.intel.com>
 
 	* display.c:
 	Fixed bug: in accumulate modes, the current set of data would be drawn
 	incorrectly just after a S/s change.  Optimized the draw_data loops.
 
-Sat Jul 27 05:43:18 1996  Tim Witham  <twitham@eng.fm.intel.com>
+Sat Jul 27 05:43:18 1996  Tim Witham  <twitham@pcocd2.intel.com>
 
 	* fft.c: Synched with freq51.
 
-Fri Jul 12 03:02:27 1996  Tim Witham  <twitham@eng.fm.intel.com>
+Fri Jul 12 03:02:27 1996  Tim Witham  <twitham@pcocd2.intel.com>
 
 	* oscope.c, display.c:
 	First sample is now the one just before trigger, second the one after.
@@ -46,13 +106,13 @@ Fri Jul 12 03:02:27 1996  Tim Witham  <twitham@eng.fm.intel.com>
 	of the accumulate modes.  This is best used by placing the trigger at
 	0 where the linear approximation is most correct.
 
-Sat Apr 27 17:47:21 1996  Tim Witham  <twitham@eng.fm.intel.com>
+Sat Apr 27 17:47:21 1996  Tim Witham  <twitham@pcocd2.intel.com>
 
 	* ChangeLog: 1.0 released.
 
 	* ChangeLog: Initial revision
 
-Sun Apr 21 03:11:51 1996  Tim Witham  <twitham@eng.fm.intel.com>
+Sun Apr 21 03:11:51 1996  Tim Witham  <twitham@pcocd2.intel.com>
 
 	* oscopefft.c: Fixed bug in the documentation.
 
@@ -91,17 +151,17 @@ Sun Apr 21 03:11:51 1996  Tim Witham  <twitham@eng.fm.intel.com>
 
 	* oscopefft.c: Initial revision
 
-Tue Apr 16 04:16:51 1996  Tim Witham  <twitham@eng.fm.intel.com>
+Tue Apr 16 04:16:51 1996  Tim Witham  <twitham@pcocd2.intel.com>
 
 	* func.c: Added external command pipe, optimized some others.
 
 	* fft.c: Initial revision
 
-Tue Apr  9 07:13:51 1996  Tim Witham  <twitham@eng.fm.intel.com>
+Tue Apr  9 07:13:51 1996  Tim Witham  <twitham@pcocd2.intel.com>
 
 	* oscope.perl: Initial revision
 
-Sun Mar 10 03:22:07 1996  Tim Witham  <twitham@eng.fm.intel.com>
+Sun Mar 10 03:22:07 1996  Tim Witham  <twitham@pcocd2.intel.com>
 
 	* file.c: Fixed bug in the trigger limiter.
 
@@ -131,15 +191,13 @@ Sun Mar 10 03:22:07 1996  Tim Witham  <twitham@eng.fm.intel.com>
 
 	* file.h, file.c: Initial revision
 
-Sat Mar  9 21:47:14 1996  Tim Witham  <twitham@eng.fm.intel.com>
+Sat Mar  9 21:47:14 1996  Tim Witham  <twitham@pcocd2.intel.com>
 
 	* dirlist.c, freq.c: Initial revision
 
-Sat Mar  2 07:24:04 1996  Tim Witham  <twitham@eng.fm.intel.com>
+Sat Mar  2 07:24:04 1996  Tim Witham  <twitham@pcocd2.intel.com>
 
 	* oscope.lsm: For 0.5.
-
-Sat Mar  2 07:13:21 1996  Tim Witham  <twitham@eng.fm.intel.com>
 
 	* Makefile: Added x11.c
 
@@ -161,19 +219,19 @@ Sat Mar  2 07:13:21 1996  Tim Witham  <twitham@eng.fm.intel.com>
 
 	* x11.c: Added memory buttons, optimized many things.
 
-Fri Mar  1 04:27:08 1996  Tim Witham  <twitham@eng.fm.intel.com>
+Fri Mar  1 04:27:08 1996  Tim Witham  <twitham@pcocd2.intel.com>
 
 	* x11.c: Turned math button into a menu with current function checked.
 
-Wed Feb 28 06:09:06 1996  Tim Witham  <twitham@eng.fm.intel.com>
+Wed Feb 28 06:09:06 1996  Tim Witham  <twitham@pcocd2.intel.com>
 
 	* x11.c: Initial revision
 
-Sat Feb 24 04:30:11 1996  Tim Witham  <twitham@eng.fm.intel.com>
+Sat Feb 24 04:30:11 1996  Tim Witham  <twitham@pcocd2.intel.com>
 
 	* func.h, func.c: Improved measurements.
 
-Thu Feb 22 06:25:53 1996  Tim Witham  <twitham@eng.fm.intel.com>
+Thu Feb 22 06:25:53 1996  Tim Witham  <twitham@pcocd2.intel.com>
 
 	* display.h, display.c:
 	Added clip detection (flash graticule in color of clipped channel).
@@ -183,14 +241,14 @@ Thu Feb 22 06:25:53 1996  Tim Witham  <twitham@eng.fm.intel.com>
 
 	* config.h: Initial revision
 
-Sat Feb 17 21:24:02 1996  Tim Witham  <twitham@eng.fm.intel.com>
+Sat Feb 17 21:24:02 1996  Tim Witham  <twitham@pcocd2.intel.com>
 
 	* fft.h, realfft.c: Initial revision
 
 	* Makefile, oscope.h, func.h, func.c, display.c, oscope.c:
 	Added Fast Fourier Transform.
 
-Sun Feb  4 22:11:19 1996  Tim Witham  <twitham@eng.fm.intel.com>
+Sun Feb  4 22:11:19 1996  Tim Witham  <twitham@pcocd2.intel.com>
 
 	* COPYING: Initial revision
 
@@ -207,7 +265,7 @@ Sun Feb  4 22:11:19 1996  Tim Witham  <twitham@eng.fm.intel.com>
 	* oscope.c, display.c, oscope.h:
 	Improved triggering: channel 1 or 2, rising or falling.
 
-Sat Feb  3 21:37:31 1996  Tim Witham  <twitham@eng.fm.intel.com>
+Sat Feb  3 21:37:31 1996  Tim Witham  <twitham@pcocd2.intel.com>
 
 	* oscope.lsm: Initial revision
 
@@ -227,7 +285,7 @@ Sat Feb  3 21:37:31 1996  Tim Witham  <twitham@eng.fm.intel.com>
 	* oscope.h, oscope.c, display.c:
 	Fixed the vertical scaling bug, moved more globals in to Scope struct.
 
-Fri Feb  2 07:11:15 1996  Tim Witham  <twitham@eng.fm.intel.com>
+Fri Feb  2 07:11:15 1996  Tim Witham  <twitham@pcocd2.intel.com>
 
 	* oscope.c, oscope.h, display.c:
 	Moved signal math to new func.c so it can be easily extended.
@@ -242,7 +300,7 @@ Fri Feb  2 07:11:15 1996  Tim Witham  <twitham@eng.fm.intel.com>
 
 	* display.c: Added min/max, period/frequency readout.
 
-Wed Jan 31 07:55:06 1996  Tim Witham  <twitham@eng.fm.intel.com>
+Wed Jan 31 07:55:06 1996  Tim Witham  <twitham@pcocd2.intel.com>
 
 	* Makefile: Added xoscope man page.
 
@@ -263,19 +321,19 @@ Wed Jan 31 07:55:06 1996  Tim Witham  <twitham@eng.fm.intel.com>
 	* display.c:
 	Added much text to the display, including keyboard key descriptors.
 
-Tue Jan 30 06:45:42 1996  Tim Witham  <twitham@eng.fm.intel.com>
+Tue Jan 30 06:45:42 1996  Tim Witham  <twitham@pcocd2.intel.com>
 
 	* scope.h, display.c, scope.c:
 	Moved some globals in to the scope structure.
 
 	* display.c: Graticule now resizes vertically.
 
-Mon Jan 29 04:38:17 1996  Tim Witham  <twitham@eng.fm.intel.com>
+Mon Jan 29 04:38:17 1996  Tim Witham  <twitham@pcocd2.intel.com>
 
 	* scope.c, display.c:
 	Added text channel displays to right side of screen.
 
-Sun Jan 28 23:41:31 1996  Tim Witham  <twitham@eng.fm.intel.com>
+Sun Jan 28 23:41:31 1996  Tim Witham  <twitham@pcocd2.intel.com>
 
 	* scope.h, display.c, scope.c:
 	Converted to signed data to simplify math and positioning.
@@ -290,18 +348,18 @@ Sun Jan 28 23:41:31 1996  Tim Witham  <twitham@eng.fm.intel.com>
 	* scope.c, display.c:
 	Channels are now defined in a structure so we can easily extend.
 
-Fri Jan 26 07:52:45 1996  Tim Witham  <twitham@eng.fm.intel.com>
+Fri Jan 26 07:52:45 1996  Tim Witham  <twitham@pcocd2.intel.com>
 
 	* display.c, scope.c:
 	Converted to more realistic 1/2/5 scaling with fixed graticule.
 
-Thu Jan 25 05:28:56 1996  Tim Witham  <twitham@eng.fm.intel.com>
+Thu Jan 25 05:28:56 1996  Tim Witham  <twitham@pcocd2.intel.com>
 
 	* scope.c: Ignore unknown keypresses.
 
 	* display.c: Rearranged to eliminate forward reference.
 
-Tue Jan 23 08:00:10 1996  Tim Witham  <twitham@eng.fm.intel.com>
+Tue Jan 23 08:00:10 1996  Tim Witham  <twitham@pcocd2.intel.com>
 
 	* Makefile: Major changes to support new multi-file source.
 
@@ -317,12 +375,12 @@ Tue Jan 23 08:00:10 1996  Tim Witham  <twitham@eng.fm.intel.com>
 
 	* Makefile: Added rules to make new xscope X client.
 
-Mon Jan 22 07:00:19 1996  Tim Witham  <twitham@eng.fm.intel.com>
+Mon Jan 22 07:00:19 1996  Tim Witham  <twitham@pcocd2.intel.com>
 
 	* scope.c:
 	Now available as an X client via libsx!  Just #define XSCOPE.
 
-Sat Jan 20 08:31:03 1996  Tim Witham  <twitham@eng.fm.intel.com>
+Sat Jan 20 08:31:03 1996  Tim Witham  <twitham@pcocd2.intel.com>
 
 	* scope.h: Added many #defines.
 
@@ -331,7 +389,7 @@ Sat Jan 20 08:31:03 1996  Tim Witham  <twitham@eng.fm.intel.com>
 
 	* scope.c: Tiny tweaks for more stable display around keypresses.
 
-Fri Jan 19 07:12:34 1996  Tim Witham  <twitham@eng.fm.intel.com>
+Fri Jan 19 07:12:34 1996  Tim Witham  <twitham@pcocd2.intel.com>
 
 	* scope.c:
 	Reset the sound card after each read.  This greatly improves response
@@ -339,7 +397,7 @@ Fri Jan 19 07:12:34 1996  Tim Witham  <twitham@eng.fm.intel.com>
 	is discarded and we start over from zero for the next screen.  This
 	prevents the samples from getting backed up and overflowing the FIFO.
 
-Wed Jan  3 06:18:57 1996  Tim Witham  <twitham@eng.fm.intel.com>
+Wed Jan  3 06:18:57 1996  Tim Witham  <twitham@pcocd2.intel.com>
 
 	* Makefile: Added PREFIX (for install) and VER (for dist) variables.
 
@@ -351,7 +409,7 @@ Wed Jan  3 06:18:57 1996  Tim Witham  <twitham@eng.fm.intel.com>
 
 	* scope.1: Initial revision
 
-Tue Jan  2 07:25:28 1996  Tim Witham  <twitham@eng.fm.intel.com>
+Tue Jan  2 07:25:28 1996  Tim Witham  <twitham@pcocd2.intel.com>
 
 	* scope.c: Converted R/r to use integer math like everything else.
 
@@ -376,14 +434,14 @@ Tue Jan  2 07:25:28 1996  Tim Witham  <twitham@eng.fm.intel.com>
 	* scope.c:
 	Added M/m and D/d for completeness, moved defaults to new scope.h.
 
-Mon Jan  1 20:45:12 1996  Tim Witham  <twitham@eng.fm.intel.com>
+Mon Jan  1 20:45:12 1996  Tim Witham  <twitham@pcocd2.intel.com>
 
 	* scope.c:
 	Improved triggering by forcing it to be at the trigger point.
 	Converted several keys to toggles, added V/v verbose toggle.
 	Rearranged usage to display interactive runtime keys.
 
-Sat Dec 30 10:30:39 1995  Tim Witham  <twitham@eng.fm.intel.com>
+Sat Dec 30 10:30:39 1995  Tim Witham  <twitham@pcocd2.intel.com>
 
 	* scope.c:
 	Added -b and B/b keys to swap the signal and graticle front/back.
@@ -397,7 +455,7 @@ Sat Dec 30 10:30:39 1995  Tim Witham  <twitham@eng.fm.intel.com>
 	Changed functions in the loop to static inline.
 	Added range forcing to -s since 0 was a fatal error.
 
-Fri Dec 29 08:42:14 1995  Tim Witham  <twitham@eng.fm.intel.com>
+Fri Dec 29 08:42:14 1995  Tim Witham  <twitham@pcocd2.intel.com>
 
 	* scope.c:
 	Enhanced -v to show each keypress; rearranged for readibility.
@@ -408,14 +466,14 @@ Fri Dec 29 08:42:14 1995  Tim Witham  <twitham@eng.fm.intel.com>
 	* scope.c:
 	Rearranged initialization so graticule is correct on startup.
 
-Thu Dec 28 06:50:33 1995  Tim Witham  <twitham@eng.fm.intel.com>
+Thu Dec 28 06:50:33 1995  Tim Witham  <twitham@pcocd2.intel.com>
 
 	* scope.c:
 	Keys are now handled while waiting on trigger.  Most won't have much
 	effect until trigger is actually detected, but at least you can hit
 	t/T to get the trigger back into range instead of locking up!
 
-Wed Dec 27 08:52:01 1995  Tim Witham  <twitham@eng.fm.intel.com>
+Wed Dec 27 08:52:01 1995  Tim Witham  <twitham@pcocd2.intel.com>
 
 	* scope.c:
 	Switched time scale to 5msec major divisions, added 0.5msec mini-ticks.
@@ -429,7 +487,7 @@ Wed Dec 27 08:52:01 1995  Tim Witham  <twitham@eng.fm.intel.com>
 	Added -s time axis Scaling (1,2,4,8,16,32) so you can zoom in/out.
 	'S' key doubles it (zoom in) while the 's' key halves it (zoom out).
 
-Tue Dec 26 13:59:25 1995  Tim Witham  <twitham@eng.fm.intel.com>
+Tue Dec 26 13:59:25 1995  Tim Witham  <twitham@pcocd2.intel.com>
 
 	* scope.c:
 	Converted time scale to use integer math instead of floating point.
