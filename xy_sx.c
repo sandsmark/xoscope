@@ -1,7 +1,7 @@
 /*
- * @(#)$Id: xy_sx.c,v 1.1 1999/08/25 03:04:54 twitham Rel $
+ * @(#)$Id: xy_sx.c,v 1.2 2001/05/06 03:45:16 twitham Rel $
  *
- * Copyright (C) 1996 - 1999 Tim Witham <twitham@quiknet.com>
+ * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
  * (see the files README and COPYING for more details)
  *
@@ -9,7 +9,12 @@
  *
  */
 
+#include "config.h"
+#if HAVE_X11_SX_LIBSX_H
+#include <X11/SX/libsx.h>
+#else
 #include <libsx.h>
+#endif
 
 Widget quit;			/* quit button */
 Widget plot[5];			/* plot menu */

@@ -1,7 +1,7 @@
 /*
- * @(#)$Id: display.c,v 1.67 2000/07/14 02:32:56 twitham Exp $
+ * @(#)$Id: display.c,v 1.68 2001/05/06 03:45:16 twitham Rel $
  *
- * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
+ * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
  * (see the files README and COPYING for more details)
  *
@@ -10,7 +10,9 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
 #include <time.h>
 #include "oscope.h"		/* program defaults */
 #include "display.h"

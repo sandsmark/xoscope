@@ -1,18 +1,13 @@
 /*
- * @(#)$Id: oscope.h,v 1.39 2000/07/11 23:01:25 twitham Exp $
+ * @(#)$Id: oscope.h,v 1.40 2001/05/06 03:45:16 twitham Rel $
  *
- * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
+ * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
  * (see the files README and COPYING for more details)
  *
  * This file defines the program's global variables and structures
  *
  */
-
-/* -DNOVGAMISC from the Makefile causes HAVEVGAMISC to be undefined */
-#ifndef NOVGAMISC
-#define HAVEVGAMISC
-#endif
 
 #include "config.h"
 

@@ -1,7 +1,7 @@
 /*
- * @(#)$Id: oscope.c,v 1.87 2000/08/31 18:37:57 twitham Exp $
+ * @(#)$Id: oscope.c,v 1.88 2001/05/06 03:45:16 twitham Rel $
  *
- * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
+ * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
  * (see the files README and COPYING for more details)
  *
@@ -10,6 +10,7 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
 #include "oscope.h"		/* program defaults */
@@ -25,7 +26,7 @@ Channel ch[CHANNELS];
 
 /* extra global variable definitions */
 char *progname;			/* the program's name, autoset via argv[0] */
-char version[] = VER;		/* version of the program, from Makefile */
+char version[] = VERSION;	/* version of the program, from Makefile */
 char error[256];		/* buffer for "one-line" error messages */
 int quit_key_pressed = 0;	/* set by handle_key() */
 int v_points;			/* pixels in vertical axis */

@@ -1,7 +1,7 @@
 /*
- * @(#)$Id: sc_linux.c,v 1.20 2000/12/06 05:03:19 twitham Exp $
+ * @(#)$Id: sc_linux.c,v 1.21 2001/05/06 03:45:16 twitham Rel $
  *
- * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
+ * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
  * (see the files README and COPYING for more details)
  *
@@ -11,16 +11,15 @@
 
 #include <stdio.h>
 #include <unistd.h>
+#include <string.h>
 #include <fcntl.h>
-#ifdef ESD
-#include <esd.h>
-#else
-#define ESD 0
-#endif
 #include <sys/ioctl.h>
 #include <sys/soundcard.h>
 #include "oscope.h"		/* program defaults */
 #include "func.h"
+#if HAVE_LIBESD
+#include <esd.h>
+#endif
 
 #define ESDDEVICE "ESounD"
 #define SOUNDDEVICE "/dev/dsp"
@@ -57,9 +56,9 @@ open_sound_card(int dma)
 
   close_sound_card();
 
-#if ESD
+#if HAVE_LIBESD
   if ((snd = esd_monitor_stream(ESD_BITS8|ESD_STEREO|ESD_STREAM|ESD_MONITOR,
-				ESD, NULL, progname)) <= 0) {
+				ESD_DEFAULT_RATE, NULL, progname)) <= 0) {
     sprintf(error, "%s: can't open %s", progname, ESDDEVICE);
     perror(error);
   } else {			/* we have esd connection! non-block it? */
@@ -111,7 +110,7 @@ reset_sound_card(int rate, int chan, int bits)
 
   read(snd, junk, SAMPLESKIP);
 
-  return(esd ? ESD : parm);
+  return(esd ? ESD_DEFAULT_RATE : parm);
 }
 
 /* get data from sound card, return value is whether we triggered or not */

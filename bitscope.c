@@ -1,7 +1,7 @@
 /*
- * @(#)$Id: bitscope.c,v 1.16 2000/08/31 18:37:57 twitham Exp $
+ * @(#)$Id: bitscope.c,v 1.17 2001/05/06 03:45:16 twitham Exp $
  *
- * Copyright (C) 2000 Tim Witham <twitham@quiknet.com>
+ * Copyright (C) 2000 - 2001 Tim Witham <twitham@quiknet.com>
  *
  * (see the files README and COPYING for more details)
  *
@@ -385,7 +385,8 @@ bs_getdata(int fd)
 	  if (k > 8192)
 	    alt = 1;
 	  mem[25].data[k] = *buff++ - 128;
-	  mem[23 + alt].data[k++ - alt * 8193] = *buff++ - 128;
+//	  mem[23 + alt].data[k++ - alt * 8193] = *buff++ - 128;
+	  mem[23 + alt].data[k++] = *buff++ - 128;
 	}
 	mem[23].num = k > 8192 ? 8192 : k;
 	if (k > 8192) mem[24].num = k - 8192;
@@ -407,8 +408,8 @@ bs_getdata(int fd)
 	}
       }
 //      mem[23].num = mem[24].num = mem[25].num = k < MAXWID ? k : MAXWID;
-//      if (k >= samples(mem[23].rate) || k >= 16 * 1024) { /* all done */
-      if (k >= 8192 + samples(mem[23].rate) || k >= 16 * 1024) {
+      if (k >= samples(mem[23].rate) || k >= 16 * 1024) { /* all done */
+//      if (k >= 8192 + samples(mem[23].rate) || k >= 16 * 1024) {
 	k = 0;
 	alt = 0;
 	in_progress = 0;

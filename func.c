@@ -1,7 +1,7 @@
 /*
- * @(#)$Id: func.c,v 1.26 2000/07/11 23:01:25 twitham Exp $
+ * @(#)$Id: func.c,v 1.27 2001/05/06 03:45:16 twitham Rel $
  *
- * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
+ * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
  * (see the files README and COPYING for more details)
  *
@@ -118,7 +118,7 @@ pipeto(int num)
       close(from[num][1]);
 
       if ((oscopepath = getenv("OSCOPEPATH")) == NULL)
-	oscopepath = LIBPATH;	/* -D defined in Makefile */
+	oscopepath = PACKAGE_LIBEXEC_DIR;
       if ((path = malloc(strlen(oscopepath) + 6)) != NULL) {
 	sprintf(path,"PATH=%s", oscopepath);
 	putenv(path);

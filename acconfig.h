@@ -1,18 +1,34 @@
 /*
- * @(#)$Id: config.h,v 1.16 2000/07/06 20:12:08 twitham Exp $
+ * @(#)$Id: acconfig.h,v 1.1 2001/05/06 03:45:16 twitham Exp $
  *
- * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
+ * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
  * (see the files README and COPYING for more details)
  *
- * This file simply sets the program's configurable options.
- * To reconfigure, simply edit them here, make clean, and make.
+ * This file simply sets the program's compile-time options.
  * Original shipped values are in (parentheses).
  *
- * On second thought, you probably don't really want to change much of
- * this.  But it's a good place for me to define things for the app.
- *
  */
+
+				/* @TOP@ */
+/* I think these came from glade, not used much yet */
+#undef ENABLE_NLS
+#undef HAVE_CATGETS
+#undef HAVE_GETTEXT
+#undef HAVE_LC_MESSAGES
+#undef HAVE_STPCPY
+#undef HAVE_LIBSM
+#undef PACKAGE_LOCALE_DIR
+/* for glade pixmaps, if any */
+#undef PACKAGE_DATA_DIR
+#undef PACKAGE_SOURCE_DIR
+/* for xoscope external math commands */
+#undef PACKAGE_LIBEXEC_DIR
+/* path to probescope serial device */
+#undef PROBESCOPE
+/* path to bitscope serial device */
+#undef BITSCOPE
+				/* @BOTTOM@ */
 
 /* program defaults for the command-line options (original values) */
 #define DEF_A	1		/* 1-8 (1) */
@@ -32,7 +48,7 @@
 #define DEF_X	0		/* 0,1 (0) don't use sound card? */
 #define DEF_Z	0		/* 0,1 (0) don't search for Serial Scope? */
 
-/* maximum number of samples stored in memories (16384) */
+/* maximum number of samples stored in memories (1024 * 256) */
 #define MAXWID		1024 * 256
 
 /* The first few samples after a reset seem invalid.  If you see

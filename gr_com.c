@@ -1,7 +1,7 @@
 /*
- * @(#)$Id: gr_com.c,v 1.1 1999/08/25 02:56:48 twitham Rel $
+ * @(#)$Id: gr_com.c,v 1.2 2001/05/06 03:45:16 twitham Rel $
  *
- * Copyright (C) 1996 - 1999 Tim Witham <twitham@quiknet.com>
+ * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
  * (see the files README and COPYING for more details)
  *
@@ -21,7 +21,7 @@ LoadSaveFile(int save)
   char *s;
   struct stat buff;
 
-  if ((s = GetFile(NULL)) == NULL) return;
+  if ((s = GetFile(save ? "Save:" : "Load:", NULL, NULL, NULL)) == NULL) return;
   if (!save) {
     loadfile(s);
     return;

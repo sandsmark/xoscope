@@ -1,7 +1,7 @@
 /*
- * @(#)$Id: gr_vga.c,v 1.1 1996/10/06 02:29:56 twitham Rel $
+ * @(#)$Id: gr_vga.c,v 1.2 2001/05/06 03:45:16 twitham Rel $
  *
- * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
+ * Copyright (C) 1996 - 2001 Tim Witham <twitham@pcocd2.intel.com>
  *
  * (see the files README and COPYING for more details)
  *
@@ -11,7 +11,7 @@
 
 #include <vga.h>
 #include "oscope.h"		/* program defaults */
-#ifdef HAVEVGAMISC
+#ifdef HAVE_LIBVGAMISC
 #include <fontutils.h>
 #include <miscutils.h>
 #endif
@@ -31,7 +31,7 @@ int screen_modes[] = {		/* allowed modes */
   G1280x1024x16
 };
 int color[] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
-#ifdef HAVEVGAMISC
+#ifdef HAVE_LIBVGAMISC
 font_t FONT;
 void *font = &FONT;		/* font pointer for display.c */
 #else
@@ -71,7 +71,7 @@ SetColor(int c)
 char *
 GetString(char *msg, char *def)
 {
-#ifdef HAVEVGAMISC
+#ifdef HAVE_LIBVGAMISC
   char *s;
 
   s = vga_prompt(0, v_points / 2,
@@ -87,10 +87,10 @@ GetString(char *msg, char *def)
 
 /* get a file name */
 char *
-GetFile(char *path)
+GetFile(char *label, char *path, void *func, void *data)
 {
-#ifdef HAVEVGAMISC
-  return GetString("Filename:", path);
+#ifdef HAVE_LIBVGAMISC
+  return GetString(label, path);
 #else
   return filename;
 #endif
@@ -100,7 +100,7 @@ GetFile(char *path)
 int
 GetYesNo(char *msg)
 {
-#ifdef HAVEVGAMISC
+#ifdef HAVE_LIBVGAMISC
   char *s;
 
   s = GetString(msg, "");
@@ -123,7 +123,7 @@ void
 init_widgets()
 {
   vga_init();
-#ifdef HAVEVGAMISC
+#ifdef HAVE_LIBVGAMISC
   vga_initfont(fontname, &FONT, 1, 1);
 #endif
   vga_setmode(screen_modes[scope.size]);

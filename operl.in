@@ -1,8 +1,8 @@
-#!/usr/bin/perl
+#!@PERL@
 
-# @(#)$Id: operl,v 1.4 1997/05/31 17:08:32 twitham Rel $
+# @(#)$Id: operl.in,v 1.1 2001/05/06 03:45:16 twitham Rel $
 
-# Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
+# Copyright (C) 1996 - 2001 Tim Witham <twitham@pcocd2.intel.com>
 
 # (see the files README and COPYING for more details)
 

@@ -1,7 +1,7 @@
 /*
- * @(#)$Id: ser_unix.c,v 1.5 2000/07/03 18:18:14 twitham Exp $
+ * @(#)$Id: ser_unix.c,v 1.6 2001/05/06 03:45:16 twitham Rel $
  *
- * Copyright (C) 1997 - 2000 Tim Witham <twitham@quiknet.com>
+ * Copyright (C) 1997 - 2001 Tim Witham <twitham@quiknet.com>
  *
  * (see the files README and COPYING for more details)
  *
@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
 #include <termio.h>
 #include <fcntl.h>
 #include <sys/types.h>

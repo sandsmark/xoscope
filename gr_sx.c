@@ -1,7 +1,7 @@
 /*
- * @(#)$Id: gr_sx.c,v 1.17 2000/07/10 23:36:51 twitham Exp $
+ * @(#)$Id: gr_sx.c,v 1.18 2001/05/06 03:45:16 twitham Rel $
  *
- * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
+ * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
  * (see the files README and COPYING for more details)
  *
@@ -11,7 +11,14 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+
+#include "config.h"
+#if HAVE_X11_SX_LIBSX_H
+#include <X11/SX/libsx.h>
+#else
 #include <libsx.h>
+#endif
+
 #include "oscope.h"		/* program defaults */
 #include "display.h"
 #include "func.h"

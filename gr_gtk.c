@@ -1,7 +1,7 @@
 /*
- * @(#)$Id: gr_gtk.c,v 1.23 2000/07/18 19:00:33 twitham Exp $
+ * @(#)$Id: gr_gtk.c,v 1.24 2001/05/06 03:45:16 twitham Rel $
  *
- * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
+ * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
  * (see the files README and COPYING for more details)
  *
@@ -406,7 +406,7 @@ help(GtkWidget *w, void *data)
   gtk_widget_show (vscrollbar);
 
   /* Load a fixed font */
-  fixed_font = gdk_font_load ("-misc-fixed-medium-r-*-*-*-120-*-*-*-*-*-*");
+  fixed_font = gdk_font_load ("8x13");
 
   /* Realizing a widget creates a window for it, ready to insert some text */
   gtk_widget_realize (text);

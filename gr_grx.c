@@ -1,7 +1,7 @@
 /*
- * @(#)$Id: gr_grx.c,v 1.2 1997/06/07 21:31:34 twitham Rel $
+ * @(#)$Id: gr_grx.c,v 1.3 2001/05/06 03:45:16 twitham Rel $
  *
- * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
+ * Copyright (C) 1996 - 2001 Tim Witham <twitham@pcocd2.intel.com>
  *
  * (see the files README and COPYING for more details)
  *
@@ -30,7 +30,7 @@ typedef struct {
 } gvmode;
 
 gvmode grmodes[16] = {{640, 480}, {800, 600}, {1024, 768}, {1280, 1024}};
-		     
+
 /* a text writer similar to libvgamisc's vga_write */
 int
 vga_write(char *s, short x, short y, void *f, short fg, short bg, char p)
@@ -98,9 +98,9 @@ GetString(char *msg, char *def)
 
 /* get a file name */
 char *
-GetFile(char *path)
+GetFile(char *label, char *path, void *func, void *data)
 {
-  return GetString("Filename:", path);
+  return GetString(label, path);
 }
 
 /* ask a yes/no question */
