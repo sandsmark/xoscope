@@ -1,3 +1,7 @@
+Sat Apr 27 16:08:18 1996  Tim Witham  <twitham@eng.fm.intel.com>
+
+	* ChangeLog: Initial revision
+
 Sun Apr 21 03:11:51 1996  Tim Witham  <twitham@eng.fm.intel.com>
 
 	* oscopefft.c: Fixed bug in the documentation.
