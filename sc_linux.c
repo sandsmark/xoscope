@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: sc_linux.c,v 1.14 2000/02/26 20:01:19 twitham Exp $
+ * @(#)$Id: sc_linux.c,v 1.15 2000/03/02 06:03:11 twitham Rel $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -62,8 +62,9 @@ open_sound_card(int dma)
 				ESD, NULL, progname)) <= 0) {
     sprintf(error, "%s: can't open %s", progname, ESDDEVICE);
     perror(error);
-  } else {			/* we have esd connection! non-block it */
-/*      fcntl(snd, F_SETFL, O_NONBLOCK); */
+  } else {			/* we have esd connection! non-block it? */
+    if (dma < 4)
+      fcntl(snd, F_SETFL, O_NONBLOCK);
     esd = 1;
   }
 #endif
@@ -118,8 +119,8 @@ int
 get_data()
 {
   static unsigned char datum[2], prev[2], *buff;
-  static char buffer[MAXWID * 2], junk[DISCARDBUF];
-  static int i;
+  static unsigned char buffer[MAXWID * 2], junk[DISCARDBUF];
+  static int i, j;
   audio_buf_info info = {0, 0, 0, MAXWID * 2};
 
   if (!snd) return(0);		/* device open? */
@@ -158,16 +159,19 @@ get_data()
       read(snd, datum, 2);
     } while (((i++ < h_points)) && ((datum[scope.trigch] > scope.trig) ||
 				    (prev[scope.trigch] <= scope.trig)));
+  } else {
+    read(snd, prev, 2);
+    read(snd, datum, 2);
   }
   if (i > h_points)		/* haven't triggered within the screen */
     return(0);			/* give up and keep previous samples */
 
   memcpy(buffer, prev, 2);	/* now get the post-trigger data */
   memcpy(buffer + 2, datum, 2);
-  read(snd, buffer + (scope.trige ? 4 : 0),
-       h_points * 2 - (scope.trige ? 4 : 0));
+  if ((j = read(snd, buffer + 4, h_points * 2 - 4)) < 0)
+    j = 0;
   buff = buffer;
-  for(i=0; i < h_points; i++) {	/* move it into channel 1 and 2 */
+  for (i = 0; i < (j + 4) / 2; i++) {	/* move it into channel 1 and 2 */
     if (*buff == 0 || *buff == 255)
       clip = 1;
     mem[23].data[i] = (short)(*buff++) - 128;
