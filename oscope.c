@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.c,v 1.88 2001/05/06 03:45:16 twitham Rel $
+ * @(#)$Id: oscope.c,v 1.89 2001/05/20 03:59:33 twitham Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -286,7 +286,7 @@ handle_key(unsigned char c)
       scope.cursa = s - 1;
     break;
   case 'w' - 96:
-    if ((scope.cursa += 2 / 20) >= s)
+    if ((scope.cursa += s / 20) >= s)
       scope.cursa = 1;
     break;
   case 'e' - 96:
