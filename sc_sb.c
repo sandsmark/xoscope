@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: sc_sb.c,v 1.5 1997/05/27 05:56:00 twitham Exp $
+ * @(#)$Id: sc_sb.c,v 1.6 1997/05/31 19:36:39 twitham Exp $
  *
  * Copyright (C) 1997 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -19,31 +19,48 @@
 #include "dma.h"
 #include "oscope.h"		/* program defaults */
 
+int snd = 0;			/* whether sound is on or off */
+
+/* close the sound device */
 void
 close_sound_card()
 {
-  sb_uninstall_driver();
+  if (snd)
+    sb_uninstall_driver();
+  snd = 0;
 }
 
 /* attempt to change sample rate and return actual sample rate set */
 int
 set_sound_card(int rate, int chan, int bits)
 {
+  if (!snd) return(rate);
   sb_uninstall_driver();
   if(sb_install_driver(rate)!=SB_SUCCESS) {
     fprintf(stderr,"Driver error: %s",sb_driver_error);
-    exit(1);
+    snd = 0;
   }
   return(sb_sample_frequency);
 }
 
+/* [re]set the sound card, and return actual sample rate */
+int
+reset_sound_card(int rate, int chan, int bits)
+{
+  if (!snd) return(rate);
+
+  return(set_sound_card(rate, chan, bits));
+}
+
+/* turn the sound device on */
 void
 open_sound_card(int dma)
 {
   if(sb_install_driver(scope.rate)!=SB_SUCCESS) {
     fprintf(stderr,"Driver error: %s",sb_driver_error);
-    exit(1);
-  }
+    snd = 0;
+  } else
+    snd = 1;
   set_sound_card(44000, 2, 8);
   clrscr();
 
@@ -62,13 +79,6 @@ open_sound_card(int dma)
   cprintf("Using a sampling rate of %d",sb_sample_frequency);
 }
 
-/* [re]set the sound card, and return actual sample rate */
-int
-reset_sound_card(int rate, int chan, int bits)
-{
-  return(set_sound_card(rate, chan, bits));
-}
-
 /* get data from sound card, return value is whether we triggered or not */
 int
 get_data()
@@ -76,9 +86,10 @@ get_data()
   static unsigned char *prev, *buff, buffer[MAXWID * 2];
   int i = 0;
 
-  /* flush the sound card's buffer */
+  if (!snd) return(0);		/* device open? */
 
-  sb_dma8bitReadSC((DWORD)buffer, MAXWID * 2);
+  /* flush the sound card's buffer */
+  sb_dma8bitReadSC((DWORD)buffer, MAXWID * 2 + SAMPLESKIP);
   prev = buffer + SAMPLESKIP;
   buff = buffer + SAMPLESKIP + 2;
   if (scope.trige == 1) {

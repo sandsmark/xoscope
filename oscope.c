@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.c,v 1.62 1997/05/28 05:37:56 twitham Exp $
+ * @(#)$Id: oscope.c,v 1.63 1997/05/31 19:37:04 twitham Exp $
  *
  * Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -369,11 +369,31 @@ handle_key(unsigned char c)
     }
     break;
   case '%':
-    if (ps.found)		/* toggle ProbeScope on/off */
+    if (ps.found) {		/* toggle ProbeScope on/off */
       ps.found = 0;
-    else {
+      clear();
+    } else {
       init_probescope();
       init_serial();
+    }
+    break;
+  case '&':
+    if (snd)			/* toggle sound card on/off */
+      close_sound_card();
+    else {
+      open_sound_card(scope.dma);
+      resetsoundcard();
+    }
+    clear();
+    break;
+  case '*':
+    scope.dma >>= 1;
+    if (scope.dma < 1)		/* DMA */
+      scope.dma = 4;
+    if (snd) {
+      close_sound_card();
+      open_sound_card(scope.dma);
+      resetsoundcard();
     }
     clear();
     break;
@@ -441,9 +461,9 @@ main(int argc, char **argv)
       readfile(filename);
     }
   open_sound_card(scope.dma);
+  resetsoundcard();
   init_probescope();
   init_serial();
-  resetsoundcard();
   mainloop();			/* to display.c */
   cleanup();
   exit(0);

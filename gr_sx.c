@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: gr_sx.c,v 1.14 1997/05/28 05:40:44 twitham Exp $
+ * @(#)$Id: gr_sx.c,v 1.15 1997/05/31 19:37:25 twitham Exp $
  *
  * Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -22,7 +22,7 @@ Widget file[4];			/* file menu */
 Widget plot[5];			/* plot menu */
 Widget grat[6];			/* graticule menu */
 Widget colormenu[17];		/* color menu */
-Widget xwidg[10];		/* extra horizontal widgets */
+Widget xwidg[11];		/* extra horizontal widgets */
 Widget mwidg[57];		/* memory / math widgets */
 Widget cwidg[CHANNELS];		/* channel button widgets */
 Widget ywidg[15];		/* vertical widgets */
@@ -274,9 +274,9 @@ fix_widgets()
     }
   }
 
-  SetWidgetState(xwidg[5], scope.run != 1);
-  SetWidgetState(xwidg[6], scope.run != 2);
-  SetWidgetState(xwidg[7], scope.run != 0);
+  SetWidgetState(xwidg[7], scope.run != 1);
+  SetWidgetState(xwidg[8], scope.run != 2);
+  SetWidgetState(xwidg[9], scope.run != 0);
 
   SetBgColor(ywidg[2], ch[scope.trigch].color);
   SetBgColor(ywidg[3], ch[scope.trigch].color);
@@ -332,11 +332,12 @@ init_widgets()
   xwidg[2] = MakeButton("<", hit_key, "(");
   xwidg[3] = MakeButton(">", hit_key, ")");
   xwidg[4] = MakeButton(" > ", hit_key, "0");
-  xwidg[5] = MakeButton("Run", runmode, "1");
-  xwidg[6] = MakeButton("Wait", runmode, "2");
-  xwidg[7] = MakeButton("Stop", runmode, "0");
-  xwidg[8] = MakeButton("PS", hit_key, "%");
-  xwidg[9] = MakeButton(" ? ", hit_key, "?");
+  xwidg[5] = MakeButton("SC", hit_key, "&");
+  xwidg[6] = MakeButton("PS", hit_key, "%");
+  xwidg[7] = MakeButton("Run", runmode, "1");
+  xwidg[8] = MakeButton("Wait", runmode, "2");
+  xwidg[9] = MakeButton("Stop", runmode, "0");
+  xwidg[10] = MakeButton(" ? ", hit_key, "?");
 
   SetWidgetPos(plot[0], PLACE_RIGHT, file[0], NO_CARE, NULL);
   SetWidgetPos(grat[0], PLACE_RIGHT, plot[0], NO_CARE, NULL);
@@ -351,6 +352,7 @@ init_widgets()
   SetWidgetPos(xwidg[7], PLACE_RIGHT, xwidg[6], NO_CARE, NULL);
   SetWidgetPos(xwidg[8], PLACE_RIGHT, xwidg[7], NO_CARE, NULL);
   SetWidgetPos(xwidg[9], PLACE_RIGHT, xwidg[8], NO_CARE, NULL);
+  SetWidgetPos(xwidg[10], PLACE_RIGHT, xwidg[9], NO_CARE, NULL);
 
   /* the drawing area for the scope */
   h_points = XX[scope.size];

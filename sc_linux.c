@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: sc_linux.c,v 1.7 1997/05/27 05:55:54 twitham Exp $
+ * @(#)$Id: sc_linux.c,v 1.8 1997/05/31 19:36:29 twitham Rel $
  *
  * Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -19,7 +19,16 @@
 
 int snd = 0;			/* file descriptor for sound device */
 
-/* abort and show system error if given ioctl status is bad */
+/* close the sound device */
+void
+close_sound_card()
+{
+  if (snd)
+    close(snd);
+  snd = 0;
+}
+
+/* show system error and close sound device if given ioctl status is bad */
 void
 check_status(int status, int line)
 {
@@ -27,15 +36,8 @@ check_status(int status, int line)
     sprintf(error, "%s: error from sound device ioctl at line %d",
 	    progname, line);
     perror(error);
-    cleanup();
-    exit(1);
+    close_sound_card();
   }
-}
-
-void
-close_sound_card()
-{
-  close(snd);
 }
 
 /* attempt to change sample rate and return actual sample rate set */
@@ -44,6 +46,7 @@ set_sound_card(int rate)
 {
   int actual = rate;
 
+  if (!snd) return(rate);
   check_status(ioctl(snd, SOUND_PCM_SYNC, 0), __LINE__);
   check_status(ioctl(snd, SOUND_PCM_WRITE_RATE, &actual), __LINE__);
   check_status(ioctl(snd, SOUND_PCM_READ_RATE, &actual), __LINE__);
@@ -56,6 +59,8 @@ reset_sound_card(int rate, int chan, int bits)
 {
   int parm;
 
+  if (!snd) return(rate);
+
   parm = chan;			/* set mono/stereo */
   check_status(ioctl(snd, SOUND_PCM_WRITE_CHANNELS, &parm), __LINE__);
 
@@ -66,6 +71,7 @@ reset_sound_card(int rate, int chan, int bits)
   return(set_sound_card(rate));
 }
 
+/* turn the sound device on */
 void
 open_sound_card(int dma)
 {
@@ -73,24 +79,18 @@ open_sound_card(int dma)
 
   /* we try a few times in case someone else is using device (FvwmAudio) */
   while ((snd = open("/dev/dsp", O_RDONLY)) < 0 && i > 0) {
-    sprintf(error, "%s: cannot open /dev/dsp, retrying %d", progname, i--);
+    sprintf(error, "%s: can't open /dev/dsp, retrying %d", progname, i--);
     perror(error);
     sleep(1);
   }
   if (snd < 0) {		/* open DSP device for read */
-    sprintf(error, "%s: cannot open /dev/dsp", progname);
+    sprintf(error, "%s: can't open /dev/dsp", progname);
     perror(error);
-    cleanup();
-    exit(1);
+    snd = 0;
+    return;
   }
   parm = dma;			/* set DMA buffer size */
   check_status(ioctl(snd, SOUND_PCM_SUBDIVIDE, &parm), __LINE__);
-}
-
-void
-flush_sound_card()
-{
-  check_status(ioctl(snd, SNDCTL_DSP_RESET), __LINE__);
 }
 
 /* get data from sound card, return value is whether we triggered or not */
@@ -100,6 +100,8 @@ get_data()
   static unsigned char datum[2], prev[2], *buff;
   static char buffer[MAXWID * 2], junk[SAMPLESKIP];
   int i = 0;
+
+  if (!snd) return(0);		/* device open? */
 
   /* flush the sound card's buffer */
   check_status(ioctl(snd, SNDCTL_DSP_RESET), __LINE__);

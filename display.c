@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 1.45 1997/05/30 01:21:03 twitham Exp $
+ * @(#)$Id: display.c,v 1.46 1997/05/31 19:37:15 twitham Exp $
  *
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -106,9 +106,12 @@ draw_text(int all)
       sprintf(string, "%d x %d", h_points, v_points);
       vga_write(string, 100, row(2), font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
 
-      vga_write("(%)", col(2), row(3), font, KEY_FG, TEXT_BG, ALIGN_LEFT);
-      sprintf(string, "ProbeScope %s", ps.found ? "On" : "Off");
+      vga_write("(&)", col(2), row(3), font, KEY_FG, TEXT_BG,ALIGN_LEFT);
+      sprintf(string, "Sound %s", snd ? "On" : "Off");
       vga_write(string, col(5), row(3), font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
+      vga_write("(*)", col(17), row(3), font, KEY_FG, TEXT_BG,ALIGN_RIGHT);
+      sprintf(string, "DMA:%d", scope.dma);
+      vga_write(string, col(17), row(3), font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
 
       vga_write("(Enter)", col(70), 0, font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
       vga_write("Refresh", col(77), 0, font, TEXT_FG, TEXT_BG, ALIGN_RIGHT);
@@ -198,8 +201,10 @@ draw_text(int all)
       vga_write("([)     (])", 0, row(27), font, KEY_FG, TEXT_BG,ALIGN_LEFT);
       vga_write("Pos.", col(3), row(27), font, p->color,TEXT_BG,ALIGN_LEFT);
 
-      sprintf(string, "DMA:%d", scope.dma);
-      vga_write(string, col(3), row(28), font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
+      vga_write("(%)", 0, row(28), font, KEY_FG, TEXT_BG, ALIGN_LEFT);
+      sprintf(string, "ProbeScope %s", ps.found ? "On" : "Off");
+      vga_write(string, col(3), row(28),
+		font, mem[25].color, TEXT_BG, ALIGN_LEFT);
 
       vga_write("(9)(()                       ())(0)", col(40), row(26),
 		font, KEY_FG, TEXT_BG, ALIGN_CENTER);
@@ -246,11 +251,13 @@ draw_text(int all)
     }
 
     if (ps.found) {		/* ProbeScope on ? */
+      j = mem[25].color;
+
       sprintf(string, "%d.%d V/div", ps.volts / 10, ps.volts % 10);
-      vga_write(string, 100, row(25), font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
+      vga_write(string, 100, row(25), font, j, TEXT_BG, ALIGN_LEFT);
 
       vga_write(ps.trigger & PS_SINGLE ? "SINGLE" : "   RUN",
-		h_points - 100, row(25), font, TEXT_FG, TEXT_BG, ALIGN_RIGHT);
+		h_points - 100, row(25), font, j, TEXT_BG, ALIGN_RIGHT);
 
       i = ps.level * (ps.trigger & PS_PEXT || ps.trigger & PS_MEXT
 		      ? 1 : ps.volts);
@@ -259,12 +266,11 @@ draw_text(int all)
 	      : ps.trigger & PS_PEXT ? "+EXTERN"
 	      : ps.trigger & PS_MEXT ? "-EXTERN" : "AUTO",
 	      i / 10, i % 10);
-      vga_write(string, h_points - 100, row(27),
-		font, TEXT_FG, TEXT_BG, ALIGN_RIGHT);
+      vga_write(string, h_points - 100, row(27), font, j, TEXT_BG, ALIGN_RIGHT);
 
       if (ps.wait)
 	vga_write("WAITING!", h_points - 100, row(28),
-		  font, TEXT_FG, TEXT_BG, ALIGN_RIGHT);
+		  font, j, TEXT_BG, ALIGN_RIGHT);
     }
 
     if (all == 1)
@@ -296,7 +302,7 @@ draw_text(int all)
 	    : ps.flags & PS_UNDERFLOW ? "\\/ " : "",
 	    (float)ps.dvm * (float)ps.volts / 100,
 	    ps.coupling);
-    vga_write(string, 100, row(27), font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
+    vga_write(string, 100, row(27), font, mem[25].color, TEXT_BG, ALIGN_LEFT);
   }
 }
 
