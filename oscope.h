@@ -1,7 +1,7 @@
 /*
- * @(#)$Id: oscope.h,v 1.24 1996/10/06 05:44:07 twitham Rel1_2 $
+ * @(#)$Id: oscope.h,v 1.25 1997/05/01 04:47:40 twitham Exp $
  *
- * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
+ * Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
  *
  * (see the files README and COPYING for more details)
  *
@@ -18,6 +18,7 @@
 
 /* global program variables */
 extern char *progname;
+extern char version[];
 extern char error[256];
 extern int quit_key_pressed;
 extern int snd;
@@ -48,8 +49,15 @@ typedef struct Scope {		/* The oscilloscope */
 } Scope;
 extern Scope scope;
 
-typedef struct Signal {		/* The signals (channels) */
+typedef struct Signal {		/* The signals */
   short data[MAXWID];
+  int rate;
+  int color;
+} Signal;
+extern Signal mem[34];
+
+typedef struct Channel {	/* The channels */
+  Signal *signal;
   short old[MAXWID];
   short min;
   short max;
@@ -62,12 +70,11 @@ typedef struct Signal {		/* The signals (channels) */
   int show;
   int func;
   char mem;
-} Signal;
-extern Signal ch[CHANNELS];
+} Channel;
+extern Channel ch[CHANNELS];
 
 /* functions that are called by files other than oscope.c */
 void	usage();
 int	get_data();
 void	handle_key(unsigned char);
-void	nomalloc();
 void	cleanup();

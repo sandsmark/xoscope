@@ -1,7 +1,7 @@
 /*
- * @(#)$Id: file.c,v 1.6 1997/02/23 05:20:00 twitham Exp $
+ * @(#)$Id: file.c,v 1.7 1997/05/01 04:44:53 twitham Exp $
  *
- * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
+ * Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
  *
  * (see the files README and COPYING for more details)
  *
@@ -33,7 +33,7 @@ void
 handle_opt(int opt, char *optarg)
 {
   char *p, *q;
-  Signal *s;
+  Channel *s;
 
   switch (opt) {
   case 'r':			/* sample rate */
@@ -53,7 +53,12 @@ handle_opt(int opt, char *optarg)
 	p = q;
       }
       if ((q = strchr(p, ':')) != NULL) {
-	scope.trigch = limit(strtol(++q, NULL, 0) - 1, 0, 1);
+	if (*(++q) == 'x' || *q == 'X')
+	  scope.trigch = 0;
+	else if (*q == 'y' || *q == 'Y')
+	  scope.trigch = 1;
+	else
+	  scope.trigch = limit(strtol(q, NULL, 0) - 1, 0, 1);
       }
     break;
   case 'c':			/* graticule color */
@@ -64,7 +69,7 @@ handle_opt(int opt, char *optarg)
   case 'M':
     scope.size = limit(strtol(optarg, NULL, 0), 0, 3);
     break;
-  case 'd':			/* dma diviisor */
+  case 'd':			/* dma divisor */
   case 'D':
     scope.dma = limit(strtol(optarg, NULL, 0), 0, 4);
     break;
@@ -118,11 +123,14 @@ handle_opt(int opt, char *optarg)
       }
       if ((q = strchr(p, ':')) != NULL) {
 	if (*++q >= '0' && *q <= '9') {
-	  s->func = limit(strtol(q, NULL, 0) + 3, 3, funccount - 1);
-	  s->mem = 0;
+	  if (*q > '0') {
+	    s->func = limit(strtol(q, NULL, 0) + 3, 3, funccount - 1);
+	    s->mem = 0;
+	  }
 	} else if (*q >= 'a' && *q <= 'z'
 		   && (*(q + 1) == '\0' || *(q + 1) == '\n')) {
-	  s->func = FUNCMEM;
+	  s->signal = &mem[*q - 'a'];
+	  s->func = *q == 'x' ? FUNCLEFT : *q == 'y' ? FUNCRIGHT : FUNCMEM;
 	  s->mem = *q;
 	} else {
 	  s->func = FUNCEXT;
@@ -130,10 +138,6 @@ handle_opt(int opt, char *optarg)
 	  if ((p = strchr(command[opt - '1'], '\n')) != NULL)
 	    *p = '\0';
 	  s->mem = EXTSTART;
-	}
-	if (opt < '3') {
-	  s->func = opt - '1';
-	  s->mem = 0;
 	}
       }
     }
@@ -147,7 +151,7 @@ writefile(char *filename)
 {
   FILE *file;
   int i, j, k = 0, chan[26], roloc[256];
-  Signal *p;
+  Channel *p;
   struct stat buff;
 
   if (!stat(filename, &buff)) {
@@ -160,23 +164,23 @@ writefile(char *filename)
     perror(error);
     return;
   }
-  fprintf(file, "# %s, %dx%d
+  fprintf(file, "# %s, version %s, %dx%d
 #
 # -a %d
 # -r %d
 # -s %d
-# -t %d:%d:%d
+# -t %d:%d:%c
 # -c %d
 # -m %d
 # -d %d
 # -p %d
 # -g %d
 %s%s",
-	  progname, h_points, v_points,
+	  progname, version, h_points, v_points,
 	  scope.select + 1,
 	  actual,
 	  scope.scale,
-	  scope.trig - 128, scope.trige, scope.trigch + 1,
+	  scope.trig - 128, scope.trige, scope.trigch + 'x',
 	  scope.color,
 	  scope.size,
 	  scope.dma,
@@ -188,7 +192,7 @@ writefile(char *filename)
     p = &ch[i];
     fprintf(file, "# -%d %s%d:%d/%d:", i + 1, p->show ? "" : "+",
 	    -p->pos, p->mult, p->div);
-    if (p->func == FUNCMEM)
+    if (p->func == FUNCMEM || p->func == FUNCLEFT || p->func == FUNCRIGHT)
       fprintf(file, "%c", (p->mem >= 'a' && p->mem <= 'z') ? p->mem : '0');
     else if (p->func == FUNCEXT)
       fprintf(file, "%s", command[i]);
@@ -196,8 +200,8 @@ writefile(char *filename)
       fprintf(file, "%d", i > 1 ? (p->func - 3) : 0);
     fprintf(file, "\n");
   }
-  for (i = 0 ; i < 26 ; i++) {
-    if (mem[i] != NULL)
+  for (i = 0 ; i < 23 ; i++) {
+    if (mem[i].color != 0)
       chan[k++] = i;
   }
   if (k) {
@@ -206,12 +210,15 @@ writefile(char *filename)
     }
     for (i = 0 ; i < k ; i++) {
       fprintf(file, "%s%c(%02d)", i ? "\t" : "# ",
-	      chan[i] + 'a', roloc[memcolor[chan[i]]]);
+	      chan[i] + 'a', roloc[mem[chan[i]].color]);
+    }
+    for (i = 0 ; i < k ; i++) {
+      fprintf(file, "%s%d", i ? "\t" : "\n#:", mem[chan[i]].rate);
     }
     fprintf(file, "\n");
     for (j = 0 ; j < h_points ; j++) {
       for (i = 0 ; i < k ; i++) {
-	fprintf(file, "%s%d", i ? "\t" : "", mem[chan[i]][j]);
+	fprintf(file, "%s%d", i ? "\t" : "", mem[chan[i]].data[j]);
       }
       fprintf(file, "\n");
     }
@@ -248,10 +255,16 @@ readfile(char *filename)
 	while (j < 26 && (sscanf(q, "%c(%d) ", &c, &k) == 2)) {
 	  if (c >= 'a' && c <= 'z' && k >= 0 && k <= 255) {
 	    chan[j++] = c - 'a';
-	    save(c - 'a' + 'A'); /* make sure it's malloc'd */
-	    memcolor[c - 'a'] = color[k];
+	    mem[c - 'a'].color = color[k];
 	  }
 	  q += 6;
+	}
+      } else if (!strncmp("#:", buff, 2)) {
+	j = 0;
+	q = buff + 2;
+	while (q && j < 26 && (sscanf(q, "%d ", &k) == 1)) {
+	  mem[chan[j++]].rate = k;
+	  q = strchr(++q, '\t');
 	}
       }
     } else if (valid &&
@@ -263,7 +276,7 @@ readfile(char *filename)
 	if (p == NULL)
 	  p = buff;
 	if (chan[j] > -1 && i < h_points)
-	  mem[chan[j]][i] = strtol(p++, NULL, 0);
+	  mem[chan[j]].data[i] = strtol(p++, NULL, 0);
 	j++;
 	q = p;
       }

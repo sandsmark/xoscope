@@ -1,7 +1,7 @@
 /*
- * @(#)$Id: sc_linux.c,v 1.1 1996/11/17 22:32:31 twitham Exp $
+ * @(#)$Id: sc_linux.c,v 1.2 1997/05/01 04:49:25 twitham Exp $
  *
- * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
+ * Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
  *
  * (see the files README and COPYING for more details)
  *
@@ -15,6 +15,7 @@
 #include <sys/ioctl.h>
 #include <sys/soundcard.h>
 #include "oscope.h"		/* program defaults */
+#include "func.h"
 
 int snd;			/* file descriptor for sound device */
 
@@ -119,10 +120,10 @@ get_data()
   for(i=0; i < h_points; i++) {	/* move it into channel 1 and 2 */
     if (*buff == 0 || *buff == 255)
       clip = 1;
-    ch[0].data[i] = (short)(*buff++) - 128;
+    mem[23].data[i] = (short)(*buff++) - 128;
     if (*buff == 0 || *buff == 255)
       clip = 2;
-    ch[1].data[i] = (short)(*buff++) - 128;
+    mem[24].data[i] = (short)(*buff++) - 128;
   }
   return(1);
 }

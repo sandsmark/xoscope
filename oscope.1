@@ -1,10 +1,10 @@
-.\" @(#)$Id: oscope.1,v 1.11 1996/10/06 05:44:43 twitham Rel1_2 $
+.\" @(#)$Id: oscope.1,v 1.12 1997/05/01 04:48:36 twitham Exp $
 .\"
-.\" Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
+.\" Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
 .\"
 .\" (see the files README and COPYING for more details)
 
-.TH OSCOPE 1 "October  6  1996" "Linux" "User Commands"
+.TH OSCOPE 1 "May  1  1997" "Linux" "User Commands"
 .SH NAME
 oscope xoscope \- Digital Oscilloscope for /dev/dsp
 .SH SYNOPSIS
@@ -83,7 +83,11 @@ to clear them.
 
 .TP 0.5i
 .B 9/0
-Increase/decrease the Sec/Div horizontal time scale.
+Increase/decrease the Sec/Div horizontal time scale (zoom out/in).
+
+.TP 0.5i
+.B (/)
+Decrease/increase the sampling rate.
 
 .TP 0.5i
 .B -/=
@@ -91,38 +95,41 @@ Decrease/increase the trigger level.
 
 .TP 0.5i
 .B _
-Toggle the trigger channel: 1 or 2.
+Toggle the trigger channel: X or Y.
 
 .TP 0.5i
 .B +
 Cycle the trigger type: automatic, rising edge, or falling edge.
 
 .TP 0.5i
-.B &
+.B ,
 Cycle the graticule style: none, minor divisions only, or minor and
 major divisions.
 
 .TP 0.5i
-.B *
+.B .
 Toggle the graticule position: behind or in front of the signals.
 
 .TP 0.5i
-.B (/)
+.B </>
 Decrease/increase the graticule color.
 
 .TP 0.5i
-.B ,/.
+.B &/*
 Decrease/increase the DMA divisor.  Higher values will usually give
 the fastest display rate.
 
 .TP 0.5i
 .B 1\-8
-Select the corresponding channel.  Auto-measurements are displayed.
-Channel 1 and 2 are always the Left and Right sound channels, as
-controlled by an external mixer program.  Channel 3 through 8 are
-software channels that can each display a math function or the
-contents of one of 26 memory buffers.  The remaining single key
-commands operate on the currently selected channel:
+Select the corresponding display channel.  Auto-measurements are
+displayed for the channel.  Because Channel 1 and 2 are used as input
+to the math functions, they can't be used to do math.  By default,
+they are connected to the Left (X) and Right (Y) sound channels, as
+controlled by an external mixer program.  Channel 1 and 2 can also be
+used to display memory buffers for doing math on memory.  Channel 3
+through 8 are not restricted and can be used for any purpose.  The
+remaining single key commands operate on the currently selected
+channel:
 
 .TP 0.5i
 .B Tab
@@ -130,36 +137,39 @@ Toggle visibility: Hide or show the selected channel.
 
 .TP 0.5i
 .B {/}
-Decrease/Increase vertical position of the selected channel.
-
-.TP 0.5i
-.B [/]
 Decrease/Increase vertical scale of the selected channel.
 
 .TP 0.5i
+.B [/]
+Decrease/Increase vertical position of the selected channel.
+
+.TP 0.5i
 .B ;/:
-Increase/Decrease the math function of the selected channel.  Not
-available on channel 1 & 2.
+Increase/Decrease the math function of the selected channel.  This is
+not available on channel 1 & 2.
 
 .TP 0.5i
 .B $
 Show the result of an external math command on the selected channel.
 You are prompted for the command.  The command must accept samples of
-channel 1 & 2 on stdin and write a new signal to stdout.  See operl
-and offt.c in the distribution for examples of external math filter
-commands.  Not available on channel 1 & 2 or if your
+channel 1 & 2 on stdin and write a new signal to stdout.  See operl,
+offt.c and xy.c in the distribution for examples of external math
+filter commands.  Not available on channel 1 & 2 or if your
 .B oscope
 can't display text.
 
 .TP 0.5i
-.B A-Z
+.B A-W
 Store the currently selected channel into the corresponding memory
-buffer.  This is only available when the sampling rate is 44000.
+buffer.  Buffer X, Y and Z can't be used because they're reserved as
+the Left (X) and Right (Y) sound inputs, and for future use (Z).
 
 .TP 0.5i
 .B a-z
-Recall the corresponding memory buffer onto the currently selected
-channel.  Not available on channel 1 & 2.
+Display the corresponding memory buffer or input device on the
+currently selected channel.  Buffer X is the Left sound input, Y is
+the Right sound input, and Z is reserved for future use.  The rest of
+the buffers are available for signal memory.
 
 .PP
 .SH "MOUSE CONTROLS"
@@ -188,9 +198,9 @@ Position is the number of pixels above (positive) or below (negative)
 the center of the display.  Scale is a valid scaling factor from 1/200
 to 200, expressed as a fraction.  The third field may contain a
 built-in math function number, memory letter, or external math command
-to run on the channel.  This field doesn't affect channel 1 & 2.
-Using these options makes the channel visible unless position begins
-with a '+', in which case the channel is hidden.
+to run on the channel.  Using these options makes the channel visible
+unless position begins with a '+', in which case the channel is
+hidden.
 
 .TP 0.5i
 .B -a <channel>
@@ -199,7 +209,7 @@ Specify the selected, or Active, channel.
 .TP 0.5i
 .B -r <rate>
 Specify the sampling Rate in samples per second.  Current valid values
-are 8800, 22000, or 44000.
+are 8800, 11000, 22000, or 44000.
 
 .TP 0.5i
 .B -s <scale>
@@ -211,8 +221,8 @@ Sets the initial Trigger conditions.  Trigger can have up to three
 fields, separated by colons: position[:type[:channel]].  Position is
 the number of pixels above (positive) or below (negative) the center
 of the display.  Type is a number indicating the kind of trigger, 0 =
-automatic, 1 = rising edge, 2 = falling edge.  Channel should be 1 or
-2.
+automatic, 1 = rising edge, 2 = falling edge.  Channel should be x or
+y.
 
 .TP 0.5i
 .B -c <color>
@@ -255,6 +265,10 @@ major divisions.
 .TP 0.5i
 .B -b
 Whether the graticule is drawn Behind or in front of the signals.
+
+.TP 0.5i
+.B -v
+Whether the Verbose key help is displayed.
 
 .B file
 The name of a file to load upon startup.  This should be a file
@@ -330,6 +344,11 @@ device, level, etc.  Since these unknowns affect the amplitude, there
 is no reference to voltage on the Y axis; it is in fact, unknown.
 Instead you're given the scale in pixels per sample unit.
 
+Signal math only works correctly if Channel 1 and 2 contain signals
+with the same sampling rate.
+.B It is up to you to make sure this is true.  Doing math on signals of
+.B different sample rates will produce incorrect results!
+
 The display may not be able to keep up if you give it too much to
 plot, depending on your sound card, graphics card, and processor
 speed.  External math commands are particularly expensive since the
@@ -341,9 +360,9 @@ zoom in on Sec/Div as much as possible, and turn off the graticule.
 
 The automatic measurements count zero crossings and divide to
 determine the frequency and period.  If these zero crossings are not
-"regularly-periodic", these measurements could be invalid.  It also
-understands how to measure the built-in FFT functions by locating the
-peak frequency.
+"regularly-periodic", these measurements could be invalid.  It does,
+however, understand how to measure the built-in FFT functions by
+locating the peak frequency.
 
 Your sound card is most-likely AC coupled so you will never see any DC
 offset.  You probably can't get DC coupling by just shorting the input
@@ -359,3 +378,5 @@ original "scope" by Jeff Tranter (Jeff_Tranter@Mitel.COM).
 .B Oscope
 is released under the conditions of the GNU General Public License.
 See the files README and COPYING in the distribution for details.
+
+.\" oscope.1 ends here.

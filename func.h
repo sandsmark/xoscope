@@ -1,7 +1,7 @@
 /*
- * @(#)$Id: func.h,v 1.9 1996/08/03 22:26:58 twitham Rel1_2 $
+ * @(#)$Id: func.h,v 1.10 1997/05/01 04:47:46 twitham Exp $
  *
- * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
+ * Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
  *
  * (see the files README and COPYING for more details)
  *
@@ -9,9 +9,11 @@
  *
  */
 
-#define FUNCEXT  2
-#define FUNCMEM  3
-#define FUNC0    4
+#define FUNCLEFT  0
+#define FUNCRIGHT 1
+#define FUNCEXT	  2
+#define FUNCMEM	  3
+#define FUNC0	  4
 
 #define EXTSTOP  0
 #define EXTSTART 1
@@ -20,10 +22,6 @@
 extern int funccount;
 
 extern char *funcnames[];
-
-extern short *mem[];
-
-extern int memcolor[];
 
 extern char command[CHANNELS][256];
 
@@ -47,7 +45,7 @@ void
 cleanup_math();
 
 void
-measure_data(Signal *);
+measure_data(Channel *);
 
 void
 init_fft();			/* in fft.c */

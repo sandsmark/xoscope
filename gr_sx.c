@@ -1,11 +1,11 @@
 /*
- * @(#)$Id: gr_sx.c,v 1.9 1996/10/06 05:43:51 twitham Rel1_2 $
+ * @(#)$Id: gr_sx.c,v 1.10 1997/05/01 04:46:42 twitham Exp $
  *
- * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
+ * Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
  *
  * (see the files README and COPYING for more details)
  *
- * This file implements the X11 specific pieces of the display
+ * This file implements the X11 (libsx) specific pieces of the display
  *
  */
 
@@ -22,7 +22,7 @@ Widget file[4];			/* file menu */
 Widget plot[5];			/* plot menu */
 Widget grat[6];			/* graticule menu */
 Widget colormenu[17];		/* color menu */
-Widget xwidg[8];		/* extra horizontal widgets */
+Widget xwidg[9];		/* extra horizontal widgets */
 Widget mwidg[56];		/* memory / math widgets */
 Widget cwidg[CHANNELS];		/* channel button widgets */
 Widget ywidg[15];		/* vertical widgets */
@@ -53,6 +53,16 @@ char *colors[] = {		/* X colors similar to 16 console colors */
   "yellow",			/* 14 */
   "white"
 };
+
+/* die on malloc error */
+void
+nomalloc(char *file, int line)
+{
+  sprintf(error, "%s: out of memory at %s line %d", progname, file, line);
+  perror(error);
+  cleanup();
+  exit(1);
+}
 
 /* a libsx text writer similar to libvgamisc's vga_write */
 int
@@ -260,18 +270,17 @@ fix_widgets()
   SetBgColor(mwidg[27], ch[scope.select].color);
   SetBgColor(mwidg[28], ch[scope.select].color);
   SetBgColor(mwidg[55], ch[scope.select].color);
-  SetWidgetState(mwidg[0], actual >= 44000);
   SetWidgetState(mwidg[27], scope.select > 1);
-  SetWidgetState(mwidg[28], scope.select > 1);
   SetWidgetState(mwidg[55], scope.select > 1);
   for (i = 0 ; i < 26 ; i++) {
-    if (mem[i] != NULL)
-      SetBgColor(mwidg[i + 29], memcolor[i]);
+    SetBgColor(mwidg[i + 29], mem[i].color);
+    if (i > 22)
+      SetWidgetState(mwidg[i + 1], 0);
   }
 
-  SetWidgetState(xwidg[4], scope.run != 1);
-  SetWidgetState(xwidg[5], scope.run != 2);
-  SetWidgetState(xwidg[6], scope.run != 0);
+  SetWidgetState(xwidg[5], scope.run != 1);
+  SetWidgetState(xwidg[6], scope.run != 2);
+  SetWidgetState(xwidg[7], scope.run != 0);
 
   SetBgColor(ywidg[2], ch[scope.trigch].color);
   SetBgColor(ywidg[3], ch[scope.trigch].color);
@@ -283,7 +292,7 @@ fix_widgets()
   SetBgColor(ywidg[12], ch[scope.select].color);
   SetBgColor(ywidg[14], ch[scope.select].color);
 
-  SetLabel(ywidg[3], scope.trigch ? "2" : "1");
+  SetLabel(ywidg[3], scope.trigch ? "Y" : "X");
   SetLabel(ywidg[4], tilt[scope.trige]);
   SetLabel(ywidg[14], ch[scope.select].show ? "Hide" : "Show");
 
@@ -324,12 +333,13 @@ init_widgets()
 
   xwidg[0] = MakeButton(" Refresh ", hit_key, "\n");
   xwidg[1] = MakeButton(" < ", hit_key, "9");
-  xwidg[2] = MakeLabel("Sec/Div");
-  xwidg[3] = MakeButton(" > ", hit_key, "0");
-  xwidg[4] = MakeButton("Run", runmode, "1");
-  xwidg[5] = MakeButton("Wait", runmode, "2");
-  xwidg[6] = MakeButton("Stop", runmode, "0");
-  xwidg[7] = MakeButton("?", hit_key, "?");
+  xwidg[2] = MakeButton("<", hit_key, "(");
+  xwidg[3] = MakeButton(">", hit_key, ")");
+  xwidg[4] = MakeButton(" > ", hit_key, "0");
+  xwidg[5] = MakeButton("Run", runmode, "1");
+  xwidg[6] = MakeButton("Wait", runmode, "2");
+  xwidg[7] = MakeButton("Stop", runmode, "0");
+  xwidg[8] = MakeButton("?", hit_key, "?");
 
   SetWidgetPos(plot[0], PLACE_RIGHT, file[0], NO_CARE, NULL);
   SetWidgetPos(grat[0], PLACE_RIGHT, plot[0], NO_CARE, NULL);
@@ -342,6 +352,7 @@ init_widgets()
   SetWidgetPos(xwidg[5], PLACE_RIGHT, xwidg[4], NO_CARE, NULL);
   SetWidgetPos(xwidg[6], PLACE_RIGHT, xwidg[5], NO_CARE, NULL);
   SetWidgetPos(xwidg[7], PLACE_RIGHT, xwidg[6], NO_CARE, NULL);
+  SetWidgetPos(xwidg[8], PLACE_RIGHT, xwidg[7], NO_CARE, NULL);
 
   /* the drawing area for the scope */
   h_points = XX[scope.size];
@@ -359,7 +370,7 @@ init_widgets()
   ywidg[4] = MakeButton(">", hit_key, "+");
   ywidg[5] = MakeButton(" \\/ ", hit_key, "-");
 
-  ywidg[6] = MakeLabel("Pos.");
+  ywidg[6] = MakeLabel("Scal");
   ywidg[7] = MakeButton(" /\\ ", hit_key, "}");
   ywidg[8] = MakeButton(" \\/ ", hit_key, "{");
 
@@ -382,7 +393,7 @@ init_widgets()
 		 PLACE_UNDER, i ? cwidg[i - 1] : ywidg[9]);
   }
 
-  ywidg[10] = MakeLabel("Scal");
+  ywidg[10] = MakeLabel("Pos.");
   ywidg[11] = MakeButton(" /\\ ", hit_key, "]");
   ywidg[12] = MakeButton(" \\/ ", hit_key, "[");
   ywidg[13] = MakeLabel("");

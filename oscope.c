@@ -1,7 +1,7 @@
 /*
- * @(#)$Id: oscope.c,v 1.55 1996/11/17 22:34:21 twitham Exp $
+ * @(#)$Id: oscope.c,v 1.56 1997/05/01 04:44:45 twitham Exp $
  *
- * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
+ * Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
  *
  * (see the files README and COPYING for more details)
  *
@@ -19,10 +19,11 @@
 
 /* global program variables */
 Scope scope;
-Signal ch[CHANNELS];
+Channel ch[CHANNELS];
 
 /* extra global variable definitions */
 char *progname;			/* the program's name, autoset via argv[0] */
+char version[] = VER;		/* version of the program, from Makefile */
 char error[256];		/* buffer for "one-line" error messages */
 int quit_key_pressed = 0;	/* set by handle_key() */
 char buffer[MAXWID * 2];	/* buffer for stereo sound data */
@@ -46,15 +47,15 @@ usage()
   static char *def[] = {"graticule", "signal"}, *onoff[] = {"on", "off"};
 
   fprintf(stderr, "usage: %s "
-	  "[-h] [-#<code>] ... [-a #] [-r<rate>] [-s<scale>] [-t<trigger>]
-[-c<color>] [-m<mode>] [-d<dma>] [-f<font>] [-p<type>] [-g<style>] [-b] [-v]
-[file]
+	  "[-h]
+[-#<code>] ... [-a #] [-r<rate>] [-s<scale>] [-t<trigger>] [-c<color>]
+[-m<mode>] [-d<dma>] [-f<font>] [-p<type>] [-g<style>] [-b] [-v] [file]
 
-Startup Options  Description (defaults)
+Startup Options  Description (defaults)               version %s
 -h               this Help message and exit
--# <code>        #=1-%d, code=pos[:scale[:func#, mem letter, or cmd]] (0:1/1:0)
+-# <code>        #=1-%d, code=pos[:scale[:func#, mem letter, or cmd]] (0:1/1)
 -a <channel>     set the Active channel: 1-%d                  (%d)
--r <rate>        sampling Rate in Hz: 8800,22000,44000        (%d)
+-r <rate>        sampling Rate in Hz: 8800,11000,22000,44000  (%d)
 -s <scale>       time Scale: 1,2,5,10,20,100,200              (%d)
 -t <trigger>     Trigger level[:type[:channel]]               (%s)
 -c <color>       graticule Color: 0-15                        (%d)
@@ -67,7 +68,7 @@ Startup Options  Description (defaults)
 -v               turn %s Verbose key help display
 file             %s file to load to restore settings and memory
 ",
-	  progname, CHANNELS, CHANNELS, DEF_A,
+	  progname, version, CHANNELS, CHANNELS, DEF_A,
 	  DEF_R, DEF_S, DEF_T,
 	  DEF_C, scope.size, scope.dma,
 	  fonts,		/* the font method for the display */
@@ -101,16 +102,6 @@ cleanup()
   close_sound_card();
 }
 
-/* die on malloc error */
-void
-nomalloc(char *file, int line)
-{
-  sprintf(error, "%s: out of memory at %s line %d", progname, file, line);
-  perror(error);
-  cleanup();
-  exit(1);
-}
-
 /* initialize the scope */
 void
 init_scope()
@@ -133,17 +124,17 @@ init_scope()
 void
 init_channels()
 {
-  int i;
+  int i, j[] = {23, 24, 25, 0, 0, 0, 0, 0};
 
   for (i = 0 ; i < CHANNELS ; i++) {
-    memset(ch[i].data, 0, MAXWID * sizeof(short));
+    ch[i].signal = &mem[j[i]];
     memset(ch[i].old, 0, MAXWID * sizeof(short));
     ch[i].mult = 1;
     ch[i].div = 1;
     ch[i].pos = 0;
     ch[i].show = (i < 2);
     ch[i].func = i < 2 ? i : FUNCMEM;
-    ch[i].mem = 0;
+    ch[i].mem = i < 2 ? 'x' + i : 0;
   }
 }
 
@@ -187,21 +178,30 @@ scaledown(int *num)
     *num = 1;
 }
 
+/* internal only */
+void
+setsoundcard(int rate)
+{
+  set_sound_card(rate);
+  mem[23].rate = mem[24].rate = actual;
+  do_math();			/* propogate new rate to any math */
+}
+
 /* handle single key commands */
 void
 handle_key(unsigned char c)
 {
-  static Signal *p;
+  static Channel *p;
   char *s;
 
   p = &ch[scope.select];
-  if (c >= 'A' && c <= 'Z' && actual >= 44000) {
+  if (c >= 'A' && c <= 'Z') {
     save(c);
     draw_text(1);
     return;
-  } else if (c >= 'a' && c <= 'z' && scope.select > 1) {
+  } else if (c >= 'a' && c <= 'z') {
     recall(c);
-    draw_text(1);
+    clear();
     return;
   } else if (c >= '1' && c <= '0' + CHANNELS) {
     scope.select = (c - '1');
@@ -216,25 +216,25 @@ handle_key(unsigned char c)
     p->show = !p->show;
     clear();
     break;
-  case ']':			/* increase scale */
+  case '}':			/* increase scale */
     if (p->div > 1)
       scaledown(&p->div);
     else
       scaleup(&p->mult);
     clear();
     break;
-  case '[':			/* decrease scale */
+  case '{':			/* decrease scale */
     if (p->mult > 1)
       scaledown(&p->mult);
     else
       scaleup(&p->div);
     clear();
     break;
-  case '}':
+  case ']':
     p->pos -= 16;		/* position up */
     clear();
     break;
-  case '{':
+  case '[':
     p->pos += 16;		/* position down */
     clear();
     break;
@@ -255,29 +255,11 @@ handle_key(unsigned char c)
     }
     break;
   case '0':
-    if (scope.run)
-      if (actual <= 8800) {
-	set_sound_card(22000);
-      } else if (actual <= 22000) {
-	set_sound_card(44000);
-      } else
-	scaleup(&scope.scale);
-    else if (actual >= 44000)
-      scaleup(&scope.scale);
+    scaleup(&scope.scale);
     clear();
     break;
   case '9':
-    if (scope.run)
-      if (actual <= 8800) {
-	/* average several samples into each pixel */
-      } else if (actual <= 22000) {
-	set_sound_card(8800);
-      } else if (scope.scale == 1) {
-	set_sound_card(22000);
-      } else
-	scaledown(&scope.scale);
-    else
-      scaledown(&scope.scale);
+    scaledown(&scope.scale);
     clear();
     break;
   case '=':
@@ -302,26 +284,46 @@ handle_key(unsigned char c)
       scope.trige = 0;
     clear();
     break;
-  case ')':
-    scope.color++;		/* increase color */
-    if (scope.color > 15)
-      scope.color = 0;
-    draw_text(1);
-    break;
   case '(':
+    if (scope.run)
+      if (scope.rate <= 11000)
+	setsoundcard(8800);
+      else if (scope.rate <= 22000)
+	setsoundcard(11000);
+      else
+	setsoundcard(22000);
+    clear();
+    break;
+  case ')':
+    if (scope.run)
+      if (scope.rate >= 22000)
+	setsoundcard(44000);
+      else if (scope.rate >= 11000)
+	setsoundcard(22000);
+      else
+	setsoundcard(11000);
+    clear();
+    break;
+  case '<':
     scope.color--;		/* decrease color */
     if (scope.color < 0)
       scope.color = 15;
     draw_text(1);
     break;
-  case '.':
+  case '>':
+    scope.color++;		/* increase color */
+    if (scope.color > 15)
+      scope.color = 0;
+    draw_text(1);
+    break;
+  case '*':
     if (scope.dma < 3) {	/* double dma */
       scope.dma <<= 1;
       init_sound_card(0);
       draw_text(1);
     }
     break;
-  case ',':
+  case '&':
     if (scope.dma > 1) {	/* half dma */
       scope.dma >>= 1;
       init_sound_card(0);
@@ -353,13 +355,13 @@ handle_key(unsigned char c)
       scope.mode = 0;
     clear();
     break;
-  case '&':
+  case ',':
     scope.grat++;		/* graticule off/on/more */
     if (scope.grat > 2)
       scope.grat = 0;
     clear();
     break;
-  case '*':
+  case '.':
     scope.behind = !scope.behind; /* graticule behind/in front of signal */
     draw_text(1);
     break;
@@ -390,6 +392,7 @@ handle_key(unsigned char c)
 int
 main(int argc, char **argv)
 {
+
   progname = strrchr(argv[0], '/');
   if (progname == NULL)
     progname = argv[0];		/* global for error messages, usage */

@@ -1,7 +1,7 @@
 /*
- * @(#)$Id: func.c,v 1.13 1996/10/04 04:52:33 twitham Rel1_2 $
+ * @(#)$Id: func.c,v 1.14 1997/05/01 04:45:21 twitham Exp $
  *
- * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
+ * Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
  *
  * (see the files README and COPYING for more details)
  *
@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
 #include <math.h>
 #include <signal.h>
 #include <sys/types.h>
@@ -41,15 +42,8 @@ char *funcnames[] =
 /* the total number of "functions" */
 int funccount = sizeof(funcnames) / sizeof(char *);
 
-/* the pointers to the signal memories */
-short *mem[26] = {
-  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-  NULL, NULL, NULL, NULL, NULL, NULL
-};
-
-/* the signal color that was recorded into the memory */
-int memcolor[26];
+/* the signals: 0-22=A-W=memories, 23=X=left, 24=Y=right, 26-33=functions */
+Signal mem[34];
 
 /* for the fft function: x position to bin number map, and data buffer */
 int xmap[MAXWID];
@@ -66,11 +60,9 @@ recall(char c)
   static int i;
 
   i = c - 'a';
-  if (mem[i] != NULL) {
-    memcpy(ch[scope.select].data, mem[i], MAXWID * sizeof(short));
-    ch[scope.select].func = FUNCMEM;
-    ch[scope.select].mem = c;
-  }
+  ch[scope.select].signal = &mem[i];
+  ch[scope.select].func = i == 23 ? FUNCLEFT : i == 24 ? FUNCRIGHT : FUNCMEM;
+  ch[scope.select].mem = c;
 }
 
 /* store the currently selected signal to the given memory register */
@@ -80,11 +72,10 @@ save(char c)
   static int i, j, k;
 
   i = c - 'A';
-  if (mem[i] == NULL)
-    mem[i] = malloc(MAXWID * sizeof(short));
-  if (mem[i] != NULL) {
-    memcpy(mem[i], ch[scope.select].data, MAXWID * sizeof(short));
-    memcolor[i] = ch[scope.select].color;
+  if (c < 'X') {
+    memcpy(mem[i].data, ch[scope.select].signal->data, MAXWID * sizeof(short));
+    mem[i].rate = ch[scope.select].signal->rate;
+    mem[i].color = ch[scope.select].color;
   }
   k = scope.select;
   for (j = 0 ; j < CHANNELS ; j++) {
@@ -150,9 +141,9 @@ pipeto(int num)
     ch[num].mem = EXTRUN;
   }
   if (ch[num].mem == EXTRUN) {	/* write to / read from child process */
-    a = ch[0].data;
-    b = ch[1].data;
-    c = ch[num].data;
+    a = ch[0].signal->data;
+    b = ch[1].signal->data;
+    c = ch[num].signal->data;
     j = 0;
     for (i = 0 ; i < h_points ; i++) {
       if (write(to[num][1], a++, sizeof(short)) != sizeof(short))
@@ -180,8 +171,8 @@ inv(int num, int chan)
   static int i;
   static short *a, *b;
 
-  a = ch[chan].data;
-  b = ch[num].data;
+  a = ch[chan].signal->data;
+  b = ch[num].signal->data;
   for (i = 0 ; i < h_points ; i++) {
     *b++ = -1 * *a++;
   }
@@ -206,9 +197,9 @@ sum(int num)
   static int i;
   static short *a, *b, *c;
 
-  a = ch[0].data;
-  b = ch[1].data;
-  c = ch[num].data;
+  a = ch[0].signal->data;
+  b = ch[1].signal->data;
+  c = ch[num].signal->data;
   for (i = 0 ; i < h_points ; i++) {
     *c++ = *a++ + *b++;
   }
@@ -221,9 +212,9 @@ diff(int num)
   static int i;
   static short *a, *b, *c;
 
-  a = ch[0].data;
-  b = ch[1].data;
-  c = ch[num].data;
+  a = ch[0].signal->data;
+  b = ch[1].signal->data;
+  c = ch[num].signal->data;
   for (i = 0 ; i < h_points ; i++) {
     *c++ = *a++ - *b++;
   }
@@ -236,9 +227,9 @@ avg(int num)
   static int i;
   static short *a, *b, *c;
 
-  a = ch[0].data;
-  b = ch[1].data;
-  c = ch[num].data;
+  a = ch[0].signal->data;
+  b = ch[1].signal->data;
+  c = ch[num].signal->data;
   for (i = 0 ; i < h_points ; i++) {
     *c++ = (*a++ + *b++) / 2;
   }
@@ -248,13 +239,13 @@ avg(int num)
 void
 fft1(int num)
 {
-  fft(ch[0].data, ch[num].data);
+  fft(ch[0].signal->data, ch[num].signal->data);
 }
 
 void
 fft2(int num)
 {
-  fft(ch[1].data, ch[num].data);
+  fft(ch[1].signal->data, ch[num].signal->data);
 }
 
 /* !!! Array of the functions, the first four shouldn't be changed */
@@ -282,6 +273,10 @@ init_math()
   for (i = 0 ; i < CHANNELS ; i++) {
     strcpy(command[i], COMMAND);
   }
+  for (i = 0 ; i < 34 ; i++) {
+    mem[i].rate = 44000;
+    memset(mem[i].data, 0, MAXWID * sizeof(short));
+  }
   init_fft();
 }
 
@@ -292,8 +287,11 @@ do_math()
   static int i;
 
   for (i = 2 ; i < CHANNELS ; i++) {
-    if ((ch[i].show || scope.select == i) && *funcarray[ch[i].func] != NULL)
+    if ((ch[i].show || scope.select == i) && *funcarray[ch[i].func] != NULL) {
+      ch[i].signal = &mem[26+i];
+      ch[i].signal->rate = ch[0].signal->rate;
       funcarray[ch[i].func](i);
+    }
   }
 }
 
@@ -301,17 +299,12 @@ do_math()
 void
 cleanup_math()
 {
-  int i;
-
-  for (i = 0 ; i < 26 ; i++) {
-    if (mem[i]) free(mem[i]);
-  }
   EndFFT();
 }
 
-/* auto-measure the given signal */
+/* auto-measure the given channel */
 void
-measure_data(Signal *sig) {
+measure_data(Channel *sig) {
   static int i, j, prev;
   int first = 0, last = 0, count = 0, max = 0;
 
@@ -319,7 +312,7 @@ measure_data(Signal *sig) {
   sig->max = 0;
   prev = 1;
   for (i = 0 ; i < h_points ; i++) {
-    j = sig->data[i];
+    j = sig->signal->data[i];
     if (j < sig->min)		/* minimum */
       sig->min = j;
     if (j > sig->max) {		/* maximum */
@@ -335,12 +328,13 @@ measure_data(Signal *sig) {
     prev = j;
   }
   if (funcarray[sig->func] == fft1 || funcarray[sig->func] == fft2) {
-    if ((sig->freq = actual * max / 880) > 0) /* freq from peak FFT */
+    if ((sig->freq = sig->signal->rate * max / 880) > 0) /* freq from peak FFT */
       sig->time = 1000000 / sig->freq;
     else
       sig->time = 0;
   } else if (count > 1) {	/* assume a wave: period = length / # periods */
-    if ((sig->time = 1000000 * (last - first) / (count - 1) / actual) > 0)
+    if ((sig->time = 1000000 * (last - first)
+	 / (count - 1) / sig->signal->rate) > 0)
       sig->freq = 1000000 / sig->time;
     else
       sig->freq = 0;

@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 1.37 1997/04/26 01:55:03 twitham Exp $
+ * @(#)$Id: display.c,v 1.38 1997/05/01 04:45:09 twitham Exp $
  *
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -18,7 +18,7 @@ void	show_data();		/* other function prototypes */
 int	vga_write();
 void	DrawPixel();		/* these are defined in */
 void	DrawLine();		/* a display-specific file */
-void	SetColor();		/* like vga.c or x11.c */
+void	SetColor();		/* like gr_vga.c or gr_sx.c */
 void	init_widgets();
 void	fix_widgets();
 void	clear_display();
@@ -70,7 +70,7 @@ draw_text(int all)
 {
   static char string[81];
   static int i, j, k;
-  static Signal *p;
+  static Channel *p;
   static char *strings[] = {
     "Point",
     "Point Accum.",
@@ -90,31 +90,33 @@ draw_text(int all)
     if (scope.verbose) {
       vga_write("(Esc)", 0, 0, font, KEY_FG, TEXT_BG, ALIGN_LEFT);
       vga_write("Quit", col(5), 0, font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
+      vga_write(progname,  col(12), 0, font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
 
       vga_write("(@)", col(2), row(1), font, KEY_FG, TEXT_BG, ALIGN_LEFT);
-      vga_write("Load", col(5), row(1), font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
+      vga_write("Load   ver:", col(5), row(1),
+		font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
+      vga_write(version,  col(16), row(1), font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
 
       vga_write("(#)", col(2), row(2), font, KEY_FG, TEXT_BG, ALIGN_LEFT);
       vga_write("Save", col(5), row(2), font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
-
       sprintf(string, "%d x %d", h_points, v_points);
-      vga_write(string, 0, row(3), font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
+      vga_write(string, col(12), row(2), font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
 
       vga_write("(Enter)", col(70), 0, font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
       vga_write("Refresh", col(77), 0, font, TEXT_FG, TEXT_BG, ALIGN_RIGHT);
 
-      vga_write("(&)", col(70), row(1), font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
+      vga_write("(,)", col(70), row(1), font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
       vga_write("Graticule", col(79), row(1),
 		font, TEXT_FG, TEXT_BG, ALIGN_RIGHT);
 
       vga_write("(_)(-)                      (=)(+)", col(40), row(2),
 		font, KEY_FG, TEXT_BG, ALIGN_CENTER);
 
-      vga_write("(*)", col(70), row(2), font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
+      vga_write("(.)", col(70), row(2), font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
       vga_write(scope.behind ? "Behind   " : "In Front ", col(79), row(2),
 		font, TEXT_FG, TEXT_BG, ALIGN_RIGHT);
 
-      vga_write("(()      ())", col(79), row(3),
+      vga_write("(<)      (>)", col(79), row(3),
 		font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
       vga_write("Color", col(75), row(3), font, TEXT_FG, TEXT_BG, ALIGN_RIGHT);
 
@@ -149,21 +151,22 @@ draw_text(int all)
 		font, KEY_FG, TEXT_BG, ALIGN_LEFT);
 
       if (scope.verbose || ch[i].show || scope.select == i) {
-	sprintf(string, "Pos. :%4d", -(ch[i].pos));
-	vga_write(string, col(69 * (i / 4)), row(j + 1),
-		  font, k, TEXT_BG, ALIGN_LEFT);
+	sprintf(string, "%d / %d", ch[i].mult, ch[i].div);
+	vga_write(string, col(69 * (i / 4) + 5), row(j + 1),
+		  font, k, TEXT_BG, ALIGN_CENTER);
 
-	sprintf(string, "Scale:%d/%d", ch[i].mult, ch[i].div);
-	vga_write(string, col(69 * (i / 4)), row(j + 2),
-		  font, k, TEXT_BG, ALIGN_LEFT);
+	sprintf(string, "@ %d", -(ch[i].pos));
+	vga_write(string, col(69 * (i / 4) + 5), row(j + 2),
+		  font, k, TEXT_BG, ALIGN_CENTER);
 
 	vga_write(funcnames[ch[i].func], col(69 * (i / 4)), row(j + 3),
-		  font, k, TEXT_BG, ALIGN_LEFT);
+		  font, ch[i].func < 2 ? ch[i].signal->color : k,
+		  TEXT_BG, ALIGN_LEFT);
 
 	if (ch[i].func == FUNCMEM) {
 	  sprintf(string, "%c", ch[i].mem);
 	  vga_write(string, col(69 * (i / 4) + 7), row(j + 3),
-		    font, memcolor[ch[i].mem - 'a'], TEXT_BG, ALIGN_LEFT);
+		    font, ch[i].signal->color, TEXT_BG, ALIGN_LEFT);
 	}
       }
       if (scope.select == i) {
@@ -183,23 +186,21 @@ draw_text(int all)
 		font, p->color, TEXT_BG, ALIGN_LEFT);
 
       vga_write("({)        (})", 0, row(26), font,KEY_FG, TEXT_BG, ALIGN_LEFT);
-      vga_write("Position", col(3), row(26), font, p->color,TEXT_BG,ALIGN_LEFT);
+      vga_write("Scale", col(4), row(26), font, p->color, TEXT_BG, ALIGN_LEFT);
 
       vga_write("([)        (])", 0, row(27), font, KEY_FG, TEXT_BG,ALIGN_LEFT);
-      vga_write("Scale", col(4), row(27), font, p->color, TEXT_BG, ALIGN_LEFT);
+      vga_write("Position", col(3), row(27), font, p->color,TEXT_BG,ALIGN_LEFT);
 
-      vga_write("(,)        (.)", 0, row(28), font, KEY_FG, TEXT_BG,ALIGN_LEFT);
+      vga_write("(&)        (*)", 0, row(28), font, KEY_FG, TEXT_BG,ALIGN_LEFT);
       sprintf(string, "DMA:%d", scope.dma);
       vga_write(string, col(4), row(28), font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
 
-      vga_write("(9)                 (0)", col(40), row(26),
+      vga_write("(9)(()                 ())(0)", col(40), row(26),
 		font, KEY_FG, TEXT_BG, ALIGN_CENTER);
 
-      if (actual >= 44000) {
-	vga_write("(A-Z)", col(72), row(27), font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
-	vga_write("Store", col(77), row(27),
-		  font, p->color, TEXT_BG, ALIGN_RIGHT);
-      }
+      vga_write("(A-Z)", col(72), row(27), font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
+      vga_write("Store", col(77), row(27),
+		font, p->color, TEXT_BG, ALIGN_RIGHT);
 
       if (scope.select > 1) {
 	vga_write("($)", col(72), row(25),
@@ -210,11 +211,12 @@ draw_text(int all)
 		  font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
 	vga_write("Math", col(76), row(26),
 		  font, p->color, TEXT_BG, ALIGN_RIGHT);
-	vga_write("(a-z)", col(72), row(28),
-		  font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
-	vga_write("Recall", col(78), row(28),
-		  font, p->color, TEXT_BG, ALIGN_RIGHT);
       }
+
+      vga_write("(a-z)", col(72), row(28),
+		font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
+      vga_write("Recall", col(78), row(28),
+		font, p->color, TEXT_BG, ALIGN_RIGHT);
 
       vga_write("(", col(26), row(28), font, KEY_FG, TEXT_BG, ALIGN_LEFT);
       vga_write(")", col(53), row(28), font, KEY_FG, TEXT_BG, ALIGN_LEFT);
@@ -223,19 +225,18 @@ draw_text(int all)
     sprintf(string, "%d %cs/div", i > 999 ? i / 1000 : i, i > 999 ? 'm' : 'u');
     vga_write(string, col(40), row(25), font, TEXT_FG, TEXT_BG, ALIGN_CENTER);
 
-    sprintf(string, "%d S/s * %d", actual, scope.scale * 44000 / actual);
-    vga_write(string, col(40), row(26), font, TEXT_FG, TEXT_BG, ALIGN_CENTER);
+    sprintf(string, "%d S/s * %d", p->signal->rate, scope.scale * 44000
+	    / p->signal->rate);
+    vga_write(string, col(40), row(26), font, p->color, TEXT_BG, ALIGN_CENTER);
 
-    i = actual / 20 * actual / 44000 / scope.scale;
+    i = p->signal->rate / 20 * p->signal->rate / 44000 / scope.scale;
     sprintf(string, "%d Hz/div FFT", i);
-    vga_write(string, col(40), row(27), font, TEXT_FG, TEXT_BG, ALIGN_CENTER);
+    vga_write(string, col(40), row(27), font, p->color, TEXT_BG, ALIGN_CENTER);
 
     for (i = 0 ; i < 26 ; i++) {
-      if (mem[i] != NULL) {
-	sprintf(string, "%c", i + 'a');
-	vga_write(string, col(27 + i), row(28),
-		  font, memcolor[i], TEXT_BG, ALIGN_LEFT);
-      }
+      sprintf(string, "%c", i + 'a');
+      vga_write(string, col(27 + i), row(28),
+		font, mem[i].color, TEXT_BG, ALIGN_LEFT);
     }
 
     if (all == 1)
@@ -274,11 +275,17 @@ draw_graticule()
     0, -10, 10
   };
 
-  /* a mark where the trigger level is */
-  i = scope.trigch;
-  j = offset + ch[i].pos + (128 - scope.trig) * ch[i].mult / ch[i].div;
-  SetColor(ch[i].color);
-  DrawLine(90, j + tilt[scope.trige], 110, j - tilt[scope.trige]);
+  /* a mark where the trigger level is, if the triggered channel is shown */
+  i = -1;
+  for (j = 7 ; j >= 0 ; j--) {
+    if (ch[j].func == scope.trigch)
+      i = j;
+  }
+  if (i > -1) {
+    j = offset + ch[i].pos + (128 - scope.trig) * ch[i].mult / ch[i].div;
+    SetColor(mem[scope.trigch + 23].color);
+    DrawLine(90, j + tilt[scope.trige], 110, j - tilt[scope.trige]);
+  }
 
   /* the frame */
   SetColor(clip ? ch[clip - 1].color : color[scope.color]);
@@ -322,18 +329,19 @@ draw_data()
 {
   static int i, j, k, l, m, off, delay, old = 100, mult, div, mode, prev;
   static int x, y, X, Y;
-  static Signal *p;
+  static Channel *p;
   static short *samples;
 
   mode = data_good ?  scope.mode : (scope.mode < 2 ? 0 : 2);
   /* interpolate a line between the sample just before and after trigger */
   off = 100 - scope.scale;	/* then shift all samples horizontally */
   if (scope.trige) {		/* to place time zero at trigger */
-    p = &ch[scope.trigch];
-    if ((i = p->data[0]) != (j = p->data[1])) /* avoid divide by zero */
+    samples = mem[k = scope.trigch + 23].data;
+    if ((i = samples[0]) != (j = samples[1])) /* avoid divide by zero: */
       delay = 100 + (j - scope.trig + 128) * 44000 * scope.scale
-	/ ((j - i) * actual);	/* y=mx+b  so  x=(y-b)/m */
-    if ((delay < 100) || (delay > (100 + 44000 / actual * scope.scale)))
+	/ ((j - i) * mem[k].rate); /* y=mx+b  so  x=(y-b)/m */
+    if ((delay < 100) || (delay > (100 + 44000
+				   / mem[k].rate * scope.scale)))
       delay = old;
   } else			/* no trigger, leave delay as it was */
     delay = old;
@@ -350,20 +358,25 @@ draw_data()
 	  l = old;
 	} else {		/* plot new samples */
 	  SetColor(p->color);
-	  samples = p->data + 1;
+	  samples = p->signal->data + 1;
 	  l = delay;
 	}
+	if (p->func == FUNCMEM)	/* should we use the offset? */
+	  l = 100;		/* not if we're memory */
+	else if (p->func > FUNCRIGHT /* yes if we're math & 1 or 2 is */
+		 && (ch[0].func > FUNCRIGHT && ch[1].func > FUNCRIGHT))
+	  l = 100;
 	prev = 1;
 	X = Y = 0;
 	if (mode < 2)		/* point / point accumulate */
 	  for (i = 0 ; i < h_points - 100 - l ; i++) {
-	    if ((m = i * actual / scope.scale / 44000 ) != prev)
+	    if ((m = i * p->signal->rate / scope.scale / 44000 ) != prev)
 	      DrawPixel(i + l, off - samples[m] * mult / div);
 	    prev = m;
 	  }
 	else			/* line / line accumulate */
 	  for (i = 0 ; i < h_points - 100 - l ; i++) {
-	    if ((m = i * actual / scope.scale / 44000) != prev) {
+	    if ((m = i * p->signal->rate / scope.scale / 44000) != prev) {
 	      x = i + l; y = off - samples[m] * mult / div;
 	      if (X)
 		DrawLine(X, Y, x, y);
@@ -374,7 +387,7 @@ draw_data()
 	    prev = m;
 	  }
       }
-      memcpy(p->old, p->data,
+      memcpy(p->old, p->signal->data,
 	     sizeof(short) * (h_points - 200) + sizeof(short));
       DrawLine(90, off, 100, off);
       DrawLine(h_points - 100, off, h_points - 90, off);
@@ -431,7 +444,7 @@ init_screen()
 
   init_widgets();
   for (i = 0 ; i < CHANNELS ; i++) {
-    ch[i].color = color[channelcolor[i]];
+    ch[i].color = mem[i + 23].color = color[channelcolor[i]];
   }
   fix_widgets();
   offset = v_points / 2;
