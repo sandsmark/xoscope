@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 1.42 1997/05/04 20:09:19 twitham Rel1_3 $
+ * @(#)$Id: display.c,v 1.43 1997/05/24 23:27:28 twitham Exp $
  *
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -13,6 +13,7 @@
 #include "oscope.h"		/* program defaults */
 #include "display.h"
 #include "func.h"
+#include "proscope.h"
 
 void	show_data();		/* other function prototypes */
 int	vga_write();
@@ -280,6 +281,13 @@ draw_graticule()
     0, -10, 10
   };
 
+  /* marks where the physical ProbeScope display ends */
+  i = 31 * 44000 * scope.scale / (mem[25].rate * scope.div) + 100;
+  if (i > h_points - 100) i = h_points - 100;
+  SetColor(mem[25].color);
+  DrawLine(i, 70, i, 80);
+  DrawLine(i, v_points - 70, i, v_points - 80);
+
   /* a mark where the trigger level is, if the triggered channel is shown */
   i = -1;
   for (j = 7 ; j >= 0 ; j--) {
@@ -338,6 +346,7 @@ draw_data()
   static short *samples;
 
   mode = data_good ?  scope.mode : (scope.mode < 2 ? 0 : 2);
+
   /* interpolate a line between the sample just before and after trigger */
   if (scope.trige) {		/* to place time zero at trigger */
     samples = mem[k = scope.trigch + 23].data;
@@ -369,27 +378,24 @@ draw_data()
 	else if (p->func > FUNCRIGHT /* yes if we're math & 1 or 2 is */
 		 && (ch[0].func > FUNCRIGHT && ch[1].func > FUNCRIGHT))
 	  l = 100;
-	prev = 1;
-	X = Y = 0;
+	prev = X = Y = 0;
 	if (mode < 2)		/* point / point accumulate */
 	  for (i = 0 ; i < h_points - 100 - l ; i++) {
-	    if ((m = i * p->signal->rate * scope.div / scope.scale / 44000)
-		!= prev && (m < h_points))
+	    if ((m = i * (p->signal->rate / 100) * scope.div
+		 / scope.scale / 440) > prev && m < h_points)
 	      DrawPixel(i + l, off - samples[m] * mult / div);
-	    prev = m;
+	    if (m > prev) prev = m;
 	  }
 	else			/* line / line accumulate */
 	  for (i = 0 ; i < h_points - 100 - l ; i++) {
-	    if ((m = i * p->signal->rate / scope.scale * scope.div / 44000)
-		!= prev && m < h_points) {
+	    if ((m = i * (p->signal->rate / 100) * scope.div
+		 / scope.scale / 440) > prev && m < h_points) {
 	      x = i + l; y = off - samples[m] * mult / div;
-	      if (X)
-		DrawLine(X, Y, x, y);
-	      else
-		DrawPixel(x, y);
+	      if (X) DrawLine(X, Y, x, y);
+	      else DrawPixel(x, y);
 	      X = x; Y = y;
 	    }
-	    prev = m;
+	    if (m > prev) prev = m;
 	  }
       }
       memcpy(p->old, p->signal->data,
@@ -424,14 +430,12 @@ animate(void *data)
 {
   if (scope.run) {
     triggered = get_data();
-    if (triggered) {
-      if (scope.run > 1) {	/* auto-stop single-shot wait */
-	scope.run = 0;
-	draw_text(1);
-      }
-      show_data();
-    } else			/* no need to redraw samples */
-      draw_text(0);
+    probescope();
+    if (triggered && scope.run > 1) {	/* auto-stop single-shot wait */
+      scope.run = 0;
+      draw_text(1);
+    }
+    show_data();
     data_good = 1;
   }
   if (quit_key_pressed) {

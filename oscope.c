@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.c,v 1.60 1997/05/04 20:03:00 twitham Rel1_3 $
+ * @(#)$Id: oscope.c,v 1.61 1997/05/24 23:25:27 twitham Exp $
  *
  * Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -16,6 +16,7 @@
 #include "display.h"		/* display routines */
 #include "func.h"		/* signal math functions */
 #include "file.h"		/* file I/O functions */
+#include "proscope.h"		/* ProbeScope (serial) functions */
 
 /* global program variables */
 Scope scope;
@@ -56,7 +57,7 @@ Startup Options  Description (defaults)               version %s
 -# <code>        #=1-%d, code=pos[:scale[:func#, mem letter, or cmd]] (0:1/1)
 -a <channel>     set the Active channel: 1-%d                  (%d)
 -r <rate>        sampling Rate in Hz: 8800,11000,22000,44000  (%d)
--s <scale>       time Scale: 1/100-100                        (%d/1)
+-s <scale>       time Scale: 1/20-1000, 1 = 1ms/div           (%d/1)
 -t <trigger>     Trigger level[:type[:channel]]               (%s)
 -c <color>       graticule Color: 0-15                        (%d)
 -m <mode>        video mode (size): 0,1,2,3                   (%d)
@@ -100,6 +101,7 @@ cleanup()
   cleanup_math();
   cleanup_display();
   close_sound_card();
+  cleanup_serial();
 }
 
 /* initialize the scope */
@@ -141,9 +143,9 @@ init_channels()
   }
 }
 
-/* scale num upward like a scope does, 1 to 100 */
+/* scale num upward like a scope does, 1 to max */
 void
-scaleup(int *num)
+scaleup(int *num, int max)
 {
   if (*num < 2)
     *num = 2;
@@ -155,15 +157,29 @@ scaleup(int *num)
     *num = 20;
   else if (*num < 50)
     *num = 50;
-  else
+  else if (*num < 100)
     *num = 100;
+  else if (*num < 200)
+    *num = 200;
+  else if (*num < 500)
+    *num = 500;
+  else
+    *num = 1000;
+  if (*num > max)
+    *num = max;
 }
 
-/* scale num downward like a scope does, 100 to 1 */
+/* scale num downward like a scope does, 1000 to 1 */
 void
 scaledown(int *num)
 {
-  if (*num > 50)
+  if (*num > 500)
+    *num = 500;
+  else if (*num > 200)
+    *num = 200;
+  else if (*num > 100)
+    *num = 100;
+  else if (*num > 50)
     *num = 50;
   else if (*num > 20)
     *num = 20;
@@ -229,14 +245,14 @@ handle_key(unsigned char c)
     if (p->div > 1)		/* increase scale */
       scaledown(&p->div);
     else
-      scaleup(&p->mult);
+      scaleup(&p->mult, 50);
     clear();
     break;
   case '{':
     if (p->mult > 1)		/* decrease scale */
       scaledown(&p->mult);
     else
-      scaleup(&p->div);
+      scaleup(&p->div, 50);
     clear();
     break;
   case ']':
@@ -267,14 +283,14 @@ handle_key(unsigned char c)
     if (scope.div > 1)		/* decrease time scale, zoom in */
       scaledown(&scope.div);
     else
-      scaleup(&scope.scale);
+      scaleup(&scope.scale, 1000);
     clear();
     break;
   case '9':
     if (scope.scale > 1)	/* increase time scale, zoom out */
       scaledown(&scope.scale);
     else
-      scaleup(&scope.div);
+      scaleup(&scope.div, 20);
     clear();
     break;
   case '=':
@@ -416,6 +432,7 @@ main(int argc, char **argv)
       readfile(filename);
     }
   open_sound_card(scope.dma);
+  init_serial();
   resetsoundcard();
   mainloop();			/* to display.c */
   cleanup();
