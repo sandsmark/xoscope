@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 1.30 1996/07/30 05:42:58 twitham Rel1_1 $
+ * @(#)$Id: display.c,v 1.31 1996/10/04 05:11:03 twitham Exp $
  *
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -400,73 +400,58 @@ draw_graticule()
 static inline void
 draw_data()
 {
-  static int i, j, off, delay, old = 0, mult, div, mode;
+  static int i, j, k, l, off, delay, old = 0, mult, div, mode;
   static Signal *p;
+  static short *samples;
 
   mode = data_good ?  scope.mode : (scope.mode < 2 ? 0 : 2);
   /* interpolate a line between the sample just before and after trigger */
   off = 100 - scope.scale;	/* then shift all samples horizontally */
   if (scope.trige) {		/* to place time zero at trigger */
     p = &ch[scope.trigch];
-    if ((i = p->data[0]) == (j = p->data[1])) /* avoid divide by zero */
-      i++;			/* solve "y = y0 + x * slope" for x to get: */
-    delay = 100 - ((scope.trig - 128 - i) * scope.scale / (j - i));
+    if ((i = p->data[0]) != (j = p->data[1])) /* avoid divide by zero */
+      delay = 100 - ((scope.trig - 128 - i) * scope.scale / (j - i));
     if (delay < off)
       delay = old;		/* may be out of range if user just tweaked */
     if (delay > 100)		/* trigger but we're using old data */
       delay = old;
   } else			/* no trigger, leave delay as it was */
     delay = old;
-  if (mode < 2) {		/* point / point accumulate */
-    for (j = 0 ; j < CHANNELS ; j++) {
-      p = &ch[j];
-      mult = p->mult;		/* precalc for efficiency */
+  for (j = 0 ; j < CHANNELS ; j++) {
+    p = &ch[j];
+    if (p->show) {		/* plot each visible channel */
+      mult = p->mult;
       div = p->div;
-      if (p->show) {
-	off = offset + p->pos;
-	VGA_SETCOLOR(p->color);
-	for (i = 1 ; i <= (h_points - 200) / scope.scale ; i++) {
-	  if (mode == 0) { /* erase previous dots */
-	    VGA_SETCOLOR(color[0]);
-	    VGA_DRAWPIXEL(i * scope.scale + old,
-			  off - p->old[i] * mult / div);
-	    VGA_SETCOLOR(p->color); /* draw dots */
-	  }
-	  VGA_DRAWPIXEL(i * scope.scale + delay,
-			off - p->data[i] * mult / div);
-	  p->old[i] = p->data[i];
+      off = offset + p->pos;
+      for (k = !(mode % 2) ; k >= 0 ; k--) { /* once=accumulate, twice=erase */
+	if (k) {		/* erase previous samples */
+	  VGA_SETCOLOR(color[0]);
+	  samples = p->old + 1;
+	  l = old;
+	} else {		/* plot new samples */
+	  VGA_SETCOLOR(p->color);
+	  samples = p->data + 1;
+	  l = delay;
 	}
-	VGA_DRAWLINE(90, off, 100, off);
-	VGA_DRAWLINE(h_points - 100, off, h_points - 90, off);
-      }
-    }
-  } else {			/* line / line accumulate */
-    for (j = 0 ; j < CHANNELS ; j++) {
-      p = &ch[j];
-      mult = p->mult;		/* precalc for efficiency */
-      div = p->div;
-      if (p->show) {
-	off = offset + p->pos;
-	VGA_SETCOLOR(p->color);
-	for (i = 1 ; i < (h_points - 200) / scope.scale ; i++) {
-	  if (mode == 2) { /* erase previous lines */
-	    VGA_SETCOLOR(color[0]);
-	    VGA_DRAWLINE(i * scope.scale + old,
-			 off - p->old[i] * mult / div,
-			 i * scope.scale + old + scope.scale,
-			 off - p->old[i + 1] * mult / div);
-	    VGA_SETCOLOR(p->color); /* draw lines */
+	if (mode < 2)		/* point / point accumulate */
+	  for (i = 1 ; i <= (h_points - 200) / scope.scale ; i++) {
+	    VGA_DRAWPIXEL(i * scope.scale + l,
+			  off - *samples * mult / div);
+	    samples++;
 	  }
-	  VGA_DRAWLINE(i * scope.scale + delay,
-		       off - p->data[i] * mult / div,
-		       i * scope.scale + delay + scope.scale,
-		       off - p->data[i + 1] * mult / div);
-	  p->old[i] = p->data[i];
-	}
-	VGA_DRAWLINE(90, off, 100, off);
-	VGA_DRAWLINE(h_points - 100, off, h_points - 90, off);
-	p->old[i] = p->data[i];
+	else			/* line / line accumulate */
+	  for (i = 1 ; i < (h_points - 200) / scope.scale ; i++) {
+	    VGA_DRAWLINE(i * scope.scale + l,
+			 off - *samples * mult / div,
+			 i * scope.scale + l + scope.scale,
+			 off - *(samples + 1) * mult / div);
+	    samples++;
+	  }
       }
+      memcpy(p->old, p->data,
+	     sizeof(short) * (h_points - 200) / scope.scale + sizeof(short));
+      VGA_DRAWLINE(90, off, 100, off);
+      VGA_DRAWLINE(h_points - 100, off, h_points - 90, off);
     }
   }
   old = delay;
