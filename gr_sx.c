@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: gr_sx.c,v 1.12 1997/05/03 16:14:55 twitham Exp $
+ * @(#)$Id: gr_sx.c,v 1.13 1997/05/04 20:15:05 twitham Rel1_3 $
  *
  * Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -108,24 +108,6 @@ keys(Widget w, char *input, int up_or_down, void *data)
 }
 
 /* menu option callbacks */
-void
-loadfile(Widget w, void *data)
-{
-  char *fname;
-
-  if ((fname = GetFile(NULL)) != NULL)
-    readfile(fname);
-}
-
-void
-savefile(Widget w, void *data)
-{
-  char *fname;
-
-  if ((fname = GetFile(NULL)) != NULL)
-      writefile(fname);
-}
-
 void
 plotmode(Widget w, void *data)
 {
@@ -286,8 +268,10 @@ fix_widgets()
   SetWidgetState(mwidg[56], scope.select > 1);
   for (i = 0 ; i < 26 ; i++) {
     SetBgColor(mwidg[i + 30], mem[i].color);
-    if (i > 22)
+    if (i > 22) {
+      SetBgColor(mwidg[i + 1], mem[i].color);
       SetWidgetState(mwidg[i + 1], 0);
+    }
   }
 
   SetWidgetState(xwidg[5], scope.run != 1);
@@ -324,8 +308,8 @@ init_widgets()
 
   /* top row of widgets */
   file[0] = MakeMenu(" File ");
-  file[1] = MakeMenuItem(file[0], "Load...", loadfile, NULL);
-  file[2] = MakeMenuItem(file[0], "Save...", savefile, NULL);
+  file[1] = MakeMenuItem(file[0], "Load...", hit_key, "@");
+  file[2] = MakeMenuItem(file[0], "Save...", hit_key, "#");
   file[3] = MakeMenuItem(file[0], "Quit", hit_key, "\e");
 
   plot[0] = MakeMenu(" Plot Mode ");
