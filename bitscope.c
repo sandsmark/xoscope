@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: bitscope.c,v 1.3 2000/07/05 03:01:51 twitham Exp $
+ * @(#)$Id: bitscope.c,v 1.4 2000/07/05 22:34:59 twitham Exp $
  *
  * Copyright (C) 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -30,6 +30,9 @@ bs_cmd(int fd, char *cmd)
   char c;
 
 /*    if (fd < 3) return(0); */
+  bs.pos = bs.buf;
+  *bs.pos = '\0';
+  bs.cmd = *cmd;
   j = strlen(cmd);
   PSDEBUG("bs_cmd: %s\n", cmd);
   for (i = 0; i < j; i++) {
@@ -70,6 +73,13 @@ bs_read(int fd, char *buf, int n)
   return(1);
 }
 
+int
+bs_read_async(int fd, int n)
+{
+  bs.end = bs.pos + n;
+  return(1);
+}
+
 /* Run IN on bitscope FD and store results in OUT (not including echo) */
 /* Only the last command in IN should produce output; else this won't work */
 int
@@ -83,17 +93,17 @@ bs_io(int fd, char *in, char *out)
   case 'T':
     return bs_read(fd, out, 6);
   case 'S':			/* DDAA, per sample + newlines per 16 */
-    return bs_read(fd, out, R15 * 5 + (R15 / 16) + 1);
+    return bs_read_async(fd, R15 * 5 + (R15 / 16) + 1);
   case 'M':
-    if (bs.version >= 111)
+    if (bs.version >= 110)
       return bs_read(fd, out, R15 * 2);
     break;
   case 'A':
-    if (bs.version >= 111)
+    if (bs.version >= 110)
       return bs_read(fd, out, R15);
     break;
   case 'P':
-    if (bs.version >= 111)
+    if (bs.version >= 110)
       return bs_read(fd, out, 14);
     break;
   case 0:			/* least used last for efficiency */
@@ -102,7 +112,7 @@ bs_io(int fd, char *in, char *out)
   case 'p':
     return bs_read(fd, out, 4);
   case 'R':
-    if (bs.version >= 111)
+    if (bs.version >= 110)
       return bs_read(fd, out, 4);
   }
   return(1);
@@ -215,7 +225,7 @@ idscope(int probescope)
   return(0);
 }
 
-/* ultimately, this will need to be done in a separate thread for speed */
+/* get available data from FD */
 int
 bs_getdata(int fd)
 {
@@ -223,31 +233,42 @@ bs_getdata(int fd)
   static int i, alt = 0, j, k, n;
 
   if (!fd) return(0);		/* device open? */
-  if (!bs_io(fd, "[e]@", buffer))
-    return(0);
-  bs.r[14] = (bs.r[14] & 0xfb) | (!alt << 2); /* attempt to ALT dual trace */
-  sprintf(error, "[%x]s>T", bs.r[14]);
-  if (!bs_io(fd, error, buffer))
-    return(0);
-  fprintf(stderr, "%s", buffer);
-  i = 0;
-  j = SAMPLES(mem[23].rate) / R15 + 1;
-  if (j > 16384 / R15) j = 16384 / R15;
-  for (k = 0; k < j; k++) { /* snag multiple S dumps ? */
-    if (!bs_io(fd, "S", buffer))
-      return(0);
-    buff = buffer;
-    while (*buff != '\0') {
-      if (*buff == '\r' || *buff == '\n')
-	buff++;
-      else {
-	n = strtol(buff, NULL, 16);
-	mem[23 + alt].data[i] = (n & 0xff) - 128;
-	mem[25].data[i++] = ((n & 0xff00) >> 8) - 128;
-	buff += 5;
+  if (bs.getting) {		/* finish a get */
+    j = bs.end - bs.pos;
+    if ((i = read(fd, bs.pos, j)) > 0) {
+      bs.pos += i;
+      if (bs.pos >= bs.end) {	/* got some data! */
+	buff = bs.buf;
+	while (*buff != '\0') {
+	  if (*buff == '\r' || *buff == '\n')
+	    buff++;
+	  else {
+	    n = strtol(buff, NULL, 16);
+	    mem[23 + alt].data[k] = (n & 0xff) - 128;
+	    mem[25].data[k++] = ((n & 0xff00) >> 8) - 128;
+	    buff += 5;
+	  }
+	}
+	if (k > SAMPLES(mem[23].rate)) { /* all done */
+	  k = 0;
+	  bs.getting = 0;
+	} else {			/* need more */
+	  bs_io(fd, "S", buffer);
+	}
       }
     }
+  } else {			/* start a get */
+    if (!bs_io(fd, "[e]@", buffer))
+      return(0);
+    bs.r[14] = (bs.r[14] & 0xfb) | (!alt << 2); /* attempt to ALT dual trace */
+    sprintf(error, "[%x]s>T", bs.r[14]);
+    if (!bs_io(fd, error, buffer))
+      return(0);
+    fprintf(stderr, "%s", buffer);
+    if (!bs_io(fd, "S", buffer))
+      return(0);
+    alt = !alt;
+    bs.getting = 1;
   }
-  alt = !alt;
   return(1);
 }
