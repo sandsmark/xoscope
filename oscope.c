@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.c,v 1.72 2000/02/26 20:20:53 twitham Exp $
+ * @(#)$Id: oscope.c,v 1.73 2000/03/05 22:59:39 twitham Rel $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -130,6 +130,11 @@ init_channels()
   int i, j[] = {23, 24, 25, 0, 0, 0, 0, 0};
 
   for (i = 0 ; i < CHANNELS ; i++) {
+    if (ch[i].pid)
+      ch[i].mem = EXTSTOP;
+  }
+  do_math();			/* halt currently running commands */
+  for (i = 0 ; i < CHANNELS ; i++) {
     ch[i].signal = &mem[j[i]];
     memset(ch[i].old, 0, MAXWID * sizeof(short));
     ch[i].mult = 1;
@@ -197,8 +202,7 @@ scaledown(int *num)
 void
 resetsoundcard(int rate)
 {
-  scope.rate = reset_sound_card(rate, 2, 8);
-  mem[23].rate = mem[24].rate = rate;
+  scope.rate = mem[23].rate = mem[24].rate = reset_sound_card(rate, 2, 8);
   do_math();			/* propogate new rate to any math */
   draw_text(1);
 }
@@ -296,7 +300,8 @@ handle_key(unsigned char c)
       if (p->func >= funccount || p->func < FUNC0)
 	p->func = FUNC0;
       clear();
-    }
+    } else
+      message("Math can not run on Channel 1 or 2", KEY_FG);
     break;
   case ':':
     if (scope.select > 1) {	/* previous math function */
@@ -304,7 +309,8 @@ handle_key(unsigned char c)
       if (p->func < FUNC0)
 	p->func = funccount - 1;
       clear();
-    }
+    } else
+      message("Math can not run on Channel 1 or 2", KEY_FG);
     break;
   case '0':
     if (scope.div > 1)		/* decrease time scale, zoom in */
@@ -365,14 +371,12 @@ handle_key(unsigned char c)
     clear();
     break;
   case '<':
-    scope.color--;		/* decrease color */
-    if (scope.color < 0)
+    if (--scope.color < 0)	/* decrease color */
       scope.color = 15;
     draw_text(1);
     break;
   case '>':
-    scope.color++;		/* increase color */
-    if (scope.color > 15)
+    if (++scope.color > 15)	/* increase color */
       scope.color = 0;
     draw_text(1);
     break;
@@ -391,11 +395,11 @@ handle_key(unsigned char c)
   case '^':
     if (ps.found) {		/* toggle ProbeScope on/off */
       ps.found = 0;
-      clear();
     } else {
       init_probescope();
       init_serial();
     }
+    clear();
     break;
   case '&':
     if (snd)			/* toggle sound card on/off */
