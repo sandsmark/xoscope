@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 1.34 1996/10/06 02:34:37 twitham Exp $
+ * @(#)$Id: display.c,v 1.35 1996/10/06 05:43:18 twitham Exp $
  *
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -87,76 +87,85 @@ draw_text(int all)
   if (all) {			/* everything */
 
     /* above graticule */
-    vga_write("(Esc)", 0, 0, font, KEY_FG, TEXT_BG, ALIGN_LEFT);
-    vga_write("Quit", col(5), 0, font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
+    if (scope.verbose) {
+      vga_write("(Esc)", 0, 0, font, KEY_FG, TEXT_BG, ALIGN_LEFT);
+      vga_write("Quit", col(5), 0, font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
 
-    vga_write("(@)", col(2), row(1), font, KEY_FG, TEXT_BG, ALIGN_LEFT);
-    vga_write("Load", col(5), row(1), font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
+      vga_write("(@)", col(2), row(1), font, KEY_FG, TEXT_BG, ALIGN_LEFT);
+      vga_write("Load", col(5), row(1), font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
 
-    vga_write("(#)", col(2), row(2), font, KEY_FG, TEXT_BG, ALIGN_LEFT);
-    vga_write("Save", col(5), row(2), font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
+      vga_write("(#)", col(2), row(2), font, KEY_FG, TEXT_BG, ALIGN_LEFT);
+      vga_write("Save", col(5), row(2), font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
 
-    sprintf(string, "%d x %d", h_points, v_points);
-    vga_write(string, 0, row(3), font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
+      sprintf(string, "%d x %d", h_points, v_points);
+      vga_write(string, 0, row(3), font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
 
-    vga_write("(Enter)", col(70), 0, font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
-    vga_write("Refresh", col(77), 0, font, TEXT_FG, TEXT_BG, ALIGN_RIGHT);
+      vga_write("(Enter)", col(70), 0, font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
+      vga_write("Refresh", col(77), 0, font, TEXT_FG, TEXT_BG, ALIGN_RIGHT);
 
-    vga_write("(&)", col(70), row(1), font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
-    vga_write("Graticule", col(79), row(1),
-	      font, TEXT_FG, TEXT_BG, ALIGN_RIGHT);
+      vga_write("(&)", col(70), row(1), font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
+      vga_write("Graticule", col(79), row(1),
+		font, TEXT_FG, TEXT_BG, ALIGN_RIGHT);
 
-    vga_write("(_)(-)                      (=)(+)", col(40), row(2),
-	      font, KEY_FG, TEXT_BG, ALIGN_CENTER);
+      vga_write("(_)(-)                      (=)(+)", col(40), row(2),
+		font, KEY_FG, TEXT_BG, ALIGN_CENTER);
+
+      vga_write("(*)", col(70), row(2), font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
+      vga_write(scope.behind ? "Behind   " : "In Front ", col(79), row(2),
+		font, TEXT_FG, TEXT_BG, ALIGN_RIGHT);
+
+      vga_write("(()      ())", col(79), row(3),
+		font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
+      vga_write("Color", col(75), row(3), font, TEXT_FG, TEXT_BG, ALIGN_RIGHT);
+
+      vga_write("(!)", 100, 62, font, KEY_FG, TEXT_BG, ALIGN_LEFT);
+      vga_write("(space)", h_points - 100 - 8 * 4, 62,
+		font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
+
+    } else {			/* not verbose */
+
+      vga_write("(?)", col(75), 0, font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
+      vga_write("Help", col(79), 0, font, TEXT_FG, TEXT_BG, ALIGN_RIGHT);
+    }
+
     sprintf(string, "%s Trigger @ %d", trigs[scope.trige], scope.trig - 128);
     vga_write(string, col(40), row(2),
 	      font, ch[scope.trigch].color, TEXT_BG, ALIGN_CENTER);
-
-    vga_write("(*)", col(70), row(2), font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
-    vga_write(scope.behind ? "Behind   " : "In Front ", col(79), row(2),
-	      font, TEXT_FG, TEXT_BG, ALIGN_RIGHT);
-
-    vga_write("(()      ())", col(79), row(3),
-	      font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
-    vga_write("Color", col(75), row(3), font, TEXT_FG, TEXT_BG, ALIGN_RIGHT);
-
-    vga_write("(!)", 100, 62, font, KEY_FG, TEXT_BG, ALIGN_LEFT);
     vga_write(strings[scope.mode],
 	      100 + 8 * 3, 62, font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
-
-    vga_write("(space)", h_points - 100 - 8 * 4, 62,
-	      font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
     vga_write(scope.run ? (scope.run > 1 ? "WAIT" : " RUN") : "STOP",
 	      h_points - 100, 62, font, TEXT_FG, TEXT_BG, ALIGN_RIGHT);
 
     /* sides of graticule */
     for (i = 0 ; i < CHANNELS ; i++) {
-      j = (i % 4) * 5 + 5;
-      k = ch[i].color;
 
-      vga_write("Channel", col(69 * (i / 4)), row(j),
-		font, k, TEXT_BG, ALIGN_LEFT);
-      sprintf(string, "(%d)", i + 1);
-      vga_write(string, col(69 * (i / 4) + 7), row(j),
-		font, KEY_FG, TEXT_BG, ALIGN_LEFT);
+      if (scope.verbose || ch[i].show || scope.select == i) {
+	j = (i % 4) * 5 + 5;
+	k = ch[i].color;
 
-      sprintf(string, "Pos. :%4d", -(ch[i].pos));
-      vga_write(string, col(69 * (i / 4)), row(j + 1),
-		font, k, TEXT_BG, ALIGN_LEFT);
+	vga_write("Channel", col(69 * (i / 4)), row(j),
+		  font, k, TEXT_BG, ALIGN_LEFT);
+	sprintf(string, "(%d)", i + 1);
+	vga_write(string, col(69 * (i / 4) + 7), row(j),
+		  font, KEY_FG, TEXT_BG, ALIGN_LEFT);
 
-      sprintf(string, "Scale:%d/%d", ch[i].mult, ch[i].div);
-      vga_write(string, col(69 * (i / 4)), row(j + 2),
-		font, k, TEXT_BG, ALIGN_LEFT);
+	sprintf(string, "Pos. :%4d", -(ch[i].pos));
+	vga_write(string, col(69 * (i / 4)), row(j + 1),
+		  font, k, TEXT_BG, ALIGN_LEFT);
 
-      vga_write(funcnames[ch[i].func], col(69 * (i / 4)), row(j + 3),
-		font, k, TEXT_BG, ALIGN_LEFT);
+	sprintf(string, "Scale:%d/%d", ch[i].mult, ch[i].div);
+	vga_write(string, col(69 * (i / 4)), row(j + 2),
+		  font, k, TEXT_BG, ALIGN_LEFT);
 
-      if (ch[i].func == FUNCMEM) {
-	sprintf(string, "%c", ch[i].mem);
-	vga_write(string, col(69 * (i / 4) + 7), row(j + 3),
-		  font, memcolor[ch[i].mem - 'a'], TEXT_BG, ALIGN_LEFT);
+	vga_write(funcnames[ch[i].func], col(69 * (i / 4)), row(j + 3),
+		  font, k, TEXT_BG, ALIGN_LEFT);
+
+	if (ch[i].func == FUNCMEM) {
+	  sprintf(string, "%c", ch[i].mem);
+	  vga_write(string, col(69 * (i / 4) + 7), row(j + 3),
+		    font, memcolor[ch[i].mem - 'a'], TEXT_BG, ALIGN_LEFT);
+	}
       }
-
       if (scope.select == i) {
 	SetColor(k);
 	k = i < 4 ? 11 : 80 - 11;
@@ -168,28 +177,52 @@ draw_text(int all)
     }
 
     /* below graticule */
-    vga_write("(Tab)", 0, row(25), font, KEY_FG, TEXT_BG, ALIGN_LEFT);
-    vga_write(p->show ? "Visible" : "HIDDEN ", col(5), row(25),
-	      font, p->color, TEXT_BG, ALIGN_LEFT);
+    if (scope.verbose) {
+      vga_write("(Tab)", 0, row(25), font, KEY_FG, TEXT_BG, ALIGN_LEFT);
+      vga_write(p->show ? "Visible" : "HIDDEN ", col(5), row(25),
+		font, p->color, TEXT_BG, ALIGN_LEFT);
 
-    vga_write("({)        (})", 0, row(26), font,KEY_FG, TEXT_BG, ALIGN_LEFT);
-    vga_write("Position", col(3), row(26), font, p->color, TEXT_BG, ALIGN_LEFT);
+      vga_write("({)        (})", 0, row(26), font,KEY_FG, TEXT_BG, ALIGN_LEFT);
+      vga_write("Position", col(3), row(26), font, p->color,TEXT_BG,ALIGN_LEFT);
 
-    vga_write("([)        (])", 0, row(27), font, KEY_FG, TEXT_BG, ALIGN_LEFT);
-    vga_write("Scale", col(4), row(27), font, p->color, TEXT_BG, ALIGN_LEFT);
+      vga_write("([)        (])", 0, row(27), font, KEY_FG, TEXT_BG,ALIGN_LEFT);
+      vga_write("Scale", col(4), row(27), font, p->color, TEXT_BG, ALIGN_LEFT);
 
-    vga_write("(,)        (.)", 0, row(28), font, KEY_FG, TEXT_BG, ALIGN_LEFT);
-    sprintf(string, "DMA:%d", scope.dma);
-    vga_write(string, col(4), row(28), font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
+      vga_write("(,)        (.)", 0, row(28), font, KEY_FG, TEXT_BG,ALIGN_LEFT);
+      sprintf(string, "DMA:%d", scope.dma);
+      vga_write(string, col(4), row(28), font, TEXT_FG, TEXT_BG, ALIGN_LEFT);
 
+      vga_write("(9)                 (0)", col(40), row(26),
+		font, KEY_FG, TEXT_BG, ALIGN_CENTER);
+
+      if (actual >= 44000) {
+	vga_write("(A-Z)", col(72), row(27), font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
+	vga_write("Store", col(77), row(27),
+		  font, p->color, TEXT_BG, ALIGN_RIGHT);
+      }
+
+      if (scope.select > 1) {
+	vga_write("($)", col(72), row(25),
+		  font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
+	vga_write("Extern", col(78), row(25),
+		  font, p->color, TEXT_BG, ALIGN_RIGHT);
+	vga_write("(:)    (;)", col(79), row(26),
+		  font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
+	vga_write("Math", col(76), row(26),
+		  font, p->color, TEXT_BG, ALIGN_RIGHT);
+	vga_write("(a-z)", col(72), row(28),
+		  font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
+	vga_write("Recall", col(78), row(28),
+		  font, p->color, TEXT_BG, ALIGN_RIGHT);
+      }
+
+      vga_write("(", col(26), row(28), font, KEY_FG, TEXT_BG, ALIGN_LEFT);
+      vga_write(")", col(53), row(28), font, KEY_FG, TEXT_BG, ALIGN_LEFT);
+    }
     i = 44000000 / actual / scope.scale;
-    sprintf(string, "%d %cs/div",
-	    i > 999 ? i / 1000 : i,
-	    i > 999 ? 'm' : 'u');
+    sprintf(string, "%d %cs/div", i > 999 ? i / 1000 : i, i > 999 ? 'm' : 'u');
     vga_write(string, col(40), row(25), font, TEXT_FG, TEXT_BG, ALIGN_CENTER);
 
-    vga_write("(9)                 (0)", col(40), row(26),
-	      font, KEY_FG, TEXT_BG, ALIGN_CENTER);
     sprintf(string, "%d S/s * %d", actual, scope.scale);
     vga_write(string, col(40), row(26), font, TEXT_FG, TEXT_BG, ALIGN_CENTER);
 
@@ -197,29 +230,6 @@ draw_text(int all)
     sprintf(string, "%d Hz/div FFT", i);
     vga_write(string, col(40), row(27), font, TEXT_FG, TEXT_BG, ALIGN_CENTER);
 
-    if (actual >= 44000) {
-      vga_write("(A-Z)", col(72), row(27), font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
-      vga_write("Store", col(77), row(27),
-		font, p->color, TEXT_BG, ALIGN_RIGHT);
-    }
-
-    if (scope.select > 1) {
-      vga_write("($)", col(72), row(25),
-		font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
-      vga_write("Extern", col(78), row(25),
-		font, p->color, TEXT_BG, ALIGN_RIGHT);
-      vga_write("(:)    (;)", col(79), row(26),
-		font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
-      vga_write("Math", col(76), row(26),
-		font, p->color, TEXT_BG, ALIGN_RIGHT);
-      vga_write("(a-z)", col(72), row(28),
-		font, KEY_FG, TEXT_BG, ALIGN_RIGHT);
-      vga_write("Recall", col(78), row(28),
-		font, p->color, TEXT_BG, ALIGN_RIGHT);
-    }
-
-    vga_write("(", col(26), row(28), font, KEY_FG, TEXT_BG, ALIGN_LEFT);
-    vga_write(")", col(53), row(28), font, KEY_FG, TEXT_BG, ALIGN_LEFT);
     for (i = 0 ; i < 26 ; i++) {
       if (mem[i] != NULL) {
 	sprintf(string, "%c", i + 'a');
@@ -227,6 +237,7 @@ draw_text(int all)
 		  font, memcolor[i], TEXT_BG, ALIGN_LEFT);
       }
     }
+
     if (all == 1)
       fix_widgets();
     show_data();
@@ -309,7 +320,7 @@ draw_graticule()
 void
 draw_data()
 {
-  static int i, j, k, l, off, delay, old = 0, mult, div, mode;
+  static int i, j, k, l, off, delay, old = 100, mult, div, mode;
   static Signal *p;
   static short *samples;
 

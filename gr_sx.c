@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: gr_sx.c,v 1.8 1996/10/06 02:37:25 twitham Exp $
+ * @(#)$Id: gr_sx.c,v 1.9 1996/10/06 05:43:51 twitham Rel1_2 $
  *
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -22,7 +22,7 @@ Widget file[4];			/* file menu */
 Widget plot[5];			/* plot menu */
 Widget grat[6];			/* graticule menu */
 Widget colormenu[17];		/* color menu */
-Widget xwidg[7];		/* extra horizontal widgets */
+Widget xwidg[8];		/* extra horizontal widgets */
 Widget mwidg[56];		/* memory / math widgets */
 Widget cwidg[CHANNELS];		/* channel button widgets */
 Widget ywidg[15];		/* vertical widgets */
@@ -329,6 +329,7 @@ init_widgets()
   xwidg[4] = MakeButton("Run", runmode, "1");
   xwidg[5] = MakeButton("Wait", runmode, "2");
   xwidg[6] = MakeButton("Stop", runmode, "0");
+  xwidg[7] = MakeButton("?", hit_key, "?");
 
   SetWidgetPos(plot[0], PLACE_RIGHT, file[0], NO_CARE, NULL);
   SetWidgetPos(grat[0], PLACE_RIGHT, plot[0], NO_CARE, NULL);
@@ -340,6 +341,7 @@ init_widgets()
   SetWidgetPos(xwidg[4], PLACE_RIGHT, xwidg[3], NO_CARE, NULL);
   SetWidgetPos(xwidg[5], PLACE_RIGHT, xwidg[4], NO_CARE, NULL);
   SetWidgetPos(xwidg[6], PLACE_RIGHT, xwidg[5], NO_CARE, NULL);
+  SetWidgetPos(xwidg[7], PLACE_RIGHT, xwidg[6], NO_CARE, NULL);
 
   /* the drawing area for the scope */
   h_points = XX[scope.size];

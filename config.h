@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: config.h,v 1.5 1996/08/03 22:29:12 twitham Rel1_1 $
+ * @(#)$Id: config.h,v 1.6 1996/10/06 05:44:26 twitham Rel1_2 $
  *
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -24,6 +24,7 @@
 #define DEF_P	2		/* 0,1,2 (2) */
 #define DEF_G	2		/* 0,1,2 (2) */
 #define DEF_B	0		/* 0,1 (0) */
+#define DEF_V	0		/* 0,1 (0) */
 
 /* maximum screen width, also max number of samples in memory at once (1600) */
 #define MAXWID		1600

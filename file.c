@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: file.c,v 1.4 1996/10/05 21:12:45 twitham Exp $
+ * @(#)$Id: file.c,v 1.5 1996/10/06 05:43:35 twitham Rel1_2 $
  *
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -85,6 +85,10 @@ handle_opt(int opt, char *optarg)
   case 'B':
     scope.behind = !scope.behind;
     break;
+  case 'v':			/* verbose display */
+  case 'V':
+    scope.verbose = !scope.verbose;
+    break;
   case 'a':			/* Active (selected) channel */
   case 'A':
     scope.select = limit(strtol(optarg, NULL, 0) - 1, 0, CHANNELS - 1);
@@ -168,7 +172,7 @@ writefile(char *filename)
 # -d %d
 # -p %d
 # -g %d
-%s",
+%s%s",
 	  progname, h_points, v_points,
 	  scope.select + 1,
 	  actual,
@@ -179,7 +183,8 @@ writefile(char *filename)
 	  scope.dma,
 	  scope.mode,
 	  scope.grat,
-	  scope.behind ? "# -b\n" : "");
+	  scope.behind ? "# -b\n" : "",
+	  scope.verbose ? "# -v\n" : "");
   for (i = 0 ; i < CHANNELS ; i++) {
     p = &ch[i];
     fprintf(file, "# -%d %s%d:%d/%d:", i + 1, p->show ? "" : "+",

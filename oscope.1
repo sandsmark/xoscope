@@ -1,10 +1,10 @@
-.\" @(#)$Id: oscope.1,v 1.10 1996/10/05 05:52:31 twitham Exp $
+.\" @(#)$Id: oscope.1,v 1.11 1996/10/06 05:44:43 twitham Rel1_2 $
 .\"
 .\" Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
 .\"
 .\" (see the files README and COPYING for more details)
 
-.TH OSCOPE 1 "October  4  1996" "Linux" "User Commands"
+.TH OSCOPE 1 "October  6  1996" "Linux" "User Commands"
 .SH NAME
 oscope xoscope \- Digital Oscilloscope for /dev/dsp
 .SH SYNOPSIS
@@ -25,8 +25,18 @@ sound device /dev/dsp.
 
 .B Oscope
 is an interactive program and can be completely controlled from the
-keyboard at run-time.  Each available key is shown on the screen in
-(parentheses).  The following single key commands are available:
+keyboard at run-time.  In verbose help mode, each available key is
+shown on the screen in (parentheses), assuming your
+.B oscope
+can display text (see
+.B Limitations
+below).  The following single key commands are available:
+
+.TP 0.5i
+.B ?
+Toggle verbose help key display mode.  This has no effect if your
+.B oscope
+can't display text.
 
 .TP 0.5i
 .B Escape
@@ -43,12 +53,13 @@ on the command line, or a default name.
 .TP 0.5i
 .B #
 Save current settings and memory buffers to a file that can be loaded
-later.  You are prompted for the filename unless your
+later.  If your
 .B oscope
-can't display text.  In that case, the filename used is the one given
-on the command line, or a default name.
-.B WARNING:
-This will overwrite existing files so be careful.
+can display text, you are prompted for the filename and asked for
+confirmation to overwrite if it already exists.  Otherwise,
+.B oscope
+unconditionally overwrites the filename given on the command line, or
+a default name.
 
 .TP 0.5i
 .B Enter
@@ -303,7 +314,10 @@ the built-in default is used.
 .B Oscope
 was written specifically for Linux, and uses the Linux sound driver
 and svgalib or libsx plotting routines.  You need a sound card capable
-of 44000 Hz sampling via the Linux kernel sound drivers.
+of 44000 Hz sampling via the Linux kernel sound drivers.  If
+.B oscope
+was built without libvgamisc or libsx, then it won't be able to
+display any text which will make it difficult to use.
 
 Because it uses svgalib,
 .B oscope
@@ -336,7 +350,7 @@ offset.  You probably can't get DC coupling by just shorting the input
 capacitors on your sound card.
 
 .SH BUGS
-None known.
+Probably.
 
 .SH AUTHOR
 .B Oscope

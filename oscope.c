@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.c,v 1.53 1996/10/06 02:39:55 twitham Exp $
+ * @(#)$Id: oscope.c,v 1.54 1996/10/06 05:43:29 twitham Rel1_2 $
  *
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -34,6 +34,7 @@ char buffer[MAXWID * 2];	/* buffer for stereo sound data */
 char junk[SAMPLESKIP];		/* junk data buffer */
 int v_points;			/* pixels in vertical axis */
 int h_points;			/* pixels in horizontal axis */
+int verbose;
 int offset;			/* vertical pixel offset to zero line */
 int actual;			/* actual sampling rate */
 int clip = 0;			/* whether we're maxed out or not */
@@ -43,14 +44,12 @@ char *filename;			/* default file name */
 void
 usage()
 {
-  static char *def[] = {
-    "graticule",			/* used by -b in usage message */
-    "signal",
-  };
+  static char *def[] = {"graticule", "signal"}, *onoff[] = {"on", "off"};
 
   fprintf(stderr, "usage: %s "
 	  "[-h] [-#<code>] ... [-a #] [-r<rate>] [-s<scale>] [-t<trigger>]
-[-c<color>] [-m<mode>] [-d<dma>] [-f<font>] [-p<type>] [-g<style>] [-b] [file]
+[-c<color>] [-m<mode>] [-d<dma>] [-f<font>] [-p<type>] [-g<style>] [-b] [-v]
+[file]
 
 Startup Options  Description (defaults)
 -h               this Help message and exit
@@ -66,6 +65,7 @@ Startup Options  Description (defaults)
 -p <type>        Plot mode: 0=point, 1=accum, 2=line, 3=accum (%d)
 -g <style>       Graticule: 0=none,  1=minor, 2=major         (%d)
 -b               %s Behind instead of in front of %s
+-v               turn %s Verbose key help display
 file             %s file to load to restore settings and memory
 ",
 	  progname, CHANNELS, CHANNELS, DEF_A,
@@ -73,7 +73,8 @@ file             %s file to load to restore settings and memory
 	  DEF_C, scope.size, scope.dma,
 	  fonts,		/* the font method for the display */
 	  scope.mode,
-	  scope.grat, def[scope.behind], def[!scope.behind], progname);
+	  scope.grat, def[DEF_B], def[!DEF_B],
+	  onoff[DEF_V], progname);
   exit(1);
 }
 
@@ -83,8 +84,8 @@ parse_args(int argc, char **argv)
 {
   const char     *flags = "h"
     "1:2:3:4:5:6:7:8:"
-    "a:r:s:t:c:m:d:f:p:g:b"
-    "A:R:S:T:C:M:D:F:P:G:B";
+    "a:r:s:t:c:m:d:f:p:g:bv"
+    "A:R:S:T:C:M:D:F:P:G:BV";
   int c;
 
   while ((c = getopt(argc, argv, flags)) != EOF) {
@@ -139,6 +140,7 @@ init_scope()
   scope.run = 1;
   scope.color = DEF_C;
   scope.select = DEF_A - 1;
+  scope.verbose = DEF_V;
 }
 
 /* initialize the signals */
@@ -416,6 +418,11 @@ handle_key(unsigned char c)
   case '*':
     scope.behind = !scope.behind; /* graticule behind/in front of signal */
     draw_text(1);
+    break;
+  case '?':
+  case '/':
+    scope.verbose = !scope.verbose; /* on-screen help */
+    clear();
     break;
   case ' ':
     scope.run++;

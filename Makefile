@@ -1,4 +1,4 @@
-# @(#)$Id: Makefile,v 1.15 1996/08/03 22:42:52 twitham Rel1_1 $
+# @(#)$Id: Makefile,v 1.16 1996/10/06 05:44:59 twitham Exp $
 
 # Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
 
@@ -34,16 +34,13 @@ MANPATH	= $(PREFIX)/man/man1
 LIBPATH	= $(PREFIX)/lib/oscope
 
 # the external math commands and files to install
-EXTERN	= offt operl ofreq.ini
+EXTERN	= offt operl ofreq.ini xy
 
 # compiler
 CC	= gcc
 
 # compiler flags; -DLIBPATH sets default value of OSCOPEPATH env variable
-CFLAGS	= '-DLIBPATH="$(LIBPATH)"' $(DFLAGS) -Wall -O4 -m486
-
-# loader
-LD	= gcc
+CFLAGS	= '-DLIBPATH="$(LIBPATH)"' $(DFLAGS) -Wall -O3 -m486
 
 # load flags
 LDFLAGS	= -s
@@ -51,26 +48,18 @@ LDFLAGS	= -s
 # nothing should need changed below here
 ############################################################
 
-VER	= 1.1
-ALLSRC	= oscope.c file.c func.c fft.c realfft.c
-SRC	= display.c $(ALLSRC)
-X11_SRC	= xdisplay.c x11.c freq.c dirlist.c $(ALLSRC)
+VER	= 1.2
+SRC	= oscope.c file.c func.c fft.c realfft.c display.c
+VGA_SRC = $(SRC) vga.o
+X11_SRC	= $(SRC) x11.c freq.c dirlist.c
+XFLAGS	= -L/usr/X11/lib -lsx -lXaw -lXt -lX11
 
-OBJ	= $(SRC:.c=.o)
+REL	= $(patsubst %,Rel%,$(subst .,_,$(VER)))
+
+VGA_OBJ	= $(VGA_SRC:.c=.o)
 X11_OBJ	= $(X11_SRC:.c=.o)
 
 all:	$(SCOPES) $(EXTERN)
-
-oscope:	$(OBJ)
-	$(CC) $(OBJ) $(LDFLAGS) -o $@ $(MISC) -lm -lvga
-	chmod u+s oscope
-
-xoscope:	$(X11_OBJ)
-	$(CC) $(X11_OBJ) $(LDFLAGS) -o $@ \
-		-lm -L/usr/X11/lib -lsx -lXaw -lXt -lX11
-
-offt:	fft.o offt.o realfft.o
-	$(CC) $^ $(LDFLAGS) -o $@ -lm
 
 install:	$(SCOPES) $(EXTERN)
 	cp -p $(SCOPES) $(BINPATH)
@@ -81,12 +70,25 @@ install:	$(SCOPES) $(EXTERN)
 	cp -p $(EXTERN) $(LIBPATH)
 
 clean:
-	$(RM) *oscope offt *.o core *~
+	$(RM) *oscope offt xy *.o core *~
 
-dist:	clean
+oscope:	$(VGA_OBJ)
+	$(CC) $^ $(LDFLAGS) -o $@ $(MISC) -lm -lvga
+	chmod u+s oscope
+
+xoscope:	$(X11_OBJ)
+	$(CC) $^ $(LDFLAGS) -o $@ -lm $(XFLAGS)
+
+offt:	fft.o offt.o realfft.o
+	$(CC) $^ $(LDFLAGS) -o $@ -lm
+
+xy:	xy.o
+	$(CC) $^ -o $@ $(XFLAGS)
+
+dist:	release
 	( cd .. ; tar --exclude oscope-$(VER)/RCS -czvf oscope-$(VER).tar.gz \
 		oscope-$(VER) )
 
-# x*.c files depend on their non-x versions like this:
-x%.o:	%.c
-	$(CC) $(CFLAGS) $(CPPFLAGS) -c x$< -o $@
+release:	clean
+	rcs -N$(REL): -s$(REL) *
+	co -M *

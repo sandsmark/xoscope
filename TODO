@@ -8,7 +8,7 @@
 
 	If you have suggestions not listed here, or have strong
 	opinions on the priorities of some of these features, please
-	let me know!  -Tim Witham <twitham@pcocd2.intel.com>
+	let me know!  --Tim Witham <twitham@pcocd2.intel.com>
 
 
 1	16 bit sampling			(Jeff_Tranter@Mitel.Com)
@@ -20,11 +20,6 @@
 	from 16 to 32 bits to avoid overflow.
 
 
-2	single shot mode		(Jeff_Tranter@Mitel.Com)
-
-	This should be fairly easy to do and should be done.
-
-
 3	envelope mode			(Jeff_Tranter@Mitel.Com)
 
 	This only applies at slower sweep speeds, right?  See #23.
@@ -33,21 +28,6 @@
 4	make drawing area mouse aware	(Jeff_Tranter@Mitel.Com)
 
 	Be able to drag signals up and down for example.
-
-
-5	clean up the cluttered screen	(twitham@pcocd2.intel.com)
-
-	Tough to do unless I invent a smarter menu-driven interface.
-	And how do I do that on svgalib?  Maybe drop console support?
-	I could at least hide the (keys) and let them show up when you
-	hit a certain help key, say (?).  That's how freq does it.
-
-
-6	X-Y mode			(Grant_Siemers@ccm.fm.intel.com)
-
-	To be of most use, X and/or Y should be able to come from
-	memory or math.  This could be an external command as
-	described in the external spectrum analyzer idea, #16.
 
 
 7	smarter maximum sample rate	(twitham@pcocd2.intel.com)
@@ -102,9 +82,10 @@
 	could "sync" correctly after window resizing.
 
 
-14	redefine math			(twitham@pcocd2.intel.com)
+14	redefine internal math		(twitham@pcocd2.intel.com)
 
-	Let internal math operate on arbitrary channels.
+	Let internal math operate on arbitrary channels so you can do
+	math on references or on other math.
 	
 
 15	autosetup			(Sean_Eilert@ccm.fm.intel.com)
@@ -147,7 +128,7 @@
 	the current gather all, plot all loop.
 
 
-23	more aquisition modes		(twitham@pcocd2.intel.com)
+23	more acquisition modes		(twitham@pcocd2.intel.com)
 
 	With #22, we could do various modes like peak detect,
 	envelope, average.  I'm thinking all samples could really be
@@ -160,8 +141,8 @@
 
 	Yack!  Might already work on other unixes.  I need to pull the
 	soundcard specifics out to a separate file like Philip did for
-	freq.  Display stuff is already modular; just write a new file
-	like x11.c and put more #ifdefs in display.c.
+	freq.  Display stuff is already fairly modular; just write a
+	new file like x11.c or vga.c.
 
 25	separate sample / display buffers	(twitham@pcocd2.intel.com)
 
@@ -173,7 +154,7 @@
 
 
 	These are items that were in the TODO list above but are now
-	done, as of the oscope version listed.
+	done, or at least partially done, as of the version listed.
 
 
 16	external spectrum analyzer	(Sean_Eilert@ccm.fm.intel.com)
@@ -202,3 +183,23 @@ v1.1	are skipped, resulting in a lousy horizontal resolution of
 	shifting the signal an appropriate amount horizontally before
 	plotting.  In conjunction with dot accumulate, this would plot
 	more of the horizontal pixels and produce a cleaner picture.
+
+
+2	single shot mode		(Jeff_Tranter@Mitel.Com)
+DONE
+v1.2	This should be fairly easy to do and should be done.
+
+
+5	clean up the cluttered screen	(twitham@pcocd2.intel.com)
+
+DONE	Tough to do unless I invent a smarter menu-driven interface.
+v1.2	And how do I do that on svgalib?  Maybe drop console support?
+	I could at least hide the (keys) and let them show up when you
+	hit a certain help key, say (?).  That's how freq does it.
+
+
+6	X-Y mode			(Grant_Siemers@ccm.fm.intel.com)
+
+(not)	To be of most use, X and/or Y should be able to come from
+DONE	memory or math.  This could be an external command as
+v1.2	described in the external spectrum analyzer idea, #16.
