@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: sc_linux.c,v 1.2 1997/05/01 04:49:25 twitham Exp $
+ * @(#)$Id: sc_linux.c,v 1.3 1997/05/03 05:44:20 twitham Exp $
  *
  * Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -38,14 +38,9 @@ close_sound_card()
   close(snd);
 }
 
-/* [re]initialize /dev/dsp */
 void
-init_sound_card(int firsttime)
+open_sound_card()
 {
-  int parm;
-
-  if (!firsttime)		/* resetting parameters? */
-    close(snd);
   snd = open("/dev/dsp", O_RDONLY);
   if (snd < 0) {		/* open DSP device for read */
     sprintf(error, "%s: cannot open /dev/dsp", progname);
@@ -53,32 +48,40 @@ init_sound_card(int firsttime)
     cleanup();
     exit(1);
   }
+}
 
-  parm = 2;			/* set mono/stereo */
-  check_status(ioctl(snd, SOUND_PCM_WRITE_CHANNELS, &parm), __LINE__);
+/* attempt to change sample rate and return actual sample rate set */
+int
+set_sound_card(int rate)
+{
+  int actual = rate;
 
-  parm = 8;			/* set 8-bit samples */
-  check_status(ioctl(snd, SOUND_PCM_WRITE_BITS, &parm), __LINE__);
+  check_status(ioctl(snd, SOUND_PCM_SYNC, 0), __LINE__);
+  check_status(ioctl(snd, SOUND_PCM_WRITE_RATE, &actual), __LINE__);
+  check_status(ioctl(snd, SOUND_PCM_READ_RATE, &actual), __LINE__);
+  return(actual);
+}
+
+/* [re]set the sound card, and return actual sample rate */
+int
+reset_sound_card(int rate, int chan, int bits, int dma)
+{
+
+  /* set mono/stereo */
+  check_status(ioctl(snd, SOUND_PCM_WRITE_CHANNELS, &chan), __LINE__);
+
+  /* set 8-bit samples */
+  check_status(ioctl(snd, SOUND_PCM_WRITE_BITS, &bits), __LINE__);
 
   /* set DMA buffer size */
-  check_status(ioctl(snd, SOUND_PCM_SUBDIVIDE, &scope.dma), __LINE__);
+  check_status(ioctl(snd, SOUND_PCM_SUBDIVIDE, &dma), __LINE__);
 
   /* set sampling rate */
-  check_status(ioctl(snd, SOUND_PCM_WRITE_RATE, &scope.rate), __LINE__);
-  check_status(ioctl(snd, SOUND_PCM_READ_RATE, &actual), __LINE__);
+  return(set_sound_card(rate));
 }
 
 void
-set_sound_card (int rate)
-{
-  scope.rate = rate;
-  check_status(ioctl(snd, SOUND_PCM_SYNC, 0), __LINE__);
-  check_status(ioctl(snd, SOUND_PCM_WRITE_RATE, &scope.rate), __LINE__);
-  check_status(ioctl(snd, SOUND_PCM_READ_RATE, &actual), __LINE__);
-}
-
-void
-flush_sound_card ()
+flush_sound_card()
 {
   check_status(ioctl(snd, SNDCTL_DSP_RESET), __LINE__);
 }

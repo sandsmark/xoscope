@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.c,v 1.57 1997/05/02 04:04:00 twitham Exp $
+ * @(#)$Id: oscope.c,v 1.58 1997/05/03 05:45:47 twitham Exp $
  *
  * Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -32,13 +32,13 @@ int v_points;			/* pixels in vertical axis */
 int h_points;			/* pixels in horizontal axis */
 int verbose;
 int offset;			/* vertical pixel offset to zero line */
-int actual;			/* actual sampling rate */
 int clip = 0;			/* whether we're maxed out or not */
 char *filename;			/* default file name */
 
-extern void init_sound_card();
-extern void set_sound_card();
+extern void open_sound_card();
 extern void close_sound_card();
+extern int set_sound_card();
+extern int reset_sound_card();
 
 /* display command usage on standard error and exit */
 void
@@ -56,7 +56,7 @@ Startup Options  Description (defaults)               version %s
 -# <code>        #=1-%d, code=pos[:scale[:func#, mem letter, or cmd]] (0:1/1)
 -a <channel>     set the Active channel: 1-%d                  (%d)
 -r <rate>        sampling Rate in Hz: 8800,11000,22000,44000  (%d)
--s <scale>       time Scale: 1,2,5,10,20,100,200              (%d)
+-s <scale>       time Scale: 1/100 - 100                      (%d/1)
 -t <trigger>     Trigger level[:type[:channel]]               (%s)
 -c <color>       graticule Color: 0-15                        (%d)
 -m <mode>        video mode (size): 0,1,2,3                   (%d)
@@ -179,9 +179,19 @@ scaledown(int *num)
 void
 setsoundcard(int rate)
 {
-  set_sound_card(rate);
-  mem[23].rate = mem[24].rate = actual;
+  scope.rate = set_sound_card(rate);
+  mem[23].rate = mem[24].rate = scope.rate;
   do_math();			/* propogate new rate to any math */
+}
+
+/* internal only */
+void
+resetsoundcard()
+{
+  scope.rate = reset_sound_card(scope.rate, 2, 8, scope.dma);
+  mem[23].rate = mem[24].rate = scope.rate;
+  do_math();			/* propogate new rate to any math */
+  draw_text(1);
 }
 
 /* handle single key commands */
@@ -322,20 +332,20 @@ handle_key(unsigned char c)
   case '*':
     if (scope.dma < 3) {	/* double dma */
       scope.dma <<= 1;
-      init_sound_card(0);
-      draw_text(1);
+      resetsoundcard();
     }
     break;
   case '&':
     if (scope.dma > 1) {	/* half dma */
       scope.dma >>= 1;
-      init_sound_card(0);
-      draw_text(1);
+      resetsoundcard();
     }
     break;
   case '@':
-    if ((s = GetFile(NULL)) != NULL)
+    if ((s = GetFile(NULL)) != NULL) {
       readfile(s);
+      resetsoundcard();
+    }
     break;
   case '#':
     if ((s = GetFile(NULL)) != NULL)
@@ -402,20 +412,20 @@ main(int argc, char **argv)
   else
     progname++;
   init_scope();
-  init_sound_card(1);
+  open_sound_card();
   init_channels();
   init_math();
   if ((argc = OpenDisplay(argc, argv)) == FALSE)
     exit(1);
   parse_args(argc, argv);
   init_screen();
-  init_sound_card(0);
   filename = FILENAME;
   if (optind < argc)
     if (argv[optind] != NULL) {
       filename = argv[optind];
       readfile(filename);
     }
+  resetsoundcard();
   mainloop();			/* to display.c */
   cleanup();
   exit(0);
