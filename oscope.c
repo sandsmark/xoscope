@@ -390,6 +390,7 @@ inline void get_data()
     if (trigger > 128) {
       datum = 255;
       do {
+	handle_key();
 	datem = datum;		/* remember previous sample */
 	read(snd, &datum, 1);
       } while ((datum < trigger) || (datum <= datem));
@@ -397,6 +398,7 @@ inline void get_data()
       /* negative trigger, look for falling edge only */
       datum = 0;
       do {
+	handle_key();
 	datem = datum;		/* remember previous sample */
 	read(snd, &datum, 1);
       } while ((datum > trigger) || (datum >= datem));
