@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: file.c,v 1.16 2000/03/05 23:03:45 twitham Rel $
+ * @(#)$Id: file.c,v 1.17 2000/04/09 04:30:14 twitham Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -126,6 +126,10 @@ handle_opt(int opt, char *optarg)
 	p++;
       }
       s->pos = limit(-strtol(p, NULL, 0), -1280, 1280);
+      if ((q = strchr(p, '.')) != NULL) {
+	s->bits = limit(strtol(++q, NULL, 0), 0, 16);
+	p = q;
+      }
       if ((q = strchr(p, ':')) != NULL) {
 	s->mult = limit(strtol(++q, NULL, 0), 1, 100);
 	p = q;
@@ -201,8 +205,8 @@ writefile(char *filename)
 	  ps.found ? "" : "# -z\n");
   for (i = 0 ; i < CHANNELS ; i++) {
     p = &ch[i];
-    fprintf(file, "# -%d %s%d:%d/%d:", i + 1, p->show ? "" : "+",
-	    -p->pos, p->mult, p->div);
+    fprintf(file, "# -%d %s%d.%d:%d/%d:", i + 1, p->show ? "" : "+",
+	    -p->pos, p->bits, p->mult, p->div);
     if (p->func <= FUNCMEM)
       fprintf(file, "%c", (p->mem >= 'a' && p->mem <= 'z') ? p->mem : '0');
     else if (p->func == FUNCEXT)

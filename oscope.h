@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.h,v 1.32 2000/03/05 23:04:06 twitham Rel $
+ * @(#)$Id: oscope.h,v 1.33 2000/04/09 04:30:07 twitham Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -70,6 +70,7 @@ typedef struct Channel {	/* The display channels */
   char mem;
   char command[256];
   int pid;
+  int bits;
 } Channel;
 extern Channel ch[CHANNELS];
 

@@ -1,10 +1,10 @@
-.\" @(#)$Id: oscope.1,v 1.17 2000/03/05 23:04:16 twitham Rel $
+.\" @(#)$Id: oscope.1,v 1.18 2000/04/09 04:31:39 twitham Exp $
 .\"
 .\" Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
 .\"
 .\" (see the files README and COPYING for more details)
 
-.TH OSCOPE 1 "February  29  2000" "Linux" "User Commands"
+.TH OSCOPE 1 "April  8  2000" "Linux" "User Commands"
 .SH NAME
 oscope xoscope \- Digital Oscilloscope via Sound Card and/or ProbeScope/osziFOX
 .SH SYNOPSIS
@@ -172,6 +172,13 @@ Decrease/Increase vertical scale of the selected channel.
 Decrease/Increase vertical position of the selected channel.
 
 .TP 0.5i
+.B `/~
+Decrease/Increase number of logic analyzer bits displayed.  The
+default of zero bits plots the signal as one analog line of varying
+amplitude.  Any other value plots multiple digital lines representing
+the least significant bits from bottom to top.
+
+.TP 0.5i
 .B ;/:
 Increase/Decrease the math function of the selected channel.  This is
 not available on channel 1 & 2.
@@ -222,10 +229,11 @@ values, then exit.
 .TP 0.5i
 .B -# <code>
 Startup conditions of each channel.  # is a channel number from 1 to
-8.  Code can have up to four fields, separated by colons:
-position[:scale[:function #, memory letter, or external command]].
-Position is the number of pixels above (positive) or below (negative)
-the center of the display.  Scale is a valid scaling factor from 1/50
+8.  Code can have up to three fields, separated by colons:
+position[.bits][:scale[:function #, memory letter, or external
+command]].  Position is the number of pixels above (positive) or below
+(negative) the center of the display.  Bits is the number of logic
+analyzer bits to display.  Scale is a valid scaling factor from 1/50
 to 50, expressed as a fraction.  The third field may contain a
 built-in math function number, memory letter, or external math command
 to run on the channel.  Using these options makes the channel visible

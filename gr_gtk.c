@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: gr_gtk.c,v 1.16 2000/03/05 21:53:34 twitham Rel $
+ * @(#)$Id: gr_gtk.c,v 1.17 2000/04/09 04:33:43 twitham Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -317,6 +317,14 @@ mathselect(GtkWidget *w, gpointer data)
 }
 
 void
+setbits(GtkWidget *w, gpointer data)
+{
+  if (fixing_widgets) return;
+  ch[scope.select].bits = (int)data;
+  clear();
+}
+
+void
 setscale(GtkWidget *w, gpointer data)
 {
   int scale[] = {0, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000};
@@ -518,8 +526,20 @@ static GtkItemFactoryEntry menu_items[] =
   {"/Channel/Position/-128", NULL, setposition, (int)"-i", NULL},
   {"/Channel/Position/-144", NULL, setposition, (int)"-j", NULL},
   {"/Channel/Position/-160", NULL, setposition, (int)"-k", NULL},
-  {"/Channel/sep", NULL, NULL, 0, "<Separator>"},
 
+  {"/Channel/Bits", NULL, NULL, 0, "<Branch>"},
+  {"/Channel/Bits/tear", NULL, NULL, 0, "<Tearoff>"},
+  {"/Channel/Bits/Analog", NULL, setbits, 0, "<RadioItem>"},
+  {"/Channel/Bits/2", NULL, setbits, 2, "/Channel/Bits/Analog"},
+  {"/Channel/Bits/4", NULL, setbits, 4, "/Channel/Bits/2"},
+  {"/Channel/Bits/6", NULL, setbits, 6, "/Channel/Bits/4"},
+  {"/Channel/Bits/8", NULL, setbits, 8, "/Channel/Bits/6"},
+  {"/Channel/Bits/10", NULL, setbits, 10, "/Channel/Bits/8"},
+  {"/Channel/Bits/12", NULL, setbits, 12, "/Channel/Bits/10"},
+  {"/Channel/Bits/14", NULL, setbits, 14, "/Channel/Bits/12"},
+  {"/Channel/Bits/16", NULL, setbits, 16, "/Channel/Bits/14"},
+
+  {"/Channel/sep", NULL, NULL, 0, "<Separator>"},
   {"/Channel/Math", NULL, NULL, 0, "<Branch>"},
   {"/Channel/Math/tear", NULL, NULL, 0, "<Tearoff>"},
   {"/Channel/Math/Prev Function", ":", hit_key, (int)":", NULL},
@@ -724,6 +744,12 @@ fix_widgets()
       (GTK_CHECK_MENU_ITEM
        (gtk_item_factory_get_item(factory, p->path)), TRUE);
   }
+  if ((p = finditem("/Channel/Bits/Analog"))) {
+    p += ch[scope.select].bits / 2;
+    gtk_check_menu_item_set_active
+      (GTK_CHECK_MENU_ITEM
+       (gtk_item_factory_get_item(factory, p->path)), TRUE);
+  }
   gtk_check_menu_item_set_active
     (GTK_CHECK_MENU_ITEM
      (gtk_item_factory_get_item(factory, "/Channel/Show")),
@@ -877,11 +903,16 @@ button_event(GtkWidget *widget, GdkEventButton *event, gpointer data)
 	gtk_menu_popup(GTK_MENU(gtk_item_factory_get_widget
 				(factory, "/Channel/Scale")),
 		       NULL, NULL, NULL, NULL, event->button, event->time);
-      else if (!((y - 2) % 5))
-	gtk_menu_popup(GTK_MENU(gtk_item_factory_get_widget
-				(factory, "/Channel/Position")),
-		       NULL, NULL, NULL, NULL, event->button, event->time);
-      else
+      else if (!((y - 2) % 5)) {
+	if (x < 4 || (x > 69 && x < 74))
+	  gtk_menu_popup(GTK_MENU(gtk_item_factory_get_widget
+				  (factory, "/Channel/Bits")),
+			 NULL, NULL, NULL, NULL, event->button, event->time);
+	else
+	  gtk_menu_popup(GTK_MENU(gtk_item_factory_get_widget
+				  (factory, "/Channel/Position")),
+			 NULL, NULL, NULL, NULL, event->button, event->time);
+      } else
 	gtk_menu_popup(GTK_MENU(gtk_item_factory_get_widget
 				(factory, "/Channel")),
 		       NULL, NULL, NULL, NULL, event->button, event->time);

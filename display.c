@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 1.53 2000/03/03 22:11:01 twitham Rel $
+ * @(#)$Id: display.c,v 1.54 2000/04/09 04:26:39 twitham Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -160,7 +160,7 @@ draw_text(int all)
 	vga_write(string, col(69 * (i / 4) + 5), row(j + 1),
 		  font, k, TEXT_BG, ALIGN_CENTER);
 
-	sprintf(string, "@ %d", -(ch[i].pos));
+	sprintf(string, "%d @ %d", ch[i].bits, -(ch[i].pos));
 	vga_write(string, col(69 * (i / 4) + 5), row(j + 2),
 		  font, k, TEXT_BG, ALIGN_CENTER);
 
@@ -399,8 +399,8 @@ draw_graticule()
 void
 draw_data()
 {
-  static int i, j, k, l, x, y, X, Y, mult, div, off;
-  static int time, prev, delay, old = 100;
+  static int i, j, k, l, x, y, X, Y, mult, div, off, bit, start, end;
+  static int num, time, prev, delay, old = 100, bitoff;
   static Channel *p;
   static short *samples;
 
@@ -420,6 +420,13 @@ draw_data()
       mult = p->mult;
       div = p->div;
       off = offset + p->pos;
+      num = 100 * p->signal->rate * scope.div / scope.scale / 440;
+      if (!p->bits)
+	start = end = -1;
+      else {
+	start = 0;
+	end = p->bits - 1;
+      }
       for (k = !(scope.mode % 2) ; k >= 0 ; k--) { /* once=accum, twice=erase */
 	if (k) {		/* erase previous samples */
 	  SetColor(color[0]);
@@ -430,31 +437,46 @@ draw_data()
 	  samples = p->signal->data + 1;
 	  l = delay;
 	}
-	if (p->func <= FUNCRIGHT /* use the delay? */
-	    || (p->func >= FUNCEXT
-		&& (ch[0].func <= FUNCRIGHT || ch[1].func <= FUNCRIGHT)))
-	  l = l;		/* yes only if we're L or R or their math */
-	else
+	if (!(p->func <= FUNCRIGHT /* use the delay? */
+	    || (p->func >= FUNCEXT /* yes only if we're L or R or their math */
+		&& (ch[0].func <= FUNCRIGHT || ch[1].func <= FUNCRIGHT))))
 	  l = 100;		/* no if we're memory or ProbeScope */
-	X = Y = 0;
-	prev = -1;
 	if (scope.mode < 2)	/* point / point accumulate */
-	  for (i = 0 ; i < h_points - 100 - l ; i++) {
-	    if ((time = i * (p->signal->rate / 100) * scope.div
-		 / scope.scale / 440) > prev && time < h_points)
-	      DrawPixel(i + l, off - samples[time] * mult / div);
-	    if (time > prev) prev = time;
+	  for (bit = start ; bit <= end ; bit++) {
+	    prev = -1;
+	    bitoff = bit * 32 - end * 16 + 8;
+	    for (i = 0 ; i < h_points - 100 - l ; i++) {
+	      if ((time = i * num / 10000) > prev && time < h_points - 1)
+		DrawPixel(i + l,
+			  off - (bit < 0 ? samples[time]
+			   : (bitoff - (samples[time] & (1 << bit) ? 0 : 16)))
+			  * mult / div);
+	      if (time > prev) prev = time;
+	    }
 	  }
 	else			/* line / line accumulate */
-	  for (i = 0 ; i < h_points - 100 - l ; i++) {
-	    if ((time = i * (p->signal->rate / 100) * scope.div
-		 / scope.scale / 440) > prev && time < h_points - 1) {
-	      x = i + l; y = off - samples[time] * mult / div;
-	      if (X) DrawLine(X, Y, x, y);
-	      else DrawPixel(x, y);
-	      X = x; Y = y;
+	  for (bit = start ; bit <= end ; bit++) {
+	    prev = -1;
+	    X = 0;
+	    bitoff = bit * 32 - end * 16 + 8;
+	    for (i = 0 ; i < h_points - 100 - l ; i++) {
+	      if ((time = i * num / 10000) > prev && time < h_points - 1) {
+		x = i + l;
+		y = off - (bit < 0 ? samples[time]
+			   : (bitoff - (samples[time] & (1 << bit) ? 0 : 16)))
+		  * mult / div;
+		if (X) {
+		  if (bit < 0)
+		    DrawLine(X, Y, x, y);
+		  else {
+		    DrawLine(X, Y, x, Y);
+		    DrawLine(x, Y, x, y);
+		  }
+		}
+		X = x; Y = y;
+	      }
+	      if (time > prev) prev = time;
 	    }
-	    if (time > prev) prev = time;
 	  }
       }
       memcpy(p->old, p->signal->data,

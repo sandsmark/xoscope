@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.c,v 1.73 2000/03/05 22:59:39 twitham Rel $
+ * @(#)$Id: oscope.c,v 1.74 2000/04/09 04:29:12 twitham Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -50,7 +50,7 @@ usage(int error)
 
 Startup Options  Description (defaults)               version %s
 -h               this Help message and exit
--# <code>        #=1-%d, code=pos[:scale[:func#, mem letter, or cmd]] (0:1/1)
+-# <code>        #=1-%d, code=pos[.bits][:scale[:func#, mem a-z or cmd]] (0:1/1)
 -a <channel>     set the Active channel: 1-%d                  (%d)
 -r <rate>        sampling Rate in Hz: 8000,11025,22050,44100  (%d)
 -s <scale>       time Scale: 1/20-1000 where 1=1ms/div        (%d/1)
@@ -145,6 +145,7 @@ init_channels()
     ch[i].mem = i < FUNCMEM ? 'x' + i : 0;
     strcpy(ch[i].command, COMMAND);
     ch[i].pid = 0;
+    ch[i].bits = 0;
   }
 }
 
@@ -266,6 +267,16 @@ handle_key(unsigned char c)
     break;
   case '\t':
     p->show = !p->show;		/* show / hide channel */
+    clear();
+    break;
+  case '~':
+    if ((p->bits += 2) > 16)
+      p->bits = 0;
+    clear();
+    break;
+  case '`':
+    if ((p->bits -= 2) < 0)
+      p->bits = 16;
     clear();
     break;
   case '}':
