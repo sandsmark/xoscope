@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: gr_sx.c,v 1.6 1996/10/04 04:53:05 twitham Exp $
+ * @(#)$Id: gr_sx.c,v 1.7 1996/10/05 20:06:07 twitham Exp $
  *
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -23,7 +23,7 @@ Widget file[4];			/* file menu */
 Widget plot[5];			/* plot menu */
 Widget grat[6];			/* graticule menu */
 Widget colormenu[17];		/* color menu */
-Widget xwidg[5];		/* extra horizontal widgets */
+Widget xwidg[7];		/* extra horizontal widgets */
 Widget mwidg[56];		/* memory / math widgets */
 Widget cwidg[CHANNELS];		/* channel button widgets */
 Widget ywidg[15];		/* vertical widgets */
@@ -123,6 +123,15 @@ plotmode(Widget w, void *data)
   char *c = (char *)data;
 
   scope.mode = *c - '0';
+  clear();
+}
+
+void
+runmode(Widget w, void *data)
+{
+  char *c = (char *)data;
+
+  scope.run = *c - '0';
   clear();
 }
 
@@ -261,7 +270,9 @@ fix_widgets()
       SetBgColor(mwidg[i + 29], memcolor[i]);
   }
 
-  SetLabel(xwidg[4], scope.run ? "Stop" : "Run");
+  SetWidgetState(xwidg[4], scope.run != 1);
+  SetWidgetState(xwidg[5], scope.run != 2);
+  SetWidgetState(xwidg[6], scope.run != 0);
 
   SetBgColor(ywidg[2], ch[scope.trigch].color);
   SetBgColor(ywidg[3], ch[scope.trigch].color);
@@ -325,7 +336,9 @@ init_widgets()
   xwidg[1] = MakeButton(" < ", hit_key, "9");
   xwidg[2] = MakeLabel("Sec/Div");
   xwidg[3] = MakeButton(" > ", hit_key, "0");
-  xwidg[4] = MakeButton("Stop", hit_key, " ");
+  xwidg[4] = MakeButton("Run", runmode, "1");
+  xwidg[5] = MakeButton("Wait", runmode, "2");
+  xwidg[6] = MakeButton("Stop", runmode, "0");
 
   SetWidgetPos(plot[0], PLACE_RIGHT, file[0], NO_CARE, NULL);
   SetWidgetPos(grat[0], PLACE_RIGHT, plot[0], NO_CARE, NULL);
@@ -335,6 +348,8 @@ init_widgets()
   SetWidgetPos(xwidg[2], PLACE_RIGHT, xwidg[1], NO_CARE, NULL);
   SetWidgetPos(xwidg[3], PLACE_RIGHT, xwidg[2], NO_CARE, NULL);
   SetWidgetPos(xwidg[4], PLACE_RIGHT, xwidg[3], NO_CARE, NULL);
+  SetWidgetPos(xwidg[5], PLACE_RIGHT, xwidg[4], NO_CARE, NULL);
+  SetWidgetPos(xwidg[6], PLACE_RIGHT, xwidg[5], NO_CARE, NULL);
 
   /* the drawing area for the scope */
   h_points = XX[scope.size];
