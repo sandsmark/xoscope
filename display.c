@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 1.72 2004/11/04 19:47:33 baccala Exp $
+ * @(#)$Id: display.c,v 1.73 2005/06/23 21:33:22 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -352,7 +352,8 @@ draw_text(int all)
        */
 
       /* sprintf(string, "%d Samples", p->signal->num); */
-      sprintf(string, "%d Samples", samples(p->signal->rate));
+      /* sprintf(string, "%d Samples", samples(p->signal->rate)); */
+      sprintf(string, "%d Samples/frame", p->signal->width);
       text_write(string, 40, 27, 14, p->color, TEXT_BG, ALIGN_CENTER);
 
       if (p->signal->rate > 0) {
@@ -480,7 +481,36 @@ clear()
 
   clear_display();
   if (datasrc) {
+
+    /* In oscope.h, I wrote "Only after reset() has been called are
+     * the rate and volts fields in the Signal structures guaranteed
+     * valid".  So... we reset() once to make sure the rate and volts
+     * fields are valid, then use the rate field in the first active
+     * channel to set the capture width to the number of samples
+     * required to fill the screen at that rate, then reset() again to
+     * (re)start the capture.
+     *
+     * XXX Probably reset() needs to be split into two functions -
+     * say reset() and start_sweep(), so then our sequence is
+     * reset(), set_width(), start_sweep()
+     *
+     * XXX Also seems a little hokey the way we run through the
+     * channels.  Implicit here is the code's current design
+     * that all the channels for a data source have the
+     * same rate and frame width.
+     */
+
     datasrc->reset();
+    if (datasrc->set_width) {
+      int i;
+      for (i=0; i<datasrc->nchans(); i++) {
+	if (datasrc->chan(i)->listeners > 0) {
+	  datasrc->set_width(samples(datasrc->chan(i)->rate));
+	  break;
+	}
+      }
+      datasrc->reset();
+    }
     setinputfd(datasrc->fd());
   }
 

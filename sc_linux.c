@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: sc_linux.c,v 1.25 2004/11/04 19:47:35 baccala Exp $
+ * @(#)$Id: sc_linux.c,v 1.26 2005/06/23 21:33:23 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -47,8 +47,8 @@ static int sc_chans = 0;
 static int sound_card_rate = DEF_R;	/* sampling rate of sound card */
 
 /* Signal structures we're capturing into */
-static Signal left_sig = {"Left Mix", "a", 0, 0, 0, 0, 0, 0};
-static Signal right_sig = {"Right Mix", "b", 0, 0, 0, 0, 0, 0};
+static Signal left_sig = {"Left Mix", "a", 0, 0, 0, 0, 0, 0, 0, MAXWID};
+static Signal right_sig = {"Right Mix", "b", 0, 0, 0, 0, 0, 0, 0, MAXWID};
 
 static int trigmode = 0;
 static int triglev;
@@ -323,25 +323,32 @@ reset(void)
   right_sig.frame ++;
 }
 
+/* set_width(int)
+ *
+ * sets the frame width (number of samples captured per sweep) globally
+ * for all the channels.
+ */
+
+static void set_width(int width)
+{
+  if (width > MAXWID) width = MAXWID;
+
+  left_sig.width = width;
+  right_sig.width = width;
+}
+
 /* get data from sound card, return value is whether we triggered or not */
 static int
 get_data()
 {
   static unsigned char buffer[MAXWID * 2];
-  static int i, j, k, delay;
+  static int i, j, delay;
   int fd;
   audio_buf_info info = {0, 0, 0, MAXWID}; /* emulation values for ESD */
 
   if (snd >= 0) fd = snd;
   else if (esd >= 0) fd = esd;
   else return (0);
-
-  /* minimum samples needed */
-#ifdef HAVE_LIBESD
-  k = samples(esd >= 0 ? ESD_DEFAULT_RATE : sound_card_rate);
-#else
-  k = samples(sound_card_rate);
-#endif
 
   if (!in_progress) {
     /* Discard excess samples so we can keep our time snapshot close
@@ -401,7 +408,7 @@ get_data()
   }
 
   while ((i+1)*2 <= j) {
-    if (in_progress >= k || in_progress >= MAXWID) break;
+    if (in_progress >= left_sig.width) break;
 #if 0
     if (*buff == 0 || *buff == 255)
       clip = i % 2 + 1;
@@ -413,11 +420,11 @@ get_data()
     i ++;
   }
 
-  left_sig.num = in_progress < MAXWID ? in_progress : MAXWID;
-  right_sig.num = in_progress < MAXWID ? in_progress : MAXWID;
+  left_sig.num = in_progress;
+  right_sig.num = in_progress;
 
-  if (in_progress >= k || in_progress >= MAXWID)
-    in_progress = 0;
+  if (in_progress >= left_sig.width) in_progress = 0;
+
   return(1);
 }
 
@@ -554,6 +561,7 @@ DataSrc datasrc_esd = {
   set_trigger,
   clear_trigger,
   change_rate,
+  set_width,
   reset,
   fd,
   get_data,
@@ -575,6 +583,7 @@ DataSrc datasrc_sc = {
   set_trigger,
   clear_trigger,
   change_rate,
+  set_width,
   reset,
   fd,
   get_data,

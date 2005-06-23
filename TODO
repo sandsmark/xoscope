@@ -211,6 +211,17 @@ and believe this will work nicely.
 	that could be used in other applications.
 
 
+36	Scroll left/right across a signal too big to fit on the screen
+
+	This was requested on the sourceforge features request page.
+
+37	Reduce size of executable!
+
+	As I right this, xoscope-1.11 clocks in at 5452 KB on my
+	Intel Linux system.  The "bloat", I'm convinced, comes
+	from the statically allocated data[] array in the Signal
+	structure.
+
 99	mini TODOs
 
 	new defaults - default device, default min update interval

@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: bitscope.c,v 1.21 2003/06/19 07:20:59 baccala Exp $
+ * @(#)$Id: bitscope.c,v 1.22 2005/06/23 21:33:22 baccala Exp $
  *
  * Copyright (C) 2000 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -514,6 +514,7 @@ DataSrc datasrc_bs = {
   NULL, /* set_trigger, */
   NULL, /* clear_trigger, */
   changerate,
+  NULL,		/* set_width */
   reset,
   serial_fd,
   bs_getdata,

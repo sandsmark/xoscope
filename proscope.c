@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: proscope.c,v 1.9 2003/06/19 07:20:59 baccala Exp $
+ * @(#)$Id: proscope.c,v 1.10 2005/06/23 21:33:23 baccala Exp $
  *
  * Copyright (C) 1997 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -178,6 +178,7 @@ get_data(void)
   ps_signal.data[0] = ps_signal.data[1];
   ps_signal.frame ++;
   ps_signal.num = 128;
+  ps_signal.width = 128;
   if (gotdvm) ps.dvm = dvm;
   if (cls) clear();		/* non-DVM text need changed? */
   if (flush) flush_serial(psfd);	/* catch up if we're getting behind */
@@ -220,6 +221,7 @@ DataSrc datasrc_ps = {
   NULL, /* set_trigger, */
   NULL, /* clear_trigger, */
   change_rate,
+  NULL,		/* set_width */
   reset,
   serial_fd,
   get_data,

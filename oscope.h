@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.h,v 1.42 2003/06/19 07:20:59 baccala Exp $
+ * @(#)$Id: oscope.h,v 1.43 2005/06/23 21:33:23 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -55,10 +55,11 @@ typedef struct Signal {
   int rate;			/* sampling rate in samples/sec */
   int volts;			/* millivolts per 320 sample values */
   int frame;			/* Current frame number, for comparisons */
-  int num;			/* number of valid entries in data[] */
+  int num;			/* number of samples read from current frame */
   int delay;			/* Delay, in ten-thousandths of samples */
   int listeners;		/* Number of things 'listening' to this Sig */
   int bits;			/* number of valid bits - 0 for analog sig */
+  int width;			/* size of data[] in samples */
   short data[MAXWID];		/* the data samples */
 } Signal;
 
@@ -88,6 +89,13 @@ typedef struct DataSrc {	/* A source of data samples */
 
   /* dir is 1 for faster; -1 for slower; returns TRUE if rate changed */
   int		(* change_rate)(int dir);
+
+  /* sets the frame width (number of samples to capture per sweep) for
+   * all channels in the DataSrc.  Success is indicated by the 'width'
+   * field changing in the DataSrc's Signal structures.  Can be NULL
+   * to indicate device does not support multiple frame widths.
+   */
+  void		(* set_width)(int width);
 
   /* reset() gets called whenever we want to start a new capture sweep.
    * It should get called after any of the above channel, trigger, or rate

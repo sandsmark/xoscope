@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: comedi.c,v 1.5 2005/06/23 21:24:28 baccala Exp $
+ * @(#)$Id: comedi.c,v 1.6 2005/06/23 21:33:22 baccala Exp $
  *
  * Author: Brent Baccala <baccala@freesoft.org>
  *
@@ -668,6 +668,21 @@ static int change_rate(int dir)
   return (comedi_rate != oldrate);
 }
 
+/* set_width(int)
+ *
+ * sets the frame width (number of samples captured per sweep) globally
+ * for all the channels.
+ */
+
+static void set_width(int width)
+{
+  int i;
+
+  for (i=0; i<NCHANS; i++) {
+    comedi_chans[i].width = width;
+  }
+}
+
 /* get_data() -
  * read all available data from comedi device, return value is TRUE if we
  * actually put some samples into the sweep buffer (and thus need a redisplay)
@@ -682,7 +697,7 @@ static int get_data(void)
   int bytes_read;
   int samples_read;
   int scans_read;
-  int samples_per_screen;
+  int samples_per_frame;
   sampl_t *current_scan, *last_scan;
   int i, j;
   int delay;
@@ -698,10 +713,14 @@ static int get_data(void)
 
   if (! comedi_dev || ! comedi_running) return 0;
 
-  /* Compute how many samples occupy a full screen sweep at this rate
-   * samples() won't return more than MAXWID, so we won't overflow data[]
+  /* The way the code's written right now, all the channels are
+   * sampled at the same rate and for the same width (number of
+   * samples per frame), so we just use the width from the first
+   * channel in the capture list to figure how many samples we're
+   * capturing.
    */
-  samples_per_screen = samples(comedi_rate);
+
+  samples_per_frame = capture_list->signal->width;
 
   /* It is possible for this loop to be entered with a full buffer of
    * data already (bufvalid == sizeof(buf)).  In that case, the read will
@@ -802,7 +821,7 @@ static int get_data(void)
 
 	triggered = 1;
 
-	if (in_progress >= samples_per_screen) {
+	if (in_progress >= samples_per_frame) {
 
 	  in_progress = 0;
 
@@ -1059,6 +1078,7 @@ DataSrc datasrc_comedi = {
   set_trigger,
   clear_trigger,
   change_rate,
+  set_width,
   reset,
   fd,
   get_data,

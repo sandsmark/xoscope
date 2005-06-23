@@ -28,14 +28,19 @@ One of the most important elements in the Signal structure is the
 to the Signal.  Data sources are only required to capture samples for
 Signal's with non-zero 'listeners' fields.
 
-Two other important Signal fields are 'frame' (the frame number) and
-'num' (number of valid samples in the current frame).  The display
-code is only required to redraw samples if one of these two numbers
-has advanced.  If only 'num' advanced, then only samples from the old
-num to the new num need be displayed.  If 'frame' advanced, then the
-samples from 0 to 'num' are displayed.  Judicious use of these fields
-both avoids needless flickering and presents the expected user interface
-of a signal that "sweeps" across the display.
+Three other important Signal fields are 'frame' (the frame number),
+'width' (the frame size in samples), and 'num' (number of valid
+samples in the current frame).  The display code is only required to
+redraw samples if one of 'frame' or 'num' has advanced.  If only 'num'
+advanced, then only samples from the old num to the new num need be
+displayed.  If 'frame' advanced by 1, then the samples from the old
+num to 'width', as well as the samples from 0 to 'num' are displayed.
+If 'frame' advanced by more than 1, then all the samples need to be
+redisplayed.  Note that get_data() is required to return at the end of
+each frame, so the later case can (and should) always be avoided.
+Judicious use of these fields both avoids needless flickering and
+presents the expected user interface of a signal that "sweeps" across
+the display.
 
 There is also a set of functions (in func.c) which create their own
 Signal's and write into them the results of various calculations
