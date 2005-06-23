@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: comedi.c,v 1.4 2003/06/30 08:29:13 baccala Exp $
+ * @(#)$Id: comedi.c,v 1.5 2005/06/23 21:24:28 baccala Exp $
  *
  * Author: Brent Baccala <baccala@freesoft.org>
  *
@@ -145,6 +145,7 @@ static void stop_comedi_running(void)
 
 static int start_comedi_running(void)
 {
+  int try;
   int ret;
   comedi_cmd cmd;
   unsigned int chanlist[NCHANS];
@@ -185,22 +186,12 @@ static int start_comedi_running(void)
     }
   }
 
-  /* This comedilib function will get us a generic timed
-   * command for a particular board.  If it returns -1,
-   * that's bad.  We multiply comedi_rate by 2 because we're sampling
-   * two channels.  The library function will return a saved
-   * copy if we call it more than once, so we can't count
-   * on it to have the sampling rate set correctly.
-   */
+  /* Now we build a COMEDI command structure */
 
-  ret = comedi_get_cmd_generic_timed(comedi_dev, comedi_subdevice, &cmd,
-				     1e9/(active_channels*comedi_rate));
-  if (ret < 0) {
-    comedi_error = comedi_errno();
-    return ret;
-  }
+  bzero(&cmd, sizeof(cmd));
+  cmd.subdev = comedi_subdevice;
 
-  /* Build a channel list based on capture_list
+  /* Start with a channel list based on capture_list
    *
    * This code matches up with get_data(), which assumes that the captured
    * data is in the same order as the channels in the capture_list
@@ -217,65 +208,122 @@ static int start_comedi_running(void)
     return 0;
   }
 
-  /* XXX we set this here, then test it later... */
-
-  cmd.start_src = TRIG_NOW;
-  cmd.start_arg = 0;
-
-  cmd.stop_src = TRIG_NONE;
-  cmd.stop_arg = 0;
-
-  cmd.scan_end_src = TRIG_COUNT;
-  cmd.scan_end_arg = cmd.chanlist_len;
-
-  if (cmd.convert_src == TRIG_TIMER) {
-    cmd.convert_arg = 1e9 / (comedi_rate * active_channels);
-  }
-  if (cmd.start_src == TRIG_TIMER) {
-    cmd.start_arg = 1e9 / comedi_rate;
-  }
-
-#if 0
-  if (cmd.convert_src == TRIG_TIMER) {
-    cmd.convert_arg = 10000;
-  }
-
-  comedi_rate = 1e9 / cmd.convert_arg;
-  comedi_rate /= active_channels;
-
-#endif
-
-  /* COMEDI command testing can be a little funky.  We get a return
-   * code indicating which phase of test failed.  Basically, if phase
-   * 1 or 2 failed, we're screwed.  If phase 3 failed, it might be
-   * because we've pushed the limits of the timing past where it can
-   * go, and if phase 4 failed, it's just because the device can't
-   * support exactly the timings we asked for.  In either of the last
-   * two cases, the driver has already adjusted the offending
-   * parameters, so we try to patch things up a bit and keep going
-   * with whatever timing we can get the driver to do.
+  /* comedilib has a comedi_get_cmd_generic_timed() function, but it's
+   * set up for sampling a single channel, so I don't use it.
+   * Instead, I try several different varients on comedi command
+   * structures in the hopes of finding one that works.
    */
 
-  ret = comedi_command_test(comedi_dev,&cmd);
-  if (ret == 3) {
-    if (cmd.start_src == TRIG_TIMER && cmd.convert_src == TRIG_TIMER) {
-      cmd.convert_arg = cmd.start_arg * active_channels;
-    }
-    ret = comedi_command_test(comedi_dev,&cmd);
-  }
-  if (ret == 4) {
-    ret = comedi_command_test(comedi_dev,&cmd);
-  }
-  if (ret != 0){
-    comedi_error = comedi_errno();
-    return ret;
-  }
+  try = 0;
+  do {
 
-  if (cmd.convert_src == TRIG_TIMER) {
+    switch (try) {
+
+      /* The first thing we try is to simultaneously sample (that's
+       * the convert_src of TRIG_NOW) all the channels at the
+       * requested rate.
+       */
+
+    case 0:
+      cmd.start_src = TRIG_NOW;
+      cmd.start_arg = 0;
+
+      cmd.scan_begin_src = TRIG_TIMER;
+      cmd.scan_begin_arg = 1e9 / comedi_rate;
+
+      cmd.convert_src = TRIG_NOW;
+      cmd.convert_arg = 0;
+
+      cmd.scan_end_src = TRIG_COUNT;
+      cmd.scan_end_arg = cmd.chanlist_len;
+
+      cmd.stop_src = TRIG_NONE;
+      cmd.stop_arg = 0;
+
+      break;
+
+      /* There's a good chance that won't work (not many cards support it).
+       * So now try sampling each channel at a staggered interval of
+       * the requested rate times the number of channels.
+       */
+
+    case 1:
+      cmd.start_src = TRIG_NOW;
+      cmd.start_arg = 0;
+
+      cmd.scan_begin_src = TRIG_FOLLOW;
+      cmd.scan_begin_arg = 0;
+
+      cmd.convert_src = TRIG_TIMER;
+      cmd.convert_arg = 1e9 / (comedi_rate * active_channels);
+
+      cmd.scan_end_src = TRIG_COUNT;
+      cmd.scan_end_arg = cmd.chanlist_len;
+
+      cmd.stop_src = TRIG_NONE;
+      cmd.stop_arg = 0;
+
+      break;
+
+      /* OK, that didn't work.  Maybe the card wants timers on
+       * both the scan and conversion?
+       */
+
+    case 2:
+      cmd.start_src = TRIG_NOW;
+      cmd.start_arg = 0;
+
+      cmd.scan_begin_src = TRIG_TIMER;
+      cmd.scan_begin_arg = 1e9 / comedi_rate;
+
+      cmd.convert_src = TRIG_TIMER;
+      cmd.convert_arg = 1e9 / (comedi_rate * active_channels);
+
+      cmd.scan_end_src = TRIG_COUNT;
+      cmd.scan_end_arg = cmd.chanlist_len;
+
+      cmd.stop_src = TRIG_NONE;
+      cmd.stop_arg = 0;
+
+      break;
+
+      /* Nothing we tried worked!  There are other possibilities, but
+       * none are currently supported by this code.  Complain and
+       * return the error code from the last thing we tried.
+       */
+
+    default:
+
+      comedi_error = comedi_errno();
+      return ret;
+
+    }
+
+    /* COMEDI command testing can be a little funky.  We get a return
+     * code indicating which phase of test failed.  Basically, if
+     * phase 1 or 2 failed, we're screwed.  If phase 3 failed, it
+     * might be because we've pushed the limits of the timing past
+     * where it can go, and if phase 4 failed, it's just because the
+     * device can't support exactly the timings we asked for.  In
+     * either of the last two cases, the driver adjusts the offending
+     * parameters.  That's why we call this function three times.
+     */
+
+    ret = comedi_command_test(comedi_dev,&cmd);
+    ret = comedi_command_test(comedi_dev,&cmd);
+    ret = comedi_command_test(comedi_dev,&cmd);
+
+    try ++;
+
+  } while (ret != 0);
+
+  /* Now we adjust our global rate to whatever we got the card to do. */
+
+  if (cmd.scan_begin_src == TRIG_TIMER) {
+    comedi_rate = 1e9 / cmd.scan_begin_arg;
+  } else if (cmd.convert_src == TRIG_TIMER) {
     comedi_rate = 1e9 / cmd.convert_arg;
     comedi_rate /= active_channels;
-  } else if (cmd.start_src == TRIG_TIMER) {
-    comedi_rate = 1e9 / cmd.start_arg;
   } else {
     fprintf(stderr, "neither convert_src nor start_src is TRIG_TIMER!?!\n");
   }
