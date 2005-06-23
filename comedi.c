@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: comedi.c,v 1.6 2005/06/23 21:33:22 baccala Exp $
+ * @(#)$Id: comedi.c,v 1.7 2005/06/23 21:35:21 baccala Exp $
  *
  * Author: Brent Baccala <baccala@freesoft.org>
  *
@@ -70,7 +70,9 @@ int comedi_bufsize = -1;
 #define BUFSZ 1024
 static sampl_t buf[BUFSZ];
 static int bufvalid=0;
-static int zero_value = (1 << 15);
+
+// has to be set later
+int zero_value = -1;
 
 static int subdevice_flags = 0;
 static int subdevice_type = COMEDI_SUBD_UNUSED;
@@ -151,6 +153,7 @@ static int start_comedi_running(void)
   unsigned int chanlist[NCHANS];
   struct capture *capture;
   comedi_range *comedi_rng;
+  int maxdata;
 
   if (!comedi_dev) return 0;
 
@@ -348,9 +351,23 @@ static int start_comedi_running(void)
       comedi_rng = comedi_get_range(comedi_dev,
 				    comedi_subdevice,
 				    capture->chan, COMEDI_RANGE);
+      maxdata=comedi_get_maxdata(comedi_dev,
+				 comedi_subdevice,
+				 0);
       capture->signal->volts
 	= (comedi_rng->max - comedi_rng->min)
-	* 1000 * 320 / (1<<(8*sizeof(sampl_t)));
+	* 1000 * 320 / maxdata;
+
+      if (zero_value<0) {
+	      // we have to set zero value
+	      if ((comedi_rng->min<0)&&(comedi_rng->max>0)) {
+		      // we are bipolar
+		      zero_value=maxdata/2;
+	      } else {
+		      // we are unipolar
+		      zero_value=0;
+	      }
+      }
 
       capture->signal->bits = 0;
 
