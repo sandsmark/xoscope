@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: callbacks.c,v 1.1 2003/06/17 22:52:32 baccala Exp $
+ * @(#)$Id: callbacks.c,v 1.2 2005/06/28 21:28:40 baccala Exp $
  *
  * Copyright (C) 2000 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -19,6 +19,7 @@
 #include <gtk/gtk.h>
 
 #include "oscope.h"
+#include "display.h"
 #include <comedilib.h>
 
 #include "callbacks.h"

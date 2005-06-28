@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.h,v 1.43 2005/06/23 21:33:23 baccala Exp $
+ * @(#)$Id: oscope.h,v 1.44 2005/06/28 21:28:39 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -227,8 +227,10 @@ int	samples();
 void	loadfile();
 void	savefile();
 void	startcommand();
+char *	split_field(char *, int, int);
 
 int	datasrc_byname(char *);
 
-/* Function defined in display library specific files */
+/* Functions defined in display library specific files */
 void	setinputfd(int);
+void	settimeout(int);

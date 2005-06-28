@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: sc_linux_gtk.c,v 1.2 2004/11/04 19:47:35 baccala Exp $
+ * @(#)$Id: sc_linux_gtk.c,v 1.3 2005/06/28 21:28:39 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <gtk/gtk.h>
 #include "oscope.h"
+#include "display.h"
 
 static int temp_dma;
 static int temp_rec;

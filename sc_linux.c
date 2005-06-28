@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: sc_linux.c,v 1.26 2005/06/23 21:33:23 baccala Exp $
+ * @(#)$Id: sc_linux.c,v 1.27 2005/06/28 21:28:39 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -23,6 +23,7 @@
 #include <string.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <stdlib.h>		/* for abs() */
 #include <sys/ioctl.h>
 #include <sys/soundcard.h>
 #include "oscope.h"		/* program defaults */
@@ -191,7 +192,6 @@ open_sound_card(void)
 static void
 reset_sound_card(void)
 {
-  int parm;
   static char junk[SAMPLESKIP];
 
 #ifdef HAVE_LIBESD
@@ -344,7 +344,6 @@ get_data()
   static unsigned char buffer[MAXWID * 2];
   static int i, j, delay;
   int fd;
-  audio_buf_info info = {0, 0, 0, MAXWID}; /* emulation values for ESD */
 
   if (snd >= 0) fd = snd;
   else if (esd >= 0) fd = esd;

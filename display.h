@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.h,v 1.11 2003/06/17 22:52:32 baccala Exp $
+ * @(#)$Id: display.h,v 1.12 2005/06/28 21:28:39 baccala Exp $
  *
  * Copyright (C) 1996 - 1999 Tim Witham <twitham@quiknet.com>
  *
@@ -30,7 +30,7 @@ void	draw_text();
 void	clear();
 void	message();
 void	cleanup_display();
-int	animate();
+void	animate();
 int	col();
 
 void	DrawPixel();		/* these are defined in */

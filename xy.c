@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: xy.c,v 1.5 2003/06/17 22:52:32 baccala Exp $
+ * @(#)$Id: xy.c,v 1.6 2005/06/28 21:28:39 baccala Exp $
  *
  * Copyright (C) 1996 - 1999 Tim Witham <twitham@quiknet.com>
  *
@@ -53,7 +53,7 @@ handle_key(char c)
 }
 
 /* get and plot one screen full of data */
-int
+void
 animate(void *data)
 {
   static short x, y, z = 0, X, Y, buff[sizeof(short)];
@@ -82,7 +82,6 @@ animate(void *data)
   }
   SyncDisplay();
   AddTimeOut(MSECREFRESH, animate, NULL);
-  return TRUE;
 }
 
 int

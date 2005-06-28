@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 1.73 2005/06/23 21:33:22 baccala Exp $
+ * @(#)$Id: display.c,v 1.74 2005/06/28 21:28:39 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <time.h>
 #include <sys/time.h>
 #include <math.h>
 #include "oscope.h"		/* program defaults */
@@ -927,7 +928,7 @@ show_data(void)
  *
  */
 
-int
+void
 animate(void *data)
 {
   static struct timeval current_time, prev_time;
@@ -971,8 +972,6 @@ animate(void *data)
     }
   }
   show_data();
-
-  return TRUE;
 }
 
 /* [re]initialize graphics screen */

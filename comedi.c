@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: comedi.c,v 1.7 2005/06/23 21:35:21 baccala Exp $
+ * @(#)$Id: comedi.c,v 1.8 2005/06/28 21:28:39 baccala Exp $
  *
  * Author: Brent Baccala <baccala@freesoft.org>
  *
@@ -148,7 +148,7 @@ static void stop_comedi_running(void)
 static int start_comedi_running(void)
 {
   int try;
-  int ret;
+  int ret = -1;
   comedi_cmd cmd;
   unsigned int chanlist[NCHANS];
   struct capture *capture;
@@ -405,7 +405,9 @@ static int start_comedi_running(void)
 static void
 close_comedi()
 {
+#if 0
   struct capture *capture;
+#endif
 
   if (comedi_dev) comedi_close(comedi_dev);
   comedi_dev = NULL;

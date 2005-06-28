@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: func.h,v 1.13 2003/06/17 22:52:32 baccala Exp $
+ * @(#)$Id: func.h,v 1.14 2005/06/28 21:28:39 baccala Exp $
  *
  * Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -39,6 +39,8 @@ void start_command_on_channel(char *, Channel *);
 void startcommand(char *);
 
 void init_math();
+
+int update_math_signals();
 
 void do_math();
 
