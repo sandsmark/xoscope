@@ -1,7 +1,119 @@
-2001-05-19  Timothy D. Witham  <twitham@quiknet.com>
+2005-06-28  Brent Baccala  <baccala@freesoft.org>
 
-	* bitscope.c, ChangeLog, config.h.in, Makefile.in, NEWS:
-	For 1.8.
+	* Makefile.in, config.h.in: getting configure to work for 1.12
+
+	* Makefile.in, configure, configure.in: version number change
+
+	* comedi-glade-src/callbacks.c, comedi.c, config.h.in, display.c, display.h, func.h, oscope.h, sc_linux.c, sc_linux_gtk.c, xy.c, Makefile.in:
+	little patches to eliminate compiler warning messages
+
+2005-06-24  Brent Baccala  <baccala@freesoft.org>
+
+	* configure: auto generated files from the last configure.in update
+
+	* configure.in: still trying to fix configure!
+
+	think I got the autoconf tests to propagate into automake correctly now
+
+2005-06-23  Brent Baccala  <baccala@freesoft.org>
+
+	* comedi.c:
+	fix to figure out zero values correctly for unipolar COMEDI cards
+
+	* oscope.h, proscope.c, sc_linux.c, INTERNALS, TODO, bitscope.c, comedi.c, display.c:
+	added set_width() function to data sources
+
+	* comedi.c: changes COMEDI command handling
+	instead of trying to use the library's generic_timed routine,
+	  we try three different commands setups of our own
+
+2004-11-04  Brent Baccala  <baccala@freesoft.org>
+
+	* comedi-glade-src/Makefile.in, bitscope-glade-src/Makefile.in, sc_linux.c, sc_linux_gtk.c, aclocal.m4, config.h.in, configure, configure.in, display.c, file.c, oscope.c, Makefile.in:
+	xoscope-1.11 release
+
+	really just applying a bunch of patches (a bug-fix release)
+
+2003-06-30  Brent Baccala  <baccala@freesoft.org>
+
+	* README.parport, comedi-parport.patch:
+	updated info on using COMEDI with parport
+
+	* TODO: updated todo list - mini-TODO
+
+	* Makefile.in, comedi.c, config.h.in:
+	bug fix in comedi.c - get channel ordering right
+
+2003-06-25  Brent Baccala  <baccala@freesoft.org>
+
+	* display.c, comedi.c:
+	Fixed little bug that could cause analog signals to display as digital
+	when using COMEDI
+
+2003-06-20  Brent Baccala  <baccala@freesoft.org>
+
+	* display.c: bug fix
+
+2003-06-19  Brent Baccala  <baccala@freesoft.org>
+
+	* INTERNALS, Makefile.in, aclocal.m4, bitscope.c, comedi.c, config.h.in, configure, oscope.c, oscope.h, proscope.c, sc_linux.c:
+	removed open and close functions from the data sources
+
+	also, added split_field helper function for displaying error messages
+
+2003-06-17  Brent Baccala  <baccala@freesoft.org>
+
+	* INTERNALS, README.parport: New files for 1.10:
+	  internals documentation
+	  readme for how to use parallel port with xoscope
+
+	* TODO, TODO.old: updated TODO files for xoscope 1.10
+
+	* Makefile.in, acconfig.h, bitscope-glade-src/Makefile.in, bitscope.c, bitscope.h, com_gtk.c, com_gtk.h, comedi-glade-src/Makefile.am, comedi-glade-src/Makefile.in, comedi-glade-src/README, comedi-glade-src/callbacks.c, comedi-glade-src/callbacks.h, comedi-glade-src/interface.c, comedi-glade-src/interface.h, comedi-glade-src/support.c, comedi-glade-src/support.h, comedi.c, comedi.glade, config.h.in, configure, configure.in, display.c, display.h, fft.c, file.c, func.c, func.h, gr_com.c, gr_gtk.c, gr_vga.c, oscope.c, oscope.h, proscope.c, proscope.h, sc_linux.c, sc_linux_gtk.c, ser_dos.c, ser_unix.c, xy.c, xy_gtk.c, Makefile.am:
+	Biiiig update - baccala's changes 1.8 -> 1.10
+
+	Main things -
+
+	  COMEDI support
+	  Display code rewrite (improved X performance)
+	  New modular data sources
+
+	* bitscope-glade-src/Makefile.in, bitscope-glade-src/interface.c, bitscope-glade-src/support.c, Makefile.am, bitscope.glade:
+
+	updated various files to reflect new location of bitscope glade subdir
+	  (now bitscope-glade-src instead of src)
+
+	new bitscope glade file has a 'connection' panel and no 'time' panel
+
+2002-06-15  Timothy Witham  <twitham@surewest.net>
+
+	* bitscope-glade-src/Makefile.in, Makefile.am, Makefile.in, README, acconfig.h, aclocal.m4, bitscope.c, config.h.in, configure, configure.in, gr_vga.c, oscope.c, sc_linux.c:
+	fixed vga detection and other build-time problems
+
+2001-05-25  Timothy Witham  <twitham@surewest.net>
+
+	* configure, configure.in:
+	Fixed bug that it tried to build oscope even if you didn't have
+	svgalib.
+
+2001-05-22  Timothy Witham  <twitham@surewest.net>
+
+	* bitscope-glade-src/Makefile.am, bitscope-glade-src/Makefile.in, bitscope-glade-src/callbacks.c, bitscope-glade-src/callbacks.h, bitscope-glade-src/interface.c, bitscope-glade-src/main.c, Makefile.am, Makefile.in, bitscope.glade, config.h.in, configure, configure.in, gr_gtk.c, oscope.1:
+	Connected the new bitscope dialog to the main menubar.
+
+2001-05-20  Timothy Witham  <twitham@surewest.net>
+
+	* oscope.c: Fixed bug: C-w didn't work right.
+
+	* Makefile.am, Makefile.in, bitscope-glade-src/Makefile.am, bitscope-glade-src/Makefile.in, bitscope-glade-src/callbacks.c, bitscope-glade-src/callbacks.h, bitscope-glade-src/interface.c, bitscope-glade-src/interface.h, bitscope-glade-src/main.c, bitscope-glade-src/support.c, bitscope-glade-src/support.h, bitscope.glade, config.h.in, configure, configure.in:
+	Added bitscope dialog that was generated by glade.  So far it's a
+	standalone program, not yet connected to xoscope.
+
+	* ChangeLog, Makefile.in, config.h.in: For 1.8.
+
+2001-05-19  Timothy Witham  <twitham@surewest.net>
+
+	* ChangeLog, Makefile.in, NEWS, bitscope.c, config.h.in: For 1.8.
 
 2001-05-09  Timothy D. Witham  <twitham@quiknet.com>
 
