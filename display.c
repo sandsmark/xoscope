@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 1.74 2005/06/28 21:28:39 baccala Exp $
+ * @(#)$Id: display.c,v 1.75 2008/12/13 04:29:06 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -612,7 +612,8 @@ draw_data()
 {
   static int i, j, l, x, y, X, Y, mult, div, off, bit, start, end;
   static int time, prev, bitoff;
-  static long int num;
+  /* num will overflow on long time bases; that's why it's 'long long' */
+  static long long int num;
   static int preva = 100, prevb = 100;	/* previous cursor locations */
   static Channel *p;
   static SignalLine *sl;

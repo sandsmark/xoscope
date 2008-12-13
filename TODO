@@ -210,6 +210,50 @@ and believe this will work nicely.
 	be built around a widget, that should be put in a shared library,
 	that could be used in other applications.
 
+	What signals/methods should the widget have?
+
+	setgraticulemode(int);  /* OFF, IN FRONT / IN BACK, MAJOR / MINOR */
+	setgraticulecolor(Color);
+	setplotmode(int mode); /* POINT, STEP, LINE, ACCUMLATE ON/OFF */
+	assign(int channel, struct Signal *);
+	setcolor(int channel, Color);
+	setdigital(int channel, int bits); /* 0=analog; non-0=num of bits */
+	ADJUSTMENTS - per channel - vscale, hscale, voffset, hoffset
+	ADJUSTMENTS - global - vscale, hscale, voffset, hoffset
+	update();
+	CURSOR FUNCTIONS
+	cursor1_setpos(GtkWidget *, GdkEvent *, data);
+	cursor2_setpos(GtkWidget *, GdkEvent *, data);
+	cursor1_increment();
+	cursor2_increment();
+	QUERY CURSOR
+
+	Timebase - we want a uniform timebase; so we should set an
+	hscale for each signal, and also have a global hscale,
+	that could be continuously adjusted - like turning the
+	red timebase knob on my scope.  This seems to imply
+
+		SAMPLE VALUES  <--->  "TIME"  <--->  DISPLAY PIXELS
+	                      local adj      global adj
+
+	Likewise, a real scope has continuous vertical scale and position
+	adjustments for each channel.  So we have to have at least
+	local hscale settings, a global hscale adjustment, local
+	vscale adjustments, local vposition adjustments, a global
+	hposition adjustment.  The simplest and most general
+	way to deal with all these is to have both local and
+	global adjustments for all of hscale, vscale, hpos, and vpos.
+
+	The scale settings work like above - there's an intermediate
+	"time" that acts as a bridge between the local and global scales.
+
+	What units do we want the position adjustments in?
+
+	Cursors, too, seem like they should be adjustments.
+	What units do we want the cursors in?
+
+	Need to make sure we can map keyboard accelerators to any of:
+	reset adjustment(s) to zero; incr/decr adjustment by small/large step
 
 36	Scroll left/right across a signal too big to fit on the screen
 

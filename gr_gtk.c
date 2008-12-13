@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: gr_gtk.c,v 1.26 2003/06/17 22:52:32 baccala Exp $
+ * @(#)$Id: gr_gtk.c,v 1.27 2008/12/13 04:29:06 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -38,7 +38,6 @@ configure_event (GtkWidget *widget, GdkEventConfigure *event)
 {
   static int h, v, once = 0;
 
-#if USE_PIXMAP
   if (pixmap)
     gdk_pixmap_unref(pixmap);
 
@@ -47,7 +46,6 @@ configure_event (GtkWidget *widget, GdkEventConfigure *event)
                           widget->allocation.height,
                           -1);
   ClearDrawArea();
-#endif
 
   h = h_points;
   v = v_points;
@@ -345,9 +343,16 @@ clear_display()
  * surrounding it).  Therefore, we use special GCs that clip at the
  * edge of the data display area, because the code in draw_data() that
  * calls us here doesn't care about clipping, and we don't want our
- * signal lines scribbled all over our text.  We also write in an
- * off-screen pixmap (the only code that doesn this), in case we need
- * to redraw the screen after an expose event.
+ * signal lines scribbled all over our text.
+ *
+ * The GDK tutorial suggests doing all your graphic ops to a pixmap,
+ * then copying the pixmap to the screen on an expose event.
+ * Unfortunately, the pixmap copy is very slow on my X server (XFree86
+ * 3.3.6 SVGA).  The display code doesn't work quite right with some
+ * kind of pixmap; accumulate mode depends on having the pixmap to
+ * keep a visual history of the signals.  So this functions write to
+ * both the screen and an off-screen pixmap (the only code that does
+ * this), in case we need to redraw the screen after an expose event.
  */
 
 /* XXX need to reset clipping rectangles on a configure_event */

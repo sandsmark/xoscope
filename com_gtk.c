@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: com_gtk.c,v 1.4 2003/06/17 22:52:32 baccala Exp $
+ * @(#)$Id: com_gtk.c,v 1.5 2008/12/13 04:29:06 baccala Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -87,7 +87,6 @@ SyncDisplay()
 {
 
 #if 0
-#if USE_PIXMAP
 
   /* This code is called at the end of show_data(), after the pixmap
    * has been changed around, and generates an extra expose event for
@@ -100,7 +99,6 @@ SyncDisplay()
   update_rect.height = drawing_area->allocation.height;
   gtk_widget_draw(drawing_area, &update_rect);
 
-#endif
 #endif
 
 }
@@ -127,7 +125,10 @@ void draw_text() {}
 gint
 expose_event(GtkWidget *widget, GdkEventExpose *event)
 {
-#if USE_PIXMAP
+  /* Our off-screen pixmap only includes the data area, so we always
+   * redraw the text.
+   */
+
   gdk_draw_pixmap(widget->window,
                   widget->style->fg_gc[GTK_WIDGET_STATE(widget)],
                   pixmap,
@@ -136,12 +137,6 @@ expose_event(GtkWidget *widget, GdkEventExpose *event)
                   event->area.width, event->area.height);
   clear_text_memory();
   draw_text(1);
-#else
-  /* This will trigger a redisplay of the entire screen, including whatever
-   * happened to be exposed in the expose event
-   */
-  clear();
-#endif
   return FALSE;
 }
 
