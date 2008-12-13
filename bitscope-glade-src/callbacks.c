@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: callbacks.c,v 1.2 2001/05/22 05:11:03 twitham Exp $
+ * @(#)$Id: callbacks.c,v 1.3 2008/12/13 19:31:43 baccala Exp $
  *
  * Copyright (C) 2000 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -23,8 +23,6 @@
 #include "support.h"
 
 #define LU(label)	lookup_widget(GTK_WIDGET(window), label)
-
-GtkWidget *window;
 
 gdouble dialog_volts;
 

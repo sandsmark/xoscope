@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: callbacks.c,v 1.2 2005/06/28 21:28:40 baccala Exp $
+ * @(#)$Id: callbacks.c,v 1.3 2008/12/13 19:31:43 baccala Exp $
  *
  * Copyright (C) 2000 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -25,8 +25,6 @@
 #include "callbacks.h"
 #include "interface.h"
 #include "support.h"
-
-static GtkWidget *window;
 
 #define LU(label)	lookup_widget(GTK_WIDGET(window), label)
 
