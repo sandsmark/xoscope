@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.h,v 1.44 2005/06/28 21:28:39 baccala Exp $
+ * @(#)$Id: oscope.h,v 1.45 2008/12/16 22:48:52 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -187,13 +187,27 @@ extern DataSrc *datasrc;
 extern DataSrc *datasrcs[];
 extern int ndatasrcs;
 
-typedef struct Point {		/* carefully defined to match X Windows' */
-  short x;			/* Point structure: 16-bit shorts */
+/* If we're using X Windows; make sure point structure matches that
+ * of the GTK library; otherwise define our own
+ */
+
+#ifdef HAVE_GTK
+
+#include <gtk/gtk.h>
+typedef GdkPoint Point;
+
+#else
+
+typedef struct Point {
+  short x;
   short y;
 } Point;
 
+#endif
+
+
 typedef struct SignalLine {
-  Point points[2048];		/* half this - 1024 - hardwired in display.c */
+  Point points[2048];	/* half this - 1024 - hardwired in display.c */
   int current_line_start;	/* index of first point on current line */
   int current_line_next;	/* index of next avail point on current line */
   int prev_line_start;		/* index of first drawn point on prev line */

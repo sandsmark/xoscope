@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: callbacks.c,v 1.3 2008/12/13 19:31:43 baccala Exp $
+ * @(#)$Id: callbacks.c,v 1.4 2008/12/16 22:48:52 baccala Exp $
  *
  * Copyright (C) 2000 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -24,6 +24,8 @@
 
 #define LU(label)	lookup_widget(GTK_WIDGET(window), label)
 
+GtkWidget *window;
+
 gdouble dialog_volts;
 
 void
@@ -44,6 +46,9 @@ bitscope_dialog()
   gtk_widget_show (dialog2);
   window = dialog2;
 
+  /* The object of this code is to update the binary "trigger condition"
+   * as the analog sliders are moved.
+   */
   hscale = lookup_widget(dialog2, "hscale1");
   gtk_signal_connect (GTK_OBJECT (GTK_RANGE (hscale)->adjustment),
                       "value_changed", GTK_SIGNAL_FUNC (on_value_changed),
@@ -53,7 +58,7 @@ bitscope_dialog()
                       "value_changed", GTK_SIGNAL_FUNC (on_value_changed),
                       "1");
 
-  /* here we need to initially set all the widgets from bs.r */
+  /* XXX here we need to initially set all the widgets from bs.r */
 
   /* force pages to update each other to current values */
   gtk_notebook_set_page(GTK_NOTEBOOK(lookup_widget(dialog2, "notebook1")), 1);
@@ -64,8 +69,10 @@ bitscope_dialog()
 void
 propagate_changes()
 {
+
   int x, y;
-  gchar format[] = "\261%.4g V", buffer[128]; /* char 261: +/- */
+  /* char 261: +/-;  GTK+ 2 uses UTF-8, so it becomes \302\261  */
+  gchar format[] = "\302\261%.4g V", buffer[128];
   gdouble volts[] = {
     0.130, 0.600,  1.200,  3.160,
     1.300, 6.000, 12.000, 31.600,
@@ -78,29 +85,30 @@ propagate_changes()
     x = GTK_TOGGLE_BUTTON(LU("checkbutton2"))->active ? 4 : 0;
     y = GTK_TOGGLE_BUTTON(LU("checkbutton3"))->active ? 4 : 0;
   }
+
   sprintf(buffer, format, volts[x]);
-  gtk_label_set_text(GTK_LABEL(GTK_BUTTON(LU("radiobutton20"))->child), buffer);
+  gtk_button_set_label(GTK_BUTTON(LU("radiobutton20")), buffer);
 
   sprintf(buffer, format, volts[x + 1]);
-  gtk_label_set_text(GTK_LABEL(GTK_BUTTON(LU("radiobutton21"))->child), buffer);
+  gtk_button_set_label(GTK_BUTTON(LU("radiobutton21")), buffer);
 
   sprintf(buffer, format, volts[x + 2]);
-  gtk_label_set_text(GTK_LABEL(GTK_BUTTON(LU("radiobutton22"))->child), buffer);
+  gtk_button_set_label(GTK_BUTTON(LU("radiobutton22")), buffer);
 
   sprintf(buffer, format, volts[x + 3]);
-  gtk_label_set_text(GTK_LABEL(GTK_BUTTON(LU("radiobutton23"))->child), buffer);
+  gtk_button_set_label(GTK_BUTTON(LU("radiobutton23")), buffer);
 
   sprintf(buffer, format, volts[y]);
-  gtk_label_set_text(GTK_LABEL(GTK_BUTTON(LU("radiobutton14"))->child), buffer);
+  gtk_button_set_label(GTK_BUTTON(LU("radiobutton14")), buffer);
 
   sprintf(buffer, format, volts[y + 1]);
-  gtk_label_set_text(GTK_LABEL(GTK_BUTTON(LU("radiobutton15"))->child), buffer);
+  gtk_button_set_label(GTK_BUTTON(LU("radiobutton15")), buffer);
 
   sprintf(buffer, format, volts[y + 2]);
-  gtk_label_set_text(GTK_LABEL(GTK_BUTTON(LU("radiobutton16"))->child), buffer);
+  gtk_button_set_label(GTK_BUTTON(LU("radiobutton16")), buffer);
 
   sprintf(buffer, format, volts[y + 3]);
-  gtk_label_set_text(GTK_LABEL(GTK_BUTTON(LU("radiobutton17"))->child), buffer);
+  gtk_button_set_label(GTK_BUTTON(LU("radiobutton17")), buffer);
 
   if (GTK_TOGGLE_BUTTON(LU("radiobutton21"))->active) x += 1;
   if (GTK_TOGGLE_BUTTON(LU("radiobutton22"))->active) x += 2;
@@ -111,6 +119,7 @@ propagate_changes()
   gtk_signal_emit_by_name(GTK_OBJECT(GTK_RANGE(LU("hscale1"))->adjustment),
 			  "value_changed");
 /*    gtk_signal_emit_by_name(GTK_OBJECT(LU("entry1")), "changed"); */
+
 }
 
 
@@ -154,7 +163,7 @@ on_value_changed                       (GtkAdjustment *adj,
     bit >>= 1;
   }
 //  bits[i] = '\0';
-  printf("bits: %s\tcare: %s\tboth: %s\n", bits, care, both);
+  /* printf("bits: %s\tcare: %s\tboth: %s\n", bits, care, both); */
   gtk_entry_set_text(GTK_ENTRY(LU("entry1")), both);
   sprintf(num, "%d @ %.4g Volts", j, dialog_volts * 2 / j);
   gtk_label_set_text(GTK_LABEL(LU("label21")), num);

@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: gr_gtk.c,v 1.27 2008/12/13 04:29:06 baccala Exp $
+ * @(#)$Id: gr_gtk.c,v 1.28 2008/12/16 22:48:52 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -561,18 +561,22 @@ setposition(GtkWidget *w, gpointer data)
 void
 help(GtkWidget *w, void *data)
 {
-  char c, prev = '\0', pprev = '\0';
+  char c;
+  char charbuffer[16];
+  int charbuffer_len = 0;
+  int running_tag = 0;
   FILE *p;
-  int i;
 
   GtkWidget *window;
   GtkWidget *box1;
   GtkWidget *box2;
   GtkWidget *button;
-  GtkWidget *table;
-  GtkWidget *vscrollbar;
   GtkWidget *text;
-  GdkFont *fixed_font;
+  GtkWidget *scrolled_window;
+  GtkTextBuffer *textbuffer;
+  PangoFontDescription *font_desc;
+  GtkTextIter iter, start;
+  GtkTextTag *underline_tag, *bold_tag;
 
   window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
   gtk_widget_set_usize (window, 640, 480);
@@ -592,55 +596,89 @@ help(GtkWidget *w, void *data)
   gtk_box_pack_start (GTK_BOX (box1), box2, TRUE, TRUE, 0);
   gtk_widget_show (box2);
 
-  table = gtk_table_new (2, 2, FALSE);
-  gtk_table_set_row_spacing (GTK_TABLE (table), 0, 2);
-  gtk_table_set_col_spacing (GTK_TABLE (table), 0, 2);
-  gtk_box_pack_start (GTK_BOX (box2), table, TRUE, TRUE, 0);
-  gtk_widget_show (table);
+  /* Create the GtkTextView widget */
+  text = gtk_text_view_new();
+  gtk_text_view_set_editable(GTK_TEXT_VIEW(text), FALSE);
+  gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(text), GTK_WRAP_NONE);
+  gtk_text_view_set_cursor_visible(GTK_TEXT_VIEW(text), FALSE);
 
-  /* Create the GtkText widget */
-  text = gtk_text_new(NULL, NULL);
-  gtk_text_set_editable(GTK_TEXT(text), FALSE);
-  gtk_text_set_word_wrap(GTK_TEXT(text), TRUE);
-  gtk_table_attach(GTK_TABLE(table), text, 0, 1, 0, 1,
-		   GTK_EXPAND | GTK_SHRINK | GTK_FILL,
-		   GTK_EXPAND | GTK_SHRINK | GTK_FILL, 0, 0);
+  /* Use a fixed width font throughout the widget */
+  font_desc = pango_font_description_from_string ("Courier 10");
+  gtk_widget_modify_font (text, font_desc);
+  pango_font_description_free (font_desc);
+
+  /* Add scrollbars (if needed) to the GtkTextView widget */
+  scrolled_window = gtk_scrolled_window_new(NULL, NULL);
+  gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled_window),
+				 GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
+  gtk_container_add(GTK_CONTAINER(scrolled_window), text);
+  gtk_box_pack_start (GTK_BOX (box2), scrolled_window, TRUE, TRUE, 0);
+  gtk_widget_show(scrolled_window);
   gtk_widget_show(text);
 
-  /* Add a vertical scrollbar to the GtkText widget */
-  vscrollbar = gtk_vscrollbar_new (GTK_TEXT (text)->vadj);
-  gtk_table_attach (GTK_TABLE (table), vscrollbar, 1, 2, 0, 1,
-		    GTK_FILL, GTK_EXPAND | GTK_SHRINK | GTK_FILL, 0, 0);
-  gtk_widget_show (vscrollbar);
-
-  /* Load a fixed font */
-  fixed_font = gdk_font_load ("8x13");
 
   /* Realizing a widget creates a window for it, ready to insert some text */
   gtk_widget_realize (text);
 
-  /* Freeze the text widget, ready for multiple updates */
-  gtk_text_freeze (GTK_TEXT (text));
+  textbuffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(text));
+
+  bold_tag = gtk_text_buffer_create_tag (textbuffer, NULL,
+					 "weight", PANGO_WEIGHT_BOLD, NULL);  
+  underline_tag = gtk_text_buffer_create_tag (textbuffer, NULL,
+					      "underline", PANGO_UNDERLINE_SINGLE, NULL);  
+
+  /* Now run 'man' and copy its output into the text buffer.  We use
+   * an intermediate 'charbuffer' for two reasons: to handle
+   * backspaces (for overstrikes or underlines) which get converted
+   * into formatting tags, and to ensure that multibyte UTF-8
+   * characters get inserted as a unit; otherwise GTK+ 2 complains.
+   *
+   * XXX this can hang the program if the 'man' runs slowly
+   *
+   * XXX we're counting on GNU man to handle the '-Tutf8' flag; other
+   * versions of man might not do this.
+   *
+   * XXX the tags are attached individually to each character; it
+   * would be better to attach them to entire words, as this could
+   * conceivably affect formating, especially of underlines
+   */
+
+  gtk_text_buffer_get_end_iter(textbuffer, &iter);
 
   if ((p = popen(HELPCOMMAND, "r")) != NULL) {
+
     while ((c = fgetc(p)) != EOF) {
-      i = 0;
       if (c == '\b') {
-	c = fgetc(p);
-	i = prev == '_' ? 1 : 4;
-	gtk_text_backward_delete(GTK_TEXT(text), 1);
+	if (charbuffer[0] == '_') running_tag = 1;
+	else running_tag = 2;
+	charbuffer_len = 0;
+	continue;
       }
-      if (!(c == '\n' && prev == '\n' && pprev == '\n'))
-	gtk_text_insert(GTK_TEXT(text), fixed_font, &gdkcolor[i],
-			NULL, &c, 1);
-      pprev = prev;
-      prev = c;
+      if (c < 0) {
+	charbuffer[charbuffer_len ++] = c;
+      } else {
+	if (charbuffer_len > 0) {
+	  gtk_text_buffer_insert(textbuffer, &iter,
+				 charbuffer, charbuffer_len);
+	  if (running_tag) {
+	    start = iter;
+	    gtk_text_iter_backward_char(&start);
+	    if (running_tag == 1) {
+	      gtk_text_buffer_apply_tag (textbuffer, underline_tag,
+					 &start, &iter);
+	    } else if (running_tag == 2) {
+	      gtk_text_buffer_apply_tag (textbuffer, bold_tag,
+					 &start, &iter);
+	    }
+	    running_tag = 0;
+	  }
+	}
+	charbuffer[0] = c;
+	charbuffer_len = 1;
+      }
     }
     pclose(p);
   }
-
-  /* Thaw the text widget, allowing the updates to become visible */
-  gtk_text_thaw (GTK_TEXT (text));
 
   box2 = gtk_vbox_new (FALSE, 10);
   gtk_container_border_width (GTK_CONTAINER (box2), 10);

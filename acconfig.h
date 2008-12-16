@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: acconfig.h,v 1.4 2003/06/17 22:52:32 baccala Exp $
+ * @(#)$Id: acconfig.h,v 1.5 2008/12/16 22:48:52 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -74,8 +74,8 @@
 /* a lower number here can increase refresh rate but at the expense of
    interactive response time as the X server becomes too busy */
 
-/* bourne shell command for X11 Help ("man xoscope 2>&1") */
-#define HELPCOMMAND	"man xoscope 2>&1"
+/* bourne shell command for X11 Help ("man -Tutf8 xoscope 2>&1") */
+#define HELPCOMMAND	"man -Tutf8 xoscope 2>&1"
 
 /* default file name ("oscope.dat") */
 #define FILENAME	"oscope.dat"

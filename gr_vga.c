@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: gr_vga.c,v 1.4 2003/06/17 22:52:32 baccala Exp $
+ * @(#)$Id: gr_vga.c,v 1.5 2008/12/16 22:48:52 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -10,28 +10,49 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <vga.h>
 #include "oscope.h"		/* program defaults */
 #ifdef HAVE_LIBVGAMISC
 #include <fontutils.h>
 #include <miscutils.h>
+#elif defined(HAVE_LIBVGAGL)
+#include <vgagl.h>
 #endif
 #include "display.h"
 #include "func.h"
 #include "file.h"
 
+int row(int y);		/* in display.c */
+
 char fontname[];
-int screen_modes[];
 int color[];
 char fontname[80] = DEF_F;
 char fonts[] = "/usr/lib/kbd/consolefonts";
-int screen_modes[] = {		/* allowed modes */
+int screen_modes_16color[] = {		/* allowed modes */
   G640x480x16,
   G800x600x16,
   G1024x768x16,
   G1280x1024x16
 };
+int screen_modes_256color[] = {		/* allowed modes */
+  G640x480x256,
+  G800x600x256,
+  G1024x768x256,
+  G1280x1024x256
+};
 int color[] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
+
+/* libvgagl can't handle 16 color modes (but there's no error return;
+ * it just dies with mysterious messages).
+ */
+
+#if !defined(HAVE_LIBVGAMISC) && defined(HAVE_LIBVGAGL)
+#define screen_modes screen_modes_256color
+#else
+#define screen_modes screen_modes_16color
+#endif
 
 #ifdef HAVE_LIBVGAMISC
 
@@ -42,6 +63,16 @@ void text_write(char *str, int x, int y, int fieldsize,
 		int fgcolor, int bgcolor, int alignment)
 {
   vga_write(str, col(x), row(y), font, fgcolor, bgcolor, alignment);
+}
+
+#elif defined(HAVE_LIBVGAGL)
+
+void text_write(char *str, int x, int y, int fieldsize,
+		int fgcolor, int bgcolor, int alignment)
+{
+  if (alignment == ALIGN_CENTER) x -= strlen(str)/2;
+  else if (alignment == ALIGN_RIGHT) x -= strlen(str);
+  gl_write(col(x), row(y), str);
 }
 
 #else
@@ -84,6 +115,7 @@ PolyPoint(int color, Point *points, int count)
 {
   int i;
 
+  SetColor(color);
   for (i=0; i<count; i++) {
     DrawPixel(points[i].x, points[i].y);
   }
@@ -94,6 +126,7 @@ PolyLine(int color, Point *points, int count)
 {
   int i;
 
+  SetColor(color);
   for (i=1; i<count; i++) {
     DrawLine(points[i-1].x, points[i-1].y, points[i].x, points[i].y);
   }
@@ -155,12 +188,27 @@ void
 init_widgets()
 {
   vga_init();
-#ifdef HAVE_LIBVGAMISC
-  vga_initfont(fontname, &FONT, 1, 1);
-#endif
   vga_setmode(screen_modes[scope.size]);
   v_points = vga_getydim();
   h_points = vga_getxdim();
+#ifdef HAVE_LIBVGAMISC
+  vga_initfont(fontname, &FONT, 1, 1);
+#elif HAVE_LIBVGAGL
+
+#define FONT_WIDTH 8
+#define FONT_HEIGHT 8
+#define COLOR 15
+
+ {
+   void *font;
+   gl_setcontextvga(screen_modes[scope.size]);
+   font = malloc(256 * FONT_WIDTH * FONT_HEIGHT * BYTESPERPIXEL);
+   gl_expandfont(FONT_WIDTH, FONT_HEIGHT, COLOR, gl_font8x8, font);
+   gl_setfont(FONT_WIDTH, FONT_HEIGHT, font);
+ }
+
+
+#endif
 }
 
 void
