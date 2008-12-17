@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.h,v 2.0 2008/12/17 17:35:46 baccala Exp $
+ * @(#)$Id: oscope.h,v 2.1 2008/12/17 19:27:39 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -9,6 +9,7 @@
  *
  */
 
+#include <gtk/gtk.h>		/* need GdkPoint below */
 #include "config.h"
 
 /* global program variables */
@@ -187,24 +188,7 @@ extern DataSrc *datasrc;
 extern DataSrc *datasrcs[];
 extern int ndatasrcs;
 
-/* If we're using X Windows; make sure point structure matches that
- * of the GTK library; otherwise define our own
- */
-
-#ifdef HAVE_GTK
-
-#include <gtk/gtk.h>
 typedef GdkPoint Point;
-
-#else
-
-typedef struct Point {
-  short x;
-  short y;
-} Point;
-
-#endif
-
 
 typedef struct SignalLine {
   Point points[2048];	/* half this - 1024 - hardwired in display.c */
