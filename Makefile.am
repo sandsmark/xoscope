@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 
-# @(#)$Id: Makefile.am,v 2.0 2008/12/17 17:35:46 baccala Exp $
+# @(#)$Id: Makefile.am,v 2.1 2008/12/17 17:47:45 baccala Exp $
 
 # Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
 
@@ -10,8 +10,8 @@
 
 man_MANS = oscope.1 xoscope.1
 
-noinst_HEADERS = com_gtk.h display.h file.h oscope.h sb.h bitscope.h	\
-config.h fft.h func.h proscope.h svasync.h
+noinst_HEADERS = com_gtk.h display.h file.h oscope.h bitscope.h	\
+config.h fft.h func.h proscope.h
 
 bin_PROGRAMS = @XOSCOPE@ @OSCOPE@
 EXTRA_PROGRAMS = xoscope oscope
@@ -23,8 +23,7 @@ pkglibexec_SCRIPTS = operl ofreq.ini
 EXTRA_DIST = $(man_MANS) $(noinst_HEADERS) HARDWARE Makefile.dos	\
 README.f51 TODO TODO.old audio.dat bitscope.dat buff.fig buff.ps	\
 buff2.fig buff2.ps count.dat isr.s ofreq.ini oscope.dat oscope.lsm	\
-patch.f51 pcb.fig pcb.ps proscope.dat sb.c sb.doc sc_sb.c ser_dos.c	\
-svasync.c svasync.doc
+patch.f51 pcb.fig pcb.ps proscope.dat
 
 src = oscope.c file.c func.c fft.c realfft.c display.c proscope.c	\
 bitscope.c sc_linux.c ser_unix.c
