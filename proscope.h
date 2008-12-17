@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: proscope.h,v 1.6 2003/06/17 22:52:32 baccala Exp $
+ * @(#)$Id: proscope.h,v 1.7 2008/12/17 04:34:49 baccala Exp $
  *
  * Copyright (C) 1997 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -45,6 +45,7 @@
 #endif
 
 typedef struct ProbeScope {	/* The state of the ProbeScope */
+  short probed;
   short found;
   short wait;
   short volts;

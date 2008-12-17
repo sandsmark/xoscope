@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: acconfig.h,v 1.5 2008/12/16 22:48:52 baccala Exp $
+ * @(#)$Id: acconfig.h,v 1.6 2008/12/17 04:34:48 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -91,7 +91,3 @@
 
 /* preferred path to bitscope serial device ("/dev/bitscope") */
 #define BITSCOPE "/dev/bitscope"
-
-/* extra places to look for serial scopes (set to {""} to not search) */
-/* ({"", "/dev/ttyS0", "/dev/ttyS1", "/dev/ttyS2", "/dev/ttyS3"}) */
-#define PSDEVS {"", "/dev/ttyS0", "/dev/ttyS1", "/dev/ttyS2", "/dev/ttyS3"}

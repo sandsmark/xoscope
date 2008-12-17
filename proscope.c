@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: proscope.c,v 1.10 2005/06/23 21:33:23 baccala Exp $
+ * @(#)$Id: proscope.c,v 1.11 2008/12/17 04:34:49 baccala Exp $
  *
  * Copyright (C) 1997 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -58,6 +58,8 @@ open_probescope(void)
   ps.trigger = ps.level = ps.dvm = ps.flags = 0;
   ps.coupling = "?";
 
+  ps.probed = 1;
+
   return init_serial_probescope();
 }
 
@@ -69,7 +71,7 @@ serial_fd(void)
 
 static int nchans(void)
 {
-  if (!ps.found) open_probescope();
+  if (!ps.found && !ps.probed) open_probescope();
 
   return ps.found ? 1 : 0;
 }
@@ -88,6 +90,7 @@ static int change_rate(int dir)
 
 static void reset(void)
 {
+  ps.probed = 0;
 }
 
 /* get one set of bytes from the ProbeScope, if possible */
@@ -188,6 +191,19 @@ get_data(void)
 static char * status_str(int i)
 {
   static char string[81];
+
+  if (ps.probed && !ps.found) {
+    switch (i) {
+    case 0:
+      return split_field(serial_error, 0, 16);
+    case 2:
+      return split_field(serial_error, 1, 16);
+    default:
+      return "";
+    }
+  }
+
+  if (!ps.found) return "";
 
   switch(i) {
 

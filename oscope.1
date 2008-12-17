@@ -1,4 +1,4 @@
-.\" @(#)$Id: oscope.1,v 1.21 2001/05/22 05:11:02 twitham Exp $
+.\" @(#)$Id: oscope.1,v 1.22 2008/12/17 04:34:48 baccala Exp $
 .\"
 .\" Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
 .\"
@@ -111,13 +111,17 @@ section below for more details.
 
 .TP 0.5i
 .B &
-Toggle the sound card input device on/off.
+Cycle between the various input devices.  Note that this key will not
+toggle to an unresponsive input device, so if only one device is
+present, it will appear to have no effect.
 
 .TP 0.5i
 .B *
-Cycle the sound card DMA divisor: 4, 2, 1.  The sound driver will
-divide it's DMA buffer by this factor.  The value 4 usually gives the
-fastest display rate.
+Different behavior for different input devices
+
+For the soundcard, this key cycles the sound card DMA divisor: 4, 2,
+1.  The sound driver will divide it's DMA buffer by this factor.  The
+value 4 usually gives the fastest display rate.
 
 Under EsounD, this value instead determines whether the connection to
 EsounD will block (4) or not (2 or 1).  Blocking mode is nicest to CPU
@@ -447,15 +451,13 @@ the built-in default is used.
 
 .TP 0.5i
 .B PROBESCOPE
-The serial device your ProbeScope or osziFOX is connected to.  If no
-ProbeScope is found here, some known serial devices are checked.  If
+The serial device your ProbeScope or osziFOX is connected to.  If
 unset, /dev/probescope is used.  /dev/probescope could be a symbolic
 link to the real device such as /dev/ttyS1.
 
 .TP 0.5i
 .B BITSCOPE
-The serial device your Bitscope is connected to.  If no Bitscope is
-found here, some known serial devices are checked.  If unset,
+The serial device your Bitscope is connected to.  If unset,
 /dev/bitscope is used.  /dev/bitscope could be a symbolic link to the
 real device such as /dev/ttyS1.
 

@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: ser_unix.c,v 1.7 2003/06/17 22:52:32 baccala Exp $
+ * @(#)$Id: ser_unix.c,v 1.8 2008/12/17 04:34:49 baccala Exp $
  *
  * Copyright (C) 1997 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -11,6 +11,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
 #include <unistd.h>
 #include <string.h>
 #include <termio.h>
@@ -24,6 +25,8 @@
 char device[512] = "";		/* Serial device */
 int sflags;
 struct termio stbuf, svbuf;	/* termios: svbuf=saved, stbuf=set */
+
+char serial_error[256];
 
 /* return a single byte from the serial device or return -1 if none avail. */
 int
@@ -66,8 +69,8 @@ cleanup_serial(int fd)
 {
   if (fd > 0) {
     if (ioctl(fd, TCSETA, &svbuf) < 0) {
-      sprintf(error, "%s: can't ioctl set device %s", progname, device);
-      perror(error);
+      /* sprintf(serial_error, "Can't ioctl set device %s", device); */
+      /* perror(error); */
     }
     close(fd);
   }
@@ -80,19 +83,16 @@ findscope(char *dev, int i)
   int fd;
 
   if ((fd = open(dev, sflags)) < 0) {
-    sprintf(error, "%s: can't open device %s", progname, dev);
-    perror(error);
+    sprintf(serial_error, "%s %s", dev, strerror(errno));
     return(0);
   }
   if (ioctl(fd, TCGETA, &svbuf) < 0) { /* save settings */
-    sprintf(error, "%s: can't ioctl get device %s", progname, dev);
-    perror(error);
+    sprintf(serial_error, "%s Can't ioctl TCGETA", dev);
     close(fd);
     return(0);
   }
   if (ioctl(fd, TCSETA, &stbuf) < 0) {
-    sprintf(error, "%s: can't ioctl set device %s", progname, dev);
-    perror(error);
+    sprintf(serial_error, "%s Can't ioctl TCSETA", dev);
     close(fd);
     return(0);
   }
@@ -102,13 +102,15 @@ findscope(char *dev, int i)
   }
 
   if (ioctl(fd, TCSETA, &svbuf) < 0) { /* restore settings */
-    sprintf(error, "%s: can't ioctl set device %s", progname, dev);
-    perror(error);
+#if 0
+    sprintf(serial_error, "Can't ioctl (set) %s", dev);
     close(fd);
     return(0);		/* nothing found. */
+#endif
   }
 
-  fprintf(stderr, "%s: no serial scope found on %s\n", progname, dev);
+  sprintf(serial_error, "%s No %s found\n", dev,
+	  i==0 ? "BitScope" : "ProbeScope");
   return(0);
 }
 
@@ -116,8 +118,7 @@ findscope(char *dev, int i)
 int
 init_serial_bitscope(void)
 {
-  char *dev[] = PSDEVS, *p;
-  int i, j = 0, num = sizeof(dev) / sizeof(char *);
+  char *p;
 
   /* BitScope serial port settings */
   sflags = O_RDWR | O_NDELAY | O_NOCTTY;
@@ -127,22 +128,16 @@ init_serial_bitscope(void)
 
   if ((p = getenv("BITSCOPE")) == NULL) /* first place to look */
     p = BITSCOPE;		/* -D default defined in Makefile */
-  dev[0] = p;
-  for (i = 0; i < num; i++) {	/* look in all places specified in config.h */
-    if ((j = findscope(dev[i], 0))) {
-      strcpy(device, dev[i]);
-      break;
-    }
-  }
-  return j;
+  strcpy(device, p);
+
+  return findscope(device, 0);
 }
 
 /* set [scope].found to non-zero if we find a scope on a serial port */
 int
 init_serial_probescope(void)
 {
-  char *dev[] = PSDEVS, *p;
-  int i, j = 0, num = sizeof(dev) / sizeof(char *);
+  char *p;
 
   /* ProbeScope serial port settings */
   sflags = O_RDONLY | O_NDELAY;
@@ -152,12 +147,7 @@ init_serial_probescope(void)
 
   if ((p = getenv("PROBESCOPE")) == NULL) /* second place to look */
     p = PROBESCOPE;		/* -D default defined in Makefile */
-  dev[0] = p;
-  for (i = 0; i < num; i++) {	/* look in all places specified in config.h */
-    if ((j = findscope(dev[i], 1))) {
-      strcpy(device, dev[i]);
-      break;
-    }
-  }
-  return j;
+  strcpy(device, p);
+
+  return findscope(device, 1);
 }

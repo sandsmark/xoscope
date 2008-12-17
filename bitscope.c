@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: bitscope.c,v 1.22 2005/06/23 21:33:22 baccala Exp $
+ * @(#)$Id: bitscope.c,v 1.23 2008/12/17 04:34:48 baccala Exp $
  *
  * Copyright (C) 2000 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -391,12 +391,14 @@ static int open_bitscope(void)
     bs.R[i] = -1;
   }
 
+  bs.probed = 1;
+
   return init_serial_bitscope();
 }
 
 static int nchans(void)
 {
-  if (! bs.found) open_bitscope();
+  if (! bs.found && ! bs.probed) open_bitscope();
 
   return bs.found ? 3 : 0;
 }
@@ -422,7 +424,9 @@ static Signal * bs_chan(int chan)
 }
 
 static void reset(void)
-{}
+{
+  bs.probed = 0;
+}
 
 /* get pending available data from FD, or initiate new data collection */
 static int bs_getdata(void)
@@ -501,7 +505,17 @@ static char * status_str(int i)
 {
   switch (i) {
   case 0:
-    return bs.bcid;
+    if (bs.probed && !bs.found) {
+      return split_field(serial_error, 0, 16);
+    } else {
+      return bs.bcid;
+    }
+  case 2:
+    if (bs.probed && !bs.found) {
+      return split_field(serial_error, 1, 16);
+    } else {
+      return NULL;
+    }
   default:
     return NULL;
   }

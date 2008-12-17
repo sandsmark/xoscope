@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: bitscope.h,v 1.9 2003/06/17 22:52:32 baccala Exp $
+ * @(#)$Id: bitscope.h,v 1.10 2008/12/17 04:34:48 baccala Exp $
  *
  * Copyright (C) 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -60,6 +60,7 @@
 #define SETWORD(r, w)	*r = w & 0xff; *(r + 1) = ((w & 0xff00) >> 8);
 
 typedef struct BitScope {	/* The state of the BitScope */
+  short probed;
   short found;
   char bcid[12];		/* ? output, minus <CR>s */
   int version;			/* numeric version equivalent */

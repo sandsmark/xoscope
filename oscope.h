@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.h,v 1.45 2008/12/16 22:48:52 baccala Exp $
+ * @(#)$Id: oscope.h,v 1.46 2008/12/17 04:34:49 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -244,6 +244,8 @@ void	startcommand();
 char *	split_field(char *, int, int);
 
 int	datasrc_byname(char *);
+
+extern char serial_error[];
 
 /* Functions defined in display library specific files */
 void	setinputfd(int);
