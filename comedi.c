@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: comedi.c,v 1.8 2005/06/28 21:28:39 baccala Exp $
+ * @(#)$Id: comedi.c,v 2.0 2008/12/17 17:35:46 baccala Exp $
  *
  * Author: Brent Baccala <baccala@freesoft.org>
  *

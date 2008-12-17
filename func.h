@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: func.h,v 1.14 2005/06/28 21:28:39 baccala Exp $
+ * @(#)$Id: func.h,v 2.0 2008/12/17 17:35:46 baccala Exp $
  *
  * Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
  *

@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: proscope.c,v 1.11 2008/12/17 04:34:49 baccala Exp $
+ * @(#)$Id: proscope.c,v 2.0 2008/12/17 17:35:46 baccala Exp $
  *
  * Copyright (C) 1997 - 2000 Tim Witham <twitham@quiknet.com>
  *

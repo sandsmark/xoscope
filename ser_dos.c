@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: ser_dos.c,v 1.4 2003/06/17 22:52:32 baccala Exp $
+ * @(#)$Id: ser_dos.c,v 2.0 2008/12/17 17:35:46 baccala Exp $
  *
  * Copyright (C) 1997 - 2000 Tim Witham <twitham@quiknet.com>
  *

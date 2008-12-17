@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: sc_sb.c,v 1.9 1999/09/02 01:24:48 twitham Rel $
+ * @(#)$Id: sc_sb.c,v 2.0 2008/12/17 17:35:46 baccala Exp $
  *
  * Copyright (C) 1997 Tim Witham <twitham@pcocd2.intel.com>
  *

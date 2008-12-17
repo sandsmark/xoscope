@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: sc_linux.c,v 1.27 2005/06/28 21:28:39 baccala Exp $
+ * @(#)$Id: sc_linux.c,v 2.0 2008/12/17 17:35:46 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *

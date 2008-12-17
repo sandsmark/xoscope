@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: gr_gtk.c,v 1.28 2008/12/16 22:48:52 baccala Exp $
+ * @(#)$Id: gr_gtk.c,v 2.0 2008/12/17 17:35:46 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *

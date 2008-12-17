@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: xy_gtk.c,v 1.3 2003/06/17 22:52:32 baccala Exp $
+ * @(#)$Id: xy_gtk.c,v 2.0 2008/12/17 17:35:46 baccala Exp $
  *
  * Copyright (C) 1996 - 1999 Tim Witham <twitham@quiknet.com>
  *

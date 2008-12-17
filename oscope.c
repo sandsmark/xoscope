@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.c,v 1.93 2004/11/04 19:47:33 baccala Exp $
+ * @(#)$Id: oscope.c,v 2.0 2008/12/17 17:35:46 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *

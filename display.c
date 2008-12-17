@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 1.75 2008/12/13 04:29:06 baccala Exp $
+ * @(#)$Id: display.c,v 2.0 2008/12/17 17:35:46 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *

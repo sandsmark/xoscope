@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: ser_unix.c,v 1.8 2008/12/17 04:34:49 baccala Exp $
+ * @(#)$Id: ser_unix.c,v 2.0 2008/12/17 17:35:46 baccala Exp $
  *
  * Copyright (C) 1997 - 2001 Tim Witham <twitham@quiknet.com>
  *

@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: bitscope.c,v 1.23 2008/12/17 04:34:48 baccala Exp $
+ * @(#)$Id: bitscope.c,v 2.0 2008/12/17 17:35:46 baccala Exp $
  *
  * Copyright (C) 2000 - 2001 Tim Witham <twitham@quiknet.com>
  *

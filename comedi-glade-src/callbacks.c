@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: callbacks.c,v 1.3 2008/12/13 19:31:43 baccala Exp $
+ * @(#)$Id: callbacks.c,v 2.0 2008/12/17 17:35:46 baccala Exp $
  *
  * Copyright (C) 2000 - 2001 Tim Witham <twitham@quiknet.com>
  *

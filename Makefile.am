@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 
-# @(#)$Id: Makefile.am,v 1.7 2003/06/17 22:52:31 baccala Exp $
+# @(#)$Id: Makefile.am,v 2.0 2008/12/17 17:35:46 baccala Exp $
 
 # Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
 

@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: fft.c,v 1.5 2003/06/17 22:52:32 baccala Exp $
+ * @(#)$Id: fft.c,v 2.0 2008/12/17 17:35:46 baccala Exp $
  *
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *

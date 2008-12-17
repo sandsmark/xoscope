@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: xy_sx.c,v 1.2 2001/05/06 03:45:16 twitham Rel $
+ * @(#)$Id: xy_sx.c,v 2.0 2008/12/17 17:35:46 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *

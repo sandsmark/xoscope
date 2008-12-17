@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: sb.c,v 1.2 1997/06/07 21:35:10 twitham Rel $
+ * @(#)$Id: sb.c,v 2.0 2008/12/17 17:35:46 baccala Exp $
  *
  * 6-Jun-97	Tim Witham		cut all playing stuff and tweaked
  *					recording stuff for my application

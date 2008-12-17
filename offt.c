@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: offt.c,v 1.3 1996/08/03 22:30:17 twitham Rel $
+ * @(#)$Id: offt.c,v 2.0 2008/12/17 17:35:46 baccala Exp $
  *
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
