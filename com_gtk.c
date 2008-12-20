@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: com_gtk.c,v 1.5 2008/12/13 04:29:06 baccala Exp $
+ * @(#)$Id: com_gtk.c,v 1.6 2008/12/20 20:21:44 baccala Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -12,6 +12,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <gtk/gtk.h>
+#include <gdk/gdkkeysyms.h>
+
 #include "oscope.h"
 #include "display.h"
 #include "com_gtk.h"
@@ -149,7 +151,12 @@ delete_event(GtkWidget *widget, GdkEvent *event, gpointer data)
 gint
 key_press_event(GtkWidget *widget, GdkEventKey *event)
 {
-  handle_key(event->string[0]);
+  if (event->keyval == GDK_Tab) {
+    handle_key('\t');
+  } else if (event->length == 1) {
+    handle_key(event->string[0]);
+  }
+
   return TRUE;
 }
 
