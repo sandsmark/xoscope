@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 2.0 2008/12/17 17:35:46 baccala Exp $
+ * @(#)$Id: display.c,v 2.1 2008/12/21 19:18:39 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -19,6 +19,17 @@
 #include "oscope.h"		/* program defaults */
 #include "display.h"
 #include "func.h"
+
+#include "com_gtk.h"
+#include <gtk/gtk.h>
+#include <gtkdatabox.h>
+#include <gtkdatabox_points.h>
+#include <gtkdatabox_lines.h>
+#include <gtkdatabox_grid.h>
+
+extern GtkDataboxGraph *graph;
+extern GtkWidget *databox;
+
 
 #define DEBUG 0
 
@@ -85,11 +96,70 @@ format(char *buf, const char *fmt, float num)
   sprintf(buf, fmt, num >= 1000 ? num / 1000 : num, num >= 1000 ? "" : "m");
 }
 
+void
+make_help_text_visible(GtkWidget *widget)
+{
+  if (GTK_IS_CONTAINER(widget)) {
+    gtk_container_forall(widget, make_help_text_visible, NULL);
+  } else {
+    const gchar * name = gtk_widget_get_name(widget);
+    if (name != NULL &&
+	(!strcmp(name + strlen(name) - 11, "_help_label")
+	 || !strcmp(name + strlen(name) - 10, "_key_label"))) {
+      gtk_label_set_text(GTK_LABEL(widget), g_object_get_data(G_OBJECT(widget), "visible-text"));
+    }
+  }
+}
+
+void
+make_help_text_invisible(GtkWidget *widget)
+{
+  if (GTK_IS_CONTAINER(widget)) {
+    gtk_container_forall(widget, make_help_text_invisible, NULL);
+  } else {
+    const gchar * name = gtk_widget_get_name(widget);
+    if (name != NULL &&
+	(!strcmp(name + strlen(name) - 11, "_help_label")
+	 || !strcmp(name + strlen(name) - 10, "_key_label"))) {
+      gtk_label_set_markup(GTK_LABEL(widget), g_object_get_data(G_OBJECT(widget), "invisible-text"));
+    }
+  }
+}
+
+/* We have to copy the saved_text as well as the modified_text because
+ * the text will be changed later (as we make it visible or invisible)
+ * and that will invalidate the pointer returned from
+ * gtk_label_get_label().
+ */
+
+void
+setup_help_text(GtkWidget *widget)
+{
+  if (GTK_IS_CONTAINER(widget)) {
+    gtk_container_forall(widget, setup_help_text, NULL);
+  } else {
+    const gchar * name = gtk_widget_get_name(widget);
+    if (name != NULL &&
+	(!strcmp(name + strlen(name) - 11, "_help_label")
+	 || !strcmp(name + strlen(name) - 10, "_key_label"))) {
+      gchar * text = gtk_label_get_label(GTK_LABEL(widget));
+      gchar * saved_text = malloc(sizeof(gchar) * 80);
+      gchar * modified_text = malloc(sizeof(gchar) * 80);
+
+      sprintf(modified_text, "<span foreground=\"black\">%s</span>",
+	      g_markup_escape_text(text, -1));
+      strcpy(saved_text, text);
+      g_object_set_data(G_OBJECT(widget), "visible-text", saved_text);
+      g_object_set_data(G_OBJECT(widget), "invisible-text", modified_text);
+    }
+  }
+}
+
 /* draw just dynamic or all text to graphics screen */
 void
 draw_text(int all)
 {
-  static char string[81];
+  static char string[81], widget[81];
   static char *s;
   static int i, j, k, frames = 0;
   static time_t sec, prev;
@@ -109,10 +179,18 @@ draw_text(int all)
   };
 
   p = &ch[scope.select];
+
+  if (scope.verbose) {
+      make_help_text_visible(glade_window);
+  } else {
+      make_help_text_invisible(glade_window);
+  }
+
   if (all) {			/* everything */
 
     /* above graticule */
     if (scope.verbose) {
+
       text_write("(Esc)", 0, 0, 0, KEY_FG, TEXT_BG, ALIGN_LEFT);
       text_write("Quit", 5, 0, 0, TEXT_FG, TEXT_BG, ALIGN_LEFT);
       text_write(progname, 12, 0, 0, TEXT_FG, TEXT_BG, ALIGN_LEFT);
@@ -174,16 +252,28 @@ draw_text(int all)
       }
       text_write(string, 40, 2,	0, TEXT_FG, TEXT_BG, ALIGN_CENTER);
       text_write(trigsig->name, 40, 3, 0, TEXT_FG, TEXT_BG, ALIGN_CENTER);
+      gtk_label_set_text(LU("trigger_label"), string);
+      gtk_label_set_text(LU("trigger_source_label"), trigsig->name);
     } else {
       text_write("No Trigger", 40, 2, 0, TEXT_FG, TEXT_BG, ALIGN_CENTER);
+      gtk_label_set_text(LU("trigger_label"), "No Trigger");
+      gtk_label_set_text(LU("trigger_source_label"), "");
     }
 
     text_write(datasrc ? datasrc->name : "No data source", 5, 3,
 	       0, TEXT_FG, TEXT_BG, ALIGN_LEFT);
+    gtk_label_set_text(LU("data_source"),
+		       datasrc ? datasrc->name : "No data source");
+
     text_write(strings[scope.mode], 12, 4, 0, TEXT_FG, TEXT_BG, ALIGN_LEFT);
+    gtk_label_set_text(LU("line_style"), strings[scope.mode]);
+
     if (datasrc && (datasrc->option1str != NULL)
 	&& ((s = datasrc->option1str()) != NULL)) {
       text_write(s, 17, 3, 0, TEXT_FG, TEXT_BG, ALIGN_LEFT);
+      gtk_label_set_text(LU("data_source_opt1"), s);
+    } else {
+      gtk_label_set_text(LU("data_source_opt1"), "");
     }
 
 
@@ -206,15 +296,38 @@ draw_text(int all)
 	else
 	  sprintf(string, "%d / %d", ch[i].mult, ch[i].div);
 	text_write(string, 69 * (i / 4), j + 1, 0, k, TEXT_BG, ALIGN_LEFT);
+	sprintf(widget, "Ch%1d_scale", i+1);
+	gtk_label_set_text(LU(widget), string);
 
 	sprintf(string, "%d @ %d", ch[i].bits, -(ch[i].pos));
 	text_write(string, 69 * (i / 4) + 5, j + 2,
 		   0, k, TEXT_BG, ALIGN_CENTER);
+	sprintf(widget, "Ch%1d_position", i+1);
+	gtk_label_set_text(LU(widget), string);
 
 	text_write(ch[i].signal->name, 69 * (i / 4), j + 3,
 		  0, ch[i].color, TEXT_BG, ALIGN_LEFT);
+	sprintf(widget, "Ch%1d_source", i+1);
+	gtk_label_set_text(LU(widget), ch[i].signal->name);
+
+      } else {
+
+	sprintf(widget, "Ch%1d_scale", i+1);
+	gtk_label_set_text(LU(widget), "");
+	sprintf(widget, "Ch%1d_position", i+1);
+	gtk_label_set_text(LU(widget), "");
+	sprintf(widget, "Ch%1d_source", i+1);
+	gtk_label_set_text(LU(widget), "");
 
       }
+
+      sprintf(widget, "Ch%1d_frame", i+1);
+      if (scope.select == i) {
+	gtk_frame_set_shadow_type(GTK_FRAME(LU(widget)), GTK_SHADOW_ETCHED_IN);
+      } else {
+	gtk_frame_set_shadow_type(GTK_FRAME(LU(widget)), GTK_SHADOW_NONE);
+      }
+
       if (scope.select == i) {
 	SetColor(k);
 	k = i < 4 ? 11 : 80 - 11;
@@ -230,6 +343,7 @@ draw_text(int all)
       text_write("(Tab)", 0, 25, 0, KEY_FG, TEXT_BG, ALIGN_LEFT);
       text_write(p->show ? "Visible" : "HIDDEN ", 5, 25,
 		0, p->color, TEXT_BG, ALIGN_LEFT);
+      gtk_label_set_text(LU("tab_help_label"), p->show ? "Visible" : "HIDDEN");
 
       text_write("({)     (})", 0, 26, 0, KEY_FG, TEXT_BG, ALIGN_LEFT);
       text_write("Scale", 3, 26, 0, p->color, TEXT_BG, ALIGN_LEFT);
@@ -275,6 +389,9 @@ draw_text(int all)
 	&& ((s = datasrc->option2str()) != NULL)) {
       text_write(s, 3, 28,
 		0, TEXT_FG, TEXT_BG, ALIGN_LEFT);
+      gtk_label_set_text(LU("data_source_opt2"), s);
+    } else {
+      gtk_label_set_text(LU("data_source_opt2"), "");
     }
 
     fix_widgets();
@@ -289,6 +406,7 @@ draw_text(int all)
     sprintf(string, "  Period of %6d us = %6d Hz  ", stats.time,  stats.freq);
     text_write(string, 40, 0,
 	      0, p->color, TEXT_BG, ALIGN_CENTER);
+    gtk_label_set_text(LU("period_label"), string);
 
     if (p->signal->volts)
       sprintf(string, "   %7.5g - %7.5g = %7.5g mV   ",
@@ -300,6 +418,7 @@ draw_text(int all)
 	      stats.max, stats.min, stats.max - stats.min);
     text_write(string, 40, 1,
 	      0, p->color, TEXT_BG, ALIGN_CENTER);
+    gtk_label_set_text(LU("min_max_label"), string);
   }
 
   if (math_warning) {
@@ -316,6 +435,7 @@ draw_text(int all)
   if (datasrc && datasrc->status_str != NULL) {
     for (i=0; i<8; i++) {
       int fieldsize[] = {16,16,16,16,20,20,12,12};
+      sprintf(widget, "status_%d", i);
       if ((s = datasrc->status_str(i)) != NULL) {
 	if (i%2 == 0)
 	  text_write(s, 12, 25 + i/2, fieldsize[i],
@@ -323,21 +443,36 @@ draw_text(int all)
 	else
 	  text_write(s, 66, 25 + i/2, fieldsize[i],
 		     TEXT_FG, TEXT_BG, ALIGN_RIGHT);
+
+	gtk_label_set_text(LU(widget), s);
+      } else {
+	gtk_label_set_text(LU(widget), "");
       }
+    }
+  } else {
+    for (i=0; i<8; i++) {
+      sprintf(widget, "status_%d", i);
+      gtk_label_set_text(LU(widget), "");
     }
   }
 
   time(&sec);
   if (sec != prev) {		/* fix "scribbled" text once a second */
 
-    text_write(scope.run ? (scope.run > 1 ? "WAIT" : " RUN") : "STOP", 68, 4,
-	       0, TEXT_FG, TEXT_BG, ALIGN_RIGHT);
+    strcpy(string, scope.run ? (scope.run > 1 ? "WAIT" : " RUN") : "STOP");
+    text_write(string, 68, 4, 0, TEXT_FG, TEXT_BG, ALIGN_RIGHT);
+    gtk_label_set_text(LU("run_stop_label"), string);
+
     sprintf(string, "fps:%3d", frames);
     text_write(string, 66, 2, 0, TEXT_FG, TEXT_BG, ALIGN_RIGHT);
+    gtk_label_set_text(LU("fps_label"), string);
 
     i = 1000 * scope.div / scope.scale;
     sprintf(string, "%d %cs/div", i > 999 ? i / 1000: i, i > 999 ? 'm' : 'u');
     text_write(string, 40, 25, 0, TEXT_FG, TEXT_BG, ALIGN_CENTER);
+
+    sprintf(string, "%d %ss/div", i > 999 ? i / 1000: i, i > 999 ? "m" : "\302\265");
+    gtk_label_set_text(LU("timebase_label"), string);
 
     if (p->signal) {
 
@@ -357,10 +492,14 @@ draw_text(int all)
       sprintf(string, "%d Samples/frame", p->signal->width);
       text_write(string, 40, 27, 14, p->color, TEXT_BG, ALIGN_CENTER);
 
+      gtk_label_set_text(LU("samples_per_frame_label"), string);
+
       if (p->signal->rate > 0) {
 
 	sprintf(string, "%d S/s", p->signal->rate);
 	text_write(string, 40, 26, 0, p->color, TEXT_BG, ALIGN_CENTER);
+
+	gtk_label_set_text(LU("sample_rate_label"), string);
 
       } else if (p->signal->rate < 0) {
 
@@ -376,6 +515,7 @@ draw_text(int all)
 		(- p->signal->rate) * 44 * scope.div / scope.scale / 10);
 	text_write(string, 40, 26, 0, p->color, TEXT_BG, ALIGN_CENTER);
 
+	gtk_label_set_text(LU("sample_rate_label"), string);
       }
     }
 
@@ -396,6 +536,25 @@ draw_text(int all)
 		  0, TEXT_FG, TEXT_BG, ALIGN_LEFT);
       }
     }
+
+    for (i = 0 ; i < 26 ; i++) {
+      if (datasrc && i < datasrc->nchans()) {
+	/* XXX Maybe here we should show color by channel if sig displayed */
+#if 0
+	text_write(string, 27 + i, 28,
+		  0, chan[i].color, TEXT_BG, ALIGN_LEFT);
+#else
+	string[i] = i + 'a';
+#endif
+      } else if (mem[i].num > 0) {
+	/* XXX different color here for memory? */
+	string[i] = i + 'a';
+      } else {
+	string[i ] = ' ';
+      }
+    }
+    string[i] = '\0';
+    gtk_label_set_text(LU("registers"), string);
 
     frames = 0;
     prev = sec;
@@ -535,6 +694,8 @@ clear()
 void
 draw_graticule()
 {
+  GdkColor gcolor;
+  GtkDataboxGraph *graph;
   static int i, j;
   static int tilt[] = {
     0, -10, 10
@@ -591,6 +752,42 @@ draw_graticule()
 	DrawPixel(j / 10, i);
       }
     }
+
+    /* NEW DATABOX CODE */
+
+    gcolor.red = 65535;
+    gcolor.green = 0;
+    gcolor.blue = 0;
+
+    graph = gtk_databox_grid_new (9, 9, &gcolor, 1);
+    gtk_databox_graph_add (GTK_DATABOX (databox), graph);
+
+    if (scope.grat > 1) {
+      gfloat *X = NULL;
+      gfloat *Y = NULL;
+
+      X = g_new0(gfloat, 2);
+      Y = g_new0(gfloat, 2);
+
+      X[0] = X[1] = (h_points - 200)/2 + 100;
+      Y[0] = 80;
+      Y[1] = v_points - 80;
+
+      graph = gtk_databox_lines_new (2, X, Y, &gcolor, 2);
+      gtk_databox_graph_add (GTK_DATABOX (databox), graph);
+
+      X = g_new0(gfloat, 2);
+      Y = g_new0(gfloat, 2);
+
+      Y[0] = Y[1] = (v_points - 160)/2 + 80;
+      X[0] = 100;
+      X[1] = h_points - 100;
+
+      graph = gtk_databox_lines_new (2, X, Y, &gcolor, 2);
+      gtk_databox_graph_add (GTK_DATABOX (databox), graph);
+
+    }
+
   }
 }
 
@@ -913,6 +1110,8 @@ show_data(void)
 
   if ((scope.scale >= 100) || !in_progress)
     measure_data(&ch[scope.select], &stats);
+
+  gtk_databox_graph_remove_all(GTK_DATABOX(databox));
 
   draw_text(0);
   if (scope.behind) {

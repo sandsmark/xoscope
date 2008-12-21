@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: sc_linux.c,v 2.0 2008/12/17 17:35:46 baccala Exp $
+ * @(#)$Id: sc_linux.c,v 2.1 2008/12/21 19:18:39 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -429,6 +429,10 @@ get_data()
 
 static char * snd_status_str(int i)
 {
+  static char string[16];
+  sprintf(string, "status %d", i);
+  return string;
+
   switch (i) {
   case 0:
     if (snd_errormsg1) return snd_errormsg1;
@@ -519,6 +523,14 @@ static char * option1str_sc(void)
   return string;
 }
 
+static char * option2str_sc(void)
+{
+  static char string[16];
+
+  sprintf(string, "opt2");
+  return string;
+}
+
 static int sc_set_option(char *option)
 {
   if (sscanf(option, "rate=%d", &sound_card_rate) == 1) {
@@ -590,7 +602,7 @@ DataSrc datasrc_sc = {
   option1_sc,
   option1str_sc,
   NULL,  /* option2, */
-  NULL,  /* option2str, */
+  option2str_sc,  /* option2str, */
   sc_set_option,
   sc_save_option,
   sc_gtk_option_dialog,

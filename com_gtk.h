@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: com_gtk.h,v 2.0 2008/12/17 17:35:46 baccala Exp $
+ * @(#)$Id: com_gtk.h,v 2.1 2008/12/21 19:18:39 baccala Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -17,6 +17,7 @@ GtkWidget *drawing_area;
 GtkWidget *menubar;
 GtkWidget *vbox;
 GtkWidget *window;
+GtkWidget *glade_window;
 char *colors[16];
 int color[16];
 
@@ -24,3 +25,5 @@ gint expose_event();
 gint key_press_event();
 void delete_event();
 void hit_key();
+
+#define LU(label)       lookup_widget(glade_window, label)

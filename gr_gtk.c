@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: gr_gtk.c,v 2.0 2008/12/17 17:35:46 baccala Exp $
+ * @(#)$Id: gr_gtk.c,v 2.1 2008/12/21 19:18:39 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -14,6 +14,11 @@
 #include <assert.h>
 #include <sys/stat.h>
 #include <gtk/gtk.h>
+#include <gtkdatabox.h>
+#include <gtkdatabox_points.h>
+#include <gtkdatabox_lines.h>
+#include <math.h>
+
 #include <string.h>
 #include "oscope.h"		/* program defaults */
 #include "display.h"
@@ -389,15 +394,42 @@ PolyPoint(int color, Point *points, int count)
 		  (GdkPoint *) points, count);
 }
 
+GtkWidget *databox;
+
 void
 PolyLine(int color, Point *points, int count)
 {
-  verify_data_gc(color);
+    GdkColor gcolor;
+    GtkDataboxGraph *graph;
+    gfloat *X = NULL;
+    gfloat *Y = NULL;
+    gint i;
 
-  if (pixmap) gdk_draw_lines(pixmap, data_gc[color],
-			     (GdkPoint *) points, count);
-  gdk_draw_lines(drawing_area->window, data_gc[color],
-		 (GdkPoint *) points, count);
+    verify_data_gc(color);
+
+    if (pixmap) gdk_draw_lines(pixmap, data_gc[color],
+			       (GdkPoint *) points, count);
+    gdk_draw_lines(drawing_area->window, data_gc[color],
+		   (GdkPoint *) points, count);
+
+    /* new widget code follows */
+
+    X = g_new0(gfloat, count);
+    Y = g_new0(gfloat, count);
+
+    for (i = 0; i < count; i ++) {
+	X[i] = points[i].x;
+	Y[i] = points[i].y;
+    }
+
+    gcolor.red = 65535;
+    gcolor.green = 65535;
+    gcolor.blue = 0;
+
+    graph = gtk_databox_lines_new (count, X, Y, &gcolor, 1);
+    gtk_databox_graph_add (GTK_DATABOX (databox), graph);
+
+    gtk_databox_redraw (GTK_DATABOX (databox));
 }
 
 /* callback to redisplay the drawing area; snap to a graticule division */
@@ -1394,14 +1426,108 @@ button_event(GtkWidget *widget, GdkEventButton *event, gpointer data)
   return TRUE;
 }
 
+GtkWidget *
+create_databox (void)
+{
+   GdkColor color;
+   GtkDataboxValue topleft, bottomright;
+
+   /* This is a global var - our one, unique, databox */
+   databox = gtk_databox_new();
+                                      
+   gtk_databox_set_enable_zoom(GTK_DATABOX(databox), FALSE);
+   gtk_databox_set_enable_selection(GTK_DATABOX(databox), FALSE);
+
+
+#if 0
+   /* Color of the scope background */
+   color.red = 0;
+   color.green = 0;
+   color.blue = 0;
+
+   gtk_widget_modify_bg (databox, GTK_STATE_NORMAL, &color);
+#endif
+
+   topleft.x = 100;
+   topleft.y = 80;
+   bottomright.x = h_points - 100;
+   bottomright.y = v_points - 80;
+
+   gtk_databox_set_canvas(GTK_DATABOX(databox), topleft, bottomright);
+
+   return databox;
+}
+
+static void
+create_databox_toplevel (void)
+{
+   GtkWidget *window = NULL;
+   GtkWidget *box1;
+   GtkWidget *box2;
+   GtkWidget *close_button;
+   GtkWidget *separator;
+
+   window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
+   gtk_widget_set_size_request (window, 300, 300);
+
+   g_signal_connect (G_OBJECT (window), "destroy",
+		     G_CALLBACK (gtk_main_quit), NULL);
+
+   gtk_window_set_title (GTK_WINDOW (window), "GtkDatabox: Lissajous Example");
+   gtk_container_set_border_width (GTK_CONTAINER (window), 0);
+
+   box1 = gtk_vbox_new (FALSE, 0);
+   gtk_container_add (GTK_CONTAINER (window), box1);
+
+   databox = create_databox();
+   gtk_box_pack_start (GTK_BOX (box1), databox, TRUE, TRUE, 0);
+                                      
+   separator = gtk_hseparator_new ();
+   gtk_box_pack_start (GTK_BOX (box1), separator, FALSE, TRUE, 0);
+
+   box2 = gtk_vbox_new (FALSE, 10);
+   gtk_container_set_border_width (GTK_CONTAINER (box2), 10);
+   gtk_box_pack_end (GTK_BOX (box1), box2, FALSE, TRUE, 0);
+   close_button = gtk_button_new_with_label ("close");
+
+   g_signal_connect_swapped (G_OBJECT (close_button), "clicked",
+			     G_CALLBACK (gtk_main_quit),
+			     G_OBJECT (databox));
+
+   gtk_box_pack_start (GTK_BOX (box2), close_button, TRUE, TRUE, 0);
+   GTK_WIDGET_SET_FLAGS (close_button, GTK_CAN_DEFAULT);
+   gtk_widget_grab_default (close_button);
+
+   gtk_widget_show_all (window);
+}
+
+GtkWidget * create_window1();
+
 /* initialize all the widgets, called by init_screen in display.c */
 void
 init_widgets()
 {
+    GdkColor gcolor;
   int i;
 
   h_points = XX[scope.size];
   v_points = XY[scope.size];
+
+  gtk_rc_parse("xoscope.rc");
+
+  /* create_databox_toplevel(); */
+  glade_window = create_window1();
+  gtk_widget_show(glade_window);
+
+  setup_help_text(glade_window);
+
+#if 0
+  gcolor.red = 0;
+  gcolor.green = 0;
+  gcolor.blue = 0;
+
+  gtk_widget_modify_bg (glade_window, GTK_STATE_NORMAL, &gcolor);
+#endif
 
   window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
   gtk_signal_connect(GTK_OBJECT(window), "delete_event",
@@ -1412,9 +1538,16 @@ init_widgets()
   vbox = gtk_vbox_new(FALSE, 0);
   gtk_container_add(GTK_CONTAINER(window), vbox);
 
+#if 0
   get_main_menu(window, &menubar);
   gtk_box_pack_start(GTK_BOX(vbox), menubar, FALSE, TRUE, 0);
   gtk_widget_show(menubar);
+#else
+  get_main_menu(glade_window, &menubar);
+  gtk_box_pack_start(GTK_BOX(LU("vbox1")), menubar, FALSE, TRUE, 0);
+  gtk_box_reorder_child(GTK_BOX(LU("vbox1")), menubar, 0);
+  gtk_widget_show(menubar);
+#endif
 
   drawing_area = gtk_drawing_area_new();
   gtk_drawing_area_size(GTK_DRAWING_AREA(drawing_area), h_points, v_points);
