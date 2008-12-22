@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 
-# @(#)$Id: Makefile.am,v 2.4 2008/12/21 19:18:39 baccala Exp $
+# @(#)$Id: Makefile.am,v 2.5 2008/12/22 17:52:40 baccala Exp $
 
 # Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
 
@@ -16,7 +16,7 @@ config.h fft.h func.h proscope.h
 bin_PROGRAMS = xoscope
 
 pkglibexecdir = $(libexecdir)/@PACKAGE@
-pkglibexec_PROGRAMS = offt xy
+pkglibexec_PROGRAMS = offt
 pkglibexec_SCRIPTS = operl ofreq.ini
 
 EXTRA_DIST = $(man_MANS) $(noinst_HEADERS) HARDWARE Makefile.dos	\
@@ -55,8 +55,8 @@ xoscope_LDADD = $(GUI_LIB) @GTK_LIBS@ @GTKDATABOX_LIBS@
 
 offt_SOURCES = offt.c fft.c realfft.c
 
-xy_SOURCES = com_gtk.c xy_gtk.c xy.c
-xy_LDADD = @GTK_LIBS@
+# xy_SOURCES = com_gtk.c xy_gtk.c xy.c
+# xy_LDADD = @GTK_LIBS@
 
 install-data-local:
 	@$(NORMAL_INSTALL)
