@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: gr_gtk.c,v 2.1 2008/12/21 19:18:39 baccala Exp $
+ * @(#)$Id: gr_gtk.c,v 2.2 2008/12/22 17:47:40 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -217,130 +217,6 @@ ExternCommand()
   /*    gtk_grab_add(window); */
 }
 
-/* text_write() and its friends are really a big pain.  I expect them
- * to go away when we release xoscope 2.0 with a completely GTK-based
- * GUI.  In the meantime, I'm not going to bother putting much work
- * into them.
- *
- * text_write(str, x, y, fieldsize, fgcolor, bgcolor, alignment)
- *
- * draws str at (x,y) (in row/col coordinates, not pixels), using
- * fgcolor.  bgcolor is ignored (always black background).  alignment
- * is ALIGN_LEFT, ALIGN_RIGHT, or ALIGN_CENTER.  fieldsize is the size
- * of the text field (in characters).  The idea is that text_write
- * remembers (via textarea[][]) what characters have been drawn
- * already and doesn't redraw things if they haven't changed (this is
- * to avoid pounding the X server with unnecessary traffic, and to
- * simplify the code in display.c).  If the text has changed, the field
- * (of size fieldsize) is blacked out, then the new text is drawn.  If
- * fieldsize is zero, then it's just assumed to be the size of the
- * text string we're trying to write.  vga_write() is a helper
- * function.
- *
- * The biggest problem is not so much here, but in the code that calls
- * here, figuring out the sizes of the several dozen fields, getting
- * their coordinates and fieldsizes right, making sure the stuff being
- * drawn into them doesn't overflow their borders... the usual GUI
- * nonsense.  This is what we have a GUI library for - so we don't
- * have to do all this!  Like it said, I want it to go away...
- */
-
-int
-vga_write(char *s, short x, short y, void *f, short fg, short bg, char p)
-{
-  static int w;
-
-  SetColor(fg);
-  w = gdk_string_width(f, s);
-  if (p == ALIGN_CENTER)
-    x -= w / 2;
-  else if (p == ALIGN_RIGHT)
-    x -= w;
-
-  gdk_draw_rectangle(drawing_area->window,
-		     drawing_area->style->black_gc,
-		     TRUE,
-		     x, y + 2, w, 16);
-
-  gdk_draw_string(drawing_area->window, font, gc, x, y + 16, s);
-  return(1);
-}
-
-static char textarea[30][80];
-int row(int);
-int col(int);
-
-void text_write(char *str, int x, int y, int fieldsize,
-		int fgcolor, int bgcolor, int alignment)
-{
-  char buf[80];
-  int len = strlen(str);
-  int start_x = 0;
-  int w;
-
-  if (fieldsize == 0) {
-    fieldsize = len;
-    strcpy(buf, str);
-    if (alignment == ALIGN_LEFT)
-      start_x = x;
-    else if (alignment == ALIGN_CENTER)
-      start_x = x - len / 2;
-    else if (alignment == ALIGN_RIGHT)
-      start_x = x - len;
-  } else {
-    memset(buf, ' ', fieldsize);
-    if (alignment == ALIGN_LEFT) {
-      strncpy(buf, str, fieldsize);
-      start_x = x;
-    } else if (alignment == ALIGN_RIGHT) {
-      strcpy(buf + fieldsize - len, str);
-      start_x = x - fieldsize;
-    } else if (alignment == ALIGN_CENTER) {
-      strcpy(buf + (fieldsize - len) / 2, str);
-      start_x = x - fieldsize / 2;
-    }
-  }
-
-  if ((y < 0) || (y >= 30) || (x < 0) || (start_x+fieldsize >= 80)) {
-    printf("Text overflow in text_write()!\n");
-    return;
-  }
-
-  if (strncmp(&textarea[y][start_x], str, fieldsize) == 0) return;
-
-  strcpy(&textarea[y][start_x], str);
-
-  SetColor(fgcolor);
-  x = col(x);
-  w = gdk_string_width(font, str);
-  if (alignment == ALIGN_CENTER)
-    x -= w / 2;
-  else if (alignment == ALIGN_RIGHT)
-    x -= w;
-
-  gdk_draw_rectangle(drawing_area->window,
-		     drawing_area->style->black_gc,
-		     TRUE,
-		     col(start_x), row(y) + 2, fieldsize*8, 16);
-
-  gdk_draw_string(drawing_area->window, font, gc, x, row(y) + 16, str);
-
-}
-
-void
-clear_text_memory()
-{
-  memset(textarea, ' ', sizeof(textarea));
-}
-
-
-void
-clear_display()
-{
-  ClearDrawArea();
-  clear_text_memory();
-}
-
 /* PolyPoint() and PolyLine()
  *
  * These functions are a bit special.  There are only used by code
@@ -360,41 +236,37 @@ clear_display()
  * this), in case we need to redraw the screen after an expose event.
  */
 
-/* XXX need to reset clipping rectangles on a configure_event */
-
-static GdkGC *data_gc[16];		/* initialized NULL by compiler */
-
-static void verify_data_gc(int color)
-{
-  if (data_gc[color] == NULL) {
-    GdkRectangle cliprect = {100, 80, h_points - 200, v_points - 160};
-
-    /* XXX should we check for error return here? */
-    data_gc[color] = gdk_gc_new(drawing_area->window);
-
-    gdk_gc_copy(data_gc[color], gc);
-    gdk_gc_set_foreground(data_gc[color], &gdkcolor[color]);
-    gdk_gc_set_clip_rectangle(data_gc[color], &cliprect);
-  }
-}
+GtkWidget *databox;
 
 void
 PolyPoint(int color, Point *points, int count)
 {
-  /* This is just here to make sure future changes to GDK don't break
-   * this assumption - that we can just cast Point to GdkPoint
-   */
-  assert(sizeof(Point) == sizeof(GdkPoint));
+    GdkColor gcolor;
+    GtkDataboxGraph *graph;
+    gfloat *X = NULL;
+    gfloat *Y = NULL;
+    gint i;
 
-  verify_data_gc(color);
+    /* new widget code follows */
+    /* XXX make sure we free the gfloat arrays at some point */
 
-  if (pixmap) gdk_draw_points(pixmap, data_gc[color],
-			      (GdkPoint *) points, count);
-  gdk_draw_points(drawing_area->window, data_gc[color],
-		  (GdkPoint *) points, count);
+    X = g_new0(gfloat, count);
+    Y = g_new0(gfloat, count);
+
+    for (i = 0; i < count; i ++) {
+	X[i] = points[i].x;
+	Y[i] = points[i].y;
+    }
+
+    gcolor.red = 65535;
+    gcolor.green = 65535;
+    gcolor.blue = 0;
+
+    graph = gtk_databox_points_new (count, X, Y, &gcolor, 1);
+    gtk_databox_graph_add (GTK_DATABOX (databox), graph);
+
+    gtk_databox_redraw (GTK_DATABOX (databox));
 }
-
-GtkWidget *databox;
 
 void
 PolyLine(int color, Point *points, int count)
@@ -405,14 +277,8 @@ PolyLine(int color, Point *points, int count)
     gfloat *Y = NULL;
     gint i;
 
-    verify_data_gc(color);
-
-    if (pixmap) gdk_draw_lines(pixmap, data_gc[color],
-			       (GdkPoint *) points, count);
-    gdk_draw_lines(drawing_area->window, data_gc[color],
-		   (GdkPoint *) points, count);
-
     /* new widget code follows */
+    /* XXX make sure we free the gfloat arrays at some point */
 
     X = g_new0(gfloat, count);
     Y = g_new0(gfloat, count);
@@ -863,9 +729,9 @@ static GtkItemFactoryEntry menu_items[] =
   {"/Channel/Store/Mem U", "U", hit_key, (int)"U", "<CheckItem>"},
   {"/Channel/Store/Mem V", "V", hit_key, (int)"V", "<CheckItem>"},
   {"/Channel/Store/Mem W", "W", hit_key, (int)"W", "<CheckItem>"},
-  {"/Channel/Store/Mem X", "W", hit_key, (int)"X", "<CheckItem>"},
-  {"/Channel/Store/Mem Y", "W", hit_key, (int)"Y", "<CheckItem>"},
-  {"/Channel/Store/Mem Z", "W", hit_key, (int)"Z", "<CheckItem>"},
+  {"/Channel/Store/Mem X", "X", hit_key, (int)"X", "<CheckItem>"},
+  {"/Channel/Store/Mem Y", "Y", hit_key, (int)"Y", "<CheckItem>"},
+  {"/Channel/Store/Mem Z", "Z", hit_key, (int)"Z", "<CheckItem>"},
 
   {"/Channel/Recall", NULL, NULL, 0, "<Branch>"},
   {"/Channel/Recall/tear", NULL, NULL, 0, "<Tearoff>"},
@@ -961,6 +827,8 @@ static GtkItemFactoryEntry menu_items[] =
   {"/Scope/Plot Mode/Step", NULL, plotmode, (int)"4", "/Scope/Plot Mode/Line Accumulate"},
   {"/Scope/Plot Mode/Step Accumulate", NULL, plotmode, (int)"5", "/Scope/Plot Mode/Step"},
   {"/Scope/Graticule/tear", NULL, NULL, 0, "<Tearoff>"},
+#if 0
+  /* XXX have no way to set the graticule color in the new GTK+ 2 interface */
   {"/Scope/Graticule/Color/tear", NULL, NULL, 0, "<Tearoff>"},
   {"/Scope/Graticule/Color/black", NULL, setcolor, (int)"a", NULL},
   {"/Scope/Graticule/Color/blue", NULL, setcolor, (int)"b", NULL},
@@ -979,6 +847,7 @@ static GtkItemFactoryEntry menu_items[] =
   {"/Scope/Graticule/Color/yellow", NULL, setcolor, (int)"o", NULL},
   {"/Scope/Graticule/Color/white", NULL, setcolor, (int)"p", NULL},
   {"/Scope/Graticule/sep", NULL, NULL, 0, "<Separator>"},
+#endif
   {"/Scope/Graticule/In Front", NULL, graticule, (int)"0", "<RadioItem>"},
   {"/Scope/Graticule/Behind", NULL, graticule, (int)"1", "/Scope/Graticule/In Front"},
   {"/Scope/Graticule/sep", NULL, NULL, 0, "<Separator>"},
@@ -1176,7 +1045,7 @@ fix_widgets()
 
   /* Now the store and recall channels - set the names for memory or
    * data source, and mark the channels active/sensitive if memory
-   * is stored there.  Store meny only displays options for the memory
+   * is stored there.  Store menu only displays options for the memory
    * channels that are actually 'visible', i.e, not obscured by
    * data source channels.
    */
@@ -1517,44 +1386,22 @@ init_widgets()
 
   /* create_databox_toplevel(); */
   glade_window = create_window1();
-  gtk_widget_show(glade_window);
 
   setup_help_text(glade_window);
 
 #if 0
-  gcolor.red = 0;
-  gcolor.green = 0;
-  gcolor.blue = 0;
-
-  gtk_widget_modify_bg (glade_window, GTK_STATE_NORMAL, &gcolor);
-#endif
-
-  window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
   gtk_signal_connect(GTK_OBJECT(window), "delete_event",
 		     GTK_SIGNAL_FUNC(delete_event), NULL);
-  gtk_signal_connect(GTK_OBJECT(window),"key_press_event",
-		     GTK_SIGNAL_FUNC(key_press_event), NULL);
+#endif
 
-  vbox = gtk_vbox_new(FALSE, 0);
-  gtk_container_add(GTK_CONTAINER(window), vbox);
-
-#if 0
-  get_main_menu(window, &menubar);
-  gtk_box_pack_start(GTK_BOX(vbox), menubar, FALSE, TRUE, 0);
-  gtk_widget_show(menubar);
-#else
   get_main_menu(glade_window, &menubar);
   gtk_box_pack_start(GTK_BOX(LU("vbox1")), menubar, FALSE, TRUE, 0);
   gtk_box_reorder_child(GTK_BOX(LU("vbox1")), menubar, 0);
   gtk_widget_show(menubar);
-#endif
 
-  drawing_area = gtk_drawing_area_new();
-  gtk_drawing_area_size(GTK_DRAWING_AREA(drawing_area), h_points, v_points);
-  gtk_signal_connect(GTK_OBJECT(drawing_area), "expose_event",
-		     GTK_SIGNAL_FUNC(expose_event), NULL);
-  gtk_signal_connect(GTK_OBJECT(drawing_area),"configure_event",
-		     GTK_SIGNAL_FUNC(configure_event), NULL);
+  gtk_widget_show(glade_window);
+
+#if 0
   gtk_signal_connect(GTK_OBJECT(drawing_area), "motion_notify_event",
 		     GTK_SIGNAL_FUNC(motion_event), NULL);
   gtk_signal_connect(GTK_OBJECT(drawing_area), "button_press_event",
@@ -1564,24 +1411,8 @@ init_widgets()
 			 | GDK_BUTTON_PRESS_MASK
 			 | GDK_POINTER_MOTION_MASK
 			 | GDK_POINTER_MOTION_HINT_MASK);
+#endif
 
-  gtk_box_pack_start(GTK_BOX(vbox), drawing_area, TRUE, TRUE, 0);
-  gtk_widget_show(drawing_area);
-  gtk_widget_show(vbox);
-  gtk_widget_show(window);
-
-  gc = gdk_gc_new(drawing_area->window);
-  for (i=0 ; i < 16 ; i++) {
-    color[i] = i;
-    gdk_color_parse(colors[i], &gdkcolor[i]);
-    gdkcolor[i].pixel = (gulong)(gdkcolor[i].red * 65536 +
-				 gdkcolor[i].green * 256 + gdkcolor[i].blue);
-    gdk_color_alloc(gtk_widget_get_colormap(window), &gdkcolor[i]);
-  }
-  gdk_gc_set_background(gc, &gdkcolor[0]);
-  SetColor(15);
-  font = gdk_font_load(fontname);
-  ClearDrawArea();
 }
 
 void inputCallback(gpointer data, gint source, GdkInputCondition condition)

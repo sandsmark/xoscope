@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 2.1 2008/12/21 19:18:39 baccala Exp $
+ * @(#)$Id: display.c,v 2.2 2008/12/22 17:47:40 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -34,7 +34,6 @@ extern GtkWidget *databox;
 #define DEBUG 0
 
 void	show_data();
-void	text_write();
 void	init_widgets();
 void	fix_widgets();
 void	clear_display();
@@ -75,10 +74,7 @@ row(int y)
 void
 message(char *message, int clr)
 {
-  text_write("                                                  ",
-	     40, 5, 0, clr, TEXT_BG, ALIGN_CENTER);
-  text_write(message,
-	     40, 5, 0, clr, TEXT_BG, ALIGN_CENTER);
+  /* XXX need something here */
 }
 
 void
@@ -180,62 +176,21 @@ draw_text(int all)
 
   p = &ch[scope.select];
 
-  if (scope.verbose) {
-      make_help_text_visible(glade_window);
-  } else {
-      make_help_text_invisible(glade_window);
-  }
-
   if (all) {			/* everything */
 
     /* above graticule */
     if (scope.verbose) {
 
-      text_write("(Esc)", 0, 0, 0, KEY_FG, TEXT_BG, ALIGN_LEFT);
-      text_write("Quit", 5, 0, 0, TEXT_FG, TEXT_BG, ALIGN_LEFT);
-      text_write(progname, 12, 0, 0, TEXT_FG, TEXT_BG, ALIGN_LEFT);
+      /* progname and version dynamic */
 
-      text_write("(@)", 2, 1, 0, KEY_FG, TEXT_BG, ALIGN_LEFT);
-      text_write("Load", 5, 1, 0, TEXT_FG, TEXT_BG, ALIGN_LEFT);
-
-      sprintf(string, "ver: %s", version);
-      text_write(string, 12, 1, 0, TEXT_FG, TEXT_BG, ALIGN_LEFT);
-
-      text_write("(#)", 2, 2, 0, KEY_FG, TEXT_BG, ALIGN_LEFT);
-      text_write("Save", 5, 2, 0, TEXT_FG, TEXT_BG, ALIGN_LEFT);
-
-      sprintf(string, "%d x %d", h_points, v_points);
-      text_write(string, 12, 2, 0, TEXT_FG, TEXT_BG, ALIGN_LEFT);
-
-      text_write("(&)", 2, 3, 0, KEY_FG, TEXT_BG,ALIGN_LEFT);
-
-      if (datasrc && datasrc->option1str != NULL) {
-	text_write("(*)", 17, 3, 0, KEY_FG, TEXT_BG,ALIGN_RIGHT);
-      }
-
-      text_write("(Enter)", 70, 0, 0, KEY_FG, TEXT_BG, ALIGN_RIGHT);
-      text_write("Refresh", 77, 0, 0, TEXT_FG, TEXT_BG, ALIGN_RIGHT);
-
-      text_write("(,)", 70, 1, 0, KEY_FG, TEXT_BG, ALIGN_RIGHT);
-      text_write("Graticule", 79, 1, 0, TEXT_FG, TEXT_BG, ALIGN_RIGHT);
-
-      text_write("(_)(-)                      (=)(+)", 40, 2,
-		 0, KEY_FG, TEXT_BG, ALIGN_CENTER);
-
-      text_write("(.)", 70, 2, 0, KEY_FG, TEXT_BG, ALIGN_RIGHT);
-      text_write(scope.behind ? "Behind   " : "In Front ", 79, 2,
-		 0, TEXT_FG, TEXT_BG, ALIGN_RIGHT);
-
-      text_write("(<)      (>)", 79, 3,	0, KEY_FG, TEXT_BG, ALIGN_RIGHT);
-      text_write("Color", 75, 3, 0, TEXT_FG, TEXT_BG, ALIGN_RIGHT);
-
-      text_write("(!)", 12, 4, 0, KEY_FG, TEXT_BG, ALIGN_RIGHT);
-      text_write("(space)", 61, 4, 0, KEY_FG, TEXT_BG, ALIGN_RIGHT);
+      /* setting help text is special */
+      gtk_label_set_text(GTK_LABEL(LU("graticule_position_help_label")),
+			 scope.behind ? "Behind" : "In Front");
+      setup_help_text(LU("graticule_position_help_label"));
 
     } else {			/* not verbose */
 
-      text_write("(?)", 75, 0, 0, KEY_FG, TEXT_BG, ALIGN_RIGHT);
-      text_write("Help", 79, 0, 0, TEXT_FG, TEXT_BG, ALIGN_RIGHT);
+      /* XXX display (?) Help */
     }
 
     if (scope.trige) {
@@ -250,30 +205,23 @@ draw_text(int all)
 	sprintf(string, "%s Trigger @ %d",
 		trigs[scope.trige], scope.trig);
       }
-      text_write(string, 40, 2,	0, TEXT_FG, TEXT_BG, ALIGN_CENTER);
-      text_write(trigsig->name, 40, 3, 0, TEXT_FG, TEXT_BG, ALIGN_CENTER);
-      gtk_label_set_text(LU("trigger_label"), string);
-      gtk_label_set_text(LU("trigger_source_label"), trigsig->name);
+      gtk_label_set_text(GTK_LABEL(LU("trigger_label")), string);
+      gtk_label_set_text(GTK_LABEL(LU("trigger_source_label")), trigsig->name);
     } else {
-      text_write("No Trigger", 40, 2, 0, TEXT_FG, TEXT_BG, ALIGN_CENTER);
-      gtk_label_set_text(LU("trigger_label"), "No Trigger");
-      gtk_label_set_text(LU("trigger_source_label"), "");
+      gtk_label_set_text(GTK_LABEL(LU("trigger_label")), "No Trigger");
+      gtk_label_set_text(GTK_LABEL(LU("trigger_source_label")), "");
     }
 
-    text_write(datasrc ? datasrc->name : "No data source", 5, 3,
-	       0, TEXT_FG, TEXT_BG, ALIGN_LEFT);
-    gtk_label_set_text(LU("data_source"),
+    gtk_label_set_text(GTK_LABEL(LU("data_source")),
 		       datasrc ? datasrc->name : "No data source");
 
-    text_write(strings[scope.mode], 12, 4, 0, TEXT_FG, TEXT_BG, ALIGN_LEFT);
-    gtk_label_set_text(LU("line_style"), strings[scope.mode]);
+    gtk_label_set_text(GTK_LABEL(LU("line_style")), strings[scope.mode]);
 
     if (datasrc && (datasrc->option1str != NULL)
 	&& ((s = datasrc->option1str()) != NULL)) {
-      text_write(s, 17, 3, 0, TEXT_FG, TEXT_BG, ALIGN_LEFT);
-      gtk_label_set_text(LU("data_source_opt1"), s);
+      gtk_label_set_text(GTK_LABEL(LU("data_source_opt1")), s);
     } else {
-      gtk_label_set_text(LU("data_source_opt1"), "");
+      gtk_label_set_text(GTK_LABEL(LU("data_source_opt1")), "");
     }
 
 
@@ -283,10 +231,6 @@ draw_text(int all)
       j = (i % 4) * 5 + 5;
       k = ch[i].color;
 
-      text_write("Channel", 69 * (i / 4), j, 0, k, TEXT_BG, ALIGN_LEFT);
-      sprintf(string, "(%d)", i + 1);
-      text_write(string, 69 * (i / 4) + 7, j, 0, KEY_FG, TEXT_BG, ALIGN_LEFT);
-
       if ((scope.verbose || ch[i].show || scope.select == i) && ch[i].signal) {
 
 	/* XXX here and other places, need to make sure we clear the field */
@@ -295,29 +239,24 @@ draw_text(int all)
 		 (float)ch[i].signal->volts * ch[i].div / ch[i].mult / 10);
 	else
 	  sprintf(string, "%d / %d", ch[i].mult, ch[i].div);
-	text_write(string, 69 * (i / 4), j + 1, 0, k, TEXT_BG, ALIGN_LEFT);
 	sprintf(widget, "Ch%1d_scale", i+1);
-	gtk_label_set_text(LU(widget), string);
+	gtk_label_set_text(GTK_LABEL(LU(widget)), string);
 
 	sprintf(string, "%d @ %d", ch[i].bits, -(ch[i].pos));
-	text_write(string, 69 * (i / 4) + 5, j + 2,
-		   0, k, TEXT_BG, ALIGN_CENTER);
 	sprintf(widget, "Ch%1d_position", i+1);
-	gtk_label_set_text(LU(widget), string);
+	gtk_label_set_text(GTK_LABEL(LU(widget)), string);
 
-	text_write(ch[i].signal->name, 69 * (i / 4), j + 3,
-		  0, ch[i].color, TEXT_BG, ALIGN_LEFT);
 	sprintf(widget, "Ch%1d_source", i+1);
-	gtk_label_set_text(LU(widget), ch[i].signal->name);
+	gtk_label_set_text(GTK_LABEL(LU(widget)), ch[i].signal->name);
 
       } else {
 
 	sprintf(widget, "Ch%1d_scale", i+1);
-	gtk_label_set_text(LU(widget), "");
+	gtk_label_set_text(GTK_LABEL(LU(widget)), "");
 	sprintf(widget, "Ch%1d_position", i+1);
-	gtk_label_set_text(LU(widget), "");
+	gtk_label_set_text(GTK_LABEL(LU(widget)), "");
 	sprintf(widget, "Ch%1d_source", i+1);
-	gtk_label_set_text(LU(widget), "");
+	gtk_label_set_text(GTK_LABEL(LU(widget)), "");
 
       }
 
@@ -328,42 +267,15 @@ draw_text(int all)
 	gtk_frame_set_shadow_type(GTK_FRAME(LU(widget)), GTK_SHADOW_NONE);
       }
 
-      if (scope.select == i) {
-	SetColor(k);
-	k = i < 4 ? 11 : 80 - 11;
-	DrawLine(col(i < 4 ? 0 : 79), row(j), col(k), row(j));
-	DrawLine(col(k), row(j), col(k), row(j + 5) - 1);
-	DrawLine(col(i < 4 ? 0 : 79), row(j + 5) - 1,
-		 col(k), row(j + 5) - 1);
-      }
     }
 
     /* below graticule */
     if (scope.verbose) {
-      text_write("(Tab)", 0, 25, 0, KEY_FG, TEXT_BG, ALIGN_LEFT);
-      text_write(p->show ? "Visible" : "HIDDEN ", 5, 25,
-		0, p->color, TEXT_BG, ALIGN_LEFT);
-      gtk_label_set_text(LU("tab_help_label"), p->show ? "Visible" : "HIDDEN");
 
-      text_write("({)     (})", 0, 26, 0, KEY_FG, TEXT_BG, ALIGN_LEFT);
-      text_write("Scale", 3, 26, 0, p->color, TEXT_BG, ALIGN_LEFT);
-
-      text_write("([)     (])", 0, 27, 0, KEY_FG, TEXT_BG,ALIGN_LEFT);
-      text_write("Pos.", 3, 27, 0, p->color,TEXT_BG,ALIGN_LEFT);
-
-      if (datasrc && datasrc->option2str != NULL) {
-	text_write("(^)", 0, 28, 0, KEY_FG, TEXT_BG, ALIGN_LEFT);
-      }
-
-      text_write("(9)              (0)", 40, 25,
-		0, KEY_FG, TEXT_BG, ALIGN_CENTER);
-      text_write("(()              ())", 40, 26,
-		0, KEY_FG, TEXT_BG, ALIGN_CENTER);
-
-      text_write("(A-W)", 73, 27, 0, KEY_FG, TEXT_BG, ALIGN_RIGHT);
-      text_write("Store", 78, 27,
-		0, p->color, TEXT_BG, ALIGN_RIGHT);
-
+      /* setting help text is special */
+      gtk_label_set_text(GTK_LABEL(LU("tab_help_label")), p->show ? "Visible" : "HIDDEN");
+      setup_help_text(LU("tab_help_label"));
+#if 0
       if (scope.select > 1) {
 	text_write("($)", 72, 25,
 		  0, KEY_FG, TEXT_BG, ALIGN_RIGHT);
@@ -374,24 +286,15 @@ draw_text(int all)
 	text_write("Math", 76, 26,
 		  0, p->color, TEXT_BG, ALIGN_RIGHT);
       }
+#endif
 
-      /* XXX not exactly true anymore */
-      text_write("(a-z)", 73, 28,
-		0, KEY_FG, TEXT_BG, ALIGN_RIGHT);
-      text_write("Recall", 79, 28,
-		0, p->color, TEXT_BG, ALIGN_RIGHT);
-
-      text_write("(", 26, 28, 0, KEY_FG, TEXT_BG, ALIGN_LEFT);
-      text_write(")", 53, 28, 0, KEY_FG, TEXT_BG, ALIGN_LEFT);
     }
 
     if (datasrc && (datasrc->option2str != NULL)
 	&& ((s = datasrc->option2str()) != NULL)) {
-      text_write(s, 3, 28,
-		0, TEXT_FG, TEXT_BG, ALIGN_LEFT);
-      gtk_label_set_text(LU("data_source_opt2"), s);
+      gtk_label_set_text(GTK_LABEL(LU("data_source_opt2")), s);
     } else {
-      gtk_label_set_text(LU("data_source_opt2"), "");
+      gtk_label_set_text(GTK_LABEL(LU("data_source_opt2")), "");
     }
 
     fix_widgets();
@@ -404,9 +307,7 @@ draw_text(int all)
   if (p->signal && (p->signal->bits == 0)) {
 
     sprintf(string, "  Period of %6d us = %6d Hz  ", stats.time,  stats.freq);
-    text_write(string, 40, 0,
-	      0, p->color, TEXT_BG, ALIGN_CENTER);
-    gtk_label_set_text(LU("period_label"), string);
+    gtk_label_set_text(GTK_LABEL(LU("period_label")), string);
 
     if (p->signal->volts)
       sprintf(string, "   %7.5g - %7.5g = %7.5g mV   ",
@@ -416,12 +317,11 @@ draw_text(int all)
     else
       sprintf(string, " Max:%3d - Min:%4d = %3d Pk-Pk ",
 	      stats.max, stats.min, stats.max - stats.min);
-    text_write(string, 40, 1,
-	      0, p->color, TEXT_BG, ALIGN_CENTER);
-    gtk_label_set_text(LU("min_max_label"), string);
+    gtk_label_set_text(GTK_LABEL(LU("min_max_label")), string);
   }
 
   if (math_warning) {
+#if 0
 #if 0
     sprintf(string, "WARNING: math(%d,%d) is bogus!",
 	    ch[0].signal->rate, ch[1].signal->rate);
@@ -430,29 +330,22 @@ draw_text(int all)
     text_write("WARNING: math is bogus!", 40, 4,
 	       0, KEY_FG, TEXT_BG, ALIGN_CENTER);
 #endif
+#endif
   }
 
   if (datasrc && datasrc->status_str != NULL) {
     for (i=0; i<8; i++) {
-      int fieldsize[] = {16,16,16,16,20,20,12,12};
       sprintf(widget, "status_%d", i);
       if ((s = datasrc->status_str(i)) != NULL) {
-	if (i%2 == 0)
-	  text_write(s, 12, 25 + i/2, fieldsize[i],
-		     TEXT_FG, TEXT_BG, ALIGN_LEFT);
-	else
-	  text_write(s, 66, 25 + i/2, fieldsize[i],
-		     TEXT_FG, TEXT_BG, ALIGN_RIGHT);
-
-	gtk_label_set_text(LU(widget), s);
+	gtk_label_set_text(GTK_LABEL(LU(widget)), s);
       } else {
-	gtk_label_set_text(LU(widget), "");
+	gtk_label_set_text(GTK_LABEL(LU(widget)), "");
       }
     }
   } else {
     for (i=0; i<8; i++) {
       sprintf(widget, "status_%d", i);
-      gtk_label_set_text(LU(widget), "");
+      gtk_label_set_text(GTK_LABEL(LU(widget)), "");
     }
   }
 
@@ -460,19 +353,15 @@ draw_text(int all)
   if (sec != prev) {		/* fix "scribbled" text once a second */
 
     strcpy(string, scope.run ? (scope.run > 1 ? "WAIT" : " RUN") : "STOP");
-    text_write(string, 68, 4, 0, TEXT_FG, TEXT_BG, ALIGN_RIGHT);
-    gtk_label_set_text(LU("run_stop_label"), string);
+    gtk_label_set_text(GTK_LABEL(LU("run_stop_label")), string);
 
     sprintf(string, "fps:%3d", frames);
-    text_write(string, 66, 2, 0, TEXT_FG, TEXT_BG, ALIGN_RIGHT);
-    gtk_label_set_text(LU("fps_label"), string);
+    gtk_label_set_text(GTK_LABEL(LU("fps_label")), string);
 
+    /* Use UTF-8 micro sign */
     i = 1000 * scope.div / scope.scale;
-    sprintf(string, "%d %cs/div", i > 999 ? i / 1000: i, i > 999 ? 'm' : 'u');
-    text_write(string, 40, 25, 0, TEXT_FG, TEXT_BG, ALIGN_CENTER);
-
     sprintf(string, "%d %ss/div", i > 999 ? i / 1000: i, i > 999 ? "m" : "\302\265");
-    gtk_label_set_text(LU("timebase_label"), string);
+    gtk_label_set_text(GTK_LABEL(LU("timebase_label")), string);
 
     if (p->signal) {
 
@@ -490,16 +379,12 @@ draw_text(int all)
       /* sprintf(string, "%d Samples", p->signal->num); */
       /* sprintf(string, "%d Samples", samples(p->signal->rate)); */
       sprintf(string, "%d Samples/frame", p->signal->width);
-      text_write(string, 40, 27, 14, p->color, TEXT_BG, ALIGN_CENTER);
-
-      gtk_label_set_text(LU("samples_per_frame_label"), string);
+      gtk_label_set_text(GTK_LABEL(LU("samples_per_frame_label")), string);
 
       if (p->signal->rate > 0) {
 
 	sprintf(string, "%d S/s", p->signal->rate);
-	text_write(string, 40, 26, 0, p->color, TEXT_BG, ALIGN_CENTER);
-
-	gtk_label_set_text(LU("sample_rate_label"), string);
+	gtk_label_set_text(GTK_LABEL(LU("sample_rate_label")), string);
 
       } else if (p->signal->rate < 0) {
 
@@ -513,39 +398,14 @@ draw_text(int all)
 
 	sprintf(string, "%d Hz/div FFT",
 		(- p->signal->rate) * 44 * scope.div / scope.scale / 10);
-	text_write(string, 40, 26, 0, p->color, TEXT_BG, ALIGN_CENTER);
-
-	gtk_label_set_text(LU("sample_rate_label"), string);
-      }
-    }
-
-    for (i = 0 ; i < 26 ; i++) {
-      sprintf(string, "%c", i + 'a');
-      if (datasrc && i < datasrc->nchans()) {
-	/* XXX Maybe here we should show color by channel if sig displayed */
-#if 0
-	text_write(string, 27 + i, 28,
-		  0, chan[i].color, TEXT_BG, ALIGN_LEFT);
-#else
-	text_write(string, 27 + i, 28,
-		  0, TEXT_FG, TEXT_BG, ALIGN_LEFT);
-#endif
-      } else if (mem[i].num > 0) {
-	/* XXX different color here for memory? */
-	text_write(string, 27 + i, 28,
-		  0, TEXT_FG, TEXT_BG, ALIGN_LEFT);
+	gtk_label_set_text(GTK_LABEL(LU("sample_rate_label")), string);
       }
     }
 
     for (i = 0 ; i < 26 ; i++) {
       if (datasrc && i < datasrc->nchans()) {
 	/* XXX Maybe here we should show color by channel if sig displayed */
-#if 0
-	text_write(string, 27 + i, 28,
-		  0, chan[i].color, TEXT_BG, ALIGN_LEFT);
-#else
 	string[i] = i + 'a';
-#endif
       } else if (mem[i].num > 0) {
 	/* XXX different color here for memory? */
 	string[i] = i + 'a';
@@ -554,11 +414,28 @@ draw_text(int all)
       }
     }
     string[i] = '\0';
-    gtk_label_set_text(LU("registers"), string);
+    gtk_label_set_text(GTK_LABEL(LU("registers")), string);
+
+    /* setting help text is special */
+    sprintf(string, "(%c-Z)", 'A' + (datasrc ? datasrc->nchans() : 0));
+    gtk_label_set_text(GTK_LABEL(LU("store_key_label")), string);
+    setup_help_text(LU("store_key_label"));
+
+    /* setting help text is special */
+    sprintf(string, "(%c-z)", 'a' + (datasrc ? datasrc->nchans() : 0));
+    gtk_label_set_text(GTK_LABEL(LU("recall_key_label")), string);
+    setup_help_text(LU("recall_key_label"));
 
     frames = 0;
     prev = sec;
   }
+
+  if (scope.verbose) {
+      make_help_text_visible(glade_window);
+  } else {
+      make_help_text_invisible(glade_window);
+  }
+
   frames++;
 }
 
@@ -639,7 +516,8 @@ clear()
 {
   int i;
 
-  clear_display();
+  /* XXX clear_display(); */
+
   if (datasrc) {
 
     /* In oscope.h, I wrote "Only after reset() has been called are
@@ -701,6 +579,7 @@ draw_graticule()
     0, -10, 10
   };
 
+#if 0
   /* a mark where the trigger level is, if the triggered channel is shown */
   if (scope.trige) {
     i = -1;
@@ -714,8 +593,10 @@ draw_graticule()
       DrawLine(90, j + tilt[scope.trige], 110, j - tilt[scope.trige]);
     }
   }
+#endif
 
   /* the frame */
+#if 0
 #if 0
   SetColor(clip ? mem[clip + 22].color : color[scope.color]);
 #else
@@ -725,33 +606,11 @@ draw_graticule()
   DrawLine(100, v_points - 80, h_points - 100, v_points - 80);
   DrawLine(100, 80, 100, v_points - 80);
   DrawLine(h_points - 100, 80, h_points - 100, v_points - 80);
+#endif
 
   if (scope.grat) {
 
     /* cross-hairs every 5 x 5 divisions */
-    if (scope.grat > 1) {
-      for (i = 320 ; i < h_points - 100 ; i += 220) {
-	DrawLine(i, 80, i, v_points - 80);
-      }
-      for (i = 0 ; (offset - i) > 80 ; i += 160) {
-	DrawLine(100, offset - i, h_points - 100, offset - i);
-	DrawLine(100, offset + i, h_points - 100, offset + i);
-      }
-    }
-
-    /* vertical dotted lines */
-    for (i = 144 ; i < h_points - 100 ; i += 44) {
-      for (j = 864 ; j < (v_points - 80) * 10 ; j += 64) {
-	DrawPixel(i, j / 10);
-      }
-    }
-
-    /* horizontal dotted lines */
-    for (i = 112 ; i < v_points - 80 ; i += 32) {
-      for (j = 1088 ; j < (h_points - 100) * 10 ; j += 88) {
-	DrawPixel(j / 10, i);
-      }
-    }
 
     /* NEW DATABOX CODE */
 
@@ -881,29 +740,33 @@ draw_data()
        * screen.  It really could be somewhat smarter.
        */
 
+#if 0
+      /* XXX update for new databox code */
+
       if (scope.curs && j == scope.select) {
 	X = (scope.cursa - 1) * 10000 / num + l + 1;
 	if (X != preva) {
-	  SetColor(color[0]);
+	  /* XXX SetColor(color[0]); */
 	  DrawLine(preva, 70, preva, v_points - 70);
 	  preva = X;
 	}
 	if (X < h_points - 100) {
-	  SetColor(p->color);
+	  /* XXX SetColor(p->color); */
 	  DrawLine(X, 70, X, v_points - 70);
 	}
 
 	X = (scope.cursb - 1) * 10000 / num + l + 1;
 	if (X != prevb) {
-	  SetColor(color[0]);
+	  /* XXX SetColor(color[0]); */
 	  DrawLine(prevb, 70, prevb, v_points - 70);
 	  prevb = X;
 	}
 	if (X < h_points - 100) {
-	  SetColor(p->color);
+	  /* XXX SetColor(p->color); */
 	  DrawLine(X, 70, X, v_points - 70);
 	}
       }
+#endif
 
       /* XXX make sure that if we're displaying a digital signal,
        * we go into digital display mode.  Should be elsewhere.
@@ -1088,10 +951,12 @@ draw_data()
 
       p->old_frame = p->signal->frame;
 
+#if 0
       /* Draw tick marks on left and right sides of display showing zero pos */
       SetColor(p->color);
       DrawLine(90, off, 100, off);
       DrawLine(h_points - 100, off, h_points - 90, off);
+#endif
     }
   }
 }

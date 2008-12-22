@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: com_gtk.c,v 2.0 2008/12/20 20:24:57 baccala Exp $
+ * @(#)$Id: com_gtk.c,v 2.1 2008/12/22 17:47:40 baccala Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -64,24 +64,6 @@ ClearDrawArea()
 		     0, 0,
 		     drawing_area->allocation.width,
 		     drawing_area->allocation.height);
-}
-
-void
-SetColor(int c)
-{
-  gdk_gc_set_foreground(gc, &gdkcolor[c]);
-}
-
-void
-DrawPixel(int x, int y)
-{
-  gdk_draw_point(drawing_area->window, gc, x, y);
-}
-
-void
-DrawLine(int x1, int y1, int x2, int y2)
-{
-  gdk_draw_line(drawing_area->window, gc, x1, y1, x2, y2);
 }
 
 void

@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: sc_linux.c,v 2.1 2008/12/21 19:18:39 baccala Exp $
+ * @(#)$Id: sc_linux.c,v 2.2 2008/12/22 17:47:40 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -429,9 +429,11 @@ get_data()
 
 static char * snd_status_str(int i)
 {
+#ifdef DEBUG
   static char string[16];
   sprintf(string, "status %d", i);
   return string;
+#endif
 
   switch (i) {
   case 0:
@@ -523,6 +525,7 @@ static char * option1str_sc(void)
   return string;
 }
 
+#ifdef DEBUG
 static char * option2str_sc(void)
 {
   static char string[16];
@@ -530,6 +533,7 @@ static char * option2str_sc(void)
   sprintf(string, "opt2");
   return string;
 }
+#endif
 
 static int sc_set_option(char *option)
 {
@@ -602,7 +606,11 @@ DataSrc datasrc_sc = {
   option1_sc,
   option1str_sc,
   NULL,  /* option2, */
+#ifdef DEBUG
   option2str_sc,  /* option2str, */
+#else
+  NULL,
+#endif
   sc_set_option,
   sc_save_option,
   sc_gtk_option_dialog,

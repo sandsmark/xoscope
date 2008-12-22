@@ -48,7 +48,7 @@ widget "*.version_help_label" style "white_label"
 widget "*.help_label" style "white_label"
 widget "*.refresh_help_label" style "white_label"
 widget "*.graticule_help_label" style "white_label"
-widget "*.in_front_help_label" style "white_label"
+widget "*.graticule_position_help_label" style "white_label"
 widget "*.color_help_label" style "white_label"
 
 # This one's a bit special - it's a key label, but not a "*_key_label"
