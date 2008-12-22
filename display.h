@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.h,v 2.0 2008/12/17 17:35:46 baccala Exp $
+ * @(#)$Id: display.h,v 2.1 2008/12/22 18:59:36 baccala Exp $
  *
  * Copyright (C) 1996 - 1999 Tim Witham <twitham@quiknet.com>
  *
@@ -38,7 +38,6 @@ void	DrawLine();		/* a display-specific file */
 void	SetColor();		/* like gr_vga.c or gr_sx.c */
 void	PolyPoint();
 void	PolyLine();
-void	SyncDisplay();
 void	AddTimeOut();
 void	LoadSaveFile();
 void	ExternCommand();

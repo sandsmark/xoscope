@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 2.2 2008/12/22 17:47:40 baccala Exp $
+ * @(#)$Id: display.c,v 2.3 2008/12/22 18:59:36 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -36,7 +36,6 @@ extern GtkWidget *databox;
 void	show_data();
 void	init_widgets();
 void	fix_widgets();
-void	clear_display();
 
 int	triggered = 0;		/* whether we've triggered or not */
 void	*font;
@@ -516,7 +515,7 @@ clear()
 {
   int i;
 
-  /* XXX clear_display(); */
+  gtk_databox_graph_remove_all(GTK_DATABOX(databox));
 
   if (datasrc) {
 
@@ -812,18 +811,7 @@ draw_data()
 	  prev = -1;
 	  X = 0;
 	    
-	  /* If we're not in an accumulate mode, erase anything
-           * lingering on the old line
-	   */
-
-	  if (!(scope.mode % 2) && (sl->prev_line_last > sl->prev_line_start)){
-	    if (scope.mode < 2)
-	      PolyPoint(color[0], sl->points + sl->prev_line_start,
-			  sl->prev_line_last - sl->prev_line_start + 1);
-	    else
-	      PolyLine(color[0], sl->points + sl->prev_line_start,
-			 sl->prev_line_last - sl->prev_line_start + 1);
-	  }
+	  /* This is where we used to erase the old signal line. */
 
 	  /* Now swap the current line into the previous line
 	   * and start a new current line.
@@ -913,23 +901,7 @@ draw_data()
 
 	}
 
-	/* If we're not in an accumulate mode, erase everything on the
-	 * previous line up to the last X coordinate we're going to
-	 * draw on the current line.
-	 */
-
-	if (!(scope.mode % 2) && (sl->prev_line_last > sl->prev_line_start)) {
-	  for (i = sl->prev_line_start; i < sl->prev_line_last; i ++) {
-	    if (sl->points[i].x >= l + X) break;
-	  }
-	  if (scope.mode < 2)
-	    PolyPoint(color[0], sl->points + sl->prev_line_start,
-			i - sl->prev_line_start + 1);
-	  else
-	    PolyLine(color[0], sl->points + sl->prev_line_start,
-		       i - sl->prev_line_start + 1);
-	  sl->prev_line_start = i;
-	}
+	/* This is where we used to erase the old signal line. */
 
 	/* Draw the points on the current line
 	 *
@@ -976,7 +948,13 @@ show_data(void)
   if ((scope.scale >= 100) || !in_progress)
     measure_data(&ch[scope.select], &stats);
 
-  gtk_databox_graph_remove_all(GTK_DATABOX(databox));
+  /* If we're not in an accumulate mode, erase anything lingering in
+   * the databox.  XXX this removes the cursors, too.
+   */
+
+  if (scope.mode % 2 == 0) {
+    gtk_databox_graph_remove_all(GTK_DATABOX(databox));
+  }
 
   draw_text(0);
   if (scope.behind) {
@@ -986,7 +964,8 @@ show_data(void)
     draw_data();		/* plot graticule on top of data */
     draw_graticule();
   }
-  SyncDisplay();
+
+  gtk_databox_redraw (GTK_DATABOX (databox));
 }
 
 /* animate() - get and plot some data

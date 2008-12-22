@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: com_gtk.c,v 2.1 2008/12/22 17:47:40 baccala Exp $
+ * @(#)$Id: com_gtk.c,v 2.2 2008/12/22 18:59:36 baccala Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -64,27 +64,6 @@ ClearDrawArea()
 		     0, 0,
 		     drawing_area->allocation.width,
 		     drawing_area->allocation.height);
-}
-
-void
-SyncDisplay()
-{
-
-#if 0
-
-  /* This code is called at the end of show_data(), after the pixmap
-   * has been changed around, and generates an extra expose event for
-   * the entire drawing_area, which pushes us into expose_event()
-   * below, and that actually copies the pixmap to the screen.
-   */
-
-  update_rect.x  = update_rect.y = 0;
-  update_rect.width = drawing_area->allocation.width;
-  update_rect.height = drawing_area->allocation.height;
-  gtk_widget_draw(drawing_area, &update_rect);
-
-#endif
-
 }
 
 void

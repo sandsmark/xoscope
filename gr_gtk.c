@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: gr_gtk.c,v 2.2 2008/12/22 17:47:40 baccala Exp $
+ * @(#)$Id: gr_gtk.c,v 2.3 2008/12/22 18:59:36 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -264,8 +264,6 @@ PolyPoint(int color, Point *points, int count)
 
     graph = gtk_databox_points_new (count, X, Y, &gcolor, 1);
     gtk_databox_graph_add (GTK_DATABOX (databox), graph);
-
-    gtk_databox_redraw (GTK_DATABOX (databox));
 }
 
 void
@@ -294,8 +292,6 @@ PolyLine(int color, Point *points, int count)
 
     graph = gtk_databox_lines_new (count, X, Y, &gcolor, 1);
     gtk_databox_graph_add (GTK_DATABOX (databox), graph);
-
-    gtk_databox_redraw (GTK_DATABOX (databox));
 }
 
 /* callback to redisplay the drawing area; snap to a graticule division */
