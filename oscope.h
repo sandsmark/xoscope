@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.h,v 2.1 2008/12/17 19:27:39 baccala Exp $
+ * @(#)$Id: oscope.h,v 2.2 2008/12/23 01:28:14 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -10,6 +10,8 @@
  */
 
 #include <gtk/gtk.h>		/* need GdkPoint below */
+#include <gtkdatabox_graph.h>
+
 #include "config.h"
 
 /* global program variables */
@@ -196,6 +198,10 @@ typedef struct SignalLine {
   int current_line_next;	/* index of next avail point on current line */
   int prev_line_start;		/* index of first drawn point on prev line */
   int prev_line_last;		/* index of last point on prev line */
+  struct SignalLine *next;	/* keep a linked list */
+  GtkDataboxGraph *graph;
+  gfloat *X;
+  gfloat *Y;
 } SignalLine;
 
 typedef struct Channel {	/* The display channels */

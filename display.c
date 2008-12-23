@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 2.3 2008/12/22 18:59:36 baccala Exp $
+ * @(#)$Id: display.c,v 2.4 2008/12/23 01:28:14 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -27,9 +27,7 @@
 #include <gtkdatabox_lines.h>
 #include <gtkdatabox_grid.h>
 
-extern GtkDataboxGraph *graph;
 extern GtkWidget *databox;
-
 
 #define DEBUG 0
 
@@ -501,6 +499,36 @@ roundoff_multipliers(Channel *p)
 
 }
 
+/* clear_databox() - very similar to
+ *    gtk_databox_graph_remove_all(GTK_DATABOX(databox))
+ * except that we don't remove quite EVERYTHING (we leave the graticule
+ * and the cursors), and we free all the associated data structures
+ */
+
+void clear_databox(void)
+{
+  int j, bit;
+
+  for (j = 0 ; j < CHANNELS ; j++) {
+    Channel *p = &ch[j];
+    for (bit = 0; bit < 16 ; bit++) {
+      while (p->signalline[bit] != NULL) {
+	SignalLine *sl = p->signalline[bit];
+
+	if (sl->graph != NULL) {
+	  gtk_databox_graph_remove(GTK_DATABOX(databox), sl->graph);
+	  g_object_unref(G_OBJECT(sl->graph));
+	}
+	g_free(sl->X);
+	g_free(sl->Y);
+
+	p->signalline[bit] = sl->next;
+	free(sl);
+      }
+    }
+  }
+}
+
 /* clear() - one of the most important functions in the program,
  * called whenever something 'changes'
  *
@@ -515,7 +543,7 @@ clear()
 {
   int i;
 
-  gtk_databox_graph_remove_all(GTK_DATABOX(databox));
+  clear_databox();
 
   if (datasrc) {
 
@@ -567,18 +595,34 @@ clear()
   draw_text(1);
 }
 
-/* if graticule mode, draw graticule, always draw frame */
+/* The Graticule - we create it as graphs within the databox, then add
+ * them as necessary with calls to draw_graticule().  The reason we
+ * remove and then re-add them is to make sure they appear either
+ * above or below the data, which is controlled by the call ordering
+ * to draw_data() and draw_graticule() from show_data().
+ */
+
+GtkDataboxGraph *graticule_majorx_graph = NULL;
+GtkDataboxGraph *graticule_majory_graph = NULL;
+GtkDataboxGraph *graticule_minor_graph = NULL;
+
+int major_graticule_displayed = 0;
+int minor_graticule_displayed = 0;
+
 void
-draw_graticule()
+create_graticule()
 {
+  GtkStyle *style;
   GdkColor gcolor;
-  GtkDataboxGraph *graph;
+  gfloat *X = NULL;
+  gfloat *Y = NULL;
+
+#if 0
   static int i, j;
   static int tilt[] = {
     0, -10, 10
   };
 
-#if 0
   /* a mark where the trigger level is, if the triggered channel is shown */
   if (scope.trige) {
     i = -1;
@@ -594,58 +638,65 @@ draw_graticule()
   }
 #endif
 
-  /* the frame */
-#if 0
-#if 0
-  SetColor(clip ? mem[clip + 22].color : color[scope.color]);
-#else
-  SetColor(color[scope.color]);
-#endif
-  DrawLine(100, 80, h_points - 100, 80);
-  DrawLine(100, v_points - 80, h_points - 100, v_points - 80);
-  DrawLine(100, 80, 100, v_points - 80);
-  DrawLine(h_points - 100, 80, h_points - 100, v_points - 80);
-#endif
+  /* Use the same color for the graticule that is used for the frame
+   * around the databox, which is its BACKGROUND color.
+   */
+
+  style = gtk_widget_get_style(GTK_WIDGET(LU("databox_frame")));
+  gcolor = style->bg[GTK_STATE_NORMAL];
+
+  /* the minor graph - the scope display is divided into a 10x10 grid
+   * with 9x9 lines
+   */
+
+  graticule_minor_graph = gtk_databox_grid_new (9, 9, &gcolor, 1);
+
+  X = g_new0(gfloat, 2);
+  Y = g_new0(gfloat, 2);
+
+  X[0] = X[1] = (h_points - 200)/2 + 100;
+  Y[0] = 80;
+  Y[1] = v_points - 80;
+
+  graticule_majory_graph = gtk_databox_lines_new (2, X, Y, &gcolor, 2);
+
+  X = g_new0(gfloat, 2);
+  Y = g_new0(gfloat, 2);
+
+  Y[0] = Y[1] = (v_points - 160)/2 + 80;
+  X[0] = 100;
+  X[1] = h_points - 100;
+
+  graticule_majorx_graph = gtk_databox_lines_new (2, X, Y, &gcolor, 2);
+}
+
+void
+draw_graticule()
+{
+  if (graticule_minor_graph == NULL) {
+    create_graticule();
+  }
+
+  if (major_graticule_displayed) {
+    gtk_databox_graph_remove(GTK_DATABOX(databox), graticule_majorx_graph);
+    gtk_databox_graph_remove(GTK_DATABOX(databox), graticule_majory_graph);
+    major_graticule_displayed = 0;
+  }
+
+  if (minor_graticule_displayed) {
+    gtk_databox_graph_remove(GTK_DATABOX(databox), graticule_minor_graph);
+    minor_graticule_displayed = 0;
+  }
 
   if (scope.grat) {
+    gtk_databox_graph_add (GTK_DATABOX (databox), graticule_minor_graph);
+    minor_graticule_displayed = 1;
+  }
 
-    /* cross-hairs every 5 x 5 divisions */
-
-    /* NEW DATABOX CODE */
-
-    gcolor.red = 65535;
-    gcolor.green = 0;
-    gcolor.blue = 0;
-
-    graph = gtk_databox_grid_new (9, 9, &gcolor, 1);
-    gtk_databox_graph_add (GTK_DATABOX (databox), graph);
-
-    if (scope.grat > 1) {
-      gfloat *X = NULL;
-      gfloat *Y = NULL;
-
-      X = g_new0(gfloat, 2);
-      Y = g_new0(gfloat, 2);
-
-      X[0] = X[1] = (h_points - 200)/2 + 100;
-      Y[0] = 80;
-      Y[1] = v_points - 80;
-
-      graph = gtk_databox_lines_new (2, X, Y, &gcolor, 2);
-      gtk_databox_graph_add (GTK_DATABOX (databox), graph);
-
-      X = g_new0(gfloat, 2);
-      Y = g_new0(gfloat, 2);
-
-      Y[0] = Y[1] = (v_points - 160)/2 + 80;
-      X[0] = 100;
-      X[1] = h_points - 100;
-
-      graph = gtk_databox_lines_new (2, X, Y, &gcolor, 2);
-      gtk_databox_graph_add (GTK_DATABOX (databox), graph);
-
-    }
-
+  if (scope.grat > 1) {
+    gtk_databox_graph_add (GTK_DATABOX (databox), graticule_majorx_graph);
+    gtk_databox_graph_add (GTK_DATABOX (databox), graticule_majory_graph);
+    major_graticule_displayed = 1;
   }
 }
 
@@ -794,45 +845,39 @@ draw_data()
 	 */
 	sl = p->signalline[bit < 0 ? 0 : bit];
 
-	if (sl == NULL) {
+	if ((sl == NULL) ||
+	    (p->signal->frame != p->old_frame) || (p->old_frame == 0)) {
+
+	  /* New signal line, so we need a new SignalLine structure */
+
 	  sl = (SignalLine *) malloc(sizeof(SignalLine));
 	  if (sl == NULL) {
 	    perror("xoscope: malloc(SignalLine)");
 	    break;
 	  }
 	  bzero(sl, sizeof(SignalLine));
+
+	  sl->next = p->signalline[bit < 0 ? 0 : bit];
 	  p->signalline[bit < 0 ? 0 : bit] = sl;
-	}
 
-	if ((p->signal->frame != p->old_frame) || (p->old_frame == 0)) {
+	  sl->X = g_new0(gfloat, h_points - 100);
+	  sl->Y = g_new0(gfloat, h_points - 100);
 
-	  /* New frame.  Start all the way at the left side. */
+	  /* Start all the way at the left side. */
 
 	  prev = -1;
 	  X = 0;
-	    
-	  /* This is where we used to erase the old signal line. */
 
-	  /* Now swap the current line into the previous line
-	   * and start a new current line.
-	   */
-
-	  sl->prev_line_start = sl->current_line_start;
-	  sl->prev_line_last = sl->current_line_next - 1;
-
-	  if (sl->current_line_start == 0) sl->current_line_start = 1024;
-	  else sl->current_line_start = 0;
-
-	  sl->current_line_next = sl->current_line_start;
+	  sl->current_line_next = 0;
 
 	} else {
 
 	  /* Continuation of a frame we've seen before.  Pick up where
-	   * we left off.  We assume here that 'l' hasn't changed from
-	   * one pass to next
+	   * we left off.  We assume here that 'l' (the left offset)
+	   * hasn't changed from one pass to next
 	   */
 
-	  if (sl->current_line_next > sl->current_line_start) {
+	  if (sl->current_line_next > 0) {
 	    X = sl->points[sl->current_line_next - 1].x - l;
 	    Y = sl->points[sl->current_line_next - 1].y;
 	  } else {
@@ -842,10 +887,21 @@ draw_data()
 
 	  prev = X * num / 10000;
 
+	  /* Remove existing line from the databox (we'll put it back
+	   * in later, with more data on it)
+	   */
+
+	  if (sl->graph != NULL) {
+	    gtk_databox_graph_remove(GTK_DATABOX(databox), sl->graph);
+	    g_object_unref(G_OBJECT(sl->graph));
+	    sl->graph = NULL;
+	  }
+
 	}
 
+
 	/* Compute the points we want to draw on the current line and
-	 * write them into the sl->points[] array.  'time' is an index
+	 * write them into the SignalLine arrays.  'time' is an index
 	 * into samp[] array, computed from the current x-coord.
 	 * 'prev', the last 'time' we actually used to draw a point,
 	 * is here to make sure that if a single sample is spread over
@@ -877,13 +933,13 @@ draw_data()
 	       * then a vertical one (instead of a single line)
 	       */
 
-	      sl->points[sl->current_line_next].x = l + x;
-	      sl->points[sl->current_line_next].y = Y;
+	      sl->X[sl->current_line_next] = l + x;
+	      sl->Y[sl->current_line_next] = Y;
 	      sl->current_line_next ++;
 	    }
 
-	    sl->points[sl->current_line_next].x = l + x;
-	    sl->points[sl->current_line_next].y = y;
+	    sl->X[sl->current_line_next] = l + x;
+	    sl->Y[sl->current_line_next] = y;
 	    sl->current_line_next ++;
 
 	    X = x; Y = y; prev = time;
@@ -901,22 +957,23 @@ draw_data()
 
 	}
 
-	/* This is where we used to erase the old signal line. */
+	/* Add the current line to the databox */
 
-	/* Draw the points on the current line
-	 *
-	 * Even if nothing changed on this line, another signal might
-	 * have erased an overlapping portion, so we always draw
-	 * the entire signal, not just the newly added part.
-	 */
+	if (sl->current_line_next > 0) {
 
-	if (sl->current_line_next > sl->current_line_start) {
+	  GdkColor gcolor;
+
+	  gcolor.red = 65535;
+	  gcolor.green = 65535;
+	  gcolor.blue = 0;
+
 	  if (scope.mode < 2)
-	    PolyPoint(p->color, sl->points + sl->current_line_start,
-			sl->current_line_next - sl->current_line_start);
+	    sl->graph = gtk_databox_points_new (sl->current_line_next, sl->X, sl->Y, &gcolor, 1);
 	  else
-	    PolyLine(p->color, sl->points + sl->current_line_start,
-		       sl->current_line_next - sl->current_line_start);
+	    sl->graph = gtk_databox_lines_new (sl->current_line_next, sl->X, sl->Y, &gcolor, 1);
+
+	  gtk_databox_graph_add (GTK_DATABOX (databox), sl->graph);
+
 	}
 
       }
@@ -953,7 +1010,7 @@ show_data(void)
    */
 
   if (scope.mode % 2 == 0) {
-    gtk_databox_graph_remove_all(GTK_DATABOX(databox));
+    clear_databox();
   }
 
   draw_text(0);
