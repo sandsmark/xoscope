@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 2.4 2008/12/23 01:28:14 baccala Exp $
+ * @(#)$Id: display.c,v 2.5 2008/12/23 02:05:03 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -724,11 +724,22 @@ draw_data()
   static Channel *p;
   static SignalLine *sl;
   static short *samp;
+  gchar widget[80];
+  GtkStyle *style;
+  GdkColor gcolor;
 
   for (j = 0 ; j < CHANNELS ; j++) { /* plot each visible channel */
     p = &ch[j];
 
     if (p->show && p->signal) {
+
+      /* Figure out color to use for this channel by fetching
+       * foreground color of its label
+       */
+
+      sprintf(widget, "Ch%d_label", j+1);
+      style = gtk_widget_get_style(GTK_WIDGET(LU(widget)));
+      gcolor = style->fg[GTK_STATE_NORMAL];
 
       mult = p->mult;
       div = p->div;
@@ -960,12 +971,6 @@ draw_data()
 	/* Add the current line to the databox */
 
 	if (sl->current_line_next > 0) {
-
-	  GdkColor gcolor;
-
-	  gcolor.red = 65535;
-	  gcolor.green = 65535;
-	  gcolor.blue = 0;
 
 	  if (scope.mode < 2)
 	    sl->graph = gtk_databox_points_new (sl->current_line_next, sl->X, sl->Y, &gcolor, 1);
