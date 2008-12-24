@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 2.5 2008/12/23 02:05:03 baccala Exp $
+ * @(#)$Id: display.c,v 2.6 2008/12/24 05:11:44 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -499,6 +499,83 @@ roundoff_multipliers(Channel *p)
 
 }
 
+/* The Graticule - we create it as graphs within the databox, then add
+ * them as necessary with calls to draw_graticule().  The reason we
+ * remove and then re-add them is to make sure they appear either
+ * above or below the data, which is controlled by the call ordering
+ * to draw_data() and draw_graticule() from show_data().
+ */
+
+GtkDataboxGraph *graticule_majorx_graph = NULL;
+GtkDataboxGraph *graticule_majory_graph = NULL;
+GtkDataboxGraph *graticule_minor_graph = NULL;
+
+int major_graticule_displayed = 0;
+int minor_graticule_displayed = 0;
+
+gfloat Xa[2], Ya[2], Xb[2], Yb[2];
+
+void recompute_major_graticule(void)
+{
+  Xa[0] = Xa[1] = 5 * 0.001 * (gfloat) scope.div / scope.scale;
+  Ya[0] = 80;
+  Ya[1] = v_points - 80;
+
+  Yb[0] = Yb[1] = (v_points - 160)/2 + 80;
+  Xb[0] = 0;
+  Xb[1] = 10 * 0.001 * (gfloat) scope.div / scope.scale;
+}
+
+void
+create_graticule()
+{
+  GtkStyle *style;
+  GdkColor gcolor;
+
+#if 0
+  static int i, j;
+  static int tilt[] = {
+    0, -10, 10
+  };
+
+  /* a mark where the trigger level is, if the triggered channel is shown */
+  if (scope.trige) {
+    i = -1;
+    for (j = 7 ; j >= 0 ; j--) {
+      if (ch[j].show && ch[j].signal == datasrc->chan(scope.trigch))
+	i = j;
+    }
+    if (i > -1) {
+      j = offset + ch[i].pos - scope.trig * ch[i].mult / ch[i].div;
+      SetColor(ch[i].color);
+      DrawLine(90, j + tilt[scope.trige], 110, j - tilt[scope.trige]);
+    }
+  }
+#endif
+
+  /* Use the same color for the graticule that is used for the frame
+   * around the databox, which is its BACKGROUND color.
+   */
+
+  style = gtk_widget_get_style(GTK_WIDGET(LU("databox_frame")));
+  gcolor = style->bg[GTK_STATE_NORMAL];
+
+  /* the minor graph - the scope display is divided into a 10x10 grid
+   * with 9x9 lines
+   */
+
+  graticule_minor_graph = gtk_databox_grid_new (9, 9, &gcolor, 1);
+
+  /* the major grid - 2x2 */
+
+  recompute_major_graticule();
+
+  graticule_majory_graph = gtk_databox_lines_new (2, Xa, Ya, &gcolor, 2);
+
+  graticule_majorx_graph = gtk_databox_lines_new (2, Xb, Yb, &gcolor, 2);
+
+}
+
 /* clear_databox() - very similar to
  *    gtk_databox_graph_remove_all(GTK_DATABOX(databox))
  * except that we don't remove quite EVERYTHING (we leave the graticule
@@ -527,6 +604,24 @@ void clear_databox(void)
       }
     }
   }
+}
+
+void configure_databox(void)
+{
+   GtkDataboxValue topleft, bottomright;
+
+   topleft.x = 0;
+   topleft.y = 80;
+
+   /* Base rate of (scope.div / scope.scale) is ms/div; 10 divs in the box */
+
+   bottomright.x = 10 * 0.001 * (gfloat) scope.div / scope.scale;
+   bottomright.y = v_points - 80;
+
+   gtk_databox_set_canvas(GTK_DATABOX(databox), topleft, bottomright);
+   gtk_databox_set_visible_canvas(GTK_DATABOX(databox), topleft, bottomright);
+
+   recompute_major_graticule();
 }
 
 /* clear() - one of the most important functions in the program,
@@ -579,6 +674,8 @@ clear()
     setinputfd(datasrc->fd());
   }
 
+  configure_databox();
+
   /* This also updates the 'volts' and 'rate' fields in the math
    * signals
    */
@@ -593,81 +690,6 @@ clear()
 
   show_data();
   draw_text(1);
-}
-
-/* The Graticule - we create it as graphs within the databox, then add
- * them as necessary with calls to draw_graticule().  The reason we
- * remove and then re-add them is to make sure they appear either
- * above or below the data, which is controlled by the call ordering
- * to draw_data() and draw_graticule() from show_data().
- */
-
-GtkDataboxGraph *graticule_majorx_graph = NULL;
-GtkDataboxGraph *graticule_majory_graph = NULL;
-GtkDataboxGraph *graticule_minor_graph = NULL;
-
-int major_graticule_displayed = 0;
-int minor_graticule_displayed = 0;
-
-void
-create_graticule()
-{
-  GtkStyle *style;
-  GdkColor gcolor;
-  gfloat *X = NULL;
-  gfloat *Y = NULL;
-
-#if 0
-  static int i, j;
-  static int tilt[] = {
-    0, -10, 10
-  };
-
-  /* a mark where the trigger level is, if the triggered channel is shown */
-  if (scope.trige) {
-    i = -1;
-    for (j = 7 ; j >= 0 ; j--) {
-      if (ch[j].show && ch[j].signal == datasrc->chan(scope.trigch))
-	i = j;
-    }
-    if (i > -1) {
-      j = offset + ch[i].pos - scope.trig * ch[i].mult / ch[i].div;
-      SetColor(ch[i].color);
-      DrawLine(90, j + tilt[scope.trige], 110, j - tilt[scope.trige]);
-    }
-  }
-#endif
-
-  /* Use the same color for the graticule that is used for the frame
-   * around the databox, which is its BACKGROUND color.
-   */
-
-  style = gtk_widget_get_style(GTK_WIDGET(LU("databox_frame")));
-  gcolor = style->bg[GTK_STATE_NORMAL];
-
-  /* the minor graph - the scope display is divided into a 10x10 grid
-   * with 9x9 lines
-   */
-
-  graticule_minor_graph = gtk_databox_grid_new (9, 9, &gcolor, 1);
-
-  X = g_new0(gfloat, 2);
-  Y = g_new0(gfloat, 2);
-
-  X[0] = X[1] = (h_points - 200)/2 + 100;
-  Y[0] = 80;
-  Y[1] = v_points - 80;
-
-  graticule_majory_graph = gtk_databox_lines_new (2, X, Y, &gcolor, 2);
-
-  X = g_new0(gfloat, 2);
-  Y = g_new0(gfloat, 2);
-
-  Y[0] = Y[1] = (v_points - 160)/2 + 80;
-  X[0] = 100;
-  X[1] = h_points - 100;
-
-  graticule_majorx_graph = gtk_databox_lines_new (2, X, Y, &gcolor, 2);
 }
 
 void
@@ -713,17 +735,21 @@ draw_graticule()
  * show zero levels.
  */
 
+int max(int a, int b)
+{
+  return a > b ? a : b;
+}
+
 void
 draw_data()
 {
-  static int i, j, l, x, y, X, Y, mult, div, off, bit, start, end;
-  static int time, prev, bitoff;
-  /* num will overflow on long time bases; that's why it's 'long long' */
-  static long long int num;
+  static int i, j, y, mult, div, off, bit, start, end;
+  int bitoff;
+  gfloat num, l;
   static int preva = 100, prevb = 100;	/* previous cursor locations */
-  static Channel *p;
-  static SignalLine *sl;
-  static short *samp;
+  Channel *p;
+  SignalLine *sl;
+  short *samp;
   gchar widget[80];
   GtkStyle *style;
   GdkColor gcolor;
@@ -747,30 +773,24 @@ draw_data()
 
       samp = p->signal->data;
 
-      /* Compute num, the number of samples per x-coordinate, times
-       * 10000, based on the signal's rate (in samples/sec), the
-       * scope's time base multiplier (scope.scale / scope.div), the
-       * 44 x-coords ((640-200)/10) in each division, and a base rate
-       * of 1 ms per div.  For example, if the signal rate is 44000 Hz,
-       * and the time base multiplier is 1, num will be 10000 (or
-       * 1, since it's times 10000), for one sample for x-coord, 44
-       * samples per division, 1 ms per div.  If the signal rate
-       * is zero (unspecified) or negative (a special case for
-       * Fourier Transforms, meaning the x scale is in Hz), we
-       * use a base rate of one sample per x-coord.
+      /* Compute num, the number of seconds per sample, based on the
+       * signal's rate (in samples/sec). If the signal rate is zero
+       * (unspecified) or negative (a special case for Fourier
+       * Transforms, meaning the x scale is in Hz), we use a base rate
+       * of one millisecond per sample.
        */
 
       if (p->signal->rate > 0) {
-	num = 10 * p->signal->rate * scope.div / scope.scale / 44;
+	num = (gfloat) 1 / p->signal->rate;
       } else {
-	num = 10000 * scope.div / scope.scale;
+	num = (gfloat) 1 / 1000;
       }
 
-      /* Compute left offset: 100 pixels to the side of the display
-       * area, plus any additional delay specified by the signal.
+      /* Compute left offset based on delay specified by the signal
+       * (which is in ten-thousandths of samples).
        */
 
-      l = 100 + p->signal->delay / num;
+      l = p->signal->delay * num / 10000;
 
       /* Erase and redraw the cursors, if they've moved.
        *
@@ -871,15 +891,19 @@ draw_data()
 	  sl->next = p->signalline[bit < 0 ? 0 : bit];
 	  p->signalline[bit < 0 ? 0 : bit] = sl;
 
-	  sl->X = g_new0(gfloat, h_points - 100);
-	  sl->Y = g_new0(gfloat, h_points - 100);
+	  /* There are two possibilities here.  Either this is a
+	   * dynamic signal, in which can there will ultimately be
+	   * samples(p->signal->rate) data points on the line, or this
+	   * is a stored signal, in which can there are p->signal->num
+	   * data points and it won't change.  Oh, and if we're in
+	   * step mode, we'll need twice as many display points as
+	   * data points.
+	   */
 
-	  /* Start all the way at the left side. */
-
-	  prev = -1;
-	  X = 0;
-
-	  sl->current_line_next = 0;
+	  sl->X = g_new0(gfloat,
+			 2*max(samples(p->signal->rate), p->signal->num));
+	  sl->Y = g_new0(gfloat,
+			 2*max(samples(p->signal->rate), p->signal->num));
 
 	} else {
 
@@ -887,16 +911,6 @@ draw_data()
 	   * we left off.  We assume here that 'l' (the left offset)
 	   * hasn't changed from one pass to next
 	   */
-
-	  if (sl->current_line_next > 0) {
-	    X = sl->points[sl->current_line_next - 1].x - l;
-	    Y = sl->points[sl->current_line_next - 1].y;
-	  } else {
-	    X = 0;
-	    Y = 0;
-	  }
-
-	  prev = X * num / 10000;
 
 	  /* Remove existing line from the databox (we'll put it back
 	   * in later, with more data on it)
@@ -926,56 +940,42 @@ draw_data()
 	 */
 
 	/* for (x = X; x <= h_points - 100 - l ; x++) { */
-	for (x = X; 1; x++) {
+	/* for (x = X; 1; x++) { */
+	for (i = sl->next_point; i < p->signal->num; i++) {
 
-	  time = x * num / 10000;
+	  /* Hardwired: 8 y-coords is height of digital line */
 
-	  if ((time > prev) && (time <= p->signal->num - 1)) {
+	  y = off - (bit < 0 ? samp[i]
+		       : (bitoff - (samp[i] & (1 << bit) ? 0 : 8)))
+	    * mult / div;
 
-	    /* Hardwired: 8 y-coords is height of digital line */
+	  if (scope.mode >= 4 && i > 0) {
 
-	    y = off - (bit < 0 ? samp[time]
-		       : (bitoff - (samp[time] & (1 << bit) ? 0 : 8)))
-	      * mult / div;
+	    /* Step mode.  Draw a horizontal line segment,
+	     * then a vertical one (instead of a single line)
+	     */
 
-	    if (scope.mode >= 4 && X) {
-
-	      /* Step mode.  Draw a horizontal line segment,
-	       * then a vertical one (instead of a single line)
-	       */
-
-	      sl->X[sl->current_line_next] = l + x;
-	      sl->Y[sl->current_line_next] = Y;
-	      sl->current_line_next ++;
-	    }
-
-	    sl->X[sl->current_line_next] = l + x;
-	    sl->Y[sl->current_line_next] = y;
-	    sl->current_line_next ++;
-
-	    X = x; Y = y; prev = time;
-
-	    if (x > h_points - 100 - l) break;
-
+	    sl->X[sl->next_point] = l + i * num;
+	    sl->Y[sl->next_point] = sl->Y[sl->next_point - 1];
+	    sl->next_point ++;
 	  }
 
-	  /* XXX this is here if we try to display a signal with no
-	   * plotable data points (i.e, p->signal->num is zero,
-	   * or we've started the draw past its last point)
-	   */
-
-	  if (time > p->signal->num + 1) break;
+	  sl->X[sl->next_point] = l + i * num;
+	  sl->Y[sl->next_point] = y;
+	  sl->next_point ++;
 
 	}
 
 	/* Add the current line to the databox */
 
-	if (sl->current_line_next > 0) {
+	if (sl->next_point > 0) {
 
 	  if (scope.mode < 2)
-	    sl->graph = gtk_databox_points_new (sl->current_line_next, sl->X, sl->Y, &gcolor, 1);
+	    sl->graph = gtk_databox_points_new (sl->next_point,
+						sl->X, sl->Y, &gcolor, 1);
 	  else
-	    sl->graph = gtk_databox_lines_new (sl->current_line_next, sl->X, sl->Y, &gcolor, 1);
+	    sl->graph = gtk_databox_lines_new (sl->next_point,
+					       sl->X, sl->Y, &gcolor, 1);
 
 	  gtk_databox_graph_add (GTK_DATABOX (databox), sl->graph);
 

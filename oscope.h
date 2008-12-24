@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.h,v 2.2 2008/12/23 01:28:14 baccala Exp $
+ * @(#)$Id: oscope.h,v 2.3 2008/12/24 05:11:44 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -193,11 +193,7 @@ extern int ndatasrcs;
 typedef GdkPoint Point;
 
 typedef struct SignalLine {
-  Point points[2048];	/* half this - 1024 - hardwired in display.c */
-  int current_line_start;	/* index of first point on current line */
-  int current_line_next;	/* index of next avail point on current line */
-  int prev_line_start;		/* index of first drawn point on prev line */
-  int prev_line_last;		/* index of last point on prev line */
+  int next_point;
   struct SignalLine *next;	/* keep a linked list */
   GtkDataboxGraph *graph;
   gfloat *X;

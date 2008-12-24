@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: gr_gtk.c,v 2.3 2008/12/22 18:59:36 baccala Exp $
+ * @(#)$Id: gr_gtk.c,v 2.4 2008/12/24 05:11:44 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -1294,31 +1294,11 @@ button_event(GtkWidget *widget, GdkEventButton *event, gpointer data)
 GtkWidget *
 create_databox (void)
 {
-   GdkColor color;
-   GtkDataboxValue topleft, bottomright;
-
    /* This is a global var - our one, unique, databox */
    databox = gtk_databox_new();
                                       
    gtk_databox_set_enable_zoom(GTK_DATABOX(databox), FALSE);
    gtk_databox_set_enable_selection(GTK_DATABOX(databox), FALSE);
-
-
-#if 0
-   /* Color of the scope background */
-   color.red = 0;
-   color.green = 0;
-   color.blue = 0;
-
-   gtk_widget_modify_bg (databox, GTK_STATE_NORMAL, &color);
-#endif
-
-   topleft.x = 100;
-   topleft.y = 80;
-   bottomright.x = h_points - 100;
-   bottomright.y = v_points - 80;
-
-   gtk_databox_set_canvas(GTK_DATABOX(databox), topleft, bottomright);
 
    return databox;
 }
