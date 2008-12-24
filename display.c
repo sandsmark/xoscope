@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 2.6 2008/12/24 05:11:44 baccala Exp $
+ * @(#)$Id: display.c,v 2.7 2008/12/24 19:40:20 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -582,6 +582,23 @@ create_graticule()
  * and the cursors), and we free all the associated data structures
  */
 
+void free_signalline(SignalLine *sl)
+{
+  while (sl != NULL) {
+    SignalLine *slnext = sl->next;
+
+    if (sl->graph != NULL) {
+      gtk_databox_graph_remove(GTK_DATABOX(databox), sl->graph);
+      g_object_unref(G_OBJECT(sl->graph));
+    }
+    g_free(sl->X);
+    g_free(sl->Y);
+
+    free(sl);
+    sl = slnext;
+  }
+}
+
 void clear_databox(void)
 {
   int j, bit;
@@ -590,17 +607,8 @@ void clear_databox(void)
     Channel *p = &ch[j];
     for (bit = 0; bit < 16 ; bit++) {
       while (p->signalline[bit] != NULL) {
-	SignalLine *sl = p->signalline[bit];
-
-	if (sl->graph != NULL) {
-	  gtk_databox_graph_remove(GTK_DATABOX(databox), sl->graph);
-	  g_object_unref(G_OBJECT(sl->graph));
-	}
-	g_free(sl->X);
-	g_free(sl->Y);
-
-	p->signalline[bit] = sl->next;
-	free(sl);
+	free_signalline(p->signalline[bit]);
+	p->signalline[bit] = NULL;
       }
     }
   }
@@ -631,6 +639,12 @@ void configure_databox(void)
  * channels, and redraw all text.  Since this clears data history
  * (both on the screen and in memory), it should only be called when
  * needed.
+ *
+ * XXX These two goals are incompatible - to call this function
+ * whenever something changes, and to call it only when needed - and
+ * it shows.  We don't want to clear the screen's history unless
+ * necessary.  In particular, we want to be able to change time bases
+ * with a frozen trace on the screen.
  */
 
 void
@@ -893,11 +907,11 @@ draw_data()
 
 	  /* There are two possibilities here.  Either this is a
 	   * dynamic signal, in which can there will ultimately be
-	   * samples(p->signal->rate) data points on the line, or this
-	   * is a stored signal, in which can there are p->signal->num
-	   * data points and it won't change.  Oh, and if we're in
-	   * step mode, we'll need twice as many display points as
-	   * data points.
+	   * samples(p->signal->rate) data points on the trace, or
+	   * this is a stored signal, in which can there are
+	   * p->signal->num data points and it won't change.  Oh, and
+	   * if we're in step mode, we'll need twice as many display
+	   * points as data points.
 	   */
 
 	  sl->X = g_new0(gfloat,
@@ -905,27 +919,44 @@ draw_data()
 	  sl->Y = g_new0(gfloat,
 			 2*max(samples(p->signal->rate), p->signal->num));
 
-	} else {
+	}
 
-	  /* Continuation of a frame we've seen before.  Pick up where
-	   * we left off.  We assume here that 'l' (the left offset)
-	   * hasn't changed from one pass to next
-	   */
 
-	  /* Remove existing line from the databox (we'll put it back
-	   * in later, with more data on it)
-	   */
+	/* If we're continuing a running sweep, remove the existing
+	 * trace from the databox.  We'll put it back in later, with
+	 * more data points.
+	 */
 
-	  if (sl->graph != NULL) {
-	    gtk_databox_graph_remove(GTK_DATABOX(databox), sl->graph);
-	    g_object_unref(G_OBJECT(sl->graph));
-	    sl->graph = NULL;
+	if (sl->graph != NULL) {
+	  gtk_databox_graph_remove(GTK_DATABOX(databox), sl->graph);
+	  g_object_unref(G_OBJECT(sl->graph));
+	  sl->graph = NULL;
+	}
+
+	/* If we're not in an accumulate mode, erase anything
+	 * lingering in the databox except the next to last trace,
+	 * because we want to leave the trailing part of it drawn if
+	 * we're in the middle of a sweep.  We do remove it from the
+	 * databox, however.  We'll put it back in later, with fewer
+	 * data points.
+	 */
+
+	if (scope.mode % 2 == 0) {
+
+	  if (sl->next != NULL && sl->next->graph != NULL) {
+	    gtk_databox_graph_remove(GTK_DATABOX(databox), sl->next->graph);
+	    g_object_unref(G_OBJECT(sl->next->graph));
+	    sl->next->graph = NULL;
+	  }
+
+	  if (sl->next != NULL && sl->next->next != NULL) {
+	    free_signalline(sl->next->next);
+	    sl->next->next = NULL;
 	  }
 
 	}
 
-
-	/* Compute the points we want to draw on the current line and
+	/* Compute the points we want to draw on the current trace and
 	 * write them into the SignalLine arrays.  'time' is an index
 	 * into samp[] array, computed from the current x-coord.
 	 * 'prev', the last 'time' we actually used to draw a point,
@@ -966,7 +997,7 @@ draw_data()
 
 	}
 
-	/* Add the current line to the databox */
+	/* Add the current trace to the databox */
 
 	if (sl->next_point > 0) {
 
@@ -979,6 +1010,30 @@ draw_data()
 
 	  gtk_databox_graph_add (GTK_DATABOX (databox), sl->graph);
 
+	}
+
+	/* If we're not in accumulate mode and there's a previous
+	 * trace, draw the part of it to the right of the current
+	 * trace.
+	 */
+
+	if ((scope.mode % 2 == 0) && (sl->next != NULL)
+	    && (sl->next_point < sl->next->next_point)) {
+
+	  if (scope.mode < 2)
+	    sl->next->graph
+	      = gtk_databox_points_new (sl->next->next_point - sl->next_point,
+					sl->next->X + sl->next_point,
+					sl->next->Y + sl->next_point,
+					&gcolor, 1);
+	  else
+	    sl->next->graph
+	      = gtk_databox_lines_new (sl->next->next_point - sl->next_point,
+				       sl->next->X + sl->next_point,
+				       sl->next->Y + sl->next_point,
+				       &gcolor, 1);
+
+	  gtk_databox_graph_add (GTK_DATABOX (databox), sl->next->graph);
 	}
 
       }
@@ -1009,14 +1064,6 @@ show_data(void)
 
   if ((scope.scale >= 100) || !in_progress)
     measure_data(&ch[scope.select], &stats);
-
-  /* If we're not in an accumulate mode, erase anything lingering in
-   * the databox.  XXX this removes the cursors, too.
-   */
-
-  if (scope.mode % 2 == 0) {
-    clear_databox();
-  }
 
   draw_text(0);
   if (scope.behind) {
