@@ -1459,7 +1459,7 @@
 		      <property name="shadow_type">GTK_SHADOW_ETCHED_IN</property>
 
 		      <child>
-			<widget class="Custom" id="custom1">
+			<widget class="Custom" id="databox">
 			  <property name="visible">True</property>
 			  <property name="creation_function">create_databox</property>
 			  <property name="int1">0</property>
