@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: gr_gtk.c,v 2.4 2008/12/24 05:11:44 baccala Exp $
+ * @(#)$Id: gr_gtk.c,v 2.5 2008/12/26 06:38:56 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -1374,6 +1374,9 @@ init_widgets()
   gtk_box_pack_start(GTK_BOX(LU("vbox1")), menubar, FALSE, TRUE, 0);
   gtk_box_reorder_child(GTK_BOX(LU("vbox1")), menubar, 0);
   gtk_widget_show(menubar);
+
+  gtk_databox_set_hadjustment (GTK_DATABOX (databox),
+			       gtk_range_get_adjustment (GTK_RANGE (LU("databox_hscrollbar"))));
 
   gtk_widget_show(glade_window);
 

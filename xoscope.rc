@@ -12,9 +12,12 @@ style "violet_label" { fg[NORMAL] = "Violet" bg[NORMAL] = "Violet" }
 style "blue_label" { fg[NORMAL] = "Blue" bg[NORMAL] = "Blue" }
 style "red_label" { fg[NORMAL] = "Red" bg[NORMAL] = "Red"}
 
+style "red_scrollbar" { fg[NORMAL] = "White" fg[PRELIGHT] = "White" fg[ACTIVE] = "White" bg[NORMAL] = "#a00000" bg[PRELIGHT] = "Red" bg[ACTIVE] = "#600000" }
+
 widget_class "GtkWindow" style "black_bg"
 widget "*.custom1" style "black_bg"
 widget "*.databox_frame" style "red_label"
+widget "*.databox_hscrollbar" style "red_scrollbar"
 
 # This has the effect of not only setting color and font for labels
 # not specified below, but also of setting font for all the labels

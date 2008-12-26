@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 2.7 2008/12/24 19:40:20 baccala Exp $
+ * @(#)$Id: display.c,v 2.8 2008/12/26 06:38:56 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -510,12 +510,14 @@ GtkDataboxGraph *graticule_majorx_graph = NULL;
 GtkDataboxGraph *graticule_majory_graph = NULL;
 GtkDataboxGraph *graticule_minor_graph = NULL;
 
+int total_horizontal_divisions = 10;
+
 int major_graticule_displayed = 0;
 int minor_graticule_displayed = 0;
 
 gfloat Xa[2], Ya[2], Xb[2], Yb[2];
 
-void recompute_major_graticule(void)
+void recompute_graticule(void)
 {
   Xa[0] = Xa[1] = 5 * 0.001 * (gfloat) scope.div / scope.scale;
   Ya[0] = 80;
@@ -524,6 +526,9 @@ void recompute_major_graticule(void)
   Yb[0] = Yb[1] = (v_points - 160)/2 + 80;
   Xb[0] = 0;
   Xb[1] = 10 * 0.001 * (gfloat) scope.div / scope.scale;
+
+  gtk_databox_grid_set_vlines(graticule_minor_graph,
+			      total_horizontal_divisions - 1);
 }
 
 void
@@ -568,7 +573,7 @@ create_graticule()
 
   /* the major grid - 2x2 */
 
-  recompute_major_graticule();
+  recompute_graticule();
 
   graticule_majory_graph = gtk_databox_lines_new (2, Xa, Ya, &gcolor, 2);
 
@@ -614,22 +619,89 @@ void clear_databox(void)
   }
 }
 
+/* configure_databox() - this function takes care of figuring out the
+ * various settings needed on the databox to display a particular
+ * timebase.  Since the floating point values plotted within the
+ * databox are always stored in seconds, selecting a new timebase
+ * means setting things on the databox more than anything else.
+ */
+
 void configure_databox(void)
 {
    GtkDataboxValue topleft, bottomright;
+   gfloat upper_time_limit;
+   int j;
+
+   /* The first thing we want to figure out is the maximum time span
+    * of any of our displayed signals.  The scope's base rate of
+    * (scope.div / scope.scale) is in ms/div; 10 (minor) divs are
+    * visible on the screen at once, so the maximum time span (in
+    * seconds) is at least...
+    */
+
+   upper_time_limit = 10 * 0.001 * (gfloat) scope.div / scope.scale;
+
+   /* But it might be more, if we have stuff stored... */
+
+   for (j = 0 ; j < CHANNELS ; j++) {
+     Channel *p = &ch[j];
+
+     /* XXX for an FFT channel, p->signal->rate will be negative */
+
+     if (p->show && p->signal) {
+       if ((gfloat) p->signal->num / p->signal->rate > upper_time_limit) {
+	 upper_time_limit = (gfloat) p->signal->num / p->signal->rate;
+       }
+     }
+   }
+
+   /* Now figure how many total divisions wide we'll make the databox.
+    * Since we sample a little past the end of the trace (to fill the
+    * entire visible area), we ignore any trailing part of a trace
+    * that takes less than half a division to display.  We start with
+    * ten divisions, and jump up in increments of five because five
+    * minor divisions make a major division and we want to stay on a
+    * major division boundary to make our graticule grid nice and
+    * neat.
+    *
+    * XXX If we have an enormous signal (relative to our timebase),
+    * this calculation could overflow int total_horizontal_divisions.
+    */
+
+   for (total_horizontal_divisions = 10;
+	upper_time_limit > (total_horizontal_divisions + 0.5)
+	  * 0.001 * (gfloat) scope.div / scope.scale;
+	total_horizontal_divisions += 5);
+
+   /* Now set the total canvas size of the databox */
 
    topleft.x = 0;
    topleft.y = 80;
 
-   /* Base rate of (scope.div / scope.scale) is ms/div; 10 divs in the box */
-
-   bottomright.x = 10 * 0.001 * (gfloat) scope.div / scope.scale;
+   bottomright.x = total_horizontal_divisions
+     * 0.001 * (gfloat) scope.div / scope.scale;
    bottomright.y = v_points - 80;
 
    gtk_databox_set_canvas(GTK_DATABOX(databox), topleft, bottomright);
+
+   /* A slight adjustment gets us our visible area.  Note that this
+    * call also resets the databox viewport to its left most position.
+    */
+
+   bottomright.x = 10 * 0.001 * (gfloat) scope.div / scope.scale;
    gtk_databox_set_visible_canvas(GTK_DATABOX(databox), topleft, bottomright);
 
-   recompute_major_graticule();
+   /* Decide if we need a scrollbar or not */
+
+   if (total_horizontal_divisions > 10) {
+     gtk_widget_show(GTK_WIDGET(LU("databox_hscrollbar")));
+   } else {
+     gtk_widget_hide(GTK_WIDGET(LU("databox_hscrollbar")));
+   }
+
+   /* And recompute the graticule grids */
+
+   recompute_graticule();
 }
 
 /* clear() - one of the most important functions in the program,

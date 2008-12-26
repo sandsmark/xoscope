@@ -1433,25 +1433,61 @@
 	  </child>
 
 	  <child>
-	    <widget class="GtkAspectFrame" id="databox_frame">
+	    <widget class="GtkAspectFrame" id="databox_aspectframe">
+	      <property name="width_request">440</property>
+	      <property name="height_request">440</property>
 	      <property name="visible">True</property>
 	      <property name="label_xalign">0</property>
 	      <property name="label_yalign">0.5</property>
-	      <property name="shadow_type">GTK_SHADOW_ETCHED_IN</property>
+	      <property name="shadow_type">GTK_SHADOW_NONE</property>
 	      <property name="xalign">0.5</property>
 	      <property name="yalign">0.5</property>
 	      <property name="ratio">1</property>
 	      <property name="obey_child">False</property>
 
 	      <child>
-		<widget class="Custom" id="custom1">
-		  <property name="width_request">440</property>
-		  <property name="height_request">440</property>
+		<widget class="GtkVBox" id="databox_vbox">
 		  <property name="visible">True</property>
-		  <property name="creation_function">create_databox</property>
-		  <property name="int1">0</property>
-		  <property name="int2">0</property>
-		  <property name="last_modification_time">Thu, 18 Dec 2008 02:27:29 GMT</property>
+		  <property name="homogeneous">False</property>
+		  <property name="spacing">0</property>
+
+		  <child>
+		    <widget class="GtkFrame" id="databox_frame">
+		      <property name="visible">True</property>
+		      <property name="label_xalign">0</property>
+		      <property name="label_yalign">0.5</property>
+		      <property name="shadow_type">GTK_SHADOW_ETCHED_IN</property>
+
+		      <child>
+			<widget class="Custom" id="custom1">
+			  <property name="visible">True</property>
+			  <property name="creation_function">create_databox</property>
+			  <property name="int1">0</property>
+			  <property name="int2">0</property>
+			  <property name="last_modification_time">Thu, 18 Dec 2008 02:27:29 GMT</property>
+			</widget>
+		      </child>
+		    </widget>
+		    <packing>
+		      <property name="padding">0</property>
+		      <property name="expand">True</property>
+		      <property name="fill">True</property>
+		    </packing>
+		  </child>
+
+		  <child>
+		    <widget class="GtkHScrollbar" id="databox_hscrollbar">
+		      <property name="visible">True</property>
+		      <property name="update_policy">GTK_UPDATE_CONTINUOUS</property>
+		      <property name="inverted">False</property>
+		      <property name="adjustment">0 0 0 0 0 0</property>
+		    </widget>
+		    <packing>
+		      <property name="padding">0</property>
+		      <property name="expand">False</property>
+		      <property name="fill">False</property>
+		    </packing>
+		  </child>
 		</widget>
 	      </child>
 	    </widget>
