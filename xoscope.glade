@@ -598,7 +598,7 @@
 	  </child>
 
 	  <child>
-	    <widget class="GtkLabel" id="data_source">
+	    <widget class="GtkLabel" id="data_source_label">
 	      <property name="visible">True</property>
 	      <property name="label" translatable="yes">source</property>
 	      <property name="use_underline">False</property>
@@ -648,7 +648,7 @@
 	  </child>
 
 	  <child>
-	    <widget class="GtkLabel" id="data_source_opt1">
+	    <widget class="GtkLabel" id="data_source_opt1_label">
 	      <property name="visible">True</property>
 	      <property name="label" translatable="yes">opt1</property>
 	      <property name="use_underline">False</property>
@@ -786,7 +786,7 @@
 	  </child>
 
 	  <child>
-	    <widget class="GtkLabel" id="line_style">
+	    <widget class="GtkLabel" id="line_style_label">
 	      <property name="visible">True</property>
 	      <property name="label" translatable="yes">line style</property>
 	      <property name="use_underline">False</property>
@@ -932,7 +932,7 @@
 			  </child>
 
 			  <child>
-			    <widget class="GtkLabel" id="Ch1_scale">
+			    <widget class="GtkLabel" id="Ch1_scale_label">
 			      <property name="visible">True</property>
 			      <property name="label" translatable="yes">Ch1_scale</property>
 			      <property name="use_underline">False</property>
@@ -957,7 +957,7 @@
 			  </child>
 
 			  <child>
-			    <widget class="GtkLabel" id="Ch1_position">
+			    <widget class="GtkLabel" id="Ch1_position_label">
 			      <property name="visible">True</property>
 			      <property name="label" translatable="yes">Ch1_position</property>
 			      <property name="use_underline">False</property>
@@ -982,7 +982,7 @@
 			  </child>
 
 			  <child>
-			    <widget class="GtkLabel" id="Ch1_source">
+			    <widget class="GtkLabel" id="Ch1_source_label">
 			      <property name="visible">True</property>
 			      <property name="label" translatable="yes">Ch1_source</property>
 			      <property name="use_underline">False</property>
@@ -1068,7 +1068,7 @@
 			  </child>
 
 			  <child>
-			    <widget class="GtkLabel" id="Ch2_scale">
+			    <widget class="GtkLabel" id="Ch2_scale_label">
 			      <property name="visible">True</property>
 			      <property name="label" translatable="yes">Ch2_scale</property>
 			      <property name="use_underline">False</property>
@@ -1093,7 +1093,7 @@
 			  </child>
 
 			  <child>
-			    <widget class="GtkLabel" id="Ch2_position">
+			    <widget class="GtkLabel" id="Ch2_position_label">
 			      <property name="visible">True</property>
 			      <property name="label" translatable="yes">Ch2_position</property>
 			      <property name="use_underline">False</property>
@@ -1118,7 +1118,7 @@
 			  </child>
 
 			  <child>
-			    <widget class="GtkLabel" id="Ch2_source">
+			    <widget class="GtkLabel" id="Ch2_source_label">
 			      <property name="visible">True</property>
 			      <property name="label" translatable="yes">Ch2_source</property>
 			      <property name="use_underline">False</property>
@@ -1204,7 +1204,7 @@
 			  </child>
 
 			  <child>
-			    <widget class="GtkLabel" id="Ch3_scale">
+			    <widget class="GtkLabel" id="Ch3_scale_label">
 			      <property name="visible">True</property>
 			      <property name="label" translatable="yes">Ch3_scale</property>
 			      <property name="use_underline">False</property>
@@ -1229,7 +1229,7 @@
 			  </child>
 
 			  <child>
-			    <widget class="GtkLabel" id="Ch3_position">
+			    <widget class="GtkLabel" id="Ch3_position_label">
 			      <property name="visible">True</property>
 			      <property name="label" translatable="yes">Ch3_position</property>
 			      <property name="use_underline">False</property>
@@ -1254,7 +1254,7 @@
 			  </child>
 
 			  <child>
-			    <widget class="GtkLabel" id="Ch3_source">
+			    <widget class="GtkLabel" id="Ch3_source_label">
 			      <property name="visible">True</property>
 			      <property name="label" translatable="yes">Ch3_source</property>
 			      <property name="use_underline">False</property>
@@ -1340,7 +1340,7 @@
 			  </child>
 
 			  <child>
-			    <widget class="GtkLabel" id="Ch4_scale">
+			    <widget class="GtkLabel" id="Ch4_scale_label">
 			      <property name="visible">True</property>
 			      <property name="label" translatable="yes">Ch4_scale</property>
 			      <property name="use_underline">False</property>
@@ -1365,7 +1365,7 @@
 			  </child>
 
 			  <child>
-			    <widget class="GtkLabel" id="Ch4_position">
+			    <widget class="GtkLabel" id="Ch4_position_label">
 			      <property name="visible">True</property>
 			      <property name="label" translatable="yes">Ch4_position</property>
 			      <property name="use_underline">False</property>
@@ -1390,7 +1390,7 @@
 			  </child>
 
 			  <child>
-			    <widget class="GtkLabel" id="Ch4_source">
+			    <widget class="GtkLabel" id="Ch4_source_label">
 			      <property name="visible">True</property>
 			      <property name="label" translatable="yes">Ch4_source</property>
 			      <property name="use_underline">False</property>
@@ -1555,7 +1555,7 @@
 			  </child>
 
 			  <child>
-			    <widget class="GtkLabel" id="Ch5_scale">
+			    <widget class="GtkLabel" id="Ch5_scale_label">
 			      <property name="visible">True</property>
 			      <property name="label" translatable="yes">Ch5_scale</property>
 			      <property name="use_underline">False</property>
@@ -1580,7 +1580,7 @@
 			  </child>
 
 			  <child>
-			    <widget class="GtkLabel" id="Ch5_position">
+			    <widget class="GtkLabel" id="Ch5_position_label">
 			      <property name="visible">True</property>
 			      <property name="label" translatable="yes">Ch5_position</property>
 			      <property name="use_underline">False</property>
@@ -1605,7 +1605,7 @@
 			  </child>
 
 			  <child>
-			    <widget class="GtkLabel" id="Ch5_source">
+			    <widget class="GtkLabel" id="Ch5_source_label">
 			      <property name="visible">True</property>
 			      <property name="label" translatable="yes">Ch5_source</property>
 			      <property name="use_underline">False</property>
@@ -1691,7 +1691,7 @@
 			  </child>
 
 			  <child>
-			    <widget class="GtkLabel" id="Ch6_scale">
+			    <widget class="GtkLabel" id="Ch6_scale_label">
 			      <property name="visible">True</property>
 			      <property name="label" translatable="yes">Ch6_scale</property>
 			      <property name="use_underline">False</property>
@@ -1716,7 +1716,7 @@
 			  </child>
 
 			  <child>
-			    <widget class="GtkLabel" id="Ch6_position">
+			    <widget class="GtkLabel" id="Ch6_position_label">
 			      <property name="visible">True</property>
 			      <property name="label" translatable="yes">Ch6_position</property>
 			      <property name="use_underline">False</property>
@@ -1741,7 +1741,7 @@
 			  </child>
 
 			  <child>
-			    <widget class="GtkLabel" id="Ch6_source">
+			    <widget class="GtkLabel" id="Ch6_source_label">
 			      <property name="visible">True</property>
 			      <property name="label" translatable="yes">Ch6_source</property>
 			      <property name="use_underline">False</property>
@@ -1827,7 +1827,7 @@
 			  </child>
 
 			  <child>
-			    <widget class="GtkLabel" id="Ch7_scale">
+			    <widget class="GtkLabel" id="Ch7_scale_label">
 			      <property name="visible">True</property>
 			      <property name="label" translatable="yes">Ch7_scale</property>
 			      <property name="use_underline">False</property>
@@ -1852,7 +1852,7 @@
 			  </child>
 
 			  <child>
-			    <widget class="GtkLabel" id="Ch7_position">
+			    <widget class="GtkLabel" id="Ch7_position_label">
 			      <property name="visible">True</property>
 			      <property name="label" translatable="yes">Ch7_position</property>
 			      <property name="use_underline">False</property>
@@ -1877,7 +1877,7 @@
 			  </child>
 
 			  <child>
-			    <widget class="GtkLabel" id="Ch7_source">
+			    <widget class="GtkLabel" id="Ch7_source_label">
 			      <property name="visible">True</property>
 			      <property name="label" translatable="yes">Ch7_source</property>
 			      <property name="use_underline">False</property>
@@ -1963,7 +1963,7 @@
 			  </child>
 
 			  <child>
-			    <widget class="GtkLabel" id="Ch8_scale">
+			    <widget class="GtkLabel" id="Ch8_scale_label">
 			      <property name="visible">True</property>
 			      <property name="label" translatable="yes">Ch8_scale</property>
 			      <property name="use_underline">False</property>
@@ -1988,7 +1988,7 @@
 			  </child>
 
 			  <child>
-			    <widget class="GtkLabel" id="Ch8_position">
+			    <widget class="GtkLabel" id="Ch8_position_label">
 			      <property name="visible">True</property>
 			      <property name="label" translatable="yes">Ch8_position</property>
 			      <property name="use_underline">False</property>
@@ -2013,7 +2013,7 @@
 			  </child>
 
 			  <child>
-			    <widget class="GtkLabel" id="Ch8_source">
+			    <widget class="GtkLabel" id="Ch8_source_label">
 			      <property name="visible">True</property>
 			      <property name="label" translatable="yes">Ch8_source</property>
 			      <property name="use_underline">False</property>
@@ -2345,7 +2345,7 @@
 		  </child>
 
 		  <child>
-		    <widget class="GtkLabel" id="data_source_opt2">
+		    <widget class="GtkLabel" id="data_source_opt2_label">
 		      <property name="visible">True</property>
 		      <property name="label" translatable="yes">opt2</property>
 		      <property name="use_underline">False</property>
@@ -2396,7 +2396,7 @@
 		  <property name="spacing">0</property>
 
 		  <child>
-		    <widget class="GtkLabel" id="status_0">
+		    <widget class="GtkLabel" id="status0_label">
 		      <property name="visible">True</property>
 		      <property name="label" translatable="yes">status 0</property>
 		      <property name="use_underline">False</property>
@@ -2496,7 +2496,7 @@
 		  </child>
 
 		  <child>
-		    <widget class="GtkLabel" id="status_1">
+		    <widget class="GtkLabel" id="status1_label">
 		      <property name="visible">True</property>
 		      <property name="label" translatable="yes">status 1</property>
 		      <property name="use_underline">False</property>
@@ -2534,7 +2534,7 @@
 		  <property name="spacing">0</property>
 
 		  <child>
-		    <widget class="GtkLabel" id="status_2">
+		    <widget class="GtkLabel" id="status2_label">
 		      <property name="visible">True</property>
 		      <property name="label" translatable="yes">status 2</property>
 		      <property name="use_underline">False</property>
@@ -2634,7 +2634,7 @@
 		  </child>
 
 		  <child>
-		    <widget class="GtkLabel" id="status_3">
+		    <widget class="GtkLabel" id="status3_label">
 		      <property name="visible">True</property>
 		      <property name="label" translatable="yes">status 3</property>
 		      <property name="use_underline">False</property>
@@ -2672,7 +2672,7 @@
 		  <property name="spacing">0</property>
 
 		  <child>
-		    <widget class="GtkLabel" id="status_4">
+		    <widget class="GtkLabel" id="status4_label">
 		      <property name="visible">True</property>
 		      <property name="label" translatable="yes">status 4</property>
 		      <property name="use_underline">False</property>
@@ -2722,7 +2722,7 @@
 		  </child>
 
 		  <child>
-		    <widget class="GtkLabel" id="status_5">
+		    <widget class="GtkLabel" id="status5_label">
 		      <property name="visible">True</property>
 		      <property name="label" translatable="yes">status 5</property>
 		      <property name="use_underline">False</property>
@@ -2760,7 +2760,7 @@
 		  <property name="spacing">0</property>
 
 		  <child>
-		    <widget class="GtkLabel" id="status_6">
+		    <widget class="GtkLabel" id="status6_label">
 		      <property name="visible">True</property>
 		      <property name="label" translatable="yes">status 6</property>
 		      <property name="use_underline">False</property>
@@ -2810,7 +2810,7 @@
 		  </child>
 
 		  <child>
-		    <widget class="GtkLabel" id="registers">
+		    <widget class="GtkLabel" id="registers_label">
 		      <property name="visible">True</property>
 		      <property name="label" translatable="yes">registers</property>
 		      <property name="use_underline">False</property>
@@ -2860,7 +2860,7 @@
 		  </child>
 
 		  <child>
-		    <widget class="GtkLabel" id="status_7">
+		    <widget class="GtkLabel" id="status7_label">
 		      <property name="visible">True</property>
 		      <property name="label" translatable="yes">status 7</property>
 		      <property name="use_underline">False</property>

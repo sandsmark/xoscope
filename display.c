@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 2.8 2008/12/26 06:38:56 baccala Exp $
+ * @(#)$Id: display.c,v 2.9 2008/12/26 18:07:45 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -209,16 +209,16 @@ draw_text(int all)
       gtk_label_set_text(GTK_LABEL(LU("trigger_source_label")), "");
     }
 
-    gtk_label_set_text(GTK_LABEL(LU("data_source")),
+    gtk_label_set_text(GTK_LABEL(LU("data_source_label")),
 		       datasrc ? datasrc->name : "No data source");
 
-    gtk_label_set_text(GTK_LABEL(LU("line_style")), strings[scope.mode]);
+    gtk_label_set_text(GTK_LABEL(LU("line_style_label")), strings[scope.mode]);
 
     if (datasrc && (datasrc->option1str != NULL)
 	&& ((s = datasrc->option1str()) != NULL)) {
-      gtk_label_set_text(GTK_LABEL(LU("data_source_opt1")), s);
+      gtk_label_set_text(GTK_LABEL(LU("data_source_opt1_label")), s);
     } else {
-      gtk_label_set_text(GTK_LABEL(LU("data_source_opt1")), "");
+      gtk_label_set_text(GTK_LABEL(LU("data_source_opt1_label")), "");
     }
 
 
@@ -236,23 +236,23 @@ draw_text(int all)
 		 (float)ch[i].signal->volts * ch[i].div / ch[i].mult / 10);
 	else
 	  sprintf(string, "%d / %d", ch[i].mult, ch[i].div);
-	sprintf(widget, "Ch%1d_scale", i+1);
+	sprintf(widget, "Ch%1d_scale_label", i+1);
 	gtk_label_set_text(GTK_LABEL(LU(widget)), string);
 
 	sprintf(string, "%d @ %d", ch[i].bits, -(ch[i].pos));
-	sprintf(widget, "Ch%1d_position", i+1);
+	sprintf(widget, "Ch%1d_position_label", i+1);
 	gtk_label_set_text(GTK_LABEL(LU(widget)), string);
 
-	sprintf(widget, "Ch%1d_source", i+1);
+	sprintf(widget, "Ch%1d_source_label", i+1);
 	gtk_label_set_text(GTK_LABEL(LU(widget)), ch[i].signal->name);
 
       } else {
 
-	sprintf(widget, "Ch%1d_scale", i+1);
+	sprintf(widget, "Ch%1d_scale_label", i+1);
 	gtk_label_set_text(GTK_LABEL(LU(widget)), "");
-	sprintf(widget, "Ch%1d_position", i+1);
+	sprintf(widget, "Ch%1d_position_label", i+1);
 	gtk_label_set_text(GTK_LABEL(LU(widget)), "");
-	sprintf(widget, "Ch%1d_source", i+1);
+	sprintf(widget, "Ch%1d_source_label", i+1);
 	gtk_label_set_text(GTK_LABEL(LU(widget)), "");
 
       }
@@ -289,9 +289,9 @@ draw_text(int all)
 
     if (datasrc && (datasrc->option2str != NULL)
 	&& ((s = datasrc->option2str()) != NULL)) {
-      gtk_label_set_text(GTK_LABEL(LU("data_source_opt2")), s);
+      gtk_label_set_text(GTK_LABEL(LU("data_source_opt2_label")), s);
     } else {
-      gtk_label_set_text(GTK_LABEL(LU("data_source_opt2")), "");
+      gtk_label_set_text(GTK_LABEL(LU("data_source_opt2_label")), "");
     }
 
     fix_widgets();
@@ -332,7 +332,7 @@ draw_text(int all)
 
   if (datasrc && datasrc->status_str != NULL) {
     for (i=0; i<8; i++) {
-      sprintf(widget, "status_%d", i);
+      sprintf(widget, "status%d_label", i);
       if ((s = datasrc->status_str(i)) != NULL) {
 	gtk_label_set_text(GTK_LABEL(LU(widget)), s);
       } else {
@@ -341,7 +341,7 @@ draw_text(int all)
     }
   } else {
     for (i=0; i<8; i++) {
-      sprintf(widget, "status_%d", i);
+      sprintf(widget, "status%d_label", i);
       gtk_label_set_text(GTK_LABEL(LU(widget)), "");
     }
   }
@@ -411,7 +411,7 @@ draw_text(int all)
       }
     }
     string[i] = '\0';
-    gtk_label_set_text(GTK_LABEL(LU("registers")), string);
+    gtk_label_set_text(GTK_LABEL(LU("registers_label")), string);
 
     /* setting help text is special */
     sprintf(string, "(%c-Z)", 'A' + (datasrc ? datasrc->nchans() : 0));
