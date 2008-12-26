@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: file.c,v 2.1 2008/12/26 18:34:57 baccala Exp $
+ * @(#)$Id: file.c,v 2.2 2008/12/26 18:43:30 baccala Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -111,10 +111,6 @@ handle_opt(int opt, char *optarg)
     }
     if ((q = strchr(p, ':')) != NULL)
       scope.curs = limit(strtol(++q, NULL, 0), 0, 1);
-    break;
-  case 'm':			/* video mode */
-  case 'M':
-    scope.size = limit(strtol(optarg, NULL, 0), 0, 3);
     break;
   case 'd':			/* dma divisor (backwards compatibility) */
     if (datasrc && !strcasecmp(datasrc->name, "Soundcard")) {
@@ -256,7 +252,6 @@ writefile(char *filename)
 # -s %d/%d\n\
 # -t %d:%d:%d\n\
 # -l %d:%d:%d\n\
-# -m %d\n\
 # -p %d\n\
 # -g %d\n\
 %s%s",
@@ -264,7 +259,6 @@ writefile(char *filename)
 	  scope.scale, scope.div,
 	  scope.trig - 128, scope.trige, scope.trigch,
 	  scope.cursa, scope.cursb, scope.curs,
-	  scope.size,
 	  scope.mode,
 	  scope.grat,
 	  scope.behind ? "# -b\n" : "",

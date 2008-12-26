@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: gr_gtk.c,v 2.8 2008/12/26 18:34:57 baccala Exp $
+ * @(#)$Id: gr_gtk.c,v 2.9 2008/12/26 18:43:30 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -26,8 +26,6 @@
 #include "file.h"
 #include "com_gtk.h"
 
-int XX[] = {640,800,1024,1280};
-int XY[] = {480,600, 768,1024};
 char my_filename[FILENAME_MAX] = "";
 GdkFont *font;
 char fontname[80] = DEF_FX;
@@ -1284,8 +1282,9 @@ init_widgets()
   GdkColor gcolor;
   int i;
 
-  h_points = XX[scope.size];
-  v_points = XY[scope.size];
+  /* XXX need to remove all dependencies on this */
+  h_points = 640;
+  v_points = 480;
 
   gtk_rc_parse("xoscope.rc");
 

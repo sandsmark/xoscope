@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.c,v 2.1 2008/12/26 18:34:57 baccala Exp $
+ * @(#)$Id: oscope.c,v 2.2 2008/12/26 18:43:30 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -82,7 +82,6 @@ Startup Options  Description (defaults)               version %s\n\
 -s <scale>       time Scale: 1/2000-1000/1 where 1=1ms/div    (%d/1)\n\
 -t <trigger>     Trigger level[:type[:channel]]               (%s)\n\
 -l <cursors>     cursor Line positions: first[:second[:on?]]  (%s)\n\
--m <mode>        video Mode (size): 0,1,2,3                   (%d)\n\
 -f <font name>   the Font name as-in %s\n\
 -p <type>        Plot mode: 0/1=point, 2/3=line, 4/5=step     (%d)\n\
 -g <style>       Graticule: 0=none,  1=minor, 2=major         (%d)\n\
@@ -93,7 +92,6 @@ file             %s file to load to restore settings and memory\n\
 ",
 	  progname, version, CHANNELS, CHANNELS, DEF_A,
 	  DEF_S, DEF_T, DEF_L,
-	  scope.size,
 	  fonts,		/* the font method for the display */
 	  scope.mode,
 	  scope.grat, def[DEF_B], def[!DEF_B],
@@ -128,7 +126,6 @@ cleanup()
 void
 init_scope()
 {
-  scope.size = DEF_M;
   scope.mode = DEF_P;
   scope.scale = DEF_S;
   scope.div = 1;
