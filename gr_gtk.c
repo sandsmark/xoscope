@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: gr_gtk.c,v 2.6 2008/12/26 06:51:08 baccala Exp $
+ * @(#)$Id: gr_gtk.c,v 2.7 2008/12/26 06:56:30 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -1303,7 +1303,7 @@ create_databox (void)
    return databox;
 }
 
-GtkWidget * create_window1();
+GtkWidget * create_main_window();
 
 /* initialize all the widgets, called by init_screen in display.c */
 void
@@ -1317,7 +1317,7 @@ init_widgets()
 
   gtk_rc_parse("xoscope.rc");
 
-  glade_window = create_window1();
+  glade_window = create_main_window();
 
   setup_help_text(glade_window);
 

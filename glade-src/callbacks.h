@@ -70,3 +70,8 @@ on_7_activate                          (GtkMenuItem     *menuitem,
 void
 on_8_activate                          (GtkMenuItem     *menuitem,
                                         gpointer         user_data);
+
+gboolean
+key_press_event                        (GtkWidget       *widget,
+                                        GdkEventKey     *event,
+                                        gpointer         user_data);

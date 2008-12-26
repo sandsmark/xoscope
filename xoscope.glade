@@ -3,7 +3,7 @@
 
 <glade-interface>
 
-<widget class="GtkWindow" id="window1">
+<widget class="GtkWindow" id="main_window">
   <property name="visible">True</property>
   <property name="title" translatable="yes">xoscope</property>
   <property name="type">GTK_WINDOW_TOPLEVEL</property>
@@ -18,7 +18,7 @@
   <property name="gravity">GDK_GRAVITY_NORTH_WEST</property>
   <property name="focus_on_map">True</property>
   <property name="urgency_hint">False</property>
-  <signal name="key_press_event" handler="on_window1_key_press_event" last_modification_time="Sat, 20 Dec 2008 18:02:07 GMT"/>
+  <signal name="key_press_event" handler="key_press_event" last_modification_time="Fri, 26 Dec 2008 06:52:18 GMT"/>
   <signal name="delete_event" handler="delete_event" last_modification_time="Sat, 20 Dec 2008 21:13:12 GMT"/>
 
   <child>
