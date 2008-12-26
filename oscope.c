@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.c,v 2.0 2008/12/17 17:35:46 baccala Exp $
+ * @(#)$Id: oscope.c,v 2.1 2008/12/26 18:34:57 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -82,7 +82,6 @@ Startup Options  Description (defaults)               version %s\n\
 -s <scale>       time Scale: 1/2000-1000/1 where 1=1ms/div    (%d/1)\n\
 -t <trigger>     Trigger level[:type[:channel]]               (%s)\n\
 -l <cursors>     cursor Line positions: first[:second[:on?]]  (%s)\n\
--c <color>       graticule Color: 0-15                        (%d)\n\
 -m <mode>        video Mode (size): 0,1,2,3                   (%d)\n\
 -f <font name>   the Font name as-in %s\n\
 -p <type>        Plot mode: 0/1=point, 2/3=line, 4/5=step     (%d)\n\
@@ -94,7 +93,7 @@ file             %s file to load to restore settings and memory\n\
 ",
 	  progname, version, CHANNELS, CHANNELS, DEF_A,
 	  DEF_S, DEF_T, DEF_L,
-	  DEF_C, scope.size,
+	  scope.size,
 	  fonts,		/* the font method for the display */
 	  scope.mode,
 	  scope.grat, def[DEF_B], def[!DEF_B],
@@ -138,7 +137,6 @@ init_scope()
   scope.grat = DEF_G;
   scope.behind = DEF_B;
   scope.run = 1;
-  scope.color = DEF_C;
   scope.select = DEF_A - 1;
   scope.verbose = DEF_V;
   scope.min_interval = 50;
@@ -584,16 +582,6 @@ handle_key(unsigned char c)
       in_progress = 0;
       clear();
     }
-    break;
-  case '<':
-    if (--scope.color < 0)	/* decrease color */
-      scope.color = 15;
-    draw_text(1);
-    break;
-  case '>':
-    if (++scope.color > 15)	/* increase color */
-      scope.color = 0;
-    draw_text(1);
     break;
   case '@':			/* load file */
     LoadSaveFile(0);

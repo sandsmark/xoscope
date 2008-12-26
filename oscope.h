@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.h,v 2.3 2008/12/24 05:11:44 baccala Exp $
+ * @(#)$Id: oscope.h,v 2.4 2008/12/26 18:34:57 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -34,7 +34,6 @@ typedef struct Scope {		/* The oscilloscope */
   int div;
   int grat;
   int behind;
-  int color;
   int select;
   int trigch;
   int trige;

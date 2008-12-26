@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: gr_gtk.c,v 2.7 2008/12/26 06:56:30 baccala Exp $
+ * @(#)$Id: gr_gtk.c,v 2.8 2008/12/26 18:34:57 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -345,13 +345,6 @@ graticule(GtkWidget *w, gpointer data)
   else
     scope.grat = i - 2;
   clear();
-}
-
-void
-setcolor(GtkWidget *w, gpointer data)
-{
-  scope.color = ((char *)data)[0] - 'a';
-  draw_text(1);
 }
 
 void
@@ -823,27 +816,6 @@ static GtkItemFactoryEntry menu_items[] =
   {"/Scope/Plot Mode/Step", NULL, plotmode, (int)"4", "/Scope/Plot Mode/Line Accumulate"},
   {"/Scope/Plot Mode/Step Accumulate", NULL, plotmode, (int)"5", "/Scope/Plot Mode/Step"},
   {"/Scope/Graticule/tear", NULL, NULL, 0, "<Tearoff>"},
-#if 0
-  /* XXX have no way to set the graticule color in the new GTK+ 2 interface */
-  {"/Scope/Graticule/Color/tear", NULL, NULL, 0, "<Tearoff>"},
-  {"/Scope/Graticule/Color/black", NULL, setcolor, (int)"a", NULL},
-  {"/Scope/Graticule/Color/blue", NULL, setcolor, (int)"b", NULL},
-  {"/Scope/Graticule/Color/green", NULL, setcolor, (int)"c", NULL},
-  {"/Scope/Graticule/Color/cyan", NULL, setcolor, (int)"d", NULL},
-  {"/Scope/Graticule/Color/red", NULL, setcolor, (int)"e", NULL},
-  {"/Scope/Graticule/Color/magenta", NULL, setcolor, (int)"f", NULL},
-  {"/Scope/Graticule/Color/orange", NULL, setcolor, (int)"g", NULL},
-  {"/Scope/Graticule/Color/gray66", NULL, setcolor, (int)"h", NULL},
-  {"/Scope/Graticule/Color/gray33", NULL, setcolor, (int)"i", NULL},
-  {"/Scope/Graticule/Color/blue4", NULL, setcolor, (int)"j", NULL},
-  {"/Scope/Graticule/Color/green4", NULL, setcolor, (int)"k", NULL},
-  {"/Scope/Graticule/Color/cyan4", NULL, setcolor, (int)"l", NULL},
-  {"/Scope/Graticule/Color/red4", NULL, setcolor, (int)"m", NULL},
-  {"/Scope/Graticule/Color/magenta4", NULL, setcolor, (int)"n", NULL},
-  {"/Scope/Graticule/Color/yellow", NULL, setcolor, (int)"o", NULL},
-  {"/Scope/Graticule/Color/white", NULL, setcolor, (int)"p", NULL},
-  {"/Scope/Graticule/sep", NULL, NULL, 0, "<Separator>"},
-#endif
   {"/Scope/Graticule/In Front", NULL, graticule, (int)"0", "<RadioItem>"},
   {"/Scope/Graticule/Behind", NULL, graticule, (int)"1", "/Scope/Graticule/In Front"},
   {"/Scope/Graticule/sep", NULL, NULL, 0, "<Separator>"},

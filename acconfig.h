@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: acconfig.h,v 2.0 2008/12/17 17:35:46 baccala Exp $
+ * @(#)$Id: acconfig.h,v 2.1 2008/12/26 18:34:57 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -32,7 +32,6 @@
 #define DEF_S	10		/* 1,2,5,10,20,50,100,200,500,1000 (10) */
 #define DEF_T	"0:0:x"		/* -128-127:0,1,2:x,y ("0:0:x") */
 #define DEF_L	"1:1:0"		/* 1-MAXWID:1-MAXWID:0,1 ("1:1:0") */
-#define DEF_C	4		/* 0-16 (4) */
 #define DEF_M	0		/* 0,1,2 (0) */
 #define DEF_D	4		/* 1,2,4 (4) */
 #define DEF_F	""		/* console font, "" = default ("") */
