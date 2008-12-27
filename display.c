@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 2.9 2008/12/26 18:07:45 baccala Exp $
+ * @(#)$Id: display.c,v 2.10 2008/12/27 05:34:53 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -649,7 +649,8 @@ void configure_databox(void)
      /* XXX for an FFT channel, p->signal->rate will be negative */
 
      if (p->show && p->signal) {
-       if ((gfloat) p->signal->num / p->signal->rate > upper_time_limit) {
+       if ((p->signal->rate > 0) &&
+	   (gfloat) p->signal->num / p->signal->rate > upper_time_limit) {
 	 upper_time_limit = (gfloat) p->signal->num / p->signal->rate;
        }
      }
