@@ -5,73 +5,68 @@ GtkWidget*
 create_databox (gchar *widget_name, gchar *string1, gchar *string2,
                 gint int1, gint int2);
 
+
+gint key_press_event(GtkWidget *widget, GdkEventKey *event);
+
+void delete_event(GtkWidget *widget, GdkEvent *event, gpointer data);
+
+/* COMEDI */
+
 void
-on_open1_activate                      (GtkMenuItem     *menuitem,
+comedi_on_ok                           (GtkButton       *button,
                                         gpointer         user_data);
 
 void
-on_save1_activate                      (GtkMenuItem     *menuitem,
+comedi_on_apply                        (GtkButton       *button,
                                         gpointer         user_data);
 
 void
-on_device2_activate                    (GtkMenuItem     *menuitem,
+on_bufsize_custom_clicked              (GtkButton       *button,
                                         gpointer         user_data);
 
 void
-on_device_options2_activate            (GtkMenuItem     *menuitem,
+on_bufsize_default_clicked             (GtkButton       *button,
                                         gpointer         user_data);
 
 void
-on_quit1_activate                      (GtkMenuItem     *menuitem,
+on_device_entry_changed                (GtkEditable     *editable,
+                                        gpointer         user_data);
+
+/* Bitscope */
+
+extern GtkWidget *window;
+extern guchar dialog_r[];
+
+void
+bitscope_dialog();
+
+void
+on_toggled                             (GtkToggleButton *togglebutton,
                                         gpointer         user_data);
 
 void
-on_about1_activate                     (GtkMenuItem     *menuitem,
+on_value_changed                       (GtkAdjustment *adj,
+                                        gpointer         user_data);
+
+void
+on_notebook1_switch_page               (GtkNotebook     *notebook,
+                                        GtkNotebookPage *page,
+                                        gint             page_num,
+                                        gpointer         user_data);
+
+void
+on_ok                                  (GtkButton       *button,
+                                        gpointer         user_data);
+
+void
+on_apply                               (GtkButton       *button,
+                                        gpointer         user_data);
+
+void
+on_entry1_changed                      (GtkEditable     *editable,
                                         gpointer         user_data);
 
 gboolean
-on_window1_key_press_event             (GtkWidget       *widget,
-                                        GdkEventKey     *event,
-                                        gpointer         user_data);
-
-gboolean
-delete_event                           (GtkWidget       *widget,
-                                        GdkEvent        *event,
-                                        gpointer         user_data);
-
-void
-hit_key__1__                           (GtkMenuItem     *menuitem,
-                                        gpointer         user_data);
-
-void
-on_2_activate                          (GtkMenuItem     *menuitem,
-                                        gpointer         user_data);
-
-void
-on_3_activate                          (GtkMenuItem     *menuitem,
-                                        gpointer         user_data);
-
-void
-on_4_activate                          (GtkMenuItem     *menuitem,
-                                        gpointer         user_data);
-
-void
-on_5_activate                          (GtkMenuItem     *menuitem,
-                                        gpointer         user_data);
-
-void
-on_6_activate                          (GtkMenuItem     *menuitem,
-                                        gpointer         user_data);
-
-void
-on_7_activate                          (GtkMenuItem     *menuitem,
-                                        gpointer         user_data);
-
-void
-on_8_activate                          (GtkMenuItem     *menuitem,
-                                        gpointer         user_data);
-
-gboolean
-key_press_event                        (GtkWidget       *widget,
-                                        GdkEventKey     *event,
+on_entry1_focusout                     (GtkWidget       *widget,
+                                        GdkEventFocus   *event,
                                         gpointer         user_data);

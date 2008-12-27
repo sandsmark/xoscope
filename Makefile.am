@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 
-# @(#)$Id: Makefile.am,v 2.5 2008/12/22 17:52:40 baccala Exp $
+# @(#)$Id: Makefile.am,v 2.6 2008/12/27 03:44:30 baccala Exp $
 
 # Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
 
@@ -29,8 +29,6 @@ bitscope.c sc_linux.c ser_unix.c
 
 if COMEDI
 comedisrc = comedi.c
-COMEDI_GUI_SUBDIR = comedi-glade-src
-COMEDI_GUI_LIB = comedi-glade-src/interface.o comedi-glade-src/callbacks.o
 else
 comedisrc =
 endif
@@ -44,11 +42,9 @@ endif
 # trick used in things like comedi.c (see comments there) won't work
 # for a library.  So we put .o files in.
 
-SUBDIRS = glade-src bitscope-glade-src $(COMEDI_GUI_SUBDIR)
+SUBDIRS = glade-src
 INCLUDES = @GTK_CFLAGS@ @GTKDATABOX_CFLAGS@
-GUI_LIB = bitscope-glade-src/support.o bitscope-glade-src/interface.o \
-	bitscope-glade-src/callbacks.o $(COMEDI_GUI_LIB) \
-	glade-src/callbacks.o glade-src/interface.o
+GUI_LIB = glade-src/callbacks.o glade-src/interface.o glade-src/support.o
 
 xoscope_SOURCES = $(src) $(comedisrc) com_gtk.c gr_gtk.c sc_linux_gtk.c
 xoscope_LDADD = $(GUI_LIB) @GTK_LIBS@ @GTKDATABOX_LIBS@
