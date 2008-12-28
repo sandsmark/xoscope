@@ -70,3 +70,8 @@ gboolean
 on_entry1_focusout                     (GtkWidget       *widget,
                                         GdkEventFocus   *event,
                                         gpointer         user_data);
+
+gboolean
+on_databox_button_press_event          (GtkWidget       *widget,
+                                        GdkEventButton  *event,
+                                        gpointer         user_data);

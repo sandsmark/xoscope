@@ -1465,6 +1465,7 @@
 			  <property name="int1">0</property>
 			  <property name="int2">0</property>
 			  <property name="last_modification_time">Thu, 18 Dec 2008 02:27:29 GMT</property>
+			  <signal name="button_press_event" handler="on_databox_button_press_event" last_modification_time="Sat, 27 Dec 2008 21:31:30 GMT"/>
 			</widget>
 		      </child>
 		    </widget>

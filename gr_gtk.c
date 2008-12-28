@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: gr_gtk.c,v 2.9 2008/12/26 18:43:30 baccala Exp $
+ * @(#)$Id: gr_gtk.c,v 2.10 2008/12/28 04:31:33 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -1169,6 +1169,53 @@ positioncursor(int x, int y, int b)
       return TRUE;
     }
   }
+  return FALSE;
+}
+
+gboolean
+on_databox_button_press_event          (GtkWidget       *widget,
+                                        GdkEventButton  *event,
+                                        gpointer         user_data)
+{
+  gfloat num, l, x;
+  int cursor;
+  Channel *p = &ch[scope.select];
+
+  /* XXX duplicates code in draw_data() */
+  if (p->signal->rate > 0) {
+    num = (gfloat) 1 / p->signal->rate;
+  } else {
+    num = (gfloat) 1 / 1000;
+  }
+  l = p->signal->delay * num / 10000;
+
+  if (scope.curs) {
+#if 1
+    GtkDataboxCoord coord;
+    GtkDataboxValue value;
+    coord.x = event->x;
+    coord.y = event->y;
+    value = gtk_databox_value_from_coord (databox, coord);
+    x = value.x;
+#else
+    x = gtk_databox_pixel_to_value_x (databox, event->x);
+#endif
+    cursor = rintf((x - l) / num) + 1;
+#if 0
+    if (event->state & GDK_BUTTON1_MASK) {
+      scope.cursa = cursor;
+    } else if (event->state & GDK_BUTTON2_MASK) {
+      scope.cursb = cursor;
+    }
+#else
+    if (event->button == 1) {
+      scope.cursa = cursor;
+    } else if (event->button == 3) {
+      scope.cursb = cursor;
+    }
+#endif
+  }
+
   return FALSE;
 }
 

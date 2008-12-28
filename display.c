@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 2.10 2008/12/27 05:34:53 baccala Exp $
+ * @(#)$Id: display.c,v 2.11 2008/12/28 04:31:33 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -811,16 +811,13 @@ draw_graticule()
 
 /* draw_data()
  *
- * graph the data on the display, possibly erasing old data to make
- * room for the new.  To do this, we keep an array of data points,
- * half of which is the previous sweep that we're erasing as we go,
- * the other half of which is the new sweep that we're drawing as we
- * go.  At the end of a sweep, we flip pointers to the two halves.  If
- * we're in an accumulate mode, don't have to erase anything, because
- * we're just letting the traces accumulate on the screen.  Also draw
- * cursors here, and, near the end of the function, draw tick marks to
- * show zero levels.
+ * write the data into the databox
  */
+
+gfloat cursoraX[2], cursoraY[2], cursorbX[2], cursorbY[2];
+
+GtkDataboxGraph *cursora = NULL;
+GtkDataboxGraph *cursorb = NULL;
 
 int max(int a, int b)
 {
@@ -833,7 +830,6 @@ draw_data()
   static int i, j, y, mult, div, off, bit, start, end;
   int bitoff;
   gfloat num, l;
-  static int preva = 100, prevb = 100;	/* previous cursor locations */
   Channel *p;
   SignalLine *sl;
   short *samp;
@@ -879,16 +875,11 @@ draw_data()
 
       l = p->signal->delay * num / 10000;
 
-      /* Erase and redraw the cursors, if they've moved.
-       *
-       * We always draw them, for much the same reason as we always
-       * draw signal lines - because we've never quite sure if
-       * a signal that coincides with them might have been erased,
-       * and part of the cursor along with it.
+      /* Draw the cursors, if needed.
        *
        * There's several things I don't like about the cursors.
-       * First, the cursor positions are stored as offsets into the
-       * data arrays, which means that if we change to a different
+       * First, the cursor positions are stored in number of samples
+       * (1 based), which means that if we change to a different
        * signal with a different sampling rate, the cursors move
        * around on the screen!  We'd have to worry about that in this
        * code, except that handle_key() always does a clear() when it
@@ -897,44 +888,31 @@ draw_data()
        * don't get doubly drawn cursors if we move to a channel with a
        * different sampling rate.
        *
-       * Also, this math might be a bit flakey, I'm not sure (I didn't
-       * write it).  Multiplication and division with computer
-       * integers is always a lot of trouble, and 'num' was designed
-       * to convert from time to x-coords, not the other way around.
-       *
-       * And, of course, we're doing all this in one of the program's
-       * most critical code sections, from a performance standpoint.
-       * These cursors get redrawn every single time we refresh the
-       * screen.  It really could be somewhat smarter.
+       * I remove and redraw the cursors every time mainly in case
+       * their color changes (silly, I know).  Also, this ensures that
+       * they're always in front of the data.
        */
 
-#if 0
-      /* XXX update for new databox code */
-
       if (scope.curs && j == scope.select) {
-	X = (scope.cursa - 1) * 10000 / num + l + 1;
-	if (X != preva) {
-	  /* XXX SetColor(color[0]); */
-	  DrawLine(preva, 70, preva, v_points - 70);
-	  preva = X;
+	cursoraX[0] = cursoraX[1] = l + (scope.cursa-1) * num;
+	cursorbX[0] = cursorbX[1] = l + (scope.cursb-1) * num;
+	cursoraY[0] = cursorbY[0] = 0;
+	cursoraY[1] = cursorbY[1] = v_points;
+
+	if (cursora != NULL) {
+	  gtk_databox_graph_remove(GTK_DATABOX(databox), cursora);
+	  g_object_unref(G_OBJECT(cursora));
 	}
-	if (X < h_points - 100) {
-	  /* XXX SetColor(p->color); */
-	  DrawLine(X, 70, X, v_points - 70);
+	if (cursorb != NULL) {
+	  gtk_databox_graph_remove(GTK_DATABOX(databox), cursorb);
+	  g_object_unref(G_OBJECT(cursorb));
 	}
 
-	X = (scope.cursb - 1) * 10000 / num + l + 1;
-	if (X != prevb) {
-	  /* XXX SetColor(color[0]); */
-	  DrawLine(prevb, 70, prevb, v_points - 70);
-	  prevb = X;
-	}
-	if (X < h_points - 100) {
-	  /* XXX SetColor(p->color); */
-	  DrawLine(X, 70, X, v_points - 70);
-	}
+	cursora = gtk_databox_lines_new(2, cursoraX, cursoraY, &gcolor, 1);
+	cursorb = gtk_databox_lines_new(2, cursorbX, cursorbY, &gcolor, 1);
+	gtk_databox_graph_add(GTK_DATABOX(databox), cursora);
+	gtk_databox_graph_add(GTK_DATABOX(databox), cursorb);
       }
-#endif
 
       /* XXX make sure that if we're displaying a digital signal,
        * we go into digital display mode.  Should be elsewhere.

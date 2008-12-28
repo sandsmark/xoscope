@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.c,v 2.2 2008/12/26 18:43:30 baccala Exp $
+ * @(#)$Id: oscope.c,v 2.3 2008/12/28 04:31:33 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -386,10 +386,22 @@ void
 handle_key(unsigned char c)
 {
   static Channel *p;
-  static int s;
+  int displayed_samples, max_samples;
 
   p = &ch[scope.select];
-  s = p->signal ? samples(p->signal->rate) : 0;	/* needed for cursors */
+
+  /* These next two are used for keyboard movement of the cursors.
+   *
+   * Cursors are stored as sample numbers (1 based).  max_samples
+   * gives the largest legal value for a cursor.  displayed_samples
+   * gives the number of samples displayed on the screen at once so we
+   * can jump by 1/20 of a screen width.  If the signal is wider than
+   * the screen width (i.e, the scrollbar is on), then these two
+   * numbers will be different.
+   */
+
+  displayed_samples = p->signal ? samples(p->signal->rate) : 0;
+  max_samples = p->signal ? max(samples(p->signal->rate), p->signal->num) : 0;
 
   if (c >= 'A' && c <= 'Z') {
     if (p->signal) {
@@ -425,35 +437,35 @@ handle_key(unsigned char c)
     clear();
     break;
   case 'q' - 96:		/* -96 is CTRL keys */
-    if ((scope.cursa -= s / 20) < 1)
-      scope.cursa = s - 1;
+    if ((scope.cursa -= displayed_samples / 20) < 1)
+      scope.cursa = max_samples - 1;
     break;
   case 'w' - 96:
-    if ((scope.cursa += 2 / 20) >= s)
+    if ((scope.cursa += displayed_samples / 20) >= max_samples)
       scope.cursa = 1;
     break;
   case 'e' - 96:
     if (--scope.cursa < 1)
-      scope.cursa = s - 1;
+      scope.cursa = max_samples - 1;
     break;
   case 'r' - 96:
-    if (++scope.cursa >= s)
+    if (++scope.cursa >= max_samples)
       scope.cursa = 1;
     break;
   case 'a' - 96:
-    if ((scope.cursb -= s / 20) < 1)
-      scope.cursb = s - 1;
+    if ((scope.cursb -= displayed_samples / 20) < 1)
+      scope.cursb = max_samples - 1;
     break;
   case 's' - 96:
-    if ((scope.cursb += s / 20) >= s)
+    if ((scope.cursb += displayed_samples / 20) >= max_samples)
       scope.cursb = 1;
     break;
   case 'd' - 96:
     if (--scope.cursb < 1)
-      scope.cursb = s - 1;
+      scope.cursb = max_samples - 1;
     break;
   case 'f' - 96:
-    if (++scope.cursb >= s)
+    if (++scope.cursb >= max_samples)
       scope.cursb = 1;
     break;
   case '\t':
