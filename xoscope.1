@@ -1,20 +1,18 @@
-.\" @(#)$Id: xoscope.1,v 2.1 2009/01/05 22:18:44 baccala Exp $
+.\" @(#)$Id: xoscope.1,v 2.2 2009/01/06 22:14:18 baccala Exp $
 .\"
 .\" Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
 .\"
 .\" (see the files README and COPYING for more details)
 
-.TH OSCOPE 1 "May  6  2001" "Linux" "User Commands"
+.TH XOSCOPE 1 "May  6  2001" "Linux" "User Commands"
 .SH NAME
-oscope xoscope \- Digital Oscilloscope via Sound Card or Other Hardware
+xoscope \- Digital Oscilloscope
 .SH SYNOPSIS
-oscope [oscope options] [file]
-.br
-xoscope [toolkit options] [oscope options] [file]
+xoscope [X toolkit options] [xoscope options] [file]
 
 .SH DESCRIPTION
 
-.B Oscope
+.B Xoscope
 is a digital real-time oscilloscope. It graphically displays signal
 amplitude or bit logic as a function of time.  Signals may be
 displayed, saved, recalled, and manipulated by math functions.  Signal
@@ -24,7 +22,7 @@ input devices currently include:
 .TP 0.5i
 .B /dev/dsp
 Audio sound recording via /dev/dsp.  Two 8-bit analog channels at 8000
-S/s to 44100 S/s.  Left and right audio is connected to X and Y inputs
+S/s to 44100 S/s.  Left and right audio is connected to A and B inputs
 respectively.  Use an external mixer program to select which sound
 inputs to record.  AC coupled, voltages unknown, 256K sample memory.
 
@@ -40,7 +38,7 @@ Radio Shack ProbeScope, Cat. No. 22-310 is also known as an osziFOX.
 This handheld probe sends its data through a serial port.  It samples
 one channel at 6-bits up to 20 MS/s with 128 samples of memory.  Real
 voltages are labeled in sample ranges from 1 volt to 100 volts.  If a
-ProbeScope is detected, it is connected to the Z input.
+ProbeScope is detected, it is connected to the A input.
 
 .TP 0.5i
 .B Bitscope
@@ -48,10 +46,18 @@ Bitscope (www.bitscope.com) is a mixed-signal capture engine which is
 accessed through a serial port.  It simultaneously samples a digital
 8-bit port and two analog channels at 8 bit resolution at up to 25
 MS/s or more.  If detected, Channel A and B are connected to X and Y
-while the Logic Analyzer is connected to Z, disabling all sound input.
+while the Logic Analyzer is connected to C.
 Bitscope support is currently under development and not yet fully
 functional.
 .P
+
+.TP 0.5i
+.B COMEDI
+The COMEDI project (www.comedi.org) develops Linux drivers, tools, and
+libraries for data acquisition.
+Many commercially available ADC cards are supported by COMEDI, and
+.B Xoscope
+can receive signals from them via the COMEDI library.
 
 See the
 .B -x
@@ -62,7 +68,7 @@ options and the
 section below for more details on how the above devices are detected.
 Some of the controls below apply only to the sound card and are
 labeled as such.
-.B Oscope
+.B Xoscope
 has no physical control over the ProbeScope/osziFOX which is
 controlled by its own switches and built-in menus.  Please refer to
 your ProbeScope or osziFOX Owner's Manual for operating instructions.
@@ -73,7 +79,7 @@ window.
 .PP
 .SH "RUN\-TIME KEYBOARD CONTROLS"
 
-.B Oscope
+.B Xoscope
 is an interactive program and can be completely controlled from the
 keyboard at run-time.  In verbose key help mode, each available key is
 shown on the screen in (parentheses).  The following single key
@@ -102,14 +108,6 @@ to overwrite if it already exists.
 Clear and refresh the entire screen.
 
 .TP 0.5i
-.B ^
-Toggle the serial input device on/off.  A serial device is turned on
-only if it is found active on a serial port.  This may be useful if
-the device was not detected at startup.  See the
-.B ENVIRONMENT
-section below for more details.
-
-.TP 0.5i
 .B &
 Cycle between the various input devices.  Note that this key will not
 toggle to an unresponsive input device, so if only one device is
@@ -126,16 +124,20 @@ value 4 usually gives the fastest display rate.
 Under EsounD, this value instead determines whether the connection to
 EsounD will block (4) or not (2 or 1).  Blocking mode is nicest to CPU
 usage but the
-.B oscope
+.B xoscope
 interface will not respond when the there is no sound stream coming
 from EsounD.  Nonblocking mode will let
-.B oscope
+.B xoscope
 be responsive whether sound is available or not, but will consume all
 available CPU cycles.
 
 .TP 0.5i
+.B ^
+Different behavior for different input devices
+
+.TP 0.5i
 .B (/)
-Decrease/increase the sound card sampling rate.
+Decrease/increase the sampling rate.
 
 .TP 0.5i
 .B 9/0
@@ -144,20 +146,19 @@ time).
 
 .TP 0.5i
 .B -/=
-Decrease/increase the sound card trigger level.
+Decrease/increase the trigger level.
 
 .TP 0.5i
 .B _
-Toggle the sound card trigger channel: X or Y.
+Cycle the trigger channel.
 
 .TP 0.5i
 .B +
-Cycle the sound card trigger type: automatic, rising edge, or falling
-edge.
+Cycle the trigger type: none, rising edge, or falling edge.
 
 .TP 0.5i
 .B Space
-Cycle the trigger mode of the sound card: run, wait, stop.  Run mode
+Cycle the trigger mode: run, wait, stop.  Run mode
 continuously acquires and displays samples after trigger events.  Wait
 mode waits for the first trigger event and displays only the first set
 of samples; this is "single-shot" mode.  Stop mode suspends the data
@@ -208,11 +209,11 @@ respectively.
 Select the corresponding display channel.  Measurements are displayed
 for the channel.  Channel 1 and 2 are used as input to the math
 functions so they can't be used to do math.  By default, they are
-connected to the X and Y input channels.  Channel 1 and 2 can also be
-used to display memory buffers or the Z input for doing math on memory
+connected to the A and B input channels.  Channel 1 and 2 can also be
+used to display memory buffers or for doing math on memory
 or the alternate input.  Channel 3 through 8 are not restricted and
-can be used for any purpose.  By default, the Z input is connected to
-Channel 3.  The remaining single key commands operate on the currently
+can be used for any purpose.
+The remaining single key commands operate on the currently
 selected channel:
 
 .TP 0.5i
@@ -248,19 +249,20 @@ offt.c and xy.c in the distribution for examples of external math
 filter commands.  Not available on channel 1 & 2.
 
 .TP 0.5i
-.B A-W
-Store the currently selected channel into the corresponding memory
-buffer.  Buffer X, Y and Z can not be used because they're reserved as
-the signal inputs.  Memories are stored from time zero to the current
-display update position.  So it is best to STOP the display before
-storing to a memory buffer.
-
-.TP 0.5i
 .B a-z
 Recall the corresponding memory buffer or input device to the
-currently selected channel.  Buffer X is the Left or A input, Y is the
-Right or B input, and Z is ProbeScope or Logic Analyzer input.  The
+currently selected channel.  Input device channels are mapped
+to the earliest letters of the alphabet; the
 rest of the buffers are available for signal memory.
+
+.TP 0.5i
+.B A-Z
+Store the currently selected channel into the corresponding memory
+buffer.  Early letters of the alphabet can not be used because they're
+reserved as the signal inputs, so the exact number of available buffers
+is dependant on the input device.  Memories are stored from time zero to
+the current display update position.  So it is best to STOP the
+display before storing to a memory buffer.
 
 .PP
 .SH "MOUSE CONTROLS"
@@ -278,11 +280,11 @@ the mouse.
 .SH "COMMAND\-LINE OPTIONS"
 
 The command-line options define the startup state of
-.B oscope
+.B xoscope
 and have reasonable defaults.  All options may be capitalized in case
 they conflict with an X toolkit option.  These options are also
 recorded in text files saved by
-.B oscope.
+.B xoscope.
 
 .TP 0.5i
 .B -h
@@ -309,7 +311,7 @@ Active, or selected, channel.
 
 .TP 0.5i
 .B -r <rate>
-Sound card sampling Rate in samples per second.  Current valid values
+Sampling Rate in samples per second.  For the sound card, current valid values
 are 8000, 11025, 22050, or 44100.
 
 .TP 0.5i
@@ -319,7 +321,7 @@ is 1 ms/div.
 
 .TP 0.5i
 .B -t <trigger>
-Sound card Trigger conditions.  Trigger can have up to three fields,
+Trigger conditions.  Trigger can have up to three fields,
 separated by colons: position[:type[:channel]].  Position is the
 number of pixels above (positive) or below (negative) the center of
 the display.  Type is a number indicating the kind of trigger, 0 =
@@ -339,14 +341,6 @@ displayed (1) or the not displayed (0).
 Divisor for sound card DMA: 1, 2, or 4.  The sound driver will divide
 it's DMA buffer by this factor.  The value 4 usually gives the fastest
 display rate.
-
-.TP 0.5i
-.B -f
-Font to use.  For
-.B oscope,
-these are listed in /usr/lib/kbd/consolefonts.  For
-.B xoscope,
-they're the output of xlsfonts.  The default should work best.
 
 .TP 0.5i
 .B -p <type>
@@ -380,14 +374,14 @@ suppress the search for a serial scope device.
 .B file
 The name of a file to load upon startup.  This should be a file
 previously saved by
-.B oscope.
+.B xoscope.
 
 .SH EXAMPLES
 .TP 0.5i
-.B oscope -1 80 -2 -80 -3 0:1/5:6 -4 -160:1/5:7
+.B xoscope -1 80 -2 -80 -3 0:1/5:6 -4 -160:1/5:7
 
 This runs
-.B oscope
+.B xoscope
 with channel 1 above and channel 2 below the center of the display.
 Also channel 3 and 4 are made visible to show the FFT of channel 1 and
 2 respectively at a reduced scale of 1/5.
@@ -399,10 +393,10 @@ This runs xoscope, loading settings and memory buffers from a
 previously saved data file called "oscope.dat".
 
 .SH FILES
-.B Oscope
+.B Xoscope
 creates readable text data files.  The files contain at least a
 comment header which holds the current settings of
-.B oscope.
+.B xoscope.
 Loading the file causes these saved settings to be restored.
 
 To record your signals permanently first store them into memory
@@ -448,7 +442,7 @@ real device such as /dev/ttyS1.
 The host:port of the EsounD to connect to if built with EsounD
 support.  If unset, localhost is assumed.  If no EsounD connection is
 made or if there is no EsounD support compiled in, then
-.B oscope
+.B xoscope
 will try to read /dev/dsp directly.
 
 .SH LIMITATIONS
@@ -471,7 +465,7 @@ same sampling rate.
 The automatic measurements count zero crossings and divide to
 determine the frequency and period.  If these zero crossings are not
 "regularly-periodic", these measurements could be invalid.
-.B Oscope
+.B Xoscope
 does understand how to measure the built-in FFT functions by locating
 the peak frequency.  Use manual cursor positioning to get more precise
 measurements.
@@ -491,12 +485,6 @@ point or point accumulate mode, zoom in on Sec/Div as much as
 possible, and turn off the graticule.
 .P
 
-Because it uses svgalib,
-.B oscope
-must be run as root or be setuid to root.
-.B xoscope
-doesn't have this restriction.
-
 .SH BUGS
 The keyboard interface may be confusing.
 
@@ -504,8 +492,8 @@ The keyboard interface may be confusing.
 .B Oscope
 was written by Tim Witham (twitham@quiknet.com), originally based
 on "scope" by Jeff Tranter (Jeff_Tranter@Mitel.COM).
-.B Oscope
+.B Xoscope
 is released under the conditions of the GNU General Public License.
 See the files README and COPYING in the distribution for details.
 
-.\" oscope.1 ends here.
+.\" xoscope.1 ends here.
