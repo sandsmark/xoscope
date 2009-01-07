@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: com_gtk.c,v 2.3 2009/01/07 01:36:20 baccala Exp $
+ * @(#)$Id: com_gtk.c,v 2.4 2009/01/07 02:19:03 baccala Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -49,10 +49,10 @@ key_press_event(GtkWidget *widget, GdkEventKey *event)
   return TRUE;
 }
 
-/* simple evnet callback that emulates the user hitting the given key */
+/* simple event callback that emulates the user hitting the given key */
 void
-hit_key(GtkWidget *w, gpointer data)
+hit_key(GtkWidget *w, guint data)
 {
   if (fixing_widgets) return;
-  handle_key(((char *)data)[0]);
+  handle_key(data);
 }

@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: gr_gtk.c,v 2.11 2009/01/07 01:27:44 baccala Exp $
+ * @(#)$Id: gr_gtk.c,v 2.12 2009/01/07 02:19:03 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -198,38 +198,35 @@ datasource(GtkWidget *w, gpointer data)
 }
 
 void
-option_dialog(GtkWidget *w, gpointer data)
+option_dialog(GtkWidget *w, guint data)
 {
   if (fixing_widgets) return;
   if (datasrc && datasrc->gtk_options) datasrc->gtk_options();
 }
 
 void
-plotmode(GtkWidget *w, gpointer data)
+plotmode(GtkWidget *w, guint data)
 {
   if (fixing_widgets) return;
-  scope.mode = ((char *)data)[0] - '0';
+  scope.mode = data;
   clear();
 }
 
 void
-runmode(GtkWidget *w, gpointer data)
+runmode(GtkWidget *w, guint data)
 {
-  scope.run = ((char *)data)[0] - '0';
+  scope.run = data;
   clear();
 }
 
 void
-graticule(GtkWidget *w, gpointer data)
+graticule(GtkWidget *w, guint data)
 {
-  int i;
-
   if (fixing_widgets) return;
-  i = ((char *)data)[0] - '0';
-  if (i < 2)
-    scope.behind = i;
+  if (data < 2)
+    scope.behind = data;
   else
-    scope.grat = i - 2;
+    scope.grat = data - 2;
   clear();
 }
 
@@ -257,18 +254,16 @@ change_trigger(int trigch, int trig, int trige)
 }
 
 void
-trigger(GtkWidget *w, gpointer data)
+trigger(GtkWidget *w, guint data)
 {
-  char c = ((char *)data)[0];
-
   if (fixing_widgets) return;
 
-  if (c >= 'a' && c <= 'c') {
-    change_trigger(scope.trigch, scope.trig, c - 'a');
+  if (data >= 'a' && data <= 'c') {
+    change_trigger(scope.trigch, scope.trig, data - 'a');
   }
 
-  if (c >= '1' && c <= '8') {
-    change_trigger(c - '1', scope.trig, scope.trige);
+  if (data >= '1' && data <= '8') {
+    change_trigger(data - '1', scope.trig, scope.trige);
   }
 
   clear();
@@ -278,17 +273,17 @@ trigger(GtkWidget *w, gpointer data)
    Selecting a built-in after external causes an extraneous command
    dialog but I can't figure out how to get rid of it.  */
 void
-mathselect(GtkWidget *w, gpointer data)
+mathselect(GtkWidget *w, guint data)
 {
   if (fixing_widgets) return;
   if (scope.select > 1) {
-    if (((char *)data)[0] == '$') {
+    if (data == '$') {
 /*        if (GTK_CHECK_MENU_ITEM */
 /*  	 (gtk_item_factory_get_item */
 /*  	  (factory, "/Channel/Math/External Command..."))->active) */
 	handle_key('$');
     } else {
-      function_bynum_on_channel(((char *)data)[0] - '0', &ch[scope.select]);
+      function_bynum_on_channel(data - '0', &ch[scope.select]);
       ch[scope.select].show = 1;
     }
     clear();
@@ -296,36 +291,33 @@ mathselect(GtkWidget *w, gpointer data)
 }
 
 void
-setbits(GtkWidget *w, gpointer data)
+setbits(GtkWidget *w, guint data)
 {
   if (fixing_widgets) return;
-  ch[scope.select].bits = (int)data;
+  ch[scope.select].bits = data;
   clear();
 }
 
 void
-setscale(GtkWidget *w, gpointer data)
+setscale(GtkWidget *w, guint data)
 {
-  int scale[] = {0, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000};
+  int mul[] = {50, 20, 10, 5, 2, 1, 1, 1,  1,  1,  1};
+  int div[] = {1,   1,  1, 1, 1, 1, 2, 5, 10, 20, 50};
 
-  ch[scope.select].target_mult = scale[((char *)data)[0] - '0'];
-  ch[scope.select].target_div = scale[((char *)data)[1] - '0'];
+  ch[scope.select].target_mult = mul[data];
+  ch[scope.select].target_div = div[data];
   clear();
 }
 
 void
-setposition(GtkWidget *w, gpointer data)
+setposition(GtkWidget *w, guint data)
 {
-  char c0 = ((char *)data)[0];
-  char c1 = ((char *)data)[1];
-
-  if (c0 == 'T') {
-    change_trigger(scope.trigch, 256 - (c1 - 'a') * 8, scope.trige);
-  } else if (c0 == 't') {
-    change_trigger(scope.trigch, (c1 - 'a') * 8, scope.trige);
+  if (data >= 100) {
+    change_trigger(scope.trigch, (data - 100) * 8, scope.trige);
+  } else if (data <= -100) {
+    change_trigger(scope.trigch, (data + 100) * 8, scope.trige);
   } else {
-    ch[scope.select].pos = (((char *)data)[0] == '-' ? 1 : -1)
-      * (((char *)data)[1] - 'a') * 16;
+    ch[scope.select].pos = data * 16;
   }
   clear();
 }
@@ -483,71 +475,71 @@ static GtkItemFactoryEntry menu_items[] =
   {"/File", NULL, NULL, 0, "<Branch>"},
   {"/File/tear", NULL, NULL, 0, "<Tearoff>"},
   /*     {"/File/New", "<control>N", print_hello, NULL, NULL}, */
-  {"/File/Open...", NULL, hit_key, (int)"@", NULL},
-  {"/File/Save...", NULL, hit_key, (int)"#", NULL},
+  {"/File/Open...", NULL, hit_key, '@', NULL},
+  {"/File/Save...", NULL, hit_key, '#', NULL},
   /*     {"/File/Save as", NULL, NULL, 0, NULL}, */
   {"/File/Device/tear", NULL, NULL, 0, "<Tearoff>"},
   {"/File/Device Options...", NULL, option_dialog, 0, NULL},
   {"/File/sep", NULL, NULL, 0, "<Separator>"},
-  {"/File/Quit", NULL, hit_key, (int)"\e", NULL},
+  {"/File/Quit", NULL, hit_key, '\e', NULL},
 
   {"/Channel", NULL, NULL, 0, "<Branch>"},
   {"/Channel/tear", NULL, NULL, 0, "<Tearoff>"},
-  {"/Channel/Channel 1", NULL, hit_key, (int)"1", "<RadioItem>"},
-  {"/Channel/Channel 2", NULL, hit_key, (int)"2", "/Channel/Channel 1"},
-  {"/Channel/Channel 3", NULL, hit_key, (int)"3", "/Channel/Channel 2"},
-  {"/Channel/Channel 4", NULL, hit_key, (int)"4", "/Channel/Channel 3"},
-  {"/Channel/Channel 5", NULL, hit_key, (int)"5", "/Channel/Channel 4"},
-  {"/Channel/Channel 6", NULL, hit_key, (int)"6", "/Channel/Channel 5"},
-  {"/Channel/Channel 7", NULL, hit_key, (int)"7", "/Channel/Channel 6"},
-  {"/Channel/Channel 8", NULL, hit_key, (int)"8", "/Channel/Channel 7"},
+  {"/Channel/Channel 1", NULL, hit_key, '1', "<RadioItem>"},
+  {"/Channel/Channel 2", NULL, hit_key, '2', "/Channel/Channel 1"},
+  {"/Channel/Channel 3", NULL, hit_key, '3', "/Channel/Channel 2"},
+  {"/Channel/Channel 4", NULL, hit_key, '4', "/Channel/Channel 3"},
+  {"/Channel/Channel 5", NULL, hit_key, '5', "/Channel/Channel 4"},
+  {"/Channel/Channel 6", NULL, hit_key, '6', "/Channel/Channel 5"},
+  {"/Channel/Channel 7", NULL, hit_key, '7', "/Channel/Channel 6"},
+  {"/Channel/Channel 8", NULL, hit_key, '8', "/Channel/Channel 7"},
   {"/Channel/sep", NULL, NULL, 0, "<Separator>"},
-  {"/Channel/Show", NULL, hit_key, (int)"\t", "<CheckItem>"},
+  {"/Channel/Show", NULL, hit_key, '\t', "<CheckItem>"},
 
   {"/Channel/Scale", NULL, NULL, 0, "<Branch>"},
   {"/Channel/Scale/tear", NULL, NULL, 0, "<Tearoff>"},
-  {"/Channel/Scale/up", NULL, hit_key, (int)"}", NULL},
-  {"/Channel/Scale/down", NULL, hit_key, (int)"{", NULL},
+  {"/Channel/Scale/up", NULL, hit_key, '}', NULL},
+  {"/Channel/Scale/down", NULL, hit_key, '{', NULL},
   {"/Channel/Scale/sep", NULL, NULL, 0, "<Separator>"},
-  {"/Channel/Scale/50", NULL, setscale, (int)"61", NULL},
-  {"/Channel/Scale/20", NULL, setscale, (int)"51", NULL},
-  {"/Channel/Scale/10", NULL, setscale, (int)"41", NULL},
-  {"/Channel/Scale/5", NULL, setscale, (int)"31", NULL},
-  {"/Channel/Scale/2", NULL, setscale, (int)"21", NULL},
-  {"/Channel/Scale/1", NULL, setscale, (int)"11", NULL},
+  {"/Channel/Scale/50", NULL, setscale, 0, NULL},
+  {"/Channel/Scale/20", NULL, setscale, 1, NULL},
+  {"/Channel/Scale/10", NULL, setscale, 2, NULL},
+  {"/Channel/Scale/5", NULL, setscale, 3, NULL},
+  {"/Channel/Scale/2", NULL, setscale, 4, NULL},
+  {"/Channel/Scale/1", NULL, setscale, 5, NULL},
   /* How the ? do you put a / in a menu ? Just use \ until I figure it out. */
-  {"/Channel/Scale/1\\2", NULL, setscale, (int)"12", NULL},
-  {"/Channel/Scale/1\\5", NULL, setscale, (int)"13", NULL},
-  {"/Channel/Scale/1\\10", NULL, setscale, (int)"14", NULL},
-  {"/Channel/Scale/1\\20", NULL, setscale, (int)"15", NULL},
-  {"/Channel/Scale/1\\50", NULL, setscale, (int)"16", NULL},
+  {"/Channel/Scale/1\\2", NULL, setscale, 6, NULL},
+  {"/Channel/Scale/1\\5", NULL, setscale, 7, NULL},
+  {"/Channel/Scale/1\\10", NULL, setscale, 8, NULL},
+  {"/Channel/Scale/1\\20", NULL, setscale, 9, NULL},
+  {"/Channel/Scale/1\\50", NULL, setscale, 10, NULL},
 
   {"/Channel/Position", NULL, NULL, 0, "<Branch>"},
   {"/Channel/Position/tear", NULL, NULL, 0, "<Tearoff>"},
-  {"/Channel/Position/up", "]", hit_key, (int)"]", NULL},
-  {"/Channel/Position/down", "[", hit_key, (int)"[", NULL},
+  {"/Channel/Position/up", "]", hit_key, ']', NULL},
+  {"/Channel/Position/down", "[", hit_key, '[', NULL},
   {"/Channel/Position/sep", NULL, NULL, 0, "<Separator>"},
-  {"/Channel/Position/160", NULL, setposition, (int)" k", NULL},
-  {"/Channel/Position/144", NULL, setposition, (int)" j", NULL},
-  {"/Channel/Position/128", NULL, setposition, (int)" i", NULL},
-  {"/Channel/Position/112", NULL, setposition, (int)" h", NULL},
-  {"/Channel/Position/96", NULL, setposition, (int)" g", NULL},
-  {"/Channel/Position/80", NULL, setposition, (int)" f", NULL},
-  {"/Channel/Position/64", NULL, setposition, (int)" e", NULL},
-  {"/Channel/Position/48", NULL, setposition, (int)" d", NULL},
-  {"/Channel/Position/32", NULL, setposition, (int)" c", NULL},
-  {"/Channel/Position/16", NULL, setposition, (int)" b", NULL},
-  {"/Channel/Position/0", NULL, setposition, (int)" a", NULL},
-  {"/Channel/Position/-16", NULL, setposition, (int)"-b", NULL},
-  {"/Channel/Position/-32", NULL, setposition, (int)"-c", NULL},
-  {"/Channel/Position/-48", NULL, setposition, (int)"-d", NULL},
-  {"/Channel/Position/-64", NULL, setposition, (int)"-e", NULL},
-  {"/Channel/Position/-80", NULL, setposition, (int)"-f", NULL},
-  {"/Channel/Position/-96", NULL, setposition, (int)"-g", NULL},
-  {"/Channel/Position/-112", NULL, setposition, (int)"-h", NULL},
-  {"/Channel/Position/-128", NULL, setposition, (int)"-i", NULL},
-  {"/Channel/Position/-144", NULL, setposition, (int)"-j", NULL},
-  {"/Channel/Position/-160", NULL, setposition, (int)"-k", NULL},
+  {"/Channel/Position/160", NULL, setposition, 10, NULL},
+  {"/Channel/Position/144", NULL, setposition, 9, NULL},
+  {"/Channel/Position/128", NULL, setposition, 8, NULL},
+  {"/Channel/Position/112", NULL, setposition, 7, NULL},
+  {"/Channel/Position/96", NULL, setposition, 6, NULL},
+  {"/Channel/Position/80", NULL, setposition, 5, NULL},
+  {"/Channel/Position/64", NULL, setposition, 4, NULL},
+  {"/Channel/Position/48", NULL, setposition, 3, NULL},
+  {"/Channel/Position/32", NULL, setposition, 2, NULL},
+  {"/Channel/Position/16", NULL, setposition, 1, NULL},
+  {"/Channel/Position/0", NULL, setposition, 0, NULL},
+  {"/Channel/Position/-16", NULL, setposition, -1, NULL},
+  {"/Channel/Position/-32", NULL, setposition, -2, NULL},
+  {"/Channel/Position/-48", NULL, setposition, -3, NULL},
+  {"/Channel/Position/-64", NULL, setposition, -4, NULL},
+  {"/Channel/Position/-80", NULL, setposition, -5, NULL},
+  {"/Channel/Position/-96", NULL, setposition, -6, NULL},
+  {"/Channel/Position/-112", NULL, setposition, -7, NULL},
+  {"/Channel/Position/-128", NULL, setposition, -8, NULL},
+  {"/Channel/Position/-144", NULL, setposition, -9, NULL},
+  {"/Channel/Position/-160", NULL, setposition, -10, NULL},
 
   {"/Channel/Bits", NULL, NULL, 0, "<Branch>"},
   {"/Channel/Bits/tear", NULL, NULL, 0, "<Tearoff>"},
@@ -564,163 +556,163 @@ static GtkItemFactoryEntry menu_items[] =
   {"/Channel/sep", NULL, NULL, 0, "<Separator>"},
   {"/Channel/Math", NULL, NULL, 0, "<Branch>"},
   {"/Channel/Math/tear", NULL, NULL, 0, "<Tearoff>"},
-  {"/Channel/Math/Prev Function", ":", hit_key, (int)":", NULL},
-  {"/Channel/Math/Next Function", ";", hit_key, (int)";", NULL},
+  {"/Channel/Math/Prev Function", ":", hit_key, ':', NULL},
+  {"/Channel/Math/Next Function", ";", hit_key, ';', NULL},
   {"/Channel/Math/sep", NULL, NULL, 0, "<Separator>"},
 
   /* this will need hacked if functions are added / changed in func.c */
   {"/Channel/Math/Other", NULL, NULL, 0, "<RadioItem>"},
-  {"/Channel/Math/External Command...", "$", mathselect, (int)"$", "/Channel/Math/Other"},
-  {"/Channel/Math/Inv. 1", NULL, mathselect, (int)"0", "/Channel/Math/External Command..."},
-  {"/Channel/Math/Inv. 2", NULL, mathselect, (int)"1", "/Channel/Math/Inv. 1"},
-  {"/Channel/Math/Sum  1+2", NULL, mathselect, (int)"2", "/Channel/Math/Inv. 2"},
-  {"/Channel/Math/Diff 1-2", NULL, mathselect, (int)"3", "/Channel/Math/Sum  1+2"},
-  {"/Channel/Math/Avg. 1,2", NULL, mathselect, (int)"4", "/Channel/Math/Diff 1-2"},
-  {"/Channel/Math/FFT. 1", NULL, mathselect, (int)"5", "/Channel/Math/Avg. 1,2"},
-  {"/Channel/Math/FFT. 2", NULL, mathselect, (int)"6", "/Channel/Math/FFT. 1"},
+  {"/Channel/Math/External Command...", "$", mathselect, '$', "/Channel/Math/Other"},
+  {"/Channel/Math/Inv. 1", NULL, mathselect, '0', "/Channel/Math/External Command..."},
+  {"/Channel/Math/Inv. 2", NULL, mathselect, '1', "/Channel/Math/Inv. 1"},
+  {"/Channel/Math/Sum  1+2", NULL, mathselect, '2', "/Channel/Math/Inv. 2"},
+  {"/Channel/Math/Diff 1-2", NULL, mathselect, '3', "/Channel/Math/Sum  1+2"},
+  {"/Channel/Math/Avg. 1,2", NULL, mathselect, '4', "/Channel/Math/Diff 1-2"},
+  {"/Channel/Math/FFT. 1", NULL, mathselect, '5', "/Channel/Math/Avg. 1,2"},
+  {"/Channel/Math/FFT. 2", NULL, mathselect, '6', "/Channel/Math/FFT. 1"},
 
   {"/Channel/Store", NULL, NULL, 0, "<Branch>"},
   {"/Channel/Store/tear", NULL, NULL, 0, "<Tearoff>"},
-  {"/Channel/Store/Mem A", "A", hit_key, (int)"A", "<CheckItem>"},
-  {"/Channel/Store/Mem B", "B", hit_key, (int)"B", "<CheckItem>"},
-  {"/Channel/Store/Mem C", "C", hit_key, (int)"C", "<CheckItem>"},
-  {"/Channel/Store/Mem D", "D", hit_key, (int)"D", "<CheckItem>"},
-  {"/Channel/Store/Mem E", "E", hit_key, (int)"E", "<CheckItem>"},
-  {"/Channel/Store/Mem F", "F", hit_key, (int)"F", "<CheckItem>"},
-  {"/Channel/Store/Mem G", "G", hit_key, (int)"G", "<CheckItem>"},
-  {"/Channel/Store/Mem H", "H", hit_key, (int)"H", "<CheckItem>"},
-  {"/Channel/Store/Mem I", "I", hit_key, (int)"I", "<CheckItem>"},
-  {"/Channel/Store/Mem J", "J", hit_key, (int)"J", "<CheckItem>"},
-  {"/Channel/Store/Mem K", "K", hit_key, (int)"K", "<CheckItem>"},
-  {"/Channel/Store/Mem L", "L", hit_key, (int)"L", "<CheckItem>"},
-  {"/Channel/Store/Mem M", "M", hit_key, (int)"M", "<CheckItem>"},
-  {"/Channel/Store/Mem N", "N", hit_key, (int)"N", "<CheckItem>"},
-  {"/Channel/Store/Mem O", "O", hit_key, (int)"O", "<CheckItem>"},
-  {"/Channel/Store/Mem P", "P", hit_key, (int)"P", "<CheckItem>"},
-  {"/Channel/Store/Mem Q", "Q", hit_key, (int)"Q", "<CheckItem>"},
-  {"/Channel/Store/Mem R", "R", hit_key, (int)"R", "<CheckItem>"},
-  {"/Channel/Store/Mem S", "S", hit_key, (int)"S", "<CheckItem>"},
-  {"/Channel/Store/Mem T", "T", hit_key, (int)"T", "<CheckItem>"},
-  {"/Channel/Store/Mem U", "U", hit_key, (int)"U", "<CheckItem>"},
-  {"/Channel/Store/Mem V", "V", hit_key, (int)"V", "<CheckItem>"},
-  {"/Channel/Store/Mem W", "W", hit_key, (int)"W", "<CheckItem>"},
-  {"/Channel/Store/Mem X", "X", hit_key, (int)"X", "<CheckItem>"},
-  {"/Channel/Store/Mem Y", "Y", hit_key, (int)"Y", "<CheckItem>"},
-  {"/Channel/Store/Mem Z", "Z", hit_key, (int)"Z", "<CheckItem>"},
+  {"/Channel/Store/Mem A", "A", hit_key, 'A', "<CheckItem>"},
+  {"/Channel/Store/Mem B", "B", hit_key, 'B', "<CheckItem>"},
+  {"/Channel/Store/Mem C", "C", hit_key, 'C', "<CheckItem>"},
+  {"/Channel/Store/Mem D", "D", hit_key, 'D', "<CheckItem>"},
+  {"/Channel/Store/Mem E", "E", hit_key, 'E', "<CheckItem>"},
+  {"/Channel/Store/Mem F", "F", hit_key, 'F', "<CheckItem>"},
+  {"/Channel/Store/Mem G", "G", hit_key, 'G', "<CheckItem>"},
+  {"/Channel/Store/Mem H", "H", hit_key, 'H', "<CheckItem>"},
+  {"/Channel/Store/Mem I", "I", hit_key, 'I', "<CheckItem>"},
+  {"/Channel/Store/Mem J", "J", hit_key, 'J', "<CheckItem>"},
+  {"/Channel/Store/Mem K", "K", hit_key, 'K', "<CheckItem>"},
+  {"/Channel/Store/Mem L", "L", hit_key, 'L', "<CheckItem>"},
+  {"/Channel/Store/Mem M", "M", hit_key, 'M', "<CheckItem>"},
+  {"/Channel/Store/Mem N", "N", hit_key, 'N', "<CheckItem>"},
+  {"/Channel/Store/Mem O", "O", hit_key, 'O', "<CheckItem>"},
+  {"/Channel/Store/Mem P", "P", hit_key, 'P', "<CheckItem>"},
+  {"/Channel/Store/Mem Q", "Q", hit_key, 'Q', "<CheckItem>"},
+  {"/Channel/Store/Mem R", "R", hit_key, 'R', "<CheckItem>"},
+  {"/Channel/Store/Mem S", "S", hit_key, 'S', "<CheckItem>"},
+  {"/Channel/Store/Mem T", "T", hit_key, 'T', "<CheckItem>"},
+  {"/Channel/Store/Mem U", "U", hit_key, 'U', "<CheckItem>"},
+  {"/Channel/Store/Mem V", "V", hit_key, 'V', "<CheckItem>"},
+  {"/Channel/Store/Mem W", "W", hit_key, 'W', "<CheckItem>"},
+  {"/Channel/Store/Mem X", "X", hit_key, 'X', "<CheckItem>"},
+  {"/Channel/Store/Mem Y", "Y", hit_key, 'Y', "<CheckItem>"},
+  {"/Channel/Store/Mem Z", "Z", hit_key, 'Z', "<CheckItem>"},
 
   {"/Channel/Recall", NULL, NULL, 0, "<Branch>"},
   {"/Channel/Recall/tear", NULL, NULL, 0, "<Tearoff>"},
   //  {"/Channel/Recall/sep", NULL, NULL, 0, "<Separator>"},
-  {"/Channel/Recall/Mem A", "a", hit_key, (int)"a", NULL},
-  {"/Channel/Recall/Mem B", "b", hit_key, (int)"b", NULL},
-  {"/Channel/Recall/Mem C", "c", hit_key, (int)"c", NULL},
-  {"/Channel/Recall/Mem D", "d", hit_key, (int)"d", NULL},
-  {"/Channel/Recall/Mem E", "e", hit_key, (int)"e", NULL},
-  {"/Channel/Recall/Mem F", "f", hit_key, (int)"f", NULL},
-  {"/Channel/Recall/Mem G", "g", hit_key, (int)"g", NULL},
-  {"/Channel/Recall/Mem H", "h", hit_key, (int)"h", NULL},
-  {"/Channel/Recall/Mem I", "i", hit_key, (int)"i", NULL},
-  {"/Channel/Recall/Mem J", "j", hit_key, (int)"j", NULL},
-  {"/Channel/Recall/Mem K", "k", hit_key, (int)"k", NULL},
-  {"/Channel/Recall/Mem L", "l", hit_key, (int)"l", NULL},
-  {"/Channel/Recall/Mem M", "m", hit_key, (int)"m", NULL},
-  {"/Channel/Recall/Mem N", "n", hit_key, (int)"n", NULL},
-  {"/Channel/Recall/Mem O", "o", hit_key, (int)"o", NULL},
-  {"/Channel/Recall/Mem P", "p", hit_key, (int)"p", NULL},
-  {"/Channel/Recall/Mem Q", "q", hit_key, (int)"q", NULL},
-  {"/Channel/Recall/Mem R", "r", hit_key, (int)"r", NULL},
-  {"/Channel/Recall/Mem S", "s", hit_key, (int)"s", NULL},
-  {"/Channel/Recall/Mem T", "t", hit_key, (int)"t", NULL},
-  {"/Channel/Recall/Mem U", "u", hit_key, (int)"u", NULL},
-  {"/Channel/Recall/Mem V", "v", hit_key, (int)"v", NULL},
-  {"/Channel/Recall/Mem W", "w", hit_key, (int)"w", NULL},
-  {"/Channel/Recall/Mem X", "x", hit_key, (int)"x", NULL},
-  {"/Channel/Recall/Mem Y", "y", hit_key, (int)"y", NULL},
-  {"/Channel/Recall/Mem Z", "z", hit_key, (int)"z", NULL},
+  {"/Channel/Recall/Mem A", "a", hit_key, 'a', NULL},
+  {"/Channel/Recall/Mem B", "b", hit_key, 'b', NULL},
+  {"/Channel/Recall/Mem C", "c", hit_key, 'c', NULL},
+  {"/Channel/Recall/Mem D", "d", hit_key, 'd', NULL},
+  {"/Channel/Recall/Mem E", "e", hit_key, 'e', NULL},
+  {"/Channel/Recall/Mem F", "f", hit_key, 'f', NULL},
+  {"/Channel/Recall/Mem G", "g", hit_key, 'g', NULL},
+  {"/Channel/Recall/Mem H", "h", hit_key, 'h', NULL},
+  {"/Channel/Recall/Mem I", "i", hit_key, 'i', NULL},
+  {"/Channel/Recall/Mem J", "j", hit_key, 'j', NULL},
+  {"/Channel/Recall/Mem K", "k", hit_key, 'k', NULL},
+  {"/Channel/Recall/Mem L", "l", hit_key, 'l', NULL},
+  {"/Channel/Recall/Mem M", "m", hit_key, 'm', NULL},
+  {"/Channel/Recall/Mem N", "n", hit_key, 'n', NULL},
+  {"/Channel/Recall/Mem O", "o", hit_key, 'o', NULL},
+  {"/Channel/Recall/Mem P", "p", hit_key, 'p', NULL},
+  {"/Channel/Recall/Mem Q", "q", hit_key, 'q', NULL},
+  {"/Channel/Recall/Mem R", "r", hit_key, 'r', NULL},
+  {"/Channel/Recall/Mem S", "s", hit_key, 's', NULL},
+  {"/Channel/Recall/Mem T", "t", hit_key, 't', NULL},
+  {"/Channel/Recall/Mem U", "u", hit_key, 'u', NULL},
+  {"/Channel/Recall/Mem V", "v", hit_key, 'v', NULL},
+  {"/Channel/Recall/Mem W", "w", hit_key, 'w', NULL},
+  {"/Channel/Recall/Mem X", "x", hit_key, 'x', NULL},
+  {"/Channel/Recall/Mem Y", "y", hit_key, 'y', NULL},
+  {"/Channel/Recall/Mem Z", "z", hit_key, 'z', NULL},
 
   {"/Trigger", NULL, NULL, 0, "<Branch>"},
   {"/Trigger/tear", NULL, NULL, 0, "<Tearoff>"},
-  {"/Trigger/Off", NULL, trigger, (int)"a", "<RadioItem>"},
-  {"/Trigger/Rising", NULL, trigger, (int)"b", "/Trigger/Off"},
-  {"/Trigger/Falling", NULL, trigger, (int)"c", "/Trigger/Rising"},
+  {"/Trigger/Off", NULL, trigger, 'a', "<RadioItem>"},
+  {"/Trigger/Rising", NULL, trigger, 'b', "/Trigger/Off"},
+  {"/Trigger/Falling", NULL, trigger, 'c', "/Trigger/Rising"},
   {"/Trigger/sep", NULL, NULL, 0, "<Separator>"},
-  {"/Trigger/Channel 1", NULL, trigger, (int)"1", "<RadioItem>"},
-  {"/Trigger/Channel 2", NULL, trigger, (int)"2", "/Trigger/Channel 1"},
-  {"/Trigger/Channel 3", NULL, trigger, (int)"3", "/Trigger/Channel 1"},
-  {"/Trigger/Channel 4", NULL, trigger, (int)"4", "/Trigger/Channel 1"},
-  {"/Trigger/Channel 5", NULL, trigger, (int)"5", "/Trigger/Channel 1"},
-  {"/Trigger/Channel 6", NULL, trigger, (int)"6", "/Trigger/Channel 1"},
-  {"/Trigger/Channel 7", NULL, trigger, (int)"7", "/Trigger/Channel 1"},
-  {"/Trigger/Channel 8", NULL, trigger, (int)"8", "/Trigger/Channel 1"},
+  {"/Trigger/Channel 1", NULL, trigger, '1', "<RadioItem>"},
+  {"/Trigger/Channel 2", NULL, trigger, '2', "/Trigger/Channel 1"},
+  {"/Trigger/Channel 3", NULL, trigger, '3', "/Trigger/Channel 1"},
+  {"/Trigger/Channel 4", NULL, trigger, '4', "/Trigger/Channel 1"},
+  {"/Trigger/Channel 5", NULL, trigger, '5', "/Trigger/Channel 1"},
+  {"/Trigger/Channel 6", NULL, trigger, '6', "/Trigger/Channel 1"},
+  {"/Trigger/Channel 7", NULL, trigger, '7', "/Trigger/Channel 1"},
+  {"/Trigger/Channel 8", NULL, trigger, '8', "/Trigger/Channel 1"},
   {"/Trigger/sep", NULL, NULL, 0, "<Separator>"},
-  {"/Trigger/Position up", "=", hit_key, (int)"=", NULL},
-  {"/Trigger/Position down", "-", hit_key, (int)"-", NULL},
+  {"/Trigger/Position up", "=", hit_key, '=', NULL},
+  {"/Trigger/Position down", "-", hit_key, '-', NULL},
   {"/Trigger/Position Positive", NULL, NULL, 0, "<Branch>"},
-  {"/Trigger/Position Positive/120", NULL, setposition, (int)"Tb", NULL},
-  {"/Trigger/Position Positive/112", NULL, setposition, (int)"Tc", NULL},
-  {"/Trigger/Position Positive/104", NULL, setposition, (int)"Td", NULL},
-  {"/Trigger/Position Positive/96", NULL, setposition, (int)"Te", NULL},
-  {"/Trigger/Position Positive/88", NULL, setposition, (int)"Tf", NULL},
-  {"/Trigger/Position Positive/80", NULL, setposition, (int)"Tg", NULL},
-  {"/Trigger/Position Positive/72", NULL, setposition, (int)"Th", NULL},
-  {"/Trigger/Position Positive/64", NULL, setposition, (int)"Ti", NULL},
-  {"/Trigger/Position Positive/56", NULL, setposition, (int)"Tj", NULL},
-  {"/Trigger/Position Positive/48", NULL, setposition, (int)"Tk", NULL},
-  {"/Trigger/Position Positive/40", NULL, setposition, (int)"Tl", NULL},
-  {"/Trigger/Position Positive/32", NULL, setposition, (int)"Tm", NULL},
-  {"/Trigger/Position Positive/24", NULL, setposition, (int)"Tn", NULL},
-  {"/Trigger/Position Positive/16", NULL, setposition, (int)"To", NULL},
-  {"/Trigger/Position Positive/8", NULL, setposition, (int)"Tp", NULL},
-  {"/Trigger/Position Positive/0", NULL, setposition, (int)"Tq", NULL},
+  {"/Trigger/Position Positive/120", NULL, setposition, 115, NULL},
+  {"/Trigger/Position Positive/112", NULL, setposition, 114, NULL},
+  {"/Trigger/Position Positive/104", NULL, setposition, 113, NULL},
+  {"/Trigger/Position Positive/96", NULL, setposition, 112, NULL},
+  {"/Trigger/Position Positive/88", NULL, setposition, 111, NULL},
+  {"/Trigger/Position Positive/80", NULL, setposition, 110, NULL},
+  {"/Trigger/Position Positive/72", NULL, setposition, 109, NULL},
+  {"/Trigger/Position Positive/64", NULL, setposition, 108, NULL},
+  {"/Trigger/Position Positive/56", NULL, setposition, 107, NULL},
+  {"/Trigger/Position Positive/48", NULL, setposition, 106, NULL},
+  {"/Trigger/Position Positive/40", NULL, setposition, 105, NULL},
+  {"/Trigger/Position Positive/32", NULL, setposition, 104, NULL},
+  {"/Trigger/Position Positive/24", NULL, setposition, 103, NULL},
+  {"/Trigger/Position Positive/16", NULL, setposition, 102, NULL},
+  {"/Trigger/Position Positive/8", NULL, setposition, 101, NULL},
+  {"/Trigger/Position Positive/0", NULL, setposition, 100, NULL},
   {"/Trigger/Position Negative", NULL, NULL, 0, "<Branch>"},
-  {"/Trigger/Position Negative/0", NULL, setposition, (int)"tq", NULL},
-  {"/Trigger/Position Negative/-8", NULL, setposition, (int)"tp", NULL},
-  {"/Trigger/Position Negative/-16", NULL, setposition, (int)"to", NULL},
-  {"/Trigger/Position Negative/-24", NULL, setposition, (int)"tn", NULL},
-  {"/Trigger/Position Negative/-32", NULL, setposition, (int)"tm", NULL},
-  {"/Trigger/Position Negative/-40", NULL, setposition, (int)"tl", NULL},
-  {"/Trigger/Position Negative/-48", NULL, setposition, (int)"tk", NULL},
-  {"/Trigger/Position Negative/-56", NULL, setposition, (int)"tj", NULL},
-  {"/Trigger/Position Negative/-64", NULL, setposition, (int)"ti", NULL},
-  {"/Trigger/Position Negative/-72", NULL, setposition, (int)"th", NULL},
-  {"/Trigger/Position Negative/-80", NULL, setposition, (int)"tg", NULL},
-  {"/Trigger/Position Negative/-88", NULL, setposition, (int)"tf", NULL},
-  {"/Trigger/Position Negative/-96", NULL, setposition, (int)"te", NULL},
-  {"/Trigger/Position Negative/-104", NULL, setposition, (int)"td", NULL},
-  {"/Trigger/Position Negative/-112", NULL, setposition, (int)"tc", NULL},
-  {"/Trigger/Position Negative/-120", NULL, setposition, (int)"tb", NULL},
-  {"/Trigger/Position Negative/-128", NULL, setposition, (int)"ta", NULL},
+  {"/Trigger/Position Negative/0", NULL, setposition, -100, NULL},
+  {"/Trigger/Position Negative/-8", NULL, setposition, -101, NULL},
+  {"/Trigger/Position Negative/-16", NULL, setposition, -102, NULL},
+  {"/Trigger/Position Negative/-24", NULL, setposition, -103, NULL},
+  {"/Trigger/Position Negative/-32", NULL, setposition, -104, NULL},
+  {"/Trigger/Position Negative/-40", NULL, setposition, -105, NULL},
+  {"/Trigger/Position Negative/-48", NULL, setposition, -106, NULL},
+  {"/Trigger/Position Negative/-56", NULL, setposition, -107, NULL},
+  {"/Trigger/Position Negative/-64", NULL, setposition, -108, NULL},
+  {"/Trigger/Position Negative/-72", NULL, setposition, -109, NULL},
+  {"/Trigger/Position Negative/-80", NULL, setposition, -110, NULL},
+  {"/Trigger/Position Negative/-88", NULL, setposition, -111, NULL},
+  {"/Trigger/Position Negative/-96", NULL, setposition, -112, NULL},
+  {"/Trigger/Position Negative/-104", NULL, setposition, -113, NULL},
+  {"/Trigger/Position Negative/-112", NULL, setposition, -114, NULL},
+  {"/Trigger/Position Negative/-120", NULL, setposition, -115, NULL},
+  {"/Trigger/Position Negative/-128", NULL, setposition, -116, NULL},
 
   {"/Scope", NULL, NULL, 0, "<Branch>"},
   {"/Scope/tear", NULL, NULL, 0, "<Tearoff>"},
-  {"/Scope/Refresh", NULL, hit_key, (int)"\n", NULL},
+  {"/Scope/Refresh", NULL, hit_key, '\n', NULL},
   {"/Scope/Plot Mode/tear", NULL, NULL, 0, "<Tearoff>"},
-  {"/Scope/Plot Mode/Point", NULL, plotmode, (int)"0", "<RadioItem>"},
-  {"/Scope/Plot Mode/Point Accumulate", NULL, plotmode, (int)"1", "/Scope/Plot Mode/Point"},
-  {"/Scope/Plot Mode/Line", NULL, plotmode, (int)"2", "/Scope/Plot Mode/Point Accumulate"},
-  {"/Scope/Plot Mode/Line Accumulate", NULL, plotmode, (int)"3", "/Scope/Plot Mode/Line"},
-  {"/Scope/Plot Mode/Step", NULL, plotmode, (int)"4", "/Scope/Plot Mode/Line Accumulate"},
-  {"/Scope/Plot Mode/Step Accumulate", NULL, plotmode, (int)"5", "/Scope/Plot Mode/Step"},
+  {"/Scope/Plot Mode/Point", NULL, plotmode, 0, "<RadioItem>"},
+  {"/Scope/Plot Mode/Point Accumulate", NULL, plotmode, 1, "/Scope/Plot Mode/Point"},
+  {"/Scope/Plot Mode/Line", NULL, plotmode, 2, "/Scope/Plot Mode/Point Accumulate"},
+  {"/Scope/Plot Mode/Line Accumulate", NULL, plotmode, 3, "/Scope/Plot Mode/Line"},
+  {"/Scope/Plot Mode/Step", NULL, plotmode, 4, "/Scope/Plot Mode/Line Accumulate"},
+  {"/Scope/Plot Mode/Step Accumulate", NULL, plotmode, 5, "/Scope/Plot Mode/Step"},
   {"/Scope/Graticule/tear", NULL, NULL, 0, "<Tearoff>"},
-  {"/Scope/Graticule/In Front", NULL, graticule, (int)"0", "<RadioItem>"},
-  {"/Scope/Graticule/Behind", NULL, graticule, (int)"1", "/Scope/Graticule/In Front"},
+  {"/Scope/Graticule/In Front", NULL, graticule, 0, "<RadioItem>"},
+  {"/Scope/Graticule/Behind", NULL, graticule, 1, "/Scope/Graticule/In Front"},
   {"/Scope/Graticule/sep", NULL, NULL, 0, "<Separator>"},
-  {"/Scope/Graticule/None", NULL, graticule, (int)"2", "<RadioItem>"},
-  {"/Scope/Graticule/Minor Divisions", NULL, graticule, (int)"3", "/Scope/Graticule/None"},
-  {"/Scope/Graticule/Minor & Major", NULL, graticule, (int)"4", "/Scope/Graticule/Minor Divisions"},
-  {"/Scope/Cursors", NULL, hit_key, (int)"'", "<CheckItem>"},
+  {"/Scope/Graticule/None", NULL, graticule, 2, "<RadioItem>"},
+  {"/Scope/Graticule/Minor Divisions", NULL, graticule, 3, "/Scope/Graticule/None"},
+  {"/Scope/Graticule/Minor & Major", NULL, graticule, 4, "/Scope/Graticule/Minor Divisions"},
+  {"/Scope/Cursors", NULL, hit_key, '\'', "<CheckItem>"},
 
-  {"/<<", NULL, hit_key, (int)"9", NULL},
-  {"/<", NULL, hit_key, (int)"(", NULL},
-  {"/>", NULL, hit_key, (int)")", NULL},
-  {"/>> ", NULL, hit_key, (int)"0", NULL},
+  {"/<<", NULL, hit_key, '9', NULL},
+  {"/<", NULL, hit_key, '(', NULL},
+  {"/>", NULL, hit_key, ')', NULL},
+  {"/>> ", NULL, hit_key, '0', NULL},
 
-  {"/Run", NULL, runmode, (int)"1", NULL},
-  {"/Wait", NULL, runmode, (int)"2", NULL},
-  {"/Stop", NULL, runmode, (int)"0", NULL},
+  {"/Run", NULL, runmode, 1, NULL},
+  {"/Wait", NULL, runmode, 2, NULL},
+  {"/Stop", NULL, runmode, 0, NULL},
 
   {"/Help", NULL, NULL, 0, "<LastBranch>"},
-  {"/Help/Keys&Info", NULL, hit_key, (int)"?", "<CheckItem>"},
+  {"/Help/Keys&Info", NULL, hit_key, '?', "<CheckItem>"},
   {"/Help/Manual", NULL, help, 0, NULL},
 
 };
