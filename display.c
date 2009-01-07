@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 2.13 2009/01/07 01:35:57 baccala Exp $
+ * @(#)$Id: display.c,v 2.14 2009/01/07 05:41:45 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -40,32 +40,6 @@ void	*font;
 int	math_warning = 0;	/* TRUE if math has a problem */
 
 struct signal_stats stats;
-
-/* how to convert text column (0-79) to graphics position */
-int
-col(int x)
-{
-  if (x < 13)			/* left side; absolute */
-    return (x * 8);
-  if (x > 67)			/* right side; absolute */
-    return (h_points - ((80 - x) * 8));
-  /* middle; spread it out proportionally */
-  return ((x - 12) * (h_points - 200) / 55 + 100);
-}
-
-/* how to convert text row(0-29) to graphics position */
-int
-row(int y)
-{
-  if (y < 4)			/* top; absolute */
-    return (y * 16);
-  if (y == 4)
-    return 62;
-  if (y > 24)			/* bottom; absolute */
-    return (v_points - ((30 - y) * 16));
-  /* center; spread out proportionally */
-  return ((y - 5) * (v_points - 160) / 20 + 80);
-}
 
 /* draw a temporary one-line message to center of screen */
 void
