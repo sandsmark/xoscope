@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 2.11 2008/12/28 04:31:33 baccala Exp $
+ * @(#)$Id: display.c,v 2.12 2009/01/07 01:27:22 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -1073,15 +1073,15 @@ draw_data()
 
 	  if (scope.mode < 2)
 	    sl->next->graph
-	      = gtk_databox_points_new (sl->next->next_point - sl->next_point,
-					sl->next->X + sl->next_point,
-					sl->next->Y + sl->next_point,
+	      = gtk_databox_points_new (sl->next->next_point-sl->next_point+1,
+					sl->next->X + sl->next_point - 1,
+					sl->next->Y + sl->next_point - 1,
 					&gcolor, 1);
 	  else
 	    sl->next->graph
-	      = gtk_databox_lines_new (sl->next->next_point - sl->next_point,
-				       sl->next->X + sl->next_point,
-				       sl->next->Y + sl->next_point,
+	      = gtk_databox_lines_new (sl->next->next_point-sl->next_point+1,
+				       sl->next->X + sl->next_point - 1,
+				       sl->next->Y + sl->next_point - 1,
 				       &gcolor, 1);
 
 	  gtk_databox_graph_add (GTK_DATABOX (databox), sl->next->graph);
