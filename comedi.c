@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: comedi.c,v 2.0 2008/12/17 17:35:46 baccala Exp $
+ * @(#)$Id: comedi.c,v 2.1 2009/01/07 22:35:19 baccala Exp $
  *
  * Author: Brent Baccala <baccala@freesoft.org>
  *
@@ -73,6 +73,8 @@ static int bufvalid=0;
 
 // has to be set later
 int zero_value = -1;
+
+static int lag = 0;			/* lag - see get_data() */
 
 static int subdevice_flags = 0;
 static int subdevice_type = COMEDI_SUBD_UNUSED;
@@ -855,6 +857,7 @@ static int get_data(void)
 	      memcpy(buf, (char *) buf + bytes_read - bufvalid, bufvalid);
 	    }
 
+	    lag = 0;
 	    return triggered;
 	  }
 	}
@@ -888,6 +891,11 @@ static int get_data(void)
      *
      * comedi-0.7.60 returned EINVAL on buffer overflows;
      * comedi-0.7.66 returns EPIPE
+     *
+     * In any event, if we detect an overflow, we reset the capture to
+     * start a new trace, record how many microseconds elapsed since
+     * the last time we were able to read the device, and report this
+     * on the screen as "lag".
      */
 
     if (errno != EINVAL && errno != EPIPE) perror("comedi read");
@@ -895,11 +903,11 @@ static int get_data(void)
     start_comedi_running();
     bufvalid = 0;
     gettimeofday(&tv2, NULL);
-    fprintf(stderr, "%ld microseconds lag\n",
-	    1000000*(tv2.tv_sec-tv1.tv_sec) + tv2.tv_usec - tv1.tv_usec);
+    lag = 1000000*(tv2.tv_sec-tv1.tv_sec) + tv2.tv_usec - tv1.tv_usec;
     return 0;
   }
 
+  lag = 0;
   return triggered;
 }
 
@@ -936,6 +944,10 @@ static char * status_str(int i)
   case 3:
     if (comedi_dev && comedi_error) {
       return split_field(error, 0, 16);
+    } else if (lag > 1000) {
+      snprintf(buffer, sizeof(buffer), "%d ms lag", lag/1000);
+    } else if (lag > 0) {
+      snprintf(buffer, sizeof(buffer), "%d \302\265s lag", lag);
     } else {
       return "";
     }
