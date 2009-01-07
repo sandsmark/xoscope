@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 2.12 2009/01/07 01:27:22 baccala Exp $
+ * @(#)$Id: display.c,v 2.13 2009/01/07 01:35:57 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -90,10 +90,10 @@ format(char *buf, const char *fmt, float num)
 }
 
 void
-make_help_text_visible(GtkWidget *widget)
+make_help_text_visible(GtkWidget *widget, gpointer ignored)
 {
   if (GTK_IS_CONTAINER(widget)) {
-    gtk_container_forall(widget, make_help_text_visible, NULL);
+    gtk_container_forall(GTK_CONTAINER(widget), make_help_text_visible, NULL);
   } else {
     const gchar * name = gtk_widget_get_name(widget);
     if (name != NULL &&
@@ -105,10 +105,10 @@ make_help_text_visible(GtkWidget *widget)
 }
 
 void
-make_help_text_invisible(GtkWidget *widget)
+make_help_text_invisible(GtkWidget *widget, gpointer ignored)
 {
   if (GTK_IS_CONTAINER(widget)) {
-    gtk_container_forall(widget, make_help_text_invisible, NULL);
+    gtk_container_forall(GTK_CONTAINER(widget), make_help_text_invisible, NULL);
   } else {
     const gchar * name = gtk_widget_get_name(widget);
     if (name != NULL &&
@@ -126,16 +126,16 @@ make_help_text_invisible(GtkWidget *widget)
  */
 
 void
-setup_help_text(GtkWidget *widget)
+setup_help_text(GtkWidget *widget, gpointer ignored)
 {
   if (GTK_IS_CONTAINER(widget)) {
-    gtk_container_forall(widget, setup_help_text, NULL);
+    gtk_container_forall(GTK_CONTAINER(widget), setup_help_text, NULL);
   } else {
     const gchar * name = gtk_widget_get_name(widget);
     if (name != NULL &&
 	(!strcmp(name + strlen(name) - 11, "_help_label")
 	 || !strcmp(name + strlen(name) - 10, "_key_label"))) {
-      gchar * text = gtk_label_get_label(GTK_LABEL(widget));
+      const gchar * text = gtk_label_get_label(GTK_LABEL(widget));
       gchar * saved_text = malloc(sizeof(gchar) * 80);
       gchar * modified_text = malloc(sizeof(gchar) * 80);
 
@@ -183,7 +183,7 @@ draw_text(int all)
       /* setting help text is special */
       gtk_label_set_text(GTK_LABEL(LU("graticule_position_help_label")),
 			 scope.behind ? "Behind" : "In Front");
-      setup_help_text(LU("graticule_position_help_label"));
+      setup_help_text(GTK_WIDGET(LU("graticule_position_help_label")), NULL);
 
     } else {			/* not verbose */
 
@@ -271,7 +271,7 @@ draw_text(int all)
 
       /* setting help text is special */
       gtk_label_set_text(GTK_LABEL(LU("tab_help_label")), p->show ? "Visible" : "HIDDEN");
-      setup_help_text(LU("tab_help_label"));
+      setup_help_text(GTK_WIDGET(LU("tab_help_label")), NULL);
 #if 0
       if (scope.select > 1) {
 	text_write("($)", 72, 25,
@@ -416,21 +416,21 @@ draw_text(int all)
     /* setting help text is special */
     sprintf(string, "(%c-Z)", 'A' + (datasrc ? datasrc->nchans() : 0));
     gtk_label_set_text(GTK_LABEL(LU("store_key_label")), string);
-    setup_help_text(LU("store_key_label"));
+    setup_help_text(GTK_WIDGET(LU("store_key_label")), NULL);
 
     /* setting help text is special */
     sprintf(string, "(%c-z)", 'a' + (datasrc ? datasrc->nchans() : 0));
     gtk_label_set_text(GTK_LABEL(LU("recall_key_label")), string);
-    setup_help_text(LU("recall_key_label"));
+    setup_help_text(GTK_WIDGET(LU("recall_key_label")), NULL);
 
     frames = 0;
     prev = sec;
   }
 
   if (scope.verbose) {
-      make_help_text_visible(glade_window);
+      make_help_text_visible(glade_window, NULL);
   } else {
-      make_help_text_invisible(glade_window);
+      make_help_text_invisible(glade_window, NULL);
   }
 
   frames++;
@@ -527,7 +527,7 @@ void recompute_graticule(void)
   Xb[0] = 0;
   Xb[1] = 10 * 0.001 * (gfloat) scope.div / scope.scale;
 
-  gtk_databox_grid_set_vlines(graticule_minor_graph,
+  gtk_databox_grid_set_vlines(GTK_DATABOX_GRID(graticule_minor_graph),
 			      total_horizontal_divisions - 1);
 }
 
