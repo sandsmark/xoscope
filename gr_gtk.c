@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: gr_gtk.c,v 2.10 2008/12/28 04:31:33 baccala Exp $
+ * @(#)$Id: gr_gtk.c,v 2.11 2009/01/07 01:27:44 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -31,41 +31,12 @@ GdkFont *font;
 char fontname[80] = DEF_FX;
 char fonts[] = "xlsfonts";
 
+GtkWidget *databox;
+
 GtkWidget *menubar;
 
 GtkItemFactory *factory;
 extern int fixing_widgets;	/* in com_gtk.c */
-
-static gint
-configure_event (GtkWidget *widget, GdkEventConfigure *event)
-{
-  static int h, v, once = 0;
-
-  if (pixmap)
-    gdk_pixmap_unref(pixmap);
-
-  pixmap = gdk_pixmap_new(widget->window,
-                          widget->allocation.width,
-                          widget->allocation.height,
-                          -1);
-  ClearDrawArea();
-
-  h = h_points;
-  v = v_points;
-  h_points = widget->allocation.width > 640
-    ? widget->allocation.width - (widget->allocation.width - 200) % 44
-    : 640;
-  v_points = widget->allocation.height > 480
-    ? widget->allocation.height - (widget->allocation.height - 160) % 64
-    : 480;
-  offset = v_points / 2;
-  if (h != h_points || v != v_points)
-    ClearDrawArea();
-  if (once)
-    draw_text();
-  once = 1;
-  return TRUE;
-}
 
 void
 yes_sel(GtkWidget *w, GtkWidget *win)
@@ -213,89 +184,6 @@ ExternCommand()
   gtk_widget_show(command);
   gtk_widget_show(window);
   /*    gtk_grab_add(window); */
-}
-
-/* PolyPoint() and PolyLine()
- *
- * These functions are a bit special.  There are only used by code
- * drawing into the 'scope data display area (not the status area
- * surrounding it).  Therefore, we use special GCs that clip at the
- * edge of the data display area, because the code in draw_data() that
- * calls us here doesn't care about clipping, and we don't want our
- * signal lines scribbled all over our text.
- *
- * The GDK tutorial suggests doing all your graphic ops to a pixmap,
- * then copying the pixmap to the screen on an expose event.
- * Unfortunately, the pixmap copy is very slow on my X server (XFree86
- * 3.3.6 SVGA).  The display code doesn't work quite right with some
- * kind of pixmap; accumulate mode depends on having the pixmap to
- * keep a visual history of the signals.  So this functions write to
- * both the screen and an off-screen pixmap (the only code that does
- * this), in case we need to redraw the screen after an expose event.
- */
-
-GtkWidget *databox;
-
-void
-PolyPoint(int color, Point *points, int count)
-{
-    GdkColor gcolor;
-    GtkDataboxGraph *graph;
-    gfloat *X = NULL;
-    gfloat *Y = NULL;
-    gint i;
-
-    /* new widget code follows */
-    /* XXX make sure we free the gfloat arrays at some point */
-
-    X = g_new0(gfloat, count);
-    Y = g_new0(gfloat, count);
-
-    for (i = 0; i < count; i ++) {
-	X[i] = points[i].x;
-	Y[i] = points[i].y;
-    }
-
-    gcolor.red = 65535;
-    gcolor.green = 65535;
-    gcolor.blue = 0;
-
-    graph = gtk_databox_points_new (count, X, Y, &gcolor, 1);
-    gtk_databox_graph_add (GTK_DATABOX (databox), graph);
-}
-
-void
-PolyLine(int color, Point *points, int count)
-{
-    GdkColor gcolor;
-    GtkDataboxGraph *graph;
-    gfloat *X = NULL;
-    gfloat *Y = NULL;
-    gint i;
-
-    /* new widget code follows */
-    /* XXX make sure we free the gfloat arrays at some point */
-
-    X = g_new0(gfloat, count);
-    Y = g_new0(gfloat, count);
-
-    for (i = 0; i < count; i ++) {
-	X[i] = points[i].x;
-	Y[i] = points[i].y;
-    }
-
-    gcolor.red = 65535;
-    gcolor.green = 65535;
-    gcolor.blue = 0;
-
-    graph = gtk_databox_lines_new (count, X, Y, &gcolor, 1);
-    gtk_databox_graph_add (GTK_DATABOX (databox), graph);
-}
-
-/* callback to redisplay the drawing area; snap to a graticule division */
-void
-redisplay(GtkWidget w, int new_width, int new_height, void *data)
-{
 }
 
 /* menu option callbacks */
@@ -1195,7 +1083,7 @@ on_databox_button_press_event          (GtkWidget       *widget,
     GtkDataboxValue value;
     coord.x = event->x;
     coord.y = event->y;
-    value = gtk_databox_value_from_coord (databox, coord);
+    value = gtk_databox_value_from_coord (GTK_DATABOX(databox), coord);
     x = value.x;
 #else
     x = gtk_databox_pixel_to_value_x (databox, event->x);
@@ -1326,9 +1214,6 @@ GtkWidget * create_main_window();
 void
 init_widgets()
 {
-  GdkColor gcolor;
-  int i;
-
   /* XXX need to remove all dependencies on this */
   h_points = 640;
   v_points = 480;
