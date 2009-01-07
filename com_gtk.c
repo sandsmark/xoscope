@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: com_gtk.c,v 2.2 2008/12/22 18:59:36 baccala Exp $
+ * @(#)$Id: com_gtk.c,v 2.3 2009/01/07 01:36:20 baccala Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -20,24 +20,6 @@
 
 GdkPixmap *pixmap = NULL;
 int fixing_widgets = 0;
-char *colors[] = {		/* X colors similar to 16 console colors */
-  "black",			/* 0 */
-  "blue",
-  "green",			/* 2 */
-  "cyan",
-  "red",			/* 4 */
-  "magenta",
-  "orange",			/* 6 */
-  "gray66",
-  "gray33",			/* 8 */
-  "blue4",
-  "green4",			/* 10 */
-  "cyan4",
-  "red4",			/* 12 */
-  "magenta4",
-  "yellow",			/* 14 */
-  "white"
-};
 
 /* emulate several libsx function in GTK */
 int
@@ -47,61 +29,7 @@ OpenDisplay(int argc, char *argv[])
   return(argc);
 }
 
-void
-ClearDrawArea()
-{
-  if (pixmap)
-    gdk_draw_rectangle(pixmap,
-		       drawing_area->style->black_gc,
-		       TRUE,
-		       0, 0,
-		       drawing_area->allocation.width,
-		       drawing_area->allocation.height);
-
-  gdk_draw_rectangle(drawing_area->window,
-		     drawing_area->style->black_gc,
-		     TRUE,
-		     0, 0,
-		     drawing_area->allocation.width,
-		     drawing_area->allocation.height);
-}
-
-void
-AddTimeOut(unsigned long interval, int (*func)(), void *data) {
-  static int done = 0;
-
-  if (done) return;
-  gtk_idle_add((GtkFunction)func, (gpointer)data);
-  done = 1;
-}
-
-/* XXX this is really a hack, because these functions aren't defined
- * for 'xy'
- */
-
-void clear_text_memory() __attribute__ ((weak));
-void clear_text_memory() {}
-void draw_text() __attribute__ ((weak));
-void draw_text() {}
-
 /* set up some common event handlers */
-gint
-expose_event(GtkWidget *widget, GdkEventExpose *event)
-{
-  /* Our off-screen pixmap only includes the data area, so we always
-   * redraw the text.
-   */
-
-  gdk_draw_pixmap(widget->window,
-                  widget->style->fg_gc[GTK_WIDGET_STATE(widget)],
-                  pixmap,
-                  event->area.x, event->area.y,
-                  event->area.x, event->area.y,
-                  event->area.width, event->area.height);
-  clear_text_memory();
-  draw_text(1);
-  return FALSE;
-}
 
 void
 delete_event(GtkWidget *widget, GdkEvent *event, gpointer data)
