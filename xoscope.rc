@@ -25,7 +25,7 @@ widget "main_window.*.databox_hscrollbar" style "red_scrollbar"
 # not specified below, but also of setting font for all the labels
 # because the fonts aren't specified below
 
-widget "main_window.*_label" style "label_font"
+#widget "main_window.*_label" style "label_font"
 widget "main_window.*_label" style "white"
 
 widget "*.sample_rate_label" style "green"
