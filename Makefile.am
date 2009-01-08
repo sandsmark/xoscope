@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 
-# @(#)$Id: Makefile.am,v 2.6 2008/12/27 03:44:30 baccala Exp $
+# @(#)$Id: Makefile.am,v 2.7 2009/01/08 22:55:28 baccala Exp $
 
 # Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
 
@@ -33,6 +33,9 @@ else
 comedisrc =
 endif
 
+GTKDATABOX_CFLAGS = -I gtkdatabox-0.6.0.0/gtk
+GTKDATABOX_LIBS = gtkdatabox-0.6.0.0/gtk/.libs/libgtkdatabox.a
+
 # Some bit of explaination is needed here for GUI_LIB.  automake won't
 # let us include source files in a subdirectory on a _SOURCES line,
 # and we do want all the auto-magically generated glade stuff confined
@@ -42,12 +45,12 @@ endif
 # trick used in things like comedi.c (see comments there) won't work
 # for a library.  So we put .o files in.
 
-SUBDIRS = glade-src
-INCLUDES = @GTK_CFLAGS@ @GTKDATABOX_CFLAGS@
+SUBDIRS = glade-src gtkdatabox-0.6.0.0
+INCLUDES = @GTK_CFLAGS@ $(GTKDATABOX_CFLAGS)
 GUI_LIB = glade-src/callbacks.o glade-src/interface.o glade-src/support.o
 
 xoscope_SOURCES = $(src) $(comedisrc) com_gtk.c gr_gtk.c sc_linux_gtk.c
-xoscope_LDADD = $(GUI_LIB) @GTK_LIBS@ @GTKDATABOX_LIBS@
+xoscope_LDADD = $(GUI_LIB) @GTK_LIBS@ $(GTKDATABOX_LIBS)
 
 offt_SOURCES = offt.c fft.c realfft.c
 

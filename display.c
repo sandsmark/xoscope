@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 2.14 2009/01/07 05:41:45 baccala Exp $
+ * @(#)$Id: display.c,v 2.15 2009/01/08 22:55:28 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -97,6 +97,8 @@ make_help_text_invisible(GtkWidget *widget, gpointer ignored)
  * the text will be changed later (as we make it visible or invisible)
  * and that will invalidate the pointer returned from
  * gtk_label_get_label().
+ *
+ * XXX free old data please
  */
 
 void
@@ -128,7 +130,7 @@ draw_text(int all)
 {
   static char string[81], widget[81];
   static char *s;
-  static int i, j, k, frames = 0;
+  static int i, frames = 0;
   static time_t sec, prev;
   static Channel *p;
   static char *strings[] = {
@@ -198,9 +200,6 @@ draw_text(int all)
 
     /* sides of graticule */
     for (i = 0 ; i < CHANNELS ; i++) {
-
-      j = (i % 4) * 5 + 5;
-      k = ch[i].color;
 
       if ((scope.verbose || ch[i].show || scope.select == i) && ch[i].signal) {
 
@@ -386,6 +385,19 @@ draw_text(int all)
     }
     string[i] = '\0';
     gtk_label_set_text(GTK_LABEL(LU("registers_label")), string);
+
+    if (datasrc && datasrc->nchans() > 0) {
+      /* setting help text is special */
+      sprintf(string, "(a-%c)", 'a' + datasrc->nchans() - 1);
+      gtk_label_set_text(GTK_LABEL(LU("signal_key_label")), string);
+      setup_help_text(GTK_WIDGET(LU("signal_key_label")), NULL);
+
+      gtk_widget_show(GTK_WIDGET(LU("signal_key_label")));
+      gtk_widget_show(GTK_WIDGET(LU("signal_help_label")));
+    } else {
+      gtk_widget_hide(GTK_WIDGET(LU("signal_key_label")));
+      gtk_widget_hide(GTK_WIDGET(LU("signal_help_label")));
+    }
 
     /* setting help text is special */
     sprintf(string, "(%c-Z)", 'A' + (datasrc ? datasrc->nchans() : 0));

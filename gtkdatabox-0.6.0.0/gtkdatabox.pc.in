@@ -1,0 +1,11 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: gtkdatabox
+Description: Widget to display large amounts of numerical data
+Version: 0.6.0.0
+Requires: gtk+-2.0
+Libs: -L${libdir} -lgtkdatabox
+Cflags: -I${includedir}
