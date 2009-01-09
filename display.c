@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 2.15 2009/01/08 22:55:28 baccala Exp $
+ * @(#)$Id: display.c,v 2.16 2009/01/09 04:55:07 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -492,8 +492,7 @@ roundoff_multipliers(Channel *p)
  * to draw_data() and draw_graticule() from show_data().
  */
 
-GtkDataboxGraph *graticule_majorx_graph = NULL;
-GtkDataboxGraph *graticule_majory_graph = NULL;
+GtkDataboxGraph *graticule_major_graph = NULL;
 GtkDataboxGraph *graticule_minor_graph = NULL;
 
 int total_horizontal_divisions = 10;
@@ -501,20 +500,12 @@ int total_horizontal_divisions = 10;
 int major_graticule_displayed = 0;
 int minor_graticule_displayed = 0;
 
-gfloat Xa[2], Ya[2], Xb[2], Yb[2];
-
 void recompute_graticule(void)
 {
-  Xa[0] = Xa[1] = 5 * 0.001 * (gfloat) scope.div / scope.scale;
-  Ya[0] = 80;
-  Ya[1] = v_points - 80;
-
-  Yb[0] = Yb[1] = (v_points - 160)/2 + 80;
-  Xb[0] = 0;
-  Xb[1] = 10 * 0.001 * (gfloat) scope.div / scope.scale;
-
   gtk_databox_grid_set_vlines(GTK_DATABOX_GRID(graticule_minor_graph),
 			      total_horizontal_divisions - 1);
+  gtk_databox_grid_set_vlines(GTK_DATABOX_GRID(graticule_major_graph),
+			      total_horizontal_divisions/5 - 1);
 }
 
 void
@@ -551,20 +542,19 @@ create_graticule()
   style = gtk_widget_get_style(GTK_WIDGET(LU("databox_frame")));
   gcolor = style->bg[GTK_STATE_NORMAL];
 
-  /* the minor graph - the scope display is divided into a 10x10 grid
-   * with 9x9 lines
+  /* the minor graticule grid - the scope display is divided into a
+   * 10x10 grid with 9x9 lines
    */
 
   graticule_minor_graph = gtk_databox_grid_new (9, 9, &gcolor, 1);
+  graticule_major_graph = gtk_databox_grid_new (1, 1, &gcolor, 1);
 
-  /* the major grid - 2x2 */
+  gtk_databox_grid_set_line_style(GTK_DATABOX_GRID(graticule_major_graph),
+				  GTK_DATABOX_GRID_SOLID_LINES);
+  gtk_databox_grid_set_line_style(GTK_DATABOX_GRID(graticule_minor_graph),
+				  GTK_DATABOX_GRID_DOTTED_LINES);
 
   recompute_graticule();
-
-  graticule_majory_graph = gtk_databox_lines_new (2, Xa, Ya, &gcolor, 2);
-
-  graticule_majorx_graph = gtk_databox_lines_new (2, Xb, Yb, &gcolor, 2);
-
 }
 
 /* clear_databox() - very similar to
@@ -773,8 +763,7 @@ draw_graticule()
   }
 
   if (major_graticule_displayed) {
-    gtk_databox_graph_remove(GTK_DATABOX(databox), graticule_majorx_graph);
-    gtk_databox_graph_remove(GTK_DATABOX(databox), graticule_majory_graph);
+    gtk_databox_graph_remove(GTK_DATABOX(databox), graticule_major_graph);
     major_graticule_displayed = 0;
   }
 
@@ -789,8 +778,7 @@ draw_graticule()
   }
 
   if (scope.grat > 1) {
-    gtk_databox_graph_add (GTK_DATABOX (databox), graticule_majorx_graph);
-    gtk_databox_graph_add (GTK_DATABOX (databox), graticule_majory_graph);
+    gtk_databox_graph_add (GTK_DATABOX (databox), graticule_major_graph);
     major_graticule_displayed = 1;
   }
 }
