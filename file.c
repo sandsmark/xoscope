@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: file.c,v 2.2 2008/12/26 18:43:30 baccala Exp $
+ * @(#)$Id: file.c,v 2.3 2009/01/09 06:22:13 baccala Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -238,9 +238,9 @@ writefile(char *filename)
     perror(error);
     return;
   }
-  fprintf(file, "# %s, version %s, %dx%d\n\
+  fprintf(file, "# %s, version %s\n\
 #\n\
-# -D %s\n", progname, version, h_points, v_points, datasrc->name);
+# -D %s\n", progname, version, datasrc->name);
 
   if (datasrc->save_option != NULL) {
     for (i=0; (s = datasrc->save_option(i)) != NULL; i++) {
