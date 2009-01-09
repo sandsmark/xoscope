@@ -56,6 +56,14 @@ extern "C"
 
    typedef struct _GtkDataboxGridPrivate GtkDataboxGridPrivate;
    
+   typedef enum
+   {
+      GTK_DATABOX_GRID_DASHED_LINES = 0,   /* Grid drawn with dashed lines */
+      GTK_DATABOX_GRID_SOLID_LINES,        /* Grid drawn with solid lines */
+      GTK_DATABOX_GRID_DOTTED_LINES        /* Grid drawn with dotted lines */
+   }
+   GtkDataboxGridLineStyle;
+   
    struct _GtkDataboxGrid
    {
       GtkDataboxGraph parent;
@@ -80,6 +88,10 @@ extern "C"
    void gtk_databox_grid_set_vlines (GtkDataboxGrid *grid, 
                                       gint vlines);
    gint gtk_databox_grid_get_vlines (GtkDataboxGrid *grid);
+
+   void gtk_databox_grid_set_line_style (GtkDataboxGrid *grid, 
+                                         gint line_style);
+   gint gtk_databox_grid_get_line_style (GtkDataboxGrid *grid);
 
 #ifdef __cplusplus
 }
