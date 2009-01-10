@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.h,v 2.5 2008/12/26 18:43:30 baccala Exp $
+ * @(#)$Id: oscope.h,v 2.6 2009/01/10 03:12:45 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -19,9 +19,6 @@ extern char *progname;
 extern char version[];
 extern char error[256];
 extern int quit_key_pressed;
-extern int v_points;
-extern int h_points;
-extern int offset;
 extern int clip;
 extern char *filename;
 extern int in_progress;
@@ -208,7 +205,8 @@ typedef struct Channel {	/* The display channels */
   int div;
   int target_mult;		/* The target scaling ratio */
   int target_div;
-  int pos;
+  gfloat pos;			/* Location of zero line on scope display;
+				 * 0 is center; 1 is top; -1 is bottom */
   int color;
   int show;
   int bits;

@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.c,v 2.3 2008/12/28 04:31:33 baccala Exp $
+ * @(#)$Id: oscope.c,v 2.4 2009/01/10 03:12:45 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -52,9 +52,6 @@ Channel ch[CHANNELS];
 char *progname;			/* the program's name, autoset via argv[0] */
 char version[] = VERSION;	/* version of the program, from Makefile */
 char error[256];		/* buffer for "one-line" error messages */
-int v_points;			/* pixels in vertical axis */
-int h_points;			/* pixels in horizontal axis */
-int offset;			/* vertical pixel offset to zero line */
 int clip = 0;			/* whether we're maxed out or not */
 char *filename;			/* default file name */
 int frames = 0;			/* # of frames (full or partial) captured */
@@ -160,12 +157,22 @@ init_channels()
   }
 }
 
-/* samples needed to draw a current display of RATE */
+/* samples needed to draw a current display of RATE
+ *
+ * scope.div / scope.scale gives us the timebase in milliseconds per
+ * divisions.  Multiply by 10 to get millseconds per screen, divide by
+ * 1000 to get seconds per screen, multiply by rate (in samples/sec)
+ * to get samples per screen, and add one so rounding doesn't
+ * make us end a capture before the end of the screen.
+ */
+
 int
 samples(int rate)
 {
   static unsigned long int r;
-  r = (rate * ((h_points - 200) / 44) * scope.div / scope.scale / 1000) + 2;
+
+  r = rate * 10 * scope.div / scope.scale / 1000 + 1;
+
   if (r > MAXWID) r = MAXWID;
   return (r);
 }
@@ -501,15 +508,15 @@ handle_key(unsigned char c)
     clear();
     break;
   case ']':
-    p->pos -= 16;		/* position up */
-    if (p->pos < -1 * v_points / 2)
-      p->pos = v_points / 2;
+    p->pos -= 0.1;		/* position up */
+    if (p->pos < -1) p->pos = -1;
+    if (p->pos * p->pos < 0.0001) p->pos = 0;
     clear();
     break;
   case '[':
-    p->pos += 16;		/* position down */
-    if (p->pos > v_points / 2)
-      p->pos = -1 * v_points / 2;
+    p->pos += 0.1;		/* position down */
+    if (p->pos > 1) p->pos = 1;
+    if (p->pos * p->pos < 0.0001) p->pos = 0;
     clear();
     break;
   case ';':

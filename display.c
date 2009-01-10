@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 2.16 2009/01/09 04:55:07 baccala Exp $
+ * @(#)$Id: display.c,v 2.17 2009/01/10 03:12:45 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -212,7 +212,7 @@ draw_text(int all)
 	sprintf(widget, "Ch%1d_scale_label", i+1);
 	gtk_label_set_text(GTK_LABEL(LU(widget)), string);
 
-	sprintf(string, "%d @ %d", ch[i].bits, -(ch[i].pos));
+	sprintf(string, "%d @ %.1g", ch[i].bits, ch[i].pos);
 	sprintf(widget, "Ch%1d_position_label", i+1);
 	gtk_label_set_text(GTK_LABEL(LU(widget)), string);
 
@@ -653,11 +653,11 @@ void configure_databox(void)
    /* Now set the total canvas size of the databox */
 
    topleft.x = 0;
-   topleft.y = 80;
+   topleft.y = 1;
 
    bottomright.x = total_horizontal_divisions
      * 0.001 * (gfloat) scope.div / scope.scale;
-   bottomright.y = v_points - 80;
+   bottomright.y = -1;
 
    gtk_databox_set_canvas(GTK_DATABOX(databox), topleft, bottomright);
 
@@ -801,7 +801,8 @@ int max(int a, int b)
 void
 draw_data()
 {
-  static int i, j, y, mult, div, off, bit, start, end;
+  static int i, j, mult, div, bit, start, end;
+  gfloat y;
   int bitoff;
   gfloat num, l;
   Channel *p;
@@ -826,7 +827,6 @@ draw_data()
 
       mult = p->mult;
       div = p->div;
-      off = offset + p->pos;
 
       samp = p->signal->data;
 
@@ -870,8 +870,8 @@ draw_data()
       if (scope.curs && j == scope.select) {
 	cursoraX[0] = cursoraX[1] = l + (scope.cursa-1) * num;
 	cursorbX[0] = cursorbX[1] = l + (scope.cursb-1) * num;
-	cursoraY[0] = cursorbY[0] = 0;
-	cursoraY[1] = cursorbY[1] = v_points;
+	cursoraY[0] = cursorbY[0] = -1;
+	cursoraY[1] = cursorbY[1] = +1;
 
 	if (cursora != NULL) {
 	  gtk_databox_graph_remove(GTK_DATABOX(databox), cursora);
@@ -999,11 +999,13 @@ draw_data()
 	/* for (x = X; 1; x++) { */
 	for (i = sl->next_point; i < p->signal->num; i++) {
 
-	  /* Hardwired: 8 y-coords is height of digital line */
+	  /* Hardwired: 8 y-coords is height of digital line
+	   * Screen used to be 480 y-coords tall; now it's -1 to +1
+	   */
 
-	  y = off - (bit < 0 ? samp[i]
-		       : (bitoff - (samp[i] & (1 << bit) ? 0 : 8)))
-	    * mult / div;
+	  y = p->pos + (float)(bit < 0 ? samp[i]
+			       : (bitoff - (samp[i] & (1 << bit) ? 0 : 8)))
+	    * mult / div / 240;
 
 	  if (scope.mode >= 4 && i > 0) {
 
@@ -1162,7 +1164,6 @@ init_screen()
     ch[i].color = color[channelcolor[i]];
   }
   fix_widgets();
-  offset = v_points / 2;
   draw_text(1);
   clear();
 }

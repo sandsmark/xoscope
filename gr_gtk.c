@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: gr_gtk.c,v 2.12 2009/01/07 02:19:03 baccala Exp $
+ * @(#)$Id: gr_gtk.c,v 2.13 2009/01/10 03:12:45 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -1010,48 +1010,6 @@ get_main_menu(GtkWidget *window, GtkWidget ** menubar)
     *menubar = gtk_item_factory_get_widget(factory, "<main>");
 }
 
-/* these are the inverse of row and col in display.c, used by button_event */
-int
-buttoncol(int x)
-{
-  if (x < 100)
-    return (x / 8);
-  if (x > h_points - 100)
-    return (79 - (h_points - x) / 8);
-  return (10 * (x - 100) / (10 * (h_points - 200) / 55) + 12);
-}
-
-int
-buttonrow(int y)
-{
-  if (y <= 80)
-    return (y / 16);
-  if (y >= v_points - 80)
-    return (29 - (v_points - y) / 16);
-  return (10 * (y - 80) / (10 * (v_points - 160) / 20) + 5);
-}
-
-gint
-positioncursor(int x, int y, int b)
-{
-  static int z;
-
-  if (x > 100 && x < h_points - 100 && y > 80 && y < v_points - 80
-      && ch[scope.select].signal != NULL) {
-    z = ((float)x - 100) * 100 * ch[scope.select].signal->rate * scope.div
-      / scope.scale / 440 / 10000 + 1;
-    if (b == 1) {
-      scope.cursa = z;
-      return TRUE;
-    }
-    if (b == 2) {
-      scope.cursb = z;
-      return TRUE;
-    }
-  }
-  return FALSE;
-}
-
 gboolean
 on_databox_button_press_event          (GtkWidget       *widget,
                                         GdkEventButton  *event,
@@ -1099,6 +1057,8 @@ on_databox_button_press_event          (GtkWidget       *widget,
   return FALSE;
 }
 
+#if 0
+
 /* draggable cursor positioning */
 gint
 motion_event (GtkWidget *widget, GdkEventMotion *event)
@@ -1119,6 +1079,7 @@ motion_event (GtkWidget *widget, GdkEventMotion *event)
     return positioncursor(x, y, 2);
   return TRUE;
 }
+
 
 /* context sensitive mouse click select, recall and pop-up menus */
 gint
@@ -1188,6 +1149,8 @@ button_event(GtkWidget *widget, GdkEventButton *event, gpointer data)
   return TRUE;
 }
 
+#endif
+
 GtkWidget *
 create_databox (void)
 {
@@ -1206,10 +1169,6 @@ GtkWidget * create_main_window();
 void
 init_widgets()
 {
-  /* XXX need to remove all dependencies on this */
-  h_points = 640;
-  v_points = 480;
-
   gtk_rc_parse("xoscope.rc");
 
   glade_window = create_main_window();
