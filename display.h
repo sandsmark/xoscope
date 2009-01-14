@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.h,v 2.2 2009/01/14 06:20:54 baccala Exp $
+ * @(#)$Id: display.h,v 2.3 2009/01/14 18:21:06 baccala Exp $
  *
  * Copyright (C) 1996 - 1999 Tim Witham <twitham@quiknet.com>
  *
@@ -21,13 +21,12 @@
 
 extern char fontname[];
 extern char fonts[];
-extern int color[];
 
 void	init_widgets()		/* exported from display.c */;
 void	mainloop();
 void	update_text();
 void	clear();
-void	message();
+void	message(char *);
 void	cleanup_display();
 void	animate();
 int	col();

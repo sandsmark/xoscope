@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: com_gtk.h,v 2.1 2008/12/21 19:18:39 baccala Exp $
+ * @(#)$Id: com_gtk.h,v 2.2 2009/01/14 18:21:06 baccala Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -9,17 +9,8 @@
  *
  */
 
-GdkColor gdkcolor[16];
-GdkGC *gc;
-GdkRectangle update_rect;
-GdkPixmap *pixmap;
-GtkWidget *drawing_area;
 GtkWidget *menubar;
-GtkWidget *vbox;
-GtkWidget *window;
 GtkWidget *glade_window;
-char *colors[16];
-int color[16];
 
 gint expose_event();
 gint key_press_event();

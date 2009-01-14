@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: func.c,v 2.0 2008/12/17 17:35:46 baccala Exp $
+ * @(#)$Id: func.c,v 2.1 2009/01/14 18:21:06 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -170,7 +170,7 @@ start_command_on_channel(char *command, Channel *ch)
   ext->next = externals;
   externals = ext;
 
-  message(command, ch->color);
+  message(command);
 
   recall_on_channel(&ext->signal, ch);
 }

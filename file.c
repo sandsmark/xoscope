@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: file.c,v 2.6 2009/01/14 18:11:33 baccala Exp $
+ * @(#)$Id: file.c,v 2.7 2009/01/14 18:21:06 baccala Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -242,7 +242,7 @@ void
 writefile(char *filename)
 {
   FILE *file;
-  int i, j, k = 0, l = 0, chan[26], roloc[256];
+  int i, j, k = 0, l = 0, chan[26];
   char *s;
   Channel *p;
 
@@ -292,9 +292,6 @@ writefile(char *filename)
       l = mem[i].num;
   }
   if (k) {
-    for (i = 0 ; i < 16 ; i++) { /* reverse color mapper */
-      roloc[color[i]] = i;
-    }
     for (i = 0 ; i < k ; i++) {
       /* XXX color written is channel color (it can't be changed) */
 #if 0

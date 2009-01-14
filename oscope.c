@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.c,v 2.5 2009/01/14 06:20:54 baccala Exp $
+ * @(#)$Id: oscope.c,v 2.6 2009/01/14 18:21:06 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -524,7 +524,7 @@ handle_key(unsigned char c)
       p->show = 1;
       clear();
     } else
-      message("Math can not run on Channel 1 or 2", KEY_FG);
+      message("Math can not run on Channel 1 or 2");
     break;
   case ':':
     if (scope.select > 1) {	/* previous math function */
@@ -532,7 +532,7 @@ handle_key(unsigned char c)
       p->show = 1;
       clear();
     } else
-      message("Math can not run on Channel 1 or 2", KEY_FG);
+      message("Math can not run on Channel 1 or 2");
     break;
   case '0':
     if (scope.div > 1)		/* decrease time scale, zoom in */
@@ -608,7 +608,7 @@ handle_key(unsigned char c)
     if (scope.select > 1)
       ExternCommand();
     else
-      message("External commands can not run on Channel 1 or 2", KEY_FG);
+      message("Pipes can not run on Channel 1 or 2");
     break;
   case '&':			/* toggle between various data sources */
     if (datasrc_next()) {

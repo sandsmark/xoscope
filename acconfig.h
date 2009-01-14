@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: acconfig.h,v 2.2 2008/12/26 18:43:30 baccala Exp $
+ * @(#)$Id: acconfig.h,v 2.3 2009/01/14 18:21:06 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -54,18 +54,6 @@
 
 /* max number of channels, up to 8 (8) */
 #define CHANNELS	8
-
-/* colors of the channels; see colors in gr_sx.c ({2,3,5,6,14,1,4,15}) */
-#define CHANNELCOLOR	{2,3,14,6,5,1,4,15}
-
-/* text foreground color (color[15]) */
-#define TEXT_FG		color[15]
-
-/* key foreground color (color[5]) */
-#define KEY_FG		color[5]
-
-/* text background color (color[0]) */
-#define TEXT_BG		color[0]
 
 /* minimum number of milliseconds between refresh on libsx version (30) */
 #define MSECREFRESH	30
