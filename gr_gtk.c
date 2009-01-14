@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: gr_gtk.c,v 2.13 2009/01/10 03:12:45 baccala Exp $
+ * @(#)$Id: gr_gtk.c,v 2.14 2009/01/14 06:20:54 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -1259,13 +1259,4 @@ void setinputfd(int fd)
 
     input_fd = fd;
   }
-}
-
-/* loop until finished */
-void
-mainloop()
-{
-  draw_text(1);
-  animate(NULL);
-  gtk_main();
 }

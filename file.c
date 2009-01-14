@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: file.c,v 2.4 2009/01/14 04:28:03 baccala Exp $
+ * @(#)$Id: file.c,v 2.5 2009/01/14 06:20:54 baccala Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -395,7 +395,6 @@ readfile(char *filename)
   init_scope();			/* reset everything */
   init_channels();
   init_math();
-  init_screen();
   while (fgets(buff, 256, file)) {
     if (buff[0] == '#') {
       if (sscanf(buff, "# %*s version %d.%d", &version[0], &version[1]) == 2) {

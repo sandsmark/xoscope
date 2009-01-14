@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.h,v 2.1 2008/12/22 18:59:36 baccala Exp $
+ * @(#)$Id: display.h,v 2.2 2009/01/14 06:20:54 baccala Exp $
  *
  * Copyright (C) 1996 - 1999 Tim Witham <twitham@quiknet.com>
  *
@@ -23,21 +23,15 @@ extern char fontname[];
 extern char fonts[];
 extern int color[];
 
-void	init_screen();		/* exported from display.c */
-void	init_widgets();
+void	init_widgets()		/* exported from display.c */;
 void	mainloop();
-void	draw_text();
+void	update_text();
 void	clear();
 void	message();
 void	cleanup_display();
 void	animate();
 int	col();
 
-void	DrawPixel();		/* these are defined in */
-void	DrawLine();		/* a display-specific file */
-void	SetColor();		/* like gr_vga.c or gr_sx.c */
-void	PolyPoint();
-void	PolyLine();
 void	AddTimeOut();
 void	LoadSaveFile();
 void	ExternCommand();
@@ -45,5 +39,3 @@ char *	GetFile();
 char *	GetString();
 int	GetYesNo();
 int	OpenDisplay();
-void	ClearDrawArea();
-void	MainLoop();

@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 2.17 2009/01/10 03:12:45 baccala Exp $
+ * @(#)$Id: display.c,v 2.18 2009/01/14 06:20:54 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -124,154 +124,22 @@ setup_help_text(GtkWidget *widget, gpointer ignored)
   }
 }
 
-/* draw just dynamic or all text to graphics screen */
-void
-draw_text(int all)
+/* Text update - the 'dynamic' text is unpredictable and is updated on
+ * every sweep.  Most of the text only changes when the user hits a
+ * key or something; updating it requires a call to update_text()
+ */
+
+void update_dynamic_text(void)
 {
-  static char string[81], widget[81];
-  static char *s;
-  static int i, frames = 0;
-  static time_t sec, prev;
-  static Channel *p;
-  static char *strings[] = {
-    "Point",
-    "Point Accum.",
-    "Line",
-    "Line Accum.",
-    "Step",
-    "Step Accum.",
-  };
-  static char *trigs[] = {
-    "Auto",
-    "Rising",
-    "Falling"
-  };
+  static time_t prev = 0;
+  static int frames = 0;
+  char string[81], widget[81];
+  char *s;
+  int i;
+  time_t sec;
+  Channel *p;
 
   p = &ch[scope.select];
-
-  if (all) {			/* everything */
-
-    /* above graticule */
-    if (scope.verbose) {
-
-      /* progname and version dynamic */
-
-      /* setting help text is special */
-      gtk_label_set_text(GTK_LABEL(LU("graticule_position_help_label")),
-			 scope.behind ? "Behind" : "In Front");
-      setup_help_text(GTK_WIDGET(LU("graticule_position_help_label")), NULL);
-
-    } else {			/* not verbose */
-
-      /* XXX display (?) Help */
-    }
-
-    if (scope.trige) {
-      Signal *trigsig = datasrc->chan(scope.trigch);
-
-      if (trigsig->volts > 0) {
-	char minibuf[256];
-	format(minibuf, "%g %sV",
-	       (scope.trig) * trigsig->volts / 320);
-	sprintf(string, "%s Trigger @ %s", trigs[scope.trige], minibuf);
-      } else {
-	sprintf(string, "%s Trigger @ %d",
-		trigs[scope.trige], scope.trig);
-      }
-      gtk_label_set_text(GTK_LABEL(LU("trigger_label")), string);
-      gtk_label_set_text(GTK_LABEL(LU("trigger_source_label")), trigsig->name);
-    } else {
-      gtk_label_set_text(GTK_LABEL(LU("trigger_label")), "No Trigger");
-      gtk_label_set_text(GTK_LABEL(LU("trigger_source_label")), "");
-    }
-
-    gtk_label_set_text(GTK_LABEL(LU("data_source_label")),
-		       datasrc ? datasrc->name : "No data source");
-
-    gtk_label_set_text(GTK_LABEL(LU("line_style_label")), strings[scope.mode]);
-
-    if (datasrc && (datasrc->option1str != NULL)
-	&& ((s = datasrc->option1str()) != NULL)) {
-      gtk_label_set_text(GTK_LABEL(LU("data_source_opt1_label")), s);
-    } else {
-      gtk_label_set_text(GTK_LABEL(LU("data_source_opt1_label")), "");
-    }
-
-
-    /* sides of graticule */
-    for (i = 0 ; i < CHANNELS ; i++) {
-
-      if ((scope.verbose || ch[i].show || scope.select == i) && ch[i].signal) {
-
-	/* XXX here and other places, need to make sure we clear the field */
-	if (!ch[i].bits && ch[i].signal->volts)
-	  format(string, "%g %sV/div",
-		 (float)ch[i].signal->volts * ch[i].div / ch[i].mult / 10);
-	else
-	  sprintf(string, "%d / %d", ch[i].mult, ch[i].div);
-	sprintf(widget, "Ch%1d_scale_label", i+1);
-	gtk_label_set_text(GTK_LABEL(LU(widget)), string);
-
-	sprintf(string, "%d @ %.1g", ch[i].bits, ch[i].pos);
-	sprintf(widget, "Ch%1d_position_label", i+1);
-	gtk_label_set_text(GTK_LABEL(LU(widget)), string);
-
-	sprintf(widget, "Ch%1d_source_label", i+1);
-	gtk_label_set_text(GTK_LABEL(LU(widget)), ch[i].signal->name);
-
-      } else {
-
-	sprintf(widget, "Ch%1d_scale_label", i+1);
-	gtk_label_set_text(GTK_LABEL(LU(widget)), "");
-	sprintf(widget, "Ch%1d_position_label", i+1);
-	gtk_label_set_text(GTK_LABEL(LU(widget)), "");
-	sprintf(widget, "Ch%1d_source_label", i+1);
-	gtk_label_set_text(GTK_LABEL(LU(widget)), "");
-
-      }
-
-      sprintf(widget, "Ch%1d_frame", i+1);
-      if (scope.select == i) {
-	gtk_frame_set_shadow_type(GTK_FRAME(LU(widget)), GTK_SHADOW_ETCHED_IN);
-      } else {
-	gtk_frame_set_shadow_type(GTK_FRAME(LU(widget)), GTK_SHADOW_NONE);
-      }
-
-    }
-
-    /* below graticule */
-    if (scope.verbose) {
-
-      /* setting help text is special */
-      gtk_label_set_text(GTK_LABEL(LU("tab_help_label")), p->show ? "Visible" : "HIDDEN");
-      setup_help_text(GTK_WIDGET(LU("tab_help_label")), NULL);
-#if 0
-      if (scope.select > 1) {
-	text_write("($)", 72, 25,
-		  0, KEY_FG, TEXT_BG, ALIGN_RIGHT);
-	text_write("Extern", 78, 25,
-		  0, p->color, TEXT_BG, ALIGN_RIGHT);
-	text_write("(:)    (;)", 79, 26,
-		  0, KEY_FG, TEXT_BG, ALIGN_RIGHT);
-	text_write("Math", 76, 26,
-		  0, p->color, TEXT_BG, ALIGN_RIGHT);
-      }
-#endif
-
-    }
-
-    if (datasrc && (datasrc->option2str != NULL)
-	&& ((s = datasrc->option2str()) != NULL)) {
-      gtk_label_set_text(GTK_LABEL(LU("data_source_opt2_label")), s);
-    } else {
-      gtk_label_set_text(GTK_LABEL(LU("data_source_opt2_label")), "");
-    }
-
-    fix_widgets();
-    prev = -1;
-    show_data();
-    return;			/* show_data will call again to do the rest */
-  }
 
   /* always draw the dynamic text, if signal is analog (bits == 0) */
   if (p->signal && (p->signal->bits == 0)) {
@@ -303,6 +171,24 @@ draw_text(int all)
 #endif
   }
 
+  /* We don't know when our data source might change its status lines,
+   * so we update these widgets every time through.
+   */
+
+  if (datasrc && (datasrc->option1str != NULL)
+      && ((s = datasrc->option1str()) != NULL)) {
+    gtk_label_set_text(GTK_LABEL(LU("data_source_opt1_label")), s);
+  } else {
+    gtk_label_set_text(GTK_LABEL(LU("data_source_opt1_label")), "");
+  }
+
+  if (datasrc && (datasrc->option2str != NULL)
+      && ((s = datasrc->option2str()) != NULL)) {
+    gtk_label_set_text(GTK_LABEL(LU("data_source_opt2_label")), s);
+  } else {
+    gtk_label_set_text(GTK_LABEL(LU("data_source_opt2_label")), "");
+  }
+
   if (datasrc && datasrc->status_str != NULL) {
     for (i=0; i<8; i++) {
       sprintf(widget, "status%d_label", i);
@@ -319,99 +205,234 @@ draw_text(int all)
     }
   }
 
-  time(&sec);
-  if (sec != prev) {		/* fix "scribbled" text once a second */
+  /* Recompute frames per second once every second */
 
-    strcpy(string, scope.run ? (scope.run > 1 ? "WAIT" : " RUN") : "STOP");
-    gtk_label_set_text(GTK_LABEL(LU("run_stop_label")), string);
+  time(&sec);
+  if (sec != prev) {
 
     sprintf(string, "fps:%3d", frames);
     gtk_label_set_text(GTK_LABEL(LU("fps_label")), string);
 
-    /* Use UTF-8 micro sign */
-    i = 1000 * scope.div / scope.scale;
-    sprintf(string, "%d %ss/div", i > 999 ? i / 1000: i, i > 999 ? "m" : "\302\265");
-    gtk_label_set_text(GTK_LABEL(LU("timebase_label")), string);
-
-    if (p->signal) {
-
-      /* XXX what do we want here - frame samples, samples per screen? */
-
-      /* I cut and changed this line a half dozen times trying to decide
-       * what number I wanted displayed as the "Samples" - p->signal->num
-       * would give us the actual number of samples in the signal, but
-       * that changes during the course of a sweep.  Now I've got the
-       * number of samples per sweep, which isn't quite acceptable if
-       * there's no data on the screen, or if we're displaying a memory
-       * channel with a fixed number of sample
-       */
-
-      /* sprintf(string, "%d Samples", p->signal->num); */
-      /* sprintf(string, "%d Samples", samples(p->signal->rate)); */
-      sprintf(string, "%d Samples/frame", p->signal->width);
-      gtk_label_set_text(GTK_LABEL(LU("samples_per_frame_label")), string);
-
-      if (p->signal->rate > 0) {
-
-	sprintf(string, "%d S/s", p->signal->rate);
-	gtk_label_set_text(GTK_LABEL(LU("sample_rate_label")), string);
-
-      } else if (p->signal->rate < 0) {
-
-	/* Special case for a Fourier Transform.  p->signal->rate is
-	 * the negative of the frequency step for each point in the
-	 * transform, times 10.  Since there are 44 x-coordinates in a
-	 * division, after applying the scope's current time base
-	 * multiplier (scope.div / scope.scale), we multiply by 44/10
-	 * to get the number of Hz in a division.
-	 */
-
-	sprintf(string, "%d Hz/div FFT",
-		(- p->signal->rate) * 44 * scope.div / scope.scale / 10);
-	gtk_label_set_text(GTK_LABEL(LU("sample_rate_label")), string);
-      }
-    }
-
-    for (i = 0 ; i < 26 ; i++) {
-      if (datasrc && i < datasrc->nchans()) {
-	/* XXX Maybe here we should show color by channel if sig displayed */
-	string[i] = i + 'a';
-      } else if (mem[i].num > 0) {
-	/* XXX different color here for memory? */
-	string[i] = i + 'a';
-      } else {
-	string[i ] = ' ';
-      }
-    }
-    string[i] = '\0';
-    gtk_label_set_text(GTK_LABEL(LU("registers_label")), string);
-
-    if (datasrc && datasrc->nchans() > 0) {
-      /* setting help text is special */
-      sprintf(string, "(a-%c)", 'a' + datasrc->nchans() - 1);
-      gtk_label_set_text(GTK_LABEL(LU("signal_key_label")), string);
-      setup_help_text(GTK_WIDGET(LU("signal_key_label")), NULL);
-
-      gtk_widget_show(GTK_WIDGET(LU("signal_key_label")));
-      gtk_widget_show(GTK_WIDGET(LU("signal_help_label")));
-    } else {
-      gtk_widget_hide(GTK_WIDGET(LU("signal_key_label")));
-      gtk_widget_hide(GTK_WIDGET(LU("signal_help_label")));
-    }
-
-    /* setting help text is special */
-    sprintf(string, "(%c-Z)", 'A' + (datasrc ? datasrc->nchans() : 0));
-    gtk_label_set_text(GTK_LABEL(LU("store_key_label")), string);
-    setup_help_text(GTK_WIDGET(LU("store_key_label")), NULL);
-
-    /* setting help text is special */
-    sprintf(string, "(%c-z)", 'a' + (datasrc ? datasrc->nchans() : 0));
-    gtk_label_set_text(GTK_LABEL(LU("recall_key_label")), string);
-    setup_help_text(GTK_WIDGET(LU("recall_key_label")), NULL);
-
     frames = 0;
     prev = sec;
   }
+
+  frames++;
+}
+
+void update_text(void)
+{
+  char string[81], widget[81];
+  int i;
+  Channel *p;
+  static char *strings[] = {
+    "Point",
+    "Point Accum.",
+    "Line",
+    "Line Accum.",
+    "Step",
+    "Step Accum.",
+  };
+  static char *trigs[] = {
+    "Auto",
+    "Rising",
+    "Falling"
+  };
+
+  p = &ch[scope.select];
+
+  /* above graticule */
+  if (scope.verbose) {
+
+    /* progname and version dynamic */
+
+    /* setting help text is special */
+    gtk_label_set_text(GTK_LABEL(LU("graticule_position_help_label")),
+		       scope.behind ? "Behind" : "In Front");
+    setup_help_text(GTK_WIDGET(LU("graticule_position_help_label")), NULL);
+
+  } else {			/* not verbose */
+
+    /* XXX display (?) Help */
+  }
+
+  if (scope.trige) {
+    Signal *trigsig = datasrc->chan(scope.trigch);
+
+    if (trigsig->volts > 0) {
+      char minibuf[256];
+      format(minibuf, "%g %sV",
+	     (scope.trig) * trigsig->volts / 320);
+      sprintf(string, "%s Trigger @ %s", trigs[scope.trige], minibuf);
+    } else {
+      sprintf(string, "%s Trigger @ %d",
+	      trigs[scope.trige], scope.trig);
+    }
+    gtk_label_set_text(GTK_LABEL(LU("trigger_label")), string);
+    gtk_label_set_text(GTK_LABEL(LU("trigger_source_label")), trigsig->name);
+  } else {
+    gtk_label_set_text(GTK_LABEL(LU("trigger_label")), "No Trigger");
+    gtk_label_set_text(GTK_LABEL(LU("trigger_source_label")), "");
+  }
+
+  gtk_label_set_text(GTK_LABEL(LU("data_source_label")),
+		     datasrc ? datasrc->name : "No data source");
+
+  gtk_label_set_text(GTK_LABEL(LU("line_style_label")), strings[scope.mode]);
+
+  strcpy(string, scope.run ? (scope.run > 1 ? "WAIT" : " RUN") : "STOP");
+  gtk_label_set_text(GTK_LABEL(LU("run_stop_label")), string);
+
+
+  /* sides of graticule */
+  for (i = 0 ; i < CHANNELS ; i++) {
+
+    if ((scope.verbose || ch[i].show || scope.select == i) && ch[i].signal) {
+
+      /* XXX here and other places, need to make sure we clear the field */
+      if (!ch[i].bits && ch[i].signal->volts)
+	format(string, "%g %sV/div",
+	       (float)ch[i].signal->volts * ch[i].div / ch[i].mult / 10);
+      else
+	sprintf(string, "%d / %d", ch[i].mult, ch[i].div);
+      sprintf(widget, "Ch%1d_scale_label", i+1);
+      gtk_label_set_text(GTK_LABEL(LU(widget)), string);
+
+      sprintf(string, "%d @ %.1g", ch[i].bits, ch[i].pos);
+      sprintf(widget, "Ch%1d_position_label", i+1);
+      gtk_label_set_text(GTK_LABEL(LU(widget)), string);
+
+      sprintf(widget, "Ch%1d_source_label", i+1);
+      gtk_label_set_text(GTK_LABEL(LU(widget)), ch[i].signal->name);
+
+    } else {
+
+      sprintf(widget, "Ch%1d_scale_label", i+1);
+      gtk_label_set_text(GTK_LABEL(LU(widget)), "");
+      sprintf(widget, "Ch%1d_position_label", i+1);
+      gtk_label_set_text(GTK_LABEL(LU(widget)), "");
+      sprintf(widget, "Ch%1d_source_label", i+1);
+      gtk_label_set_text(GTK_LABEL(LU(widget)), "");
+
+    }
+
+    sprintf(widget, "Ch%1d_frame", i+1);
+    if (scope.select == i) {
+      gtk_frame_set_shadow_type(GTK_FRAME(LU(widget)), GTK_SHADOW_ETCHED_IN);
+    } else {
+      gtk_frame_set_shadow_type(GTK_FRAME(LU(widget)), GTK_SHADOW_NONE);
+    }
+
+  }
+
+  /* below graticule */
+  if (scope.verbose) {
+
+    /* setting help text is special */
+    gtk_label_set_text(GTK_LABEL(LU("tab_help_label")), p->show ? "Visible" : "HIDDEN");
+    setup_help_text(GTK_WIDGET(LU("tab_help_label")), NULL);
+#if 0
+      if (scope.select > 1) {
+	text_write("($)", 72, 25,
+		  0, KEY_FG, TEXT_BG, ALIGN_RIGHT);
+	text_write("Extern", 78, 25,
+		  0, p->color, TEXT_BG, ALIGN_RIGHT);
+	text_write("(:)    (;)", 79, 26,
+		  0, KEY_FG, TEXT_BG, ALIGN_RIGHT);
+	text_write("Math", 76, 26,
+		  0, p->color, TEXT_BG, ALIGN_RIGHT);
+      }
+#endif
+
+  }
+
+  /* Use UTF-8 micro sign */
+  i = 1000 * scope.div / scope.scale;
+  sprintf(string, "%d %ss/div", i > 999 ? i / 1000: i, i > 999 ? "m" : "\302\265");
+  gtk_label_set_text(GTK_LABEL(LU("timebase_label")), string);
+
+  if (p->signal) {
+
+    /* XXX what do we want here - frame samples, samples per screen? */
+
+    /* I cut and changed this line a half dozen times trying to decide
+     * what number I wanted displayed as the "Samples" -
+     * p->signal->num would give us the actual number of samples in
+     * the signal, but that changes during the course of a sweep.  Now
+     * I've got the number of samples per sweep, which isn't quite
+     * acceptable if there's no data on the screen, or if we're
+     * displaying a memory channel with a fixed number of sample
+     */
+
+    /* sprintf(string, "%d Samples", p->signal->num); */
+    /* sprintf(string, "%d Samples", samples(p->signal->rate)); */
+    sprintf(string, "%d Samples/frame", p->signal->width);
+    gtk_label_set_text(GTK_LABEL(LU("samples_per_frame_label")), string);
+
+    if (p->signal->rate > 0) {
+
+      sprintf(string, "%d S/s", p->signal->rate);
+      gtk_label_set_text(GTK_LABEL(LU("sample_rate_label")), string);
+
+    } else if (p->signal->rate < 0) {
+
+      /* Special case for a Fourier Transform.  p->signal->rate is the
+       * negative of the frequency step for each point in the
+       * transform, times 10.  Since there are 44 x-coordinates in a
+       * division, after applying the scope's current time base
+       * multiplier (scope.div / scope.scale), we multiply by 44/10 to
+       * get the number of Hz in a division.
+       */
+
+      sprintf(string, "%d Hz/div FFT",
+	      (- p->signal->rate) * 44 * scope.div / scope.scale / 10);
+      gtk_label_set_text(GTK_LABEL(LU("sample_rate_label")), string);
+    }
+
+  } else {
+
+    gtk_label_set_text(GTK_LABEL(LU("samples_per_frame_label")), "");
+    gtk_label_set_text(GTK_LABEL(LU("sample_rate_label")), "");
+
+  }
+
+  /* List of available registers */
+  for (i = 0 ; i < 26 ; i++) {
+    if (datasrc && i < datasrc->nchans()) {
+      /* XXX Maybe here we should show color by channel if sig displayed */
+      string[i] = i + 'a';
+    } else if (mem[i].num > 0) {
+      /* XXX different color here for memory? */
+      string[i] = i + 'a';
+    } else {
+      string[i ] = ' ';
+    }
+  }
+  string[i] = '\0';
+  gtk_label_set_text(GTK_LABEL(LU("registers_label")), string);
+
+  if (datasrc && datasrc->nchans() > 0) {
+    /* setting help text is special */
+    sprintf(string, "(a-%c)", 'a' + datasrc->nchans() - 1);
+    gtk_label_set_text(GTK_LABEL(LU("signal_key_label")), string);
+    setup_help_text(GTK_WIDGET(LU("signal_key_label")), NULL);
+
+    gtk_widget_show(GTK_WIDGET(LU("signal_key_label")));
+    gtk_widget_show(GTK_WIDGET(LU("signal_help_label")));
+  } else {
+    gtk_widget_hide(GTK_WIDGET(LU("signal_key_label")));
+    gtk_widget_hide(GTK_WIDGET(LU("signal_help_label")));
+  }
+
+  /* setting help text is special */
+  sprintf(string, "(%c-Z)", 'A' + (datasrc ? datasrc->nchans() : 0));
+  gtk_label_set_text(GTK_LABEL(LU("store_key_label")), string);
+  setup_help_text(GTK_WIDGET(LU("store_key_label")), NULL);
+
+  /* setting help text is special */
+  sprintf(string, "(%c-z)", 'a' + (datasrc ? datasrc->nchans() : 0));
+  gtk_label_set_text(GTK_LABEL(LU("recall_key_label")), string);
+  setup_help_text(GTK_WIDGET(LU("recall_key_label")), NULL);
 
   if (scope.verbose) {
       make_help_text_visible(glade_window, NULL);
@@ -419,8 +440,10 @@ draw_text(int all)
       make_help_text_invisible(glade_window, NULL);
   }
 
-  frames++;
+  update_dynamic_text();
+  fix_widgets();
 }
+
 
 /* roundoff_multipliers() - set mult/div, based on target mult/div if
  * channel is displaying a signal with a voltage scale, then round
@@ -752,7 +775,7 @@ clear()
   }
 
   show_data();
-  draw_text(1);
+  update_text();
 }
 
 void
@@ -1092,7 +1115,8 @@ show_data(void)
   if ((scope.scale >= 100) || !in_progress)
     measure_data(&ch[scope.select], &stats);
 
-  draw_text(0);
+  update_dynamic_text();
+
   if (scope.behind) {
     draw_graticule();		/* plot data on top of graticule */
     draw_data();
@@ -1142,7 +1166,7 @@ animate(void *data)
       triggered = datasrc->get_data();
       if (triggered && scope.run > 1) { /* auto-stop single-shot wait */
 	scope.run = 0;
-	draw_text(1);
+	update_text();
       }
     } else if (in_progress) {
       datasrc->get_data();
@@ -1152,18 +1176,4 @@ animate(void *data)
     }
   }
   show_data();
-}
-
-/* [re]initialize graphics screen */
-void
-init_screen()
-{
-  int i, channelcolor[] = CHANNELCOLOR;
-
-  for (i = 0 ; i < CHANNELS ; i++) {
-    ch[i].color = color[channelcolor[i]];
-  }
-  fix_widgets();
-  draw_text(1);
-  clear();
 }

@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.c,v 2.4 2009/01/10 03:12:45 baccala Exp $
+ * @(#)$Id: oscope.c,v 2.5 2009/01/14 06:20:54 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -414,7 +414,6 @@ handle_key(unsigned char c)
     if (p->signal) {
       save(c);			/* store channel */
       clear();			/* need this in case other chan displays mem */
-      draw_text(1);
     }
     return;
   } else if (c >= 'a' && c <= 'z') {
@@ -640,7 +639,7 @@ handle_key(unsigned char c)
     break;
   case '.':
     scope.behind = !scope.behind; /* graticule behind/in front of signal */
-    draw_text(1);
+    update_text();
     break;
   case '?':
   case '/':
@@ -653,7 +652,7 @@ handle_key(unsigned char c)
       scope.run = 0;
     if ((scope.run == 1) && datasrc)
       setinputfd(datasrc->fd());	/* were stopped, so now start */
-    draw_text(1);
+    update_text();
     break;
   case '\r':
   case '\n':
@@ -689,8 +688,7 @@ main(int argc, char **argv)
     exit(1);
   parse_args(argc, argv);
   init_widgets();
-  init_screen();
-  /* clear(); */
+  clear();
 
   filename = FILENAME;
   if ((optind < argc) && (argv[optind] != NULL)) {
@@ -702,12 +700,12 @@ main(int argc, char **argv)
     exit(1);
 #endif
   }
-#if 0
-  init_widgets();
-  init_screen();
-#endif
+
   clear();
-  mainloop();
+  animate(NULL);
+
+  gtk_main();
+
   cleanup();
   exit(0);
 }
