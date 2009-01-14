@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: file.c,v 2.5 2009/01/14 06:20:54 baccala Exp $
+ * @(#)$Id: file.c,v 2.6 2009/01/14 18:11:33 baccala Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -248,8 +248,7 @@ writefile(char *filename)
 
   if ((file = fopen(filename, "w")) == NULL) {
     sprintf(error, "%s: can't write %s", progname, filename);
-    message(error, KEY_FG);
-    perror(error);
+    message(error);
     return;
   }
   fprintf(file, "# %s, version %s\n\
@@ -322,7 +321,7 @@ writefile(char *filename)
   }
   fclose(file);
   sprintf(error, "wrote %s", filename);
-  message(error, TEXT_FG);
+  message(error);
 }
 
 /* Backwards compatibility with older file format that didn't
@@ -343,8 +342,7 @@ guess_input_device_pre_1_10(char *filename)
 
   if ((file = fopen(filename, "r")) == NULL) {
     sprintf(error, "%s: can't read %s", progname, filename);
-    message(error, KEY_FG);
-    perror(error);
+    message(error);
     return;
   }
 
@@ -388,8 +386,7 @@ readfile(char *filename)
 
   if ((file = fopen(filename, "r")) == NULL) {
     sprintf(error, "%s: can't read %s", progname, filename);
-    message(error, KEY_FG);
-    perror(error);
+    message(error);
     return;
   }
   init_scope();			/* reset everything */
@@ -459,9 +456,9 @@ readfile(char *filename)
   if (valid) {
     clear();		/* XXX not sure if we need this */
     sprintf(error, "loaded %s", filename);
-    message(error, TEXT_FG);
+    message(error);
   } else {
     sprintf(error, "invalid format: %s", filename);
-    message(error, KEY_FG);
+    message(error);
   }
 }

@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 2.18 2009/01/14 06:20:54 baccala Exp $
+ * @(#)$Id: display.c,v 2.19 2009/01/14 18:11:33 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -21,11 +21,13 @@
 #include "func.h"
 
 #include "com_gtk.h"
+#include <glib.h>
 #include <gtk/gtk.h>
 #include <gtkdatabox.h>
 #include <gtkdatabox_points.h>
 #include <gtkdatabox_lines.h>
 #include <gtkdatabox_grid.h>
+#include <gtkdatabox_marker.h>
 
 extern GtkWidget *databox;
 
@@ -41,11 +43,40 @@ int	math_warning = 0;	/* TRUE if math has a problem */
 
 struct signal_stats stats;
 
-/* draw a temporary one-line message to center of screen */
-void
-message(char *message, int clr)
+/* draw a temporary one-line message to center of screen
+ *
+ * XXX actually draws into the databox, which means that if we scroll
+ * the databox, the message moves.
+ */
+
+GtkDataboxGraph *databox_message = NULL;
+gfloat databox_message_X = 0.0;
+gfloat databox_message_Y = 0.0;
+
+gboolean clear_message_callback(gpointer ignored)
 {
-  /* XXX need something here */
+  gtk_databox_graph_remove (GTK_DATABOX(databox), databox_message);
+  gtk_databox_redraw (GTK_DATABOX (databox));
+  return FALSE;
+}
+
+void
+message(char *message)
+{
+  if (databox_message == NULL) {
+    GdkColor gcolor;
+    gcolor.red = gcolor.green = gcolor.blue = 65535;
+    databox_message = gtk_databox_marker_new(1, &databox_message_X,
+					     &databox_message_Y, &gcolor, 0,
+					     GTK_DATABOX_MARKER_NONE);
+  }
+
+  gtk_databox_marker_set_label(GTK_DATABOX_MARKER(databox_message), 0,
+			       GTK_DATABOX_TEXT_N, message, FALSE);
+  gtk_databox_graph_add (GTK_DATABOX(databox), databox_message);
+  gtk_databox_redraw (GTK_DATABOX (databox));
+
+  g_timeout_add (2000, clear_message_callback, NULL);
 }
 
 void
@@ -690,6 +721,9 @@ void configure_databox(void)
 
    bottomright.x = 10 * 0.001 * (gfloat) scope.div / scope.scale;
    gtk_databox_set_visible_canvas(GTK_DATABOX(databox), topleft, bottomright);
+
+   /* Temporary message is always centered on screen */
+   databox_message_X = bottomright.x / 2;
 
    /* Decide if we need a scrollbar or not */
 
