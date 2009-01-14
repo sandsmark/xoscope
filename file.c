@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: file.c,v 2.3 2009/01/09 06:22:13 baccala Exp $
+ * @(#)$Id: file.c,v 2.4 2009/01/14 04:28:03 baccala Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -16,7 +16,8 @@
 #include "display.h"		/* display routines */
 #include "func.h"		/* signal math functions */
 
-int backwards_compat = 0;	/* TRUE if parsing a pre-1.10 save file */
+int backwards_compat_1_10 = 0;	/* TRUE if parsing a pre-1.10 save file */
+int backwards_compat_2_0 = 0;	/* TRUE if parsing a pre-2.0 save file */
 
 /* force num to stay within the range lo - hi */
 int
@@ -56,7 +57,7 @@ handle_opt(int opt, char *optarg)
      * reading an older file, only process -o if data source is BitScope
      */
     if ((datasrc != NULL) &&
-	(!backwards_compat || !strcasecmp(datasrc->name, "BitScope"))) {
+	(!backwards_compat_1_10 || !strcasecmp(datasrc->name, "BitScope"))) {
       if ((datasrc->set_option == NULL)
 	  || (datasrc->set_option(optarg) == 0)) {
 	fprintf(stderr, "Couldn't set option %s\n\n", optarg);
@@ -171,7 +172,20 @@ handle_opt(int opt, char *optarg)
 	s->show = 0;
 	p++;
       }
+
+      /* Prior to the 2.0 release, signal position was stored as the
+       * number of y pixels to offset.  Now it's stored as 100 times
+       * the decimal fraction s->pos, which is a floating point number
+       * ranging nominally from -1 (bottom of screen) to +1 (top).
+       * The data part of the display used to be 160 pixels less than
+       * v_points, so for a 640x480 display (the most common), the
+       * data part was 320 pixels tall, so we divide by 160, negative
+       * since the old number's zero point was at the top.
+       */
       s->pos = limit(-strtol(p, NULL, 0), -1280, 1280);
+      if (backwards_compat_2_0) s->pos /= -160;
+      else s->pos /= 100;
+
       if ((q = strchr(p, '.')) != NULL) {
 	s->bits = limit(strtol(++q, NULL, 0), 0, 16);
 	p = q;
@@ -196,13 +210,13 @@ handle_opt(int opt, char *optarg)
 	   * use a, b, c, etc.  Probescope used z exclusively
 	   */
 
-	  if (datasrc && !backwards_compat
+	  if (datasrc && !backwards_compat_1_10
 	      && ((*q - 'a') <= datasrc->nchans())) {
 	    recall_on_channel(datasrc->chan(*q - 'a'), s);
-	  } else if (datasrc && backwards_compat && (*q == 'z')
+	  } else if (datasrc && backwards_compat_1_10 && (*q == 'z')
 		     && !strcasecmp(datasrc->name, "ProbeScope")) {
 	    recall_on_channel(datasrc->chan(0), s);
-	  } else if (datasrc && backwards_compat && (*q >= 'x')) {
+	  } else if (datasrc && backwards_compat_1_10 && (*q >= 'x')) {
 	    recall_on_channel(datasrc->chan(*q - 'x'), s);
 	  } else {
 	    /* Might have a (slight) problem here if we're
@@ -267,7 +281,7 @@ writefile(char *filename)
     p = &ch[i];
     if (p->signal) {
       fprintf(file, "# -%d %s%d.%d:%d/%d:%s\n", i + 1, p->show ? "" : "+",
-	      -p->pos, p->bits, p->target_mult, p->target_div,
+	      -(int)(p->pos*100), p->bits, p->target_mult, p->target_div,
 	      p->signal->savestr);
     }
   }
@@ -321,7 +335,7 @@ writefile(char *filename)
  */
 
 void
-backwards_compat_pre_1_10(char *filename)
+guess_input_device_pre_1_10(char *filename)
 {
   FILE *file;
   char buff[256];
@@ -386,8 +400,11 @@ readfile(char *filename)
     if (buff[0] == '#') {
       if (sscanf(buff, "# %*s version %d.%d", &version[0], &version[1]) == 2) {
 	if ((version[0] <= 1) && (version[1] < 10)) {
-	  backwards_compat_pre_1_10(filename);
-	  backwards_compat = 1;
+	  guess_input_device_pre_1_10(filename);
+	  backwards_compat_1_10 = 1;
+	}
+	if (version[0] == 1) {
+	  backwards_compat_2_0 = 1;
 	}
 	valid = 1;
       } else if (!strncmp("# -", buff, 3)) {
@@ -438,7 +455,8 @@ readfile(char *filename)
     }
   }
   fclose(file);
-  backwards_compat = 0;		/* in case we set this during the parse */
+  backwards_compat_1_10 = 0;	/* in case we set these during the parse */
+  backwards_compat_2_0 = 0;
   if (valid) {
     clear();		/* XXX not sure if we need this */
     sprintf(error, "loaded %s", filename);
