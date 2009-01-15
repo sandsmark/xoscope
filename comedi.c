@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: comedi.c,v 2.1 2009/01/07 22:35:19 baccala Exp $
+ * @(#)$Id: comedi.c,v 2.2 2009/01/15 07:05:59 baccala Exp $
  *
  * Author: Brent Baccala <baccala@freesoft.org>
  *
@@ -454,7 +454,7 @@ open_comedi(void)
      */
 
     for (i = 0 ; i < NCHANS ; i++) {		/* XXX hardwired at 8 */
-      memset(comedi_chans[i].data, 0, MAXWID * sizeof(short));
+      comedi_chans[i].data = NULL;
       comedi_chans[i].num = comedi_chans[i].frame = comedi_chans[i].volts = 0;
       comedi_chans[i].listeners = 0;
       //sprintf(comedi_chans[i].name, "Channel %d", i);
@@ -701,6 +701,8 @@ static void set_width(int width)
 
   for (i=0; i<NCHANS; i++) {
     comedi_chans[i].width = width;
+    if (comedi_chans[i].data != NULL) free(comedi_chans[i].data);
+    comedi_chans[i].data = malloc(width * sizeof(short));
   }
 }
 

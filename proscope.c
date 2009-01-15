@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: proscope.c,v 2.0 2008/12/17 17:35:46 baccala Exp $
+ * @(#)$Id: proscope.c,v 2.1 2009/01/15 07:05:59 baccala Exp $
  *
  * Copyright (C) 1997 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -59,6 +59,9 @@ open_probescope(void)
   ps.coupling = "?";
 
   ps.probed = 1;
+
+  ps_signal.width = 128;
+  if (ps_signal.data == NULL) ps_signal.data = malloc(128 * sizeof(short));
 
   return init_serial_probescope();
 }
@@ -181,7 +184,7 @@ get_data(void)
   ps_signal.data[0] = ps_signal.data[1];
   ps_signal.frame ++;
   ps_signal.num = 128;
-  ps_signal.width = 128;
+
   if (gotdvm) ps.dvm = dvm;
   if (cls) clear();		/* non-DVM text need changed? */
   if (flush) flush_serial(psfd);	/* catch up if we're getting behind */

@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.h,v 2.6 2009/01/10 03:12:45 baccala Exp $
+ * @(#)$Id: oscope.h,v 2.7 2009/01/15 07:05:59 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -58,7 +58,7 @@ typedef struct Signal {
   int listeners;		/* Number of things 'listening' to this Sig */
   int bits;			/* number of valid bits - 0 for analog sig */
   int width;			/* size of data[] in samples */
-  short data[MAXWID];		/* the data samples */
+  short *data;			/* the data samples */
 } Signal;
 
 extern Signal mem[26];		/* Memory channels */

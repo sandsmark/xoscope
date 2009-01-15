@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: sc_linux.c,v 2.2 2008/12/22 17:47:40 baccala Exp $
+ * @(#)$Id: sc_linux.c,v 2.3 2009/01/15 07:05:59 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -48,8 +48,8 @@ static int sc_chans = 0;
 static int sound_card_rate = DEF_R;	/* sampling rate of sound card */
 
 /* Signal structures we're capturing into */
-static Signal left_sig = {"Left Mix", "a", 0, 0, 0, 0, 0, 0, 0, MAXWID};
-static Signal right_sig = {"Right Mix", "b", 0, 0, 0, 0, 0, 0, 0, MAXWID};
+static Signal left_sig = {"Left Mix", "a"};
+static Signal right_sig = {"Right Mix", "b"};
 
 static int trigmode = 0;
 static int triglev;
@@ -331,10 +331,14 @@ reset(void)
 
 static void set_width(int width)
 {
-  if (width > MAXWID) width = MAXWID;
-
   left_sig.width = width;
   right_sig.width = width;
+
+  if (left_sig.data != NULL) free(left_sig.data);
+  if (right_sig.data != NULL) free(right_sig.data);
+
+  left_sig.data = malloc(width * sizeof(short));
+  right_sig.data = malloc(width * sizeof(short));
 }
 
 /* get data from sound card, return value is whether we triggered or not */

@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: func.c,v 2.1 2009/01/14 18:21:06 baccala Exp $
+ * @(#)$Id: func.c,v 2.2 2009/01/15 07:05:59 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -55,21 +55,20 @@ save(char c)
 
   if (ch[scope.select].signal == NULL) return;
 
-#if 1
   /* Don't want the name - leave that at 'Memory x'
    * Also, increment frame instead of setting it to signal->frame in
    * case signal->frame is the same as mem's old frame number!
    */
-  memcpy(mem[i].data, ch[scope.select].signal->data, MAXWID * sizeof(short));
+  if (mem[i].data != NULL) {
+    free(mem[i].data);
+  }
+  mem[i].data = malloc(ch[scope.select].signal->width * sizeof(short));
+  memcpy(mem[i].data, ch[scope.select].signal->data,
+	 ch[scope.select].signal->width * sizeof(short));
   mem[i].rate = ch[scope.select].signal->rate;
   mem[i].num = ch[scope.select].signal->num;
   mem[i].frame ++;
   mem[i].volts = ch[scope.select].signal->volts;
-  //mem[i].color = ch[scope.select].color;
-#else
-  memcpy(&mem[i], ch[scope.select].signal, sizeof(Signal));
-#endif
-
 }
 
 /* !!! External process handling
@@ -408,6 +407,9 @@ fft2(Signal *dest)
  * fields in the Signal structure, something we count on happening
  * whenever we call update_math_signals(), which calls these
  * functions.
+ *
+ * These functions are also responsible for mallocing the data areas
+ * in the math function's associated Signal structures.
  */
 
 int ch1active(Signal *dest)
@@ -419,11 +421,18 @@ int ch1active(Signal *dest)
     dest->rate = 0;
     dest->volts = 0;
     return 0;
-  } else {
-    dest->rate = ch[0].signal->rate;
-    dest->volts = ch[0].signal->volts;
-    return 1;
   }
+
+  dest->rate = ch[0].signal->rate;
+  dest->volts = ch[0].signal->volts;
+
+  if (dest->width != ch[0].signal->width) {
+    dest->width = ch[0].signal->width;
+    if (dest->data != NULL) free(dest->data);
+    dest->data = malloc(dest->width * sizeof(short));
+  }
+
+  return 1;
 }
 
 int ch2active(Signal *dest)
@@ -435,11 +444,18 @@ int ch2active(Signal *dest)
     dest->rate = 0;
     dest->volts = 0;
     return 0;
-  } else {
-    dest->rate = ch[1].signal->rate;
-    dest->volts = ch[1].signal->volts;
-    return 1;
   }
+
+  dest->rate = ch[1].signal->rate;
+  dest->volts = ch[1].signal->volts;
+
+  if (dest->width != ch[1].signal->width) {
+    dest->width = ch[1].signal->width;
+    if (dest->data != NULL) free(dest->data);
+    dest->data = malloc(dest->width * sizeof(short));
+  }
+
+  return 1;
 }
 
 int chs12active(Signal *dest)
@@ -453,11 +469,24 @@ int chs12active(Signal *dest)
     dest->rate = 0;
     dest->volts = 0;
     return 0;
-  } else {
-    dest->rate = ch[0].signal->rate;
-    dest->volts = ch[0].signal->volts;
-    return 1;
   }
+
+  dest->rate = ch[0].signal->rate;
+  dest->volts = ch[0].signal->volts;
+
+  /* All of the associated functions (sum, diff, avg) only use the
+   * minimum of the samples on Channels 1 and 2, so we can safely base
+   * the size of our data array on Channel 1 only... the worst that
+   * can happen is that it is too big.
+   */
+
+  if (dest->width != ch[0].signal->width) {
+    dest->width = ch[0].signal->width;
+    if (dest->data != NULL) free(dest->data);
+    dest->data = malloc(dest->width * sizeof(short));
+  }
+
+  return 1;
 }
 
 /* special isvalid() functions for FFT
@@ -517,8 +546,8 @@ struct func funcarray[] =
   {sum, "Sum  1+2", chs12active},
   {diff, "Diff 1-2", chs12active},
   {avg, "Avg. 1,2", chs12active},
-  {fft1, "FFT. 1  ", ch1FFTactive},
-  {fft2, "FFT. 2  ", ch2FFTactive},
+  /* {fft1, "FFT. 1  ", ch1FFTactive}, */
+  /* {fft2, "FFT. 2  ", ch2FFTactive}, */
 };
 
 /* the total number of "functions" */
@@ -617,14 +646,21 @@ int function_bynum_on_channel(int fnum, Channel *ch)
   return FALSE;
 }
 
-/* Initialize math, called once by main at startup */
+/* Initialize math, called once by main at startup, and again whenever
+ * we read a file.
+ */
+
 void
 init_math()
 {
   static int i;
+  static int once = 0;
 
   for (i = 0 ; i < 26 ; i++) {
-    memset(mem[i].data, 0, MAXWID * sizeof(short));
+    if (once==1 && mem[i].data != NULL) {
+      free(mem[i].data);
+    }
+    mem[i].data = NULL;
     mem[i].num = mem[i].frame = mem[i].volts = 0;
     mem[i].listeners = 0;
     sprintf(mem[i].name, "Memory %c", 'a' + i);
@@ -637,6 +673,7 @@ init_math()
     funcarray[i].signal.savestr[1] = '\0';
   }
   init_fft();
+  once=1;
 }
 
 /* update_math_signals() is called whenever 'something' has changed in

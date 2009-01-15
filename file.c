@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: file.c,v 2.7 2009/01/14 18:21:06 baccala Exp $
+ * @(#)$Id: file.c,v 2.8 2009/01/15 07:05:59 baccala Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -412,6 +412,11 @@ readfile(char *filename)
 	    //XXX 'k' is color and it is ignored
 	    //mem[c - 'a'].color = color[k];
 	    mem[c - 'a'].frame ++;
+	    /* Guess some multiple of two here for our data size.
+	     * We'll adjust this up if needed.
+	     */
+	    mem[c - 'a'].data = malloc(16 * sizeof(short));
+	    mem[c - 'a'].width = 16;
 	  }
 	  q += 6;
 	}
@@ -432,17 +437,31 @@ readfile(char *filename)
       }
     } else if (valid &&
 	       ((buff[0] >= '0' && buff[0] <= '9') || buff[0] == '-')) {
-      j = 0;
-      p = buff;
-      q = p;
-      while (j < 26 && (!j || ((p = strchr(q, '\t')) != NULL))) {
-	if (p == NULL)
-	  p = buff;
-	if (chan[j] > -1 && i < MAXWID) {
-	  mem[chan[j]].data[i] = strtol(p++, NULL, 0);
-	  mem[chan[j++]].num = i + 1;
+
+      /* This is a line of memory data.  Integer values, separated by
+       * tabs, and we already read into the chan[] array the mapping
+       * between the tab-separated fields and memory channels.  Take
+       * care to dynamically resize the memory channel data arrays.
+       */
+
+      j = 0;		/* Field number (starts at 0) */
+      p = buff;		/* Pointer to tab that starts the field (or buff) */
+
+      while (j < 26 && (!j || ((p = strchr(p, '\t')) != NULL))) {
+	if (chan[j] > -1) {
+	  if (mem[chan[j]].width <= i) {
+	    while (mem[chan[j]].width <= i) {
+	      mem[chan[j]].width *= 2;
+	    }
+	    mem[chan[j]].data = realloc(mem[chan[j]].data,
+					mem[chan[j]].width * sizeof(short));
+	  }
+	  mem[chan[j]].data[i] = strtol(p, NULL, 0);
+	  mem[chan[j]].num = i + 1;
+
+	  p ++;
+	  j ++;
 	}
-	q = p;
       }
       i++;
     }

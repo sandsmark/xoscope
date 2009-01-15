@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: bitscope.c,v 2.0 2008/12/17 17:35:46 baccala Exp $
+ * @(#)$Id: bitscope.c,v 2.1 2009/01/15 07:05:59 baccala Exp $
  *
  * Copyright (C) 2000 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -338,6 +338,18 @@ bs_init(int fd)
   analogB_signal.rate = 25000000;
   digital_signal.rate = 25000000;
 //  mem[23].rate = mem[24].rate = mem[25].rate = 12500000;
+
+  analogA_signal.width = MAXWID;
+  analogB_signal.width = MAXWID;
+  digital_signal.width = MAXWID;
+
+  if (analogA_signal.data != NULL) free(analogA_signal.data);
+  if (analogB_signal.data != NULL) free(analogB_signal.data);
+  if (digital_signal.data != NULL) free(digital_signal.data);
+
+  analogA_signal.data = malloc(MAXWID * sizeof(short));
+  analogB_signal.data = malloc(MAXWID * sizeof(short));
+  digital_signal.data = malloc(MAXWID * sizeof(short));
 
 //  printf("bs_init\n");
   bs_getregs(fd, bs.r);
