@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.c,v 2.6 2009/01/14 18:21:06 baccala Exp $
+ * @(#)$Id: oscope.c,v 2.7 2009/01/15 03:57:20 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -539,14 +539,14 @@ handle_key(unsigned char c)
       scope.div = scaledown(scope.div);
     else
       scope.scale = scaleup(scope.scale, 5000);
-    clear();
+    timebase_changed();
     break;
   case '9':
     if (scope.scale > 1)	/* increase time scale, zoom out */
       scope.scale = scaledown(scope.scale);
     else
       scope.div = scaleup(scope.div, 2000);
-    clear();
+    timebase_changed();
     break;
   case '=':
     if (datasrc->set_trigger) {	/* increase trigger */

@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 2.19 2009/01/14 18:11:33 baccala Exp $
+ * @(#)$Id: display.c,v 2.20 2009/01/15 03:57:20 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -736,6 +736,54 @@ void configure_databox(void)
    /* And recompute the graticule grids */
 
    recompute_graticule();
+}
+
+void timebase_changed(void)
+{
+  /* If the scope is running, then clear the screen traces and reset
+   * the capture.  We don't do this if the scope isn't running so
+   * that the user can change timebases on a frozen sweep without
+   * it disappearing.
+   */
+
+  if (datasrc && scope.run) {
+
+    clear_databox();
+
+    /* In oscope.h, I wrote "Only after reset() has been called are
+     * the rate and volts fields in the Signal structures guaranteed
+     * valid".  So... we reset() once to make sure the rate and volts
+     * fields are valid, then use the rate field in the first active
+     * channel to set the capture width to the number of samples
+     * required to fill the screen at that rate, then reset() again to
+     * (re)start the capture.
+     *
+     * XXX Probably reset() needs to be split into two functions -
+     * say reset() and start_sweep(), so then our sequence is
+     * reset(), set_width(), start_sweep()
+     *
+     * XXX Also seems a little hokey the way we run through the
+     * channels.  Implicit here is the code's current design
+     * that all the channels for a data source have the
+     * same rate and frame width.
+     */
+
+    datasrc->reset();
+    if (datasrc->set_width) {
+      int i;
+      for (i=0; i<datasrc->nchans(); i++) {
+	if (datasrc->chan(i)->listeners > 0) {
+	  datasrc->set_width(samples(datasrc->chan(i)->rate));
+	  break;
+	}
+      }
+      datasrc->reset();
+    }
+    setinputfd(datasrc->fd());
+  }
+
+  configure_databox();
+  update_text();
 }
 
 /* clear() - one of the most important functions in the program,
