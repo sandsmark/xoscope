@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: comedi.c,v 2.2 2009/01/15 07:05:59 baccala Exp $
+ * @(#)$Id: comedi.c,v 2.3 2009/01/15 18:46:18 baccala Exp $
  *
  * Author: Brent Baccala <baccala@freesoft.org>
  *
@@ -41,6 +41,7 @@
  */
 
 comedi_t *comedi_dev = NULL;
+gchar *comedi_board_name = NULL;
 
 static int comedi_opened = 0;	/* t if open has at least been _attempted_ */
 static int comedi_running = 0;
@@ -413,6 +414,8 @@ close_comedi()
 
   if (comedi_dev) comedi_close(comedi_dev);
   comedi_dev = NULL;
+  if (comedi_board_name) g_free(comedi_board_name);
+  comedi_board_name = NULL;
   comedi_running = 0;
   comedi_opened = 0;
 
@@ -473,6 +476,13 @@ open_comedi(void)
     return 0;
   }
 
+  /* All the GTK stuff uses UTF8, and complains to stderr if it
+   * doesn't get it.
+   */
+
+  comedi_board_name = g_locale_to_utf8(comedi_get_board_name(comedi_dev),
+				       -1, NULL, NULL, NULL);
+
   /* XXX I'd kinda like to do this here, but then the read() loop
    * below (to get offset correction for the DAQP) returns errors
    * (-EAGAIN).  If do this later, and start_comedi_running() has
@@ -481,7 +491,7 @@ open_comedi(void)
    */
   /* fcntl(comedi_fileno(comedi_dev), F_SETFL, O_NONBLOCK); */
 
-  if (strncmp(comedi_get_board_name(comedi_dev), "DAQP", 4) == 0) {
+  if (comedi_board_name && strncmp(comedi_board_name, "DAQP", 4) == 0) {
 
     /* Special case for DAQP - unfortunately, COMEDI doesn't (yet) provide
      * a generic interface for boards that can do offset correction,
@@ -924,7 +934,7 @@ static char * status_str(int i)
     return comedi_devname;
   case 2:
     if (comedi_dev) {
-      return comedi_get_board_name(comedi_dev);
+      return comedi_board_name;
     } else {
       return split_field(error, 0, 16);
     }
