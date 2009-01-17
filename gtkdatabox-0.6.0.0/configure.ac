@@ -34,7 +34,6 @@ AM_PATH_GTK_2_0
 
 AC_OUTPUT(Makefile              \
 	gtk/Makefile            \
-	examples/Makefile       \
         gtkdatabox.pc           \
 	)
 
