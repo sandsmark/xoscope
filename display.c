@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 2.23 2009/01/17 19:05:20 baccala Exp $
+ * @(#)$Id: display.c,v 2.24 2009/01/17 20:11:47 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -273,19 +273,14 @@ void update_text(void)
   p = &ch[scope.select];
 
   /* above graticule */
-  if (scope.verbose) {
 
-    /* progname and version dynamic */
+  /* progname and version dynamic */
 
-    /* setting help text is special */
-    gtk_label_set_text(GTK_LABEL(LU("graticule_position_help_label")),
-		       scope.behind ? "Behind" : "In Front");
-    setup_help_text(GTK_WIDGET(LU("graticule_position_help_label")), NULL);
+  /* setting help text is special */
+  gtk_label_set_text(GTK_LABEL(LU("graticule_position_help_label")),
+		     scope.behind ? "Behind" : "In Front");
+  setup_help_text(GTK_WIDGET(LU("graticule_position_help_label")), NULL);
 
-  } else {			/* not verbose */
-
-    /* XXX display (?) Help */
-  }
 
   if (scope.trige) {
     Signal *trigsig = datasrc->chan(scope.trigch);
@@ -318,9 +313,8 @@ void update_text(void)
   /* sides of graticule */
   for (i = 0 ; i < CHANNELS ; i++) {
 
-    if ((scope.verbose || ch[i].show || scope.select == i) && ch[i].signal) {
+    if (ch[i].signal) {
 
-      /* XXX here and other places, need to make sure we clear the field */
       if (!ch[i].bits && ch[i].signal->volts)
 	format(string, "%g %sV/div",
 	       (float)ch[i].signal->volts * ch[i].div / ch[i].mult / 10);
@@ -418,6 +412,11 @@ void update_text(void)
       sprintf(string, "%d Hz/div FFT",
 	      (- p->signal->rate) * 44 * scope.div / scope.scale / 10);
       gtk_label_set_text(GTK_LABEL(LU("sample_rate_label")), string);
+
+    } else {
+
+      gtk_label_set_text(GTK_LABEL(LU("sample_rate_label")), "");
+
     }
 
   } else {
@@ -1098,21 +1097,12 @@ draw_data()
 	}
 
 	/* Compute the points we want to draw on the current trace and
-	 * write them into the SignalLine arrays.  'time' is an index
-	 * into samp[] array, computed from the current x-coord.
-	 * 'prev', the last 'time' we actually used to draw a point,
-	 * is here to make sure that if a single sample is spread over
-	 * several x-coords, we skip coords to draw one line across
-	 * them all.
+	 * write them into the SignalLine arrays.  The only thing a
+	 * little bit strange is that we might be updating a trace
+	 * that's already partially drawn; that's why we start at
+	 * sl->next_point and not 0.
 	 */
 
-	/* XXX we'd really like to draw one point extra, so we're
-	 * never left with a signal line that stops before the end of
-	 * the screen.
-	 */
-
-	/* for (x = X; x <= h_points - 100 - l ; x++) { */
-	/* for (x = X; 1; x++) { */
 	for (i = sl->next_point; i < p->signal->num; i++) {
 
 	  /* Hardwired: 8 y-coords is height of digital line
