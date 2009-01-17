@@ -4,7 +4,7 @@
 <glade-project>
   <name>xoscope</name>
   <program_name>xoscope</program_name>
-  <source_directory>glade-src</source_directory>
+  <source_directory></source_directory>
   <gnome_support>FALSE</gnome_support>
   <use_widget_names>TRUE</use_widget_names>
   <output_main_file>FALSE</output_main_file>
