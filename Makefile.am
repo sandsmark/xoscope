@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 
-# @(#)$Id: Makefile.am,v 2.8 2009/01/10 04:00:23 baccala Exp $
+# @(#)$Id: Makefile.am,v 2.9 2009/01/17 06:54:06 baccala Exp $
 
 # Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
 
@@ -19,10 +19,11 @@ pkglibexecdir = $(libexecdir)/@PACKAGE@
 pkglibexec_PROGRAMS = offt
 pkglibexec_SCRIPTS = operl ofreq.ini
 
-EXTRA_DIST = $(man_MANS) $(noinst_HEADERS) HARDWARE	\
-README.f51 TODO TODO.old audio.dat bitscope.dat buff.fig buff.ps	\
-buff2.fig buff2.ps count.dat ofreq.ini oscope.dat oscope.lsm	\
-patch.f51 pcb.fig pcb.ps proscope.dat
+EXTRA_DIST = $(man_MANS) $(noinst_HEADERS) \
+README.f51 TODO TODO.old audio.dat bitscope.dat 	\
+count.dat ofreq.ini oscope.dat oscope.lsm	\
+patch.f51 proscope.dat xoscope.glade xoscope.gladep \
+hardware/HARDWARE hardware/*.fig hardware/*.ps hardware/*.png
 
 src = oscope.c file.c func.c fft.c realfft.c display.c proscope.c	\
 bitscope.c sc_linux.c ser_unix.c
