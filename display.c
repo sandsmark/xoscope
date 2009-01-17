@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 2.20 2009/01/15 03:57:20 baccala Exp $
+ * @(#)$Id: display.c,v 2.21 2009/01/17 02:31:16 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -1035,19 +1035,12 @@ draw_data()
 	  sl->next = p->signalline[bit < 0 ? 0 : bit];
 	  p->signalline[bit < 0 ? 0 : bit] = sl;
 
-	  /* There are two possibilities here.  Either this is a
-	   * dynamic signal, in which can there will ultimately be
-	   * samples(p->signal->rate) data points on the trace, or
-	   * this is a stored signal, in which can there are
-	   * p->signal->num data points and it won't change.  Oh, and
-	   * if we're in step mode, we'll need twice as many display
+	  /* If we're in step mode, we'll need twice as many display
 	   * points as data points.
 	   */
 
-	  sl->X = g_new0(gfloat,
-			 2*max(samples(p->signal->rate), p->signal->num));
-	  sl->Y = g_new0(gfloat,
-			 2*max(samples(p->signal->rate), p->signal->num));
+	  sl->X = g_new0(gfloat, 2 * p->signal->width);
+	  sl->Y = g_new0(gfloat, 2 * p->signal->width);
 
 	}
 

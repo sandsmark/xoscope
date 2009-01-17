@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: func.c,v 2.2 2009/01/15 07:05:59 baccala Exp $
+ * @(#)$Id: func.c,v 2.3 2009/01/17 02:31:16 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -67,6 +67,7 @@ save(char c)
 	 ch[scope.select].signal->width * sizeof(short));
   mem[i].rate = ch[scope.select].signal->rate;
   mem[i].num = ch[scope.select].signal->num;
+  mem[i].width = ch[scope.select].signal->width;
   mem[i].frame ++;
   mem[i].volts = ch[scope.select].signal->volts;
 }

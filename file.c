@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: file.c,v 2.8 2009/01/15 07:05:59 baccala Exp $
+ * @(#)$Id: file.c,v 2.9 2009/01/17 02:31:16 baccala Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -467,6 +467,18 @@ readfile(char *filename)
     }
   }
   fclose(file);
+
+  /* If we read any memory channels, set their widths to be exactly
+   * the number of data values in them.  We do this so we get an
+   * accurate display indication of the number of samples.
+   */
+
+  for (j=0; j<26; j++) {
+    if (chan[j] != -1) {
+      mem[chan[j]].width = mem[chan[j]].num;
+    }
+  }
+
   backwards_compat_1_10 = 0;	/* in case we set these during the parse */
   backwards_compat_2_0 = 0;
   if (valid) {
