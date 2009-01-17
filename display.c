@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 2.21 2009/01/17 02:31:16 baccala Exp $
+ * @(#)$Id: display.c,v 2.22 2009/01/17 06:44:55 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -441,6 +441,22 @@ void update_text(void)
   }
   string[i] = '\0';
   gtk_label_set_text(GTK_LABEL(LU("registers_label")), string);
+
+  if ((datasrc != NULL) && (datasrc->option1str != NULL)) {
+    gtk_widget_show(LU("data_source_opt1_label"));
+    gtk_widget_show(LU("asterisk_key_label"));
+  } else {
+    gtk_widget_hide(LU("data_source_opt1_label"));
+    gtk_widget_hide(LU("asterisk_key_label"));
+  }
+
+  if ((datasrc != NULL) && (datasrc->option2str != NULL)) {
+    gtk_widget_show(LU("data_source_opt2_label"));
+    gtk_widget_show(LU("caret_key_label"));
+  } else {
+    gtk_widget_hide(LU("data_source_opt2_label"));
+    gtk_widget_hide(LU("caret_key_label"));
+  }
 
   if (datasrc && datasrc->nchans() > 0) {
     /* setting help text is special */

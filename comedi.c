@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: comedi.c,v 2.3 2009/01/15 18:46:18 baccala Exp $
+ * @(#)$Id: comedi.c,v 2.4 2009/01/17 06:44:55 baccala Exp $
  *
  * Author: Brent Baccala <baccala@freesoft.org>
  *
@@ -502,7 +502,7 @@ open_comedi(void)
      */
 
     comedi_cmd cmd;
-    int chan;
+    unsigned int chan;
     int ret;
 
     ret = comedi_get_cmd_generic_timed(comedi_dev, comedi_subdevice, &cmd, 0);
@@ -1018,7 +1018,13 @@ static char * option1str(void)
 }
 
 
-/* XXX Option 2 key - use this for a per-channel Range setting? */
+#if 0
+
+/* XXX Option 2 key - use this for a per-channel Range setting?
+ *
+ * If so, would also need to add option strings below.
+ */
+
 
 static int option2(void)
 {
@@ -1030,7 +1036,7 @@ static char * option2str(void)
   return NULL;
 }
 
-/* XXX add options for per-channel Range setting */
+#endif
 
 static int comedi_set_option(char *option)
 {
@@ -1128,8 +1134,13 @@ DataSrc datasrc_comedi = {
   status_str,
   option1,
   option1str,
+#if 0
   option2,
   option2str,
+#else
+  NULL,
+  NULL,
+#endif
   comedi_set_option,
   comedi_save_option,
   comedi_gtk_options,

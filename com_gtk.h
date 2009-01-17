@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: com_gtk.h,v 2.2 2009/01/14 18:21:06 baccala Exp $
+ * @(#)$Id: com_gtk.h,v 2.3 2009/01/17 06:44:55 baccala Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -17,4 +17,5 @@ gint key_press_event();
 void delete_event();
 void hit_key();
 
+GtkWidget* lookup_widget(GtkWidget *widget, const gchar *widget_name);
 #define LU(label)       lookup_widget(glade_window, label)
