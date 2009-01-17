@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 2.22 2009/01/17 06:44:55 baccala Exp $
+ * @(#)$Id: display.c,v 2.23 2009/01/17 19:05:20 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -572,10 +572,12 @@ int minor_graticule_displayed = 0;
 
 void recompute_graticule(void)
 {
-  gtk_databox_grid_set_vlines(GTK_DATABOX_GRID(graticule_minor_graph),
-			      total_horizontal_divisions - 1);
-  gtk_databox_grid_set_vlines(GTK_DATABOX_GRID(graticule_major_graph),
-			      total_horizontal_divisions/5 - 1);
+  if (graticule_major_graph != NULL) {
+    gtk_databox_grid_set_vlines(GTK_DATABOX_GRID(graticule_minor_graph),
+				total_horizontal_divisions - 1);
+    gtk_databox_grid_set_vlines(GTK_DATABOX_GRID(graticule_major_graph),
+				total_horizontal_divisions/5 - 1);
+  }
 }
 
 void
