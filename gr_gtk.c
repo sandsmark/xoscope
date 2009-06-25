@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: gr_gtk.c,v 2.14 2009/01/14 06:20:54 baccala Exp $
+ * @(#)$Id: gr_gtk.c,v 2.15 2009/06/25 18:09:52 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -215,6 +215,7 @@ plotmode(GtkWidget *w, guint data)
 void
 runmode(GtkWidget *w, guint data)
 {
+  if (fixing_widgets) return;
   scope.run = data;
   clear();
 }
@@ -685,6 +686,15 @@ static GtkItemFactoryEntry menu_items[] =
 
   {"/Scope", NULL, NULL, 0, "<Branch>"},
   {"/Scope/tear", NULL, NULL, 0, "<Tearoff>"},
+  {"/Scope/Run", NULL, runmode, 1, "<RadioItem>"},
+  {"/Scope/Wait", NULL, runmode, 2, "/Scope/Run"},
+  {"/Scope/Stop", NULL, runmode, 0, "/Scope/Wait"},
+  {"/Scope/sep", NULL, NULL, 0, "<Separator>"},
+  {"/Scope/Slower Time Base", NULL, hit_key, '9', NULL},
+  {"/Scope/Faster Time Base", NULL, hit_key, '0', NULL},
+  {"/Scope/Slower Sample Rate", NULL, hit_key, '(', NULL},
+  {"/Scope/Faster Sample Rate", NULL, hit_key, ')', NULL},
+  {"/Scope/sep", NULL, NULL, 0, "<Separator>"},
   {"/Scope/Refresh", NULL, hit_key, '\n', NULL},
   {"/Scope/Plot Mode/tear", NULL, NULL, 0, "<Tearoff>"},
   {"/Scope/Plot Mode/Point", NULL, plotmode, 0, "<RadioItem>"},
@@ -701,15 +711,6 @@ static GtkItemFactoryEntry menu_items[] =
   {"/Scope/Graticule/Minor Divisions", NULL, graticule, 3, "/Scope/Graticule/None"},
   {"/Scope/Graticule/Minor & Major", NULL, graticule, 4, "/Scope/Graticule/Minor Divisions"},
   {"/Scope/Cursors", NULL, hit_key, '\'', "<CheckItem>"},
-
-  {"/<<", NULL, hit_key, '9', NULL},
-  {"/<", NULL, hit_key, '(', NULL},
-  {"/>", NULL, hit_key, ')', NULL},
-  {"/>> ", NULL, hit_key, '0', NULL},
-
-  {"/Run", NULL, runmode, 1, NULL},
-  {"/Wait", NULL, runmode, 2, NULL},
-  {"/Stop", NULL, runmode, 0, NULL},
 
   {"/Help", NULL, NULL, 0, "<LastBranch>"},
   {"/Help/Keys&Info", NULL, hit_key, '?', "<CheckItem>"},
@@ -839,6 +840,24 @@ fix_widgets()
     gtk_widget_set_sensitive
       (GTK_WIDGET(gtk_item_factory_get_item(factory, p->path)),
        scope.trige != 0);
+  }
+
+  if ((p = finditem("/Scope/Stop")) && scope.run == 0) {
+    gtk_check_menu_item_set_active
+      (GTK_CHECK_MENU_ITEM
+       (gtk_item_factory_get_item(factory, p->path)), TRUE);
+  }
+
+  if ((p = finditem("/Scope/Run")) && scope.run == 1) {
+    gtk_check_menu_item_set_active
+      (GTK_CHECK_MENU_ITEM
+       (gtk_item_factory_get_item(factory, p->path)), TRUE);
+  }
+
+  if ((p = finditem("/Scope/Wait")) && scope.run == 2) {
+    gtk_check_menu_item_set_active
+      (GTK_CHECK_MENU_ITEM
+       (gtk_item_factory_get_item(factory, p->path)), TRUE);
   }
 
   if ((p = finditem("/Scope/Plot Mode/Point"))) {
