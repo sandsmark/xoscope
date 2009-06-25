@@ -1,12 +1,12 @@
 EXTRA_DIST = gtkdatabox_marshal.list
 
-lib_LTLIBRARIES		= libgtkdatabox.la
+noinst_LTLIBRARIES		= libgtkdatabox.la
 libgtkdatabox_la_SOURCES= \
 			gtkdatabox.c\
 			gtkdatabox_marshal.c\
 			gtkdatabox_xyc_graph.c\
 			gtkdatabox_graph.c\
- 			gtkdatabox_points.c\
+			gtkdatabox_points.c\
                         gtkdatabox_lines.c\
                         gtkdatabox_bars.c\
                         gtkdatabox_grid.c\
@@ -19,12 +19,12 @@ libgtkdatabox_la_LDFLAGS= \
 			@GTK_LIBS@
 
 
-include_HEADERS		= \
+noinst_HEADERS		= \
 			gtkdatabox.h\
 			gtkdatabox_marshal.h\
 			gtkdatabox_graph.h\
 			gtkdatabox_xyc_graph.h\
- 			gtkdatabox_points.h\
+			gtkdatabox_points.h\
                         gtkdatabox_lines.h\
                         gtkdatabox_bars.h\
                         gtkdatabox_grid.h\

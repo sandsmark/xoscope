@@ -1,4 +1,19 @@
 
+NOTICE
+
+This isn't an actual gtkdatabox distribution.  I ripped the gtk
+directory out of the distribution and have deleted almost everything
+else.  I did this because the gtkdatabox API fluctuates, so there is
+no way to code against a 'system' version.  I've also made some
+little changes of my own...
+
+					Brent Baccala
+					June 25, 2009
+
+
+END NOTICE
+
+
                             GtkDatabox
 
 ------------------------------------------------------------------

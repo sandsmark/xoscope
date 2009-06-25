@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 
-# @(#)$Id: Makefile.am,v 2.10 2009/01/17 07:45:30 baccala Exp $
+# @(#)$Id: Makefile.am,v 2.11 2009/06/25 04:05:50 baccala Exp $
 
 # Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
 
@@ -48,7 +48,7 @@ GTKDATABOX_LIBS = $(top_builddir)/gtkdatabox-0.6.0.0/gtk/.libs/libgtkdatabox.a
 # trick used in things like comedi.c (see comments there) won't work
 # for a library.  So we put .o files in.
 
-SUBDIRS = gtkdatabox-0.6.0.0
+SUBDIRS = gtkdatabox-0.6.0.0/gtk
 INCLUDES = @GTK_CFLAGS@ $(GTKDATABOX_CFLAGS)
 GUI_LIB = callbacks.c callbacks.h interface.c interface.h support.c support.h
 
