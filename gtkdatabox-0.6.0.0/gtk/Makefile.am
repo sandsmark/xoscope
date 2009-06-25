@@ -1,7 +1,6 @@
-EXTRA_DIST = gtkdatabox_marshal.list
 
-noinst_LTLIBRARIES		= libgtkdatabox.la
-libgtkdatabox_la_SOURCES= \
+noinst_LIBRARIES		= libgtkdatabox.a
+libgtkdatabox_a_SOURCES= \
 			gtkdatabox.c\
 			gtkdatabox_marshal.c\
 			gtkdatabox_xyc_graph.c\
@@ -12,12 +11,6 @@ libgtkdatabox_la_SOURCES= \
                         gtkdatabox_grid.c\
                         gtkdatabox_cross_simple.c\
 			gtkdatabox_marker.c
-
-libgtkdatabox_la_LDFLAGS= \
-		        -version-info $(LT_CURRENT)\
-			-release $(LT_RELEASE)\
-			@GTK_LIBS@
-
 
 noinst_HEADERS		= \
 			gtkdatabox.h\

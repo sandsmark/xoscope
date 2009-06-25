@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 
-# @(#)$Id: Makefile.am,v 2.11 2009/06/25 04:05:50 baccala Exp $
+# @(#)$Id: Makefile.am,v 2.12 2009/06/25 04:13:48 baccala Exp $
 
 # Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
 
@@ -37,7 +37,7 @@ comedisrc =
 endif
 
 GTKDATABOX_CFLAGS = -I $(top_srcdir)/gtkdatabox-0.6.0.0/gtk
-GTKDATABOX_LIBS = $(top_builddir)/gtkdatabox-0.6.0.0/gtk/.libs/libgtkdatabox.a
+GTKDATABOX_LIBS = $(top_builddir)/gtkdatabox-0.6.0.0/gtk/libgtkdatabox.a
 
 # Some bit of explaination is needed here for GUI_LIB.  automake won't
 # let us include source files in a subdirectory on a _SOURCES line,
