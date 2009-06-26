@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 
-# @(#)$Id: Makefile.am,v 2.13 2009/06/26 06:46:43 baccala Exp $
+# @(#)$Id: Makefile.am,v 2.14 2009/06/26 19:00:03 baccala Exp $
 
 # Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
 
@@ -11,7 +11,7 @@
 man_MANS = xoscope.1
 
 noinst_HEADERS = com_gtk.h display.h file.h oscope.h bitscope.h	\
-config.h fft.h func.h proscope.h
+config.h fft.h func.h proscope.h xoscope.rc.h
 
 bin_PROGRAMS = xoscope
 
@@ -25,7 +25,7 @@ bin_PROGRAMS = xoscope
 
 EXTRA_DIST = $(man_MANS) $(noinst_HEADERS) \
 README.f51 TODO TODO.old audio.dat bitscope.dat 	\
-count.dat ofreq.ini oscope.dat oscope.lsm	\
+count.dat ofreq.ini oscope.dat oscope.lsm xoscope.rc	\
 patch.f51 proscope.dat xoscope.glade xoscope.gladep \
 hardware/HARDWARE hardware/buff.fig hardware/buff.ps \
 hardware/buff2.fig hardware/buff2.ps hardware/pcb.fig hardware/pcb.ps \
@@ -67,7 +67,7 @@ xoscope_LDADD = @GTK_LIBS@ $(GTKDATABOX_LIBS)
 # I compile in the rc file so I don't have to worry about what happens
 # if it can't be found at runtime.
 
-xoscope.rc.h: xoscope.rc
+xoscope.rc.h: $(top_srcdir)/xoscope.rc
 	echo "char * xoscope_rc[] = {" > $@
 	sed -e 's/"/\\"/g' -e 's/^/"/' -e 's/$$/",/' $< >> $@
 	echo "NULL };" >> $@
