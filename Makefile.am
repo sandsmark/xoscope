@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 
-# @(#)$Id: Makefile.am,v 2.12 2009/06/25 04:13:48 baccala Exp $
+# @(#)$Id: Makefile.am,v 2.13 2009/06/26 06:46:43 baccala Exp $
 
 # Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
 
@@ -15,9 +15,13 @@ config.h fft.h func.h proscope.h
 
 bin_PROGRAMS = xoscope
 
-pkglibexecdir = $(libexecdir)/@PACKAGE@
-pkglibexec_PROGRAMS = offt
-pkglibexec_SCRIPTS = operl ofreq.ini
+# Used to install these auxiliary programs, but I want to depreciate
+# them.  Figure how to wrap their functionality into main program
+# instead.
+
+# pkglibexecdir = $(libexecdir)/@PACKAGE@
+# pkglibexec_PROGRAMS = offt
+# pkglibexec_SCRIPTS = operl ofreq.ini
 
 EXTRA_DIST = $(man_MANS) $(noinst_HEADERS) \
 README.f51 TODO TODO.old audio.dat bitscope.dat 	\
@@ -55,10 +59,18 @@ GUI_LIB = callbacks.c callbacks.h interface.c interface.h support.c support.h
 xoscope_SOURCES = $(src) $(comedisrc) $(GUI_LIB) com_gtk.c gr_gtk.c sc_linux_gtk.c
 xoscope_LDADD = @GTK_LIBS@ $(GTKDATABOX_LIBS)
 
-offt_SOURCES = offt.c fft.c realfft.c
+# offt_SOURCES = offt.c fft.c realfft.c
 
 # xy_SOURCES = com_gtk.c xy_gtk.c xy.c
 # xy_LDADD = @GTK_LIBS@
+
+# I compile in the rc file so I don't have to worry about what happens
+# if it can't be found at runtime.
+
+xoscope.rc.h: xoscope.rc
+	echo "char * xoscope_rc[] = {" > $@
+	sed -e 's/"/\\"/g' -e 's/^/"/' -e 's/$$/",/' $< >> $@
+	echo "NULL };" >> $@
 
 install-data-local:
 	@$(NORMAL_INSTALL)

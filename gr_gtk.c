@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: gr_gtk.c,v 2.15 2009/06/25 18:09:52 baccala Exp $
+ * @(#)$Id: gr_gtk.c,v 2.16 2009/06/26 06:46:43 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -25,6 +25,8 @@
 #include "func.h"
 #include "file.h"
 #include "com_gtk.h"
+
+#include "xoscope.rc.h"
 
 char my_filename[FILENAME_MAX] = "";
 GdkFont *font;
@@ -1188,7 +1190,18 @@ GtkWidget * create_main_window();
 void
 init_widgets()
 {
-  gtk_rc_parse("xoscope.rc");
+  char ** xoscope_rc_ptr = xoscope_rc;
+
+  /* I don't like the added complexity of having to install rc files
+   * (and the related problems if they can't be found), so instead of
+   * loading 'xoscope.rc', it gets compiled into the program and
+   * loaded as a series of strings.
+   */
+
+  /* gtk_rc_parse("xoscope.rc"); */
+  for (xoscope_rc_ptr=xoscope_rc; *xoscope_rc_ptr != NULL; xoscope_rc_ptr++) {
+    gtk_rc_parse_string(*xoscope_rc_ptr);
+  }
 
   glade_window = create_main_window();
 
