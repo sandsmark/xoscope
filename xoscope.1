@@ -1,4 +1,4 @@
-.\" @(#)$Id: xoscope.1,v 2.2 2009/01/06 22:14:18 baccala Exp $
+.\" @(#)$Id: xoscope.1,v 2.3 2009/06/26 05:18:48 baccala Exp $
 .\"
 .\" Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
 .\"
@@ -117,12 +117,8 @@ present, it will appear to have no effect.
 .B *
 Different behavior for different input devices
 
-For the soundcard, this key cycles the sound card DMA divisor: 4, 2,
-1.  The sound driver will divide it's DMA buffer by this factor.  The
-value 4 usually gives the fastest display rate.
-
 Under EsounD, this value instead determines whether the connection to
-EsounD will block (4) or not (2 or 1).  Blocking mode is nicest to CPU
+EsounD will block or not.  Blocking mode is nicest to CPU
 usage but the
 .B xoscope
 interface will not respond when the there is no sound stream coming
@@ -130,6 +126,9 @@ from EsounD.  Nonblocking mode will let
 .B xoscope
 be responsive whether sound is available or not, but will consume all
 available CPU cycles.
+
+Under COMEDI, this key toggles between different analog reference
+points (ground, differential, or common).
 
 .TP 0.5i
 .B ^
@@ -335,12 +334,6 @@ separated by colons: first[:second[:on?]].  First is the sample
 position of the first cursor.  Second is the sample position of the
 second cursor.  The final field is weather the manual cursors are
 displayed (1) or the not displayed (0).
-
-.TP 0.5i
-.B -d <dma divisor>
-Divisor for sound card DMA: 1, 2, or 4.  The sound driver will divide
-it's DMA buffer by this factor.  The value 4 usually gives the fastest
-display rate.
 
 .TP 0.5i
 .B -p <type>

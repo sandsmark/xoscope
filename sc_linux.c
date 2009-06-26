@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: sc_linux.c,v 2.3 2009/01/15 07:05:59 baccala Exp $
+ * @(#)$Id: sc_linux.c,v 2.4 2009/06/26 05:18:48 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -36,8 +36,6 @@
 
 static int snd = -2;		/* file descriptor for /dev/dsp */
 static int esd = -2;		/* file descriptor for ESD */
-
-static int dma = 4;		/* 1, 2 or 4 */
 
 #ifdef HAVE_LIBESD
 static int esdblock = 0;	/* 1 to block ESD; 0 to non-block */
@@ -168,9 +166,6 @@ open_sound_card(void)
     snd_errormsg2 = strerror(errno);
     return 0;
   }
-
-  parm = dma;			/* set DMA buffer size */
-  check_status_ioctl(snd, SOUND_PCM_SUBDIVIDE, &parm, __LINE__);
 
   parm = chan;			/* set mono/stereo */
   //check_status_ioctl(snd, SOUND_PCM_WRITE_CHANNELS, &parm, __LINE__);
@@ -494,6 +489,10 @@ static int esd_set_option(char *option)
   }
 }
 
+/* The GUI interface in sc_linux_gtk.c depends on the esdrecord option
+ * being number 1.
+ */
+
 static char * esd_save_option(int i)
 {
   static char buf[32];
@@ -510,26 +509,15 @@ static char * esd_save_option(int i)
 
 #endif
 
-/* soundcard option key 1 (*) - toggle DMA mode */
-
-static int option1_sc(void)
-{
-  dma >>= 1;
-  if (dma < 1)
-    dma = 4;
-
-  return 1;
-}
-
+#ifdef DEBUG
 static char * option1str_sc(void)
 {
   static char string[16];
 
-  sprintf(string, "DMA:%d", dma);
+  sprintf(string, "opt1");
   return string;
 }
 
-#ifdef DEBUG
 static char * option2str_sc(void)
 {
   static char string[16];
@@ -543,16 +531,13 @@ static int sc_set_option(char *option)
 {
   if (sscanf(option, "rate=%d", &sound_card_rate) == 1) {
     return 1;
-  } else if (sscanf(option, "dma=%d", &dma) == 1) {
+  } else if (strcmp(option, "dma=") == 0) {
+    /* a deprecated option, return 1 so we don't indicate error */
     return 1;
   } else {
     return 0;
   }
 }
-
-/* The GUI interface in sc_linux_gtk.c depends on the DMA option
- * being number 1.
- */
 
 static char * sc_save_option(int i)
 {
@@ -561,10 +546,6 @@ static char * sc_save_option(int i)
   switch (i) {
   case 0:
     snprintf(buf, sizeof(buf), "rate=%d", sound_card_rate);
-    return buf;
-
-  case 1:
-    snprintf(buf, sizeof(buf), "dma=%d", dma);
     return buf;
 
   default:
@@ -607,15 +588,18 @@ DataSrc datasrc_sc = {
   fd,
   get_data,
   snd_status_str,
-  option1_sc,
-  option1str_sc,
-  NULL,  /* option2, */
 #ifdef DEBUG
-  option2str_sc,  /* option2str, */
-#else
   NULL,
+  option1str_sc,
+  NULL,
+  option2str_sc,
+#else
+  NULL,  /* option1, */
+  NULL,  /* option1str, */
+  NULL,  /* option2, */
+  NULL,  /* option2str, */
 #endif
   sc_set_option,
   sc_save_option,
-  sc_gtk_option_dialog,
+  NULL,  /* gtk_options */
 };
