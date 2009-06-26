@@ -228,40 +228,6 @@ void comedi_save_options(void)
   clear();
 }
 
-void
-comedi_on_ok                           (GtkButton       *button,
-                                        gpointer         user_data)
-{
-  comedi_save_options();
-  gtk_widget_destroy(window);
-  menu = NULL;
-}
-
-
-void
-comedi_on_apply                        (GtkButton       *button,
-                                        gpointer         user_data)
-{
-  comedi_save_options();
-  device_changed();
-}
-
-
-void
-on_bufsize_custom_clicked              (GtkButton       *button,
-                                        gpointer         user_data)
-{
-  gtk_widget_set_sensitive(GTK_WIDGET(LU("bufsize_entry")), TRUE);
-}
-
-
-void
-on_bufsize_default_clicked             (GtkButton       *button,
-                                        gpointer         user_data)
-{
-  gtk_widget_set_sensitive(GTK_WIDGET(LU("bufsize_entry")), FALSE);
-}
-
 #if 0
 
 void
@@ -285,6 +251,44 @@ on_device_entry_changed                (GtkEditable     *editable,
 #endif
 
 #endif
+
+void
+comedi_on_ok                           (GtkButton       *button,
+                                        gpointer         user_data)
+{
+#ifdef HAVE_LIBCOMEDI
+  comedi_save_options();
+  gtk_widget_destroy(window);
+  menu = NULL;
+#endif
+}
+
+
+void
+comedi_on_apply                        (GtkButton       *button,
+                                        gpointer         user_data)
+{
+#ifdef HAVE_LIBCOMEDI
+  comedi_save_options();
+  device_changed();
+#endif
+}
+
+
+void
+on_bufsize_custom_clicked              (GtkButton       *button,
+                                        gpointer         user_data)
+{
+  gtk_widget_set_sensitive(GTK_WIDGET(LU("bufsize_entry")), TRUE);
+}
+
+
+void
+on_bufsize_default_clicked             (GtkButton       *button,
+                                        gpointer         user_data)
+{
+  gtk_widget_set_sensitive(GTK_WIDGET(LU("bufsize_entry")), FALSE);
+}
 
 /* This part implements the Bitscope dialog window. */
 
