@@ -1,3 +1,22 @@
+	NEW for 2.0	Released June 2009
+	===========	==================
+
+* Completely X Windows / GTK 2.0 based
+
+* Ability to scroll a signal too wide to fit on the screen
+
+
+	NEW for 1.10	Released June 2003
+	============	==================
+
+* COMEDI support - http://www.comedi.org/
+
+* Ability to use parallel port for digital data collection
+
+* Improved performance under X Windows
+
+* More modular data source interface
+
 	NEW for 1.8	Released May 2001
 	===========	=================
 
