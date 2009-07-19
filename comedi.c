@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: comedi.c,v 2.4 2009/01/17 06:44:55 baccala Exp $
+ * @(#)$Id: comedi.c,v 2.5 2009/07/19 05:07:49 baccala Exp $
  *
  * Author: Brent Baccala <baccala@freesoft.org>
  *
@@ -27,7 +27,6 @@
 #include <sys/ioctl.h>
 #include <sys/time.h>
 #include <sys/poll.h>
-#include <asm/page.h>
 #include <comedilib.h>
 #include "oscope.h"		/* program defaults */
 #include "func.h"
@@ -175,16 +174,16 @@ static int start_comedi_running(void)
 
   if (active_channels == 0) return 0;
 
-  if (comedi_bufsize > 0) {
-    /* comedi 0.7.66 has a bug in its buffer size handling.  Not only
-     * does it fail to round up to a multiple of PAGE_SIZE correctly,
-     * but if you attempt to set a buffer smaller than PAGE_SIZE, it
-     * will deallocate the buffer and you'll never get it back without
-     * re-configuring the device.  We round up to PAGE_SIZE here to
-     * avoid the bug.  This is the only reason we need <asm/page.h> in
-     * our include list.
+  if ((comedi_bufsize > 0) && (comedi_get_version_code(comedi_dev) > 0x0748)) {
+    /* comedi versions pre-0.7.73 have a bug in their buffer size
+     * handling.  Not only does it fail to round up to a multiple of
+     * PAGE_SIZE correctly, but if you attempt to set a buffer smaller
+     * than PAGE_SIZE, it will deallocate the buffer and you'll never
+     * get it back without re-configuring the device.  I used to round
+     * up to PAGE_SIZE here to avoid the bug, but that requires
+     * <asm/page.h> to be present on the system.  Easier is to just
+     * skip setting buffer size on pre-0.7.73 comedi.
      */
-    comedi_bufsize = (comedi_bufsize + PAGE_SIZE - 1) & PAGE_MASK;
     ret = comedi_set_buffer_size(comedi_dev, comedi_subdevice, comedi_bufsize);
     if (ret < 0) {
       comedi_error = comedi_errno();
