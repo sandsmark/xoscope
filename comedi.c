@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: comedi.c,v 2.5 2009/07/19 05:07:49 baccala Exp $
+ * @(#)$Id: comedi.c,v 2.6 2009/07/19 05:15:53 baccala Exp $
  *
  * Author: Brent Baccala <baccala@freesoft.org>
  *
@@ -504,7 +504,11 @@ open_comedi(void)
     unsigned int chan;
     int ret;
 
+#ifdef COMEDI_GET_CMD_GENERIC_TIMED_TAKES_5_ARGS
+    ret = comedi_get_cmd_generic_timed(comedi_dev, comedi_subdevice, &cmd,0,0);
+#else
     ret = comedi_get_cmd_generic_timed(comedi_dev, comedi_subdevice, &cmd, 0);
+#endif
 
     if (ret >= 0) {
       chan = CR_PACK(4,0,AREF_DIFF);
