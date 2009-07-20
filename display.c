@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 2.24 2009/01/17 20:11:47 baccala Exp $
+ * @(#)$Id: display.c,v 2.25 2009/07/20 21:34:02 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -22,6 +22,7 @@
 
 #include "com_gtk.h"
 #include <glib.h>
+#include <glib-object.h>
 #include <gtk/gtk.h>
 #include <gtkdatabox.h>
 #include <gtkdatabox_points.h>
@@ -329,6 +330,11 @@ void update_text(void)
 
       sprintf(widget, "Ch%1d_source_label", i+1);
       gtk_label_set_text(GTK_LABEL(LU(widget)), ch[i].signal->name);
+
+      // Not much point in doing this, since the rc file doesn't give
+      // us enough control over insensitive rendering.
+
+      // gtk_widget_set_sensitive(LU(widget), ch[i].show);
 
     } else {
 
@@ -658,7 +664,7 @@ void clear_databox(void)
   for (j = 0 ; j < CHANNELS ; j++) {
     Channel *p = &ch[j];
     for (bit = 0; bit < 16 ; bit++) {
-      while (p->signalline[bit] != NULL) {
+      if (p->signalline[bit] != NULL) {
 	free_signalline(p->signalline[bit]);
 	p->signalline[bit] = NULL;
       }
@@ -923,7 +929,7 @@ int max(int a, int b)
 void
 draw_data()
 {
-  static int i, j, mult, div, bit, start, end;
+  static int i, j, bit, start, end;
   gfloat y;
   int bitoff;
   gfloat num, l;
@@ -933,9 +939,22 @@ draw_data()
   gchar widget[80];
   GtkStyle *style;
   GdkColor gcolor;
+  GValue yfactor, yoffset;
+
+  bzero(&yfactor, sizeof(GValue));
+  g_value_init(&yfactor, G_TYPE_DOUBLE);
+  bzero(&yoffset, sizeof(GValue));
+  g_value_init(&yoffset, G_TYPE_DOUBLE);
 
   for (j = 0 ; j < CHANNELS ; j++) { /* plot each visible channel */
     p = &ch[j];
+
+    if (!p->bits)		/* analog display mode: draw one line */
+      start = end = -1;
+    else {			/* logic analyzer mode: draw bits lines */
+      start = 0;
+      end = p->bits - 1;
+    }
 
     if (p->show && p->signal) {
 
@@ -947,8 +966,8 @@ draw_data()
       style = gtk_widget_get_style(GTK_WIDGET(LU(widget)));
       gcolor = style->fg[GTK_STATE_NORMAL];
 
-      mult = p->mult;
-      div = p->div;
+      g_value_set_double(&yfactor, (double)p->mult / p->div / 240);
+      g_value_set_double(&yoffset, (double)p->pos);
 
       samp = p->signal->data;
 
@@ -1018,13 +1037,6 @@ draw_data()
 	p->bits = p->signal->bits;
       }
 #endif
-
-      if (!p->bits)		/* analog display mode: draw one line */
-	start = end = -1;
-      else {			/* logic analyzer mode: draw bits lines */
-	start = 0;
-	end = p->bits - 1;
-      }
 
       for (bit = start ; bit <= end ; bit++) {
 
@@ -1109,9 +1121,8 @@ draw_data()
 	   * Screen used to be 480 y-coords tall; now it's -1 to +1
 	   */
 
-	  y = p->pos + (float)(bit < 0 ? samp[i]
-			       : (bitoff - (samp[i] & (1 << bit) ? 0 : 8)))
-	    * mult / div / 240;
+	  y = (float)(bit < 0 ? samp[i]
+		      : (bitoff - (samp[i] & (1 << bit) ? 0 : 8)));
 
 	  if (scope.mode >= 4 && i > 0) {
 
@@ -1169,6 +1180,23 @@ draw_data()
 	  gtk_databox_graph_add (GTK_DATABOX (databox), sl->next->graph);
 	}
 
+	/* Run through all of the SignalLines associated with this
+	 * trace and set the y-factor and y-offset for all of them.
+	 * This ensures that if we're in accumulate mode and change
+	 * the scale or position of the channel, all of the
+	 * accumulated traces move together.  Not quite what you'd
+	 * expect from a real scope, but I think this makes the most
+	 * sense.
+	 */
+
+	while (sl != NULL) {
+	  if (sl->graph != NULL) {
+	    g_object_set_property((GObject *) sl->graph, "y-factor", &yfactor);
+	    g_object_set_property((GObject *) sl->graph, "y-offset", &yoffset);
+	  }
+	  sl = sl->next;
+	}
+
       }
 
       p->old_frame = p->signal->frame;
@@ -1180,7 +1208,26 @@ draw_data()
       DrawLine(h_points - 100, off, h_points - 90, off);
 #endif
     }
+
+    /* If we're not showing a channel, make sure that we've removed
+     * any traces that might still be lingering around on the screen.
+     */
+
+    if (! p->show) {
+      for (bit = start ; bit <= end ; bit++) {
+	for (sl = p->signalline[bit < 0 ? 0 : bit]; sl != NULL; sl = sl->next) {
+	  if (sl->graph != NULL) {
+	    gtk_databox_graph_remove(GTK_DATABOX(databox), sl->graph);
+	    g_object_unref(G_OBJECT(sl->graph));
+	    sl->graph = NULL;
+	  }
+	}
+      }
+    }
   }
+
+  g_value_unset(&yoffset);
+  g_value_unset(&yfactor);
 }
 
 /* calculate any math and plot the results and the graticule */

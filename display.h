@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.h,v 2.4 2009/01/15 03:57:20 baccala Exp $
+ * @(#)$Id: display.h,v 2.5 2009/07/20 21:34:02 baccala Exp $
  *
  * Copyright (C) 1996 - 1999 Tim Witham <twitham@quiknet.com>
  *
@@ -25,6 +25,7 @@ extern char fonts[];
 void	init_widgets()		/* exported from display.c */;
 void	mainloop();
 void	update_text();
+void	roundoff_multipliers(Channel *);
 void	timebase_changed(void);
 void	clear();
 void	message(char *);

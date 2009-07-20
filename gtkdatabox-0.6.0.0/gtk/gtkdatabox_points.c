@@ -1,4 +1,6 @@
-/* GtkDatabox - An extension to the gtk+ library
+/* -*- mode: C; c-basic-offset: 3; -*-
+ *
+ * GtkDatabox - An extension to the gtk+ library
  * Copyright (C) 1998 - 2006  Dr. Roland Bock
  *
  * This program is free software; you can redistribute it and/or
@@ -21,12 +23,66 @@
 static void gtk_databox_points_real_draw (GtkDataboxGraph *points, 
                                   GtkDataboxCanvas *canvas);
 
+/* IDs of properties */
+enum
+{
+   Y_FACTOR = 1,
+   Y_OFFSET
+};
+
 struct _GtkDataboxPointsPrivate
 {
    GdkPoint *data;
+   double y_factor, y_offset;
 };
 
 static gpointer parent_class = NULL;
+
+static void
+gtk_databox_points_set_property (GObject      *object,
+				 guint         property_id,
+				 const GValue *value,
+				 GParamSpec   *pspec)
+{
+   GtkDataboxPoints *points = GTK_DATABOX_POINTS (object);
+
+   switch (property_id) 
+      {
+      case Y_FACTOR:
+	 points->priv->y_factor = g_value_get_double (value);
+         break;
+      case Y_OFFSET:
+	 points->priv->y_offset = g_value_get_double (value);
+         break;
+      default:
+        /* We don't have any other property... */
+        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, property_id, pspec);
+        break;
+      }
+}
+
+static void
+gtk_databox_points_get_property (GObject      *object,
+				 guint         property_id,
+				 GValue       *value,
+				 GParamSpec   *pspec)
+{
+   GtkDataboxPoints *points = GTK_DATABOX_POINTS (object);
+
+   switch (property_id) 
+      {
+      case Y_FACTOR:
+	 g_value_set_double (value, points->priv->y_factor);
+         break;
+      case Y_OFFSET:
+	 g_value_set_double (value, points->priv->y_offset);
+         break;
+      default:
+         /* We don't have any other property... */
+         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, property_id, pspec);
+         break;
+      }
+}
 
 static void points_finalize (GObject *object) 
 {
@@ -46,11 +102,34 @@ gtk_databox_points_class_init (gpointer g_class,
    GObjectClass *gobject_class = G_OBJECT_CLASS (g_class);
    GtkDataboxGraphClass *graph_class = GTK_DATABOX_GRAPH_CLASS (g_class);
    GtkDataboxPointsClass *klass = GTK_DATABOX_POINTS_CLASS (g_class);
+   GParamSpec *param_spec;
 
    parent_class = g_type_class_peek_parent (klass);
    
+   gobject_class->set_property = gtk_databox_points_set_property;
+   gobject_class->get_property = gtk_databox_points_get_property;
    gobject_class->finalize     = points_finalize;
 
+   param_spec = g_param_spec_double ("y-factor",
+				     "y-factor",
+				     "Number to multiply y-coordinates by",
+				     -G_MAXDOUBLE,
+				     G_MAXDOUBLE,
+				     1.0, /* default value */
+				     G_PARAM_READWRITE);
+
+   g_object_class_install_property (gobject_class, Y_FACTOR, param_spec);
+   
+   param_spec = g_param_spec_double ("y-offset",
+				     "y-offset",
+				     "Number to offset y-coordinates by",
+				     -G_MAXDOUBLE,
+				     G_MAXDOUBLE,
+				     0.0, /* default value */
+				     G_PARAM_READWRITE);
+
+   g_object_class_install_property (gobject_class, Y_OFFSET, param_spec);
+   
    graph_class->draw = gtk_databox_points_real_draw;
 }
 
@@ -71,6 +150,8 @@ gtk_databox_points_instance_init (GTypeInstance   *instance,
    GtkDataboxPoints *points = GTK_DATABOX_POINTS (instance);
 
    points->priv = g_new0 (GtkDataboxPointsPrivate, 1);
+   points->priv->y_factor = 1.0;
+   points->priv->y_offset = 0.0;
    
    g_signal_connect (points, "notify::length",
                      G_CALLBACK (gtk_databox_points_complete), NULL);
@@ -153,8 +234,9 @@ gtk_databox_points_real_draw (GtkDataboxGraph *graph,
         (gint16) ((*X - canvas->top_left_visible.x) 
                    * canvas->translation_factor.x);
       data->y =
-        (gint16) ((*Y - canvas->top_left_visible.y) 
-                   * canvas->translation_factor.y);
+        (gint16) (((*Y  * points->priv->y_factor)
+		   + points->priv->y_offset - canvas->top_left_visible.y) 
+		  * canvas->translation_factor.y);
    }
 
    data = points->priv->data;

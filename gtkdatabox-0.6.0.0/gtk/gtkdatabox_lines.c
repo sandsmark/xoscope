@@ -1,4 +1,6 @@
-/* GtkDatabox - An extension to the gtk+ library
+/* -*- mode: C; c-basic-offset: 3; -*-
+ *
+ * GtkDatabox - An extension to the gtk+ library
  * Copyright (C) 1998 - 2006  Dr. Roland Bock
  *
  * This program is free software; you can redistribute it and/or
@@ -21,12 +23,66 @@
 static void gtk_databox_lines_real_draw (GtkDataboxGraph *lines, 
                                   GtkDataboxCanvas *canvas);
 
+/* IDs of properties */
+enum
+{
+   Y_FACTOR = 1,
+   Y_OFFSET
+};
+
 struct _GtkDataboxLinesPrivate
 {
    GdkPoint *data;
+   double y_factor, y_offset;
 };
 
 static gpointer parent_class = NULL;
+
+static void
+gtk_databox_lines_set_property (GObject      *object,
+				guint         property_id,
+				const GValue *value,
+				GParamSpec   *pspec)
+{
+   GtkDataboxLines *lines = GTK_DATABOX_LINES (object);
+
+   switch (property_id) 
+      {
+      case Y_FACTOR:
+	 lines->priv->y_factor = g_value_get_double (value);
+         break;
+      case Y_OFFSET:
+	 lines->priv->y_offset = g_value_get_double (value);
+         break;
+      default:
+        /* We don't have any other property... */
+        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, property_id, pspec);
+        break;
+      }
+}
+
+static void
+gtk_databox_lines_get_property (GObject      *object,
+				guint         property_id,
+				GValue       *value,
+				GParamSpec   *pspec)
+{
+   GtkDataboxLines *lines = GTK_DATABOX_LINES (object);
+
+   switch (property_id) 
+      {
+      case Y_FACTOR:
+	 g_value_set_double (value, lines->priv->y_factor);
+         break;
+      case Y_OFFSET:
+	 g_value_set_double (value, lines->priv->y_offset);
+         break;
+      default:
+         /* We don't have any other property... */
+         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, property_id, pspec);
+         break;
+      }
+}
 
 static void lines_finalize (GObject *object) 
 {
@@ -46,11 +102,34 @@ gtk_databox_lines_class_init (gpointer g_class,
    GObjectClass *gobject_class = G_OBJECT_CLASS (g_class);
    GtkDataboxGraphClass *graph_class = GTK_DATABOX_GRAPH_CLASS (g_class);
    GtkDataboxLinesClass *klass = GTK_DATABOX_LINES_CLASS (g_class);
+   GParamSpec *param_spec;
 
    parent_class = g_type_class_peek_parent (klass);
    
+   gobject_class->set_property = gtk_databox_lines_set_property;
+   gobject_class->get_property = gtk_databox_lines_get_property;
    gobject_class->finalize     = lines_finalize;
 
+   param_spec = g_param_spec_double ("y-factor",
+				     "y-factor",
+				     "Number to multiply y-coordinates by",
+				     -G_MAXDOUBLE,
+				     G_MAXDOUBLE,
+				     1.0, /* default value */
+				     G_PARAM_READWRITE);
+
+   g_object_class_install_property (gobject_class, Y_FACTOR, param_spec);
+   
+   param_spec = g_param_spec_double ("y-offset",
+				     "y-offset",
+				     "Number to offset y-coordinates by",
+				     -G_MAXDOUBLE,
+				     G_MAXDOUBLE,
+				     0.0, /* default value */
+				     G_PARAM_READWRITE);
+
+   g_object_class_install_property (gobject_class, Y_OFFSET, param_spec);
+   
    graph_class->draw = gtk_databox_lines_real_draw;
 }
 
@@ -71,6 +150,8 @@ gtk_databox_lines_instance_init (GTypeInstance   *instance,
    GtkDataboxLines *lines = GTK_DATABOX_LINES (instance);
 
    lines->priv = g_new0 (GtkDataboxLinesPrivate, 1);
+   lines->priv->y_factor = 1.0;
+   lines->priv->y_offset = 0.0;
    
    g_signal_connect (lines, "notify::length",
                      G_CALLBACK (gtk_databox_lines_complete), NULL);
@@ -155,8 +236,9 @@ gtk_databox_lines_real_draw (GtkDataboxGraph *graph,
         (gint16) ((*X - canvas->top_left_visible.x) 
                    * canvas->translation_factor.x);
       data->y =
-        (gint16) ((*Y - canvas->top_left_visible.y) 
-                   * canvas->translation_factor.y);
+        (gint16) (((*Y  * lines->priv->y_factor)
+		   + lines->priv->y_offset - canvas->top_left_visible.y) 
+		  * canvas->translation_factor.y);
    }
    
    /* More than 2^16 lines will cause X IO error on most XServers

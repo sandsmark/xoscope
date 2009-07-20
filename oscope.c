@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.c,v 2.7 2009/01/15 03:57:20 baccala Exp $
+ * @(#)$Id: oscope.c,v 2.8 2009/07/20 21:34:02 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -427,7 +427,9 @@ handle_key(unsigned char c)
     return;
   } else if (c >= '1' && c <= '0' + CHANNELS) {
     scope.select = (c - '1');	/* select channel */
-    clear();			/* do this in case cursors move; see comments in display.c:drawdata() */
+    // clear();			/* do this in case cursors move; see comments in display.c:drawdata() */
+    show_data();
+    update_text();
     return;
   }
   switch (c) {
@@ -436,11 +438,11 @@ handle_key(unsigned char c)
     break;
   case '\'':			/* toggle manual cursors */
     scope.curs = ! scope.curs;
-    clear();
+    show_data();
     break;
   case '"':			/* reset cursors to first sample */
     scope.cursa = scope.cursb = 1;
-    clear();
+    show_data();
     break;
   case 'q' - 96:		/* -96 is CTRL keys */
     if ((scope.cursa -= displayed_samples / 20) < 1)
@@ -480,7 +482,8 @@ handle_key(unsigned char c)
     } else {
       p->show = 1;
     }
-    clear();
+    show_data();
+    update_text();
     break;
   case '~':
     if ((p->bits += 2) > 16)
@@ -497,26 +500,32 @@ handle_key(unsigned char c)
       p->target_div = scaledown(p->target_div);
     else
       p->target_mult = scaleup(p->target_mult, 100);
-    clear();
+    roundoff_multipliers(p);
+    update_text();
+    show_data();
     break;
   case '{':
     if (p->target_mult > 1)		/* decrease scale */
       p->target_mult = scaledown(p->target_mult);
     else
       p->target_div = scaleup(p->target_div, 100);
-    clear();
+    roundoff_multipliers(p);
+    update_text();
+    show_data();
     break;
   case ']':
-    p->pos -= 0.1;		/* position up */
+    p->pos += 0.1;		/* position up */
     if (p->pos < -1) p->pos = -1;
     if (p->pos * p->pos < 0.0001) p->pos = 0;
-    clear();
+    update_text();
+    show_data();
     break;
   case '[':
-    p->pos += 0.1;		/* position down */
+    p->pos -= 0.1;		/* position down */
     if (p->pos > 1) p->pos = 1;
     if (p->pos * p->pos < 0.0001) p->pos = 0;
-    clear();
+    update_text();
+    show_data();
     break;
   case ';':
     if (scope.select > 1) {	/* next math function */
@@ -644,7 +653,7 @@ handle_key(unsigned char c)
   case '?':
   case '/':
     scope.verbose = !scope.verbose; /* on-screen help */
-    clear();	/* XXX this is done to clear the help messages */
+    update_text();
     break;
   case ' ':
     scope.run++;		/* run / wait / stop */
