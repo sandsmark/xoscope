@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: sc_linux.c,v 2.4 2009/06/26 05:18:48 baccala Exp $
+ * @(#)$Id: sc_linux.c,v 2.5 2009/07/20 21:31:30 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -316,6 +316,8 @@ reset(void)
 
   right_sig.num = 0;
   right_sig.frame ++;
+
+  in_progress = 0;
 }
 
 /* set_width(int)
