@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.c,v 2.8 2009/07/20 21:34:02 baccala Exp $
+ * @(#)$Id: oscope.c,v 2.9 2009/07/20 22:07:37 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -447,34 +447,42 @@ handle_key(unsigned char c)
   case 'q' - 96:		/* -96 is CTRL keys */
     if ((scope.cursa -= displayed_samples / 20) < 1)
       scope.cursa = max_samples - 1;
+    show_data();
     break;
   case 'w' - 96:
     if ((scope.cursa += displayed_samples / 20) >= max_samples)
       scope.cursa = 1;
+    show_data();
     break;
   case 'e' - 96:
     if (--scope.cursa < 1)
       scope.cursa = max_samples - 1;
+    show_data();
     break;
   case 'r' - 96:
     if (++scope.cursa >= max_samples)
       scope.cursa = 1;
+    show_data();
     break;
   case 'a' - 96:
     if ((scope.cursb -= displayed_samples / 20) < 1)
       scope.cursb = max_samples - 1;
+    show_data();
     break;
   case 's' - 96:
     if ((scope.cursb += displayed_samples / 20) >= max_samples)
       scope.cursb = 1;
+    show_data();
     break;
   case 'd' - 96:
     if (--scope.cursb < 1)
       scope.cursb = max_samples - 1;
+    show_data();
     break;
   case 'f' - 96:
     if (++scope.cursb >= max_samples)
       scope.cursb = 1;
+    show_data();
     break;
   case '\t':
     if (p->show) {		/* show / hide channel */

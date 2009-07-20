@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 2.25 2009/07/20 21:34:02 baccala Exp $
+ * @(#)$Id: display.c,v 2.26 2009/07/20 22:07:37 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -946,6 +946,21 @@ draw_data()
   bzero(&yoffset, sizeof(GValue));
   g_value_init(&yoffset, G_TYPE_DOUBLE);
 
+  /* Remove the cursors.  We'll put them back in later if they're
+   * active.
+   */
+
+  if (cursora != NULL) {
+    gtk_databox_graph_remove(GTK_DATABOX(databox), cursora);
+    g_object_unref(G_OBJECT(cursora));
+    cursora = NULL;
+  }
+  if (cursorb != NULL) {
+    gtk_databox_graph_remove(GTK_DATABOX(databox), cursorb);
+    g_object_unref(G_OBJECT(cursorb));
+    cursorb = NULL;
+  }
+
   for (j = 0 ; j < CHANNELS ; j++) { /* plot each visible channel */
     p = &ch[j];
 
@@ -1002,10 +1017,6 @@ draw_data()
        * when we change channels, but at least it makes sure that we
        * don't get doubly drawn cursors if we move to a channel with a
        * different sampling rate.
-       *
-       * I remove and redraw the cursors every time mainly in case
-       * their color changes (silly, I know).  Also, this ensures that
-       * they're always in front of the data.
        */
 
       if (scope.curs && j == scope.select) {
@@ -1013,15 +1024,6 @@ draw_data()
 	cursorbX[0] = cursorbX[1] = l + (scope.cursb-1) * num;
 	cursoraY[0] = cursorbY[0] = -1;
 	cursoraY[1] = cursorbY[1] = +1;
-
-	if (cursora != NULL) {
-	  gtk_databox_graph_remove(GTK_DATABOX(databox), cursora);
-	  g_object_unref(G_OBJECT(cursora));
-	}
-	if (cursorb != NULL) {
-	  gtk_databox_graph_remove(GTK_DATABOX(databox), cursorb);
-	  g_object_unref(G_OBJECT(cursorb));
-	}
 
 	cursora = gtk_databox_lines_new(2, cursoraX, cursoraY, &gcolor, 1);
 	cursorb = gtk_databox_lines_new(2, cursorbX, cursorbY, &gcolor, 1);

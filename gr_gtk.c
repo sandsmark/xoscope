@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: gr_gtk.c,v 2.16 2009/06/26 06:46:43 baccala Exp $
+ * @(#)$Id: gr_gtk.c,v 2.17 2009/07/20 22:07:37 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -1073,6 +1073,7 @@ on_databox_button_press_event          (GtkWidget       *widget,
       scope.cursb = cursor;
     }
 #endif
+    show_data();
   }
 
   return FALSE;
