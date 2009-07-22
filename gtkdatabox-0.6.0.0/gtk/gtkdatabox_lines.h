@@ -56,6 +56,14 @@ extern "C"
 
    typedef struct _GtkDataboxLinesPrivate GtkDataboxLinesPrivate;
    
+   typedef enum
+     {
+       GTK_DATABOX_LINES_PLOT_STYLE_POINT = 0,
+       GTK_DATABOX_LINES_PLOT_STYLE_LINE,
+       GTK_DATABOX_LINES_PLOT_STYLE_STEP
+     }
+   GtkDataboxLinesStyle;
+
    struct _GtkDataboxLines
    {
       GtkDataboxXYCGraph parent;

@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.c,v 2.9 2009/07/20 22:07:37 baccala Exp $
+ * @(#)$Id: oscope.c,v 2.10 2009/07/22 20:11:14 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -646,7 +646,8 @@ handle_key(unsigned char c)
     scope.mode++;		/* point, point accumulate, line, line acc. */
     if (scope.mode > 5)
       scope.mode = 0;
-    clear();
+    update_text();
+    show_data();
     break;
   case ',':
     scope.grat++;		/* graticule off/on/more */

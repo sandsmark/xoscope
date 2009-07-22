@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: gr_gtk.c,v 2.18 2009/07/22 02:30:09 baccala Exp $
+ * @(#)$Id: gr_gtk.c,v 2.19 2009/07/22 20:11:14 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -206,12 +206,22 @@ option_dialog(GtkWidget *w, guint data)
   if (datasrc && datasrc->gtk_options) datasrc->gtk_options();
 }
 
+/* Plot mode works a little different from what it used to, where it
+ * just set 'scope.mode'.  Now we've got a checkbox for 'accumulate'
+ * mode, so we 'set' the scope mode if the argument is even (this is
+ * what get called from the radio buttons now), and toggle accumulate
+ * mode (in bit zero of scope.mode) if the argument is 1.
+ */
+
 void
 plotmode(GtkWidget *w, guint data)
 {
   if (fixing_widgets) return;
-  scope.mode = data;
-  clear();
+  if (data == 1) scope.mode ^= 1;
+  else scope.mode = data | (scope.mode & 1);
+
+  update_text();
+  show_data();
 }
 
 void
@@ -702,11 +712,10 @@ static GtkItemFactoryEntry menu_items[] =
   {"/Scope/Refresh", NULL, hit_key, '\n', NULL},
   {"/Scope/Plot Mode/tear", NULL, NULL, 0, "<Tearoff>"},
   {"/Scope/Plot Mode/Point", NULL, plotmode, 0, "<RadioItem>"},
-  {"/Scope/Plot Mode/Point Accumulate", NULL, plotmode, 1, "/Scope/Plot Mode/Point"},
-  {"/Scope/Plot Mode/Line", NULL, plotmode, 2, "/Scope/Plot Mode/Point Accumulate"},
-  {"/Scope/Plot Mode/Line Accumulate", NULL, plotmode, 3, "/Scope/Plot Mode/Line"},
-  {"/Scope/Plot Mode/Step", NULL, plotmode, 4, "/Scope/Plot Mode/Line Accumulate"},
-  {"/Scope/Plot Mode/Step Accumulate", NULL, plotmode, 5, "/Scope/Plot Mode/Step"},
+  {"/Scope/Plot Mode/Line", NULL, plotmode, 2, "/Scope/Plot Mode/Point"},
+  {"/Scope/Plot Mode/Step", NULL, plotmode, 4, "/Scope/Plot Mode/Line"},
+  {"/Scope/Plot Mode/sep", NULL, NULL, 0, "<Separator>"},
+  {"/Scope/Plot Mode/Accumulate", NULL, plotmode, 1, "<CheckItem>"},
   {"/Scope/Graticule/tear", NULL, NULL, 0, "<Tearoff>"},
   {"/Scope/Graticule/In Front", NULL, graticule, 0, "<RadioItem>"},
   {"/Scope/Graticule/Behind", NULL, graticule, 1, "/Scope/Graticule/In Front"},
@@ -865,10 +874,15 @@ fix_widgets()
   }
 
   if ((p = finditem("/Scope/Plot Mode/Point"))) {
-    p += scope.mode;
+    p += scope.mode/2;
     gtk_check_menu_item_set_active
       (GTK_CHECK_MENU_ITEM
        (gtk_item_factory_get_item(factory, p->path)), TRUE);
+  }
+  if ((p = finditem("/Scope/Plot Mode/Accumulate"))) {
+    gtk_check_menu_item_set_active
+      (GTK_CHECK_MENU_ITEM
+       (gtk_item_factory_get_item(factory, p->path)), scope.mode & 1);
   }
   if ((p = finditem("/Scope/Graticule/In Front"))) {
     q = p + scope.behind;

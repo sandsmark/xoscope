@@ -27,13 +27,15 @@ static void gtk_databox_lines_real_draw (GtkDataboxGraph *lines,
 enum
 {
    Y_FACTOR = 1,
-   Y_OFFSET
+   Y_OFFSET,
+   PLOT_STYLE
 };
 
 struct _GtkDataboxLinesPrivate
 {
    GdkPoint *data;
    double y_factor, y_offset;
+   int plot_style;
 };
 
 static gpointer parent_class = NULL;
@@ -54,6 +56,9 @@ gtk_databox_lines_set_property (GObject      *object,
       case Y_OFFSET:
 	 lines->priv->y_offset = g_value_get_double (value);
          break;
+      case PLOT_STYLE:
+	 lines->priv->plot_style = g_value_get_int (value);
+	 break;
       default:
         /* We don't have any other property... */
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, property_id, pspec);
@@ -77,6 +82,9 @@ gtk_databox_lines_get_property (GObject      *object,
       case Y_OFFSET:
 	 g_value_set_double (value, lines->priv->y_offset);
          break;
+      case PLOT_STYLE:
+	 g_value_set_int (value, lines->priv->plot_style);
+	 break;
       default:
          /* We don't have any other property... */
          G_OBJECT_WARN_INVALID_PROPERTY_ID(object, property_id, pspec);
@@ -130,16 +138,30 @@ gtk_databox_lines_class_init (gpointer g_class,
 
    g_object_class_install_property (gobject_class, Y_OFFSET, param_spec);
    
+   param_spec = g_param_spec_int ("plot-style",
+				  "plot-style",
+				  "Plot style: lines, step, points",
+				  0,
+				  2,
+				  0, /* default value */
+				  G_PARAM_READWRITE);
+
+   g_object_class_install_property (gobject_class, PLOT_STYLE, param_spec);
+   
    graph_class->draw = gtk_databox_lines_real_draw;
 }
 
 static void
 gtk_databox_lines_complete (GtkDataboxLines *lines)
 {
+   /* Multiply by two in case we go into step mode, which requires two
+    * lines per data point.
+    */
+
    lines->priv->data = 
       g_new0 (GdkPoint, 
-              gtk_databox_xyc_graph_get_length 
-                 (GTK_DATABOX_XYC_GRAPH (lines)));
+              2 * gtk_databox_xyc_graph_get_length 
+                     (GTK_DATABOX_XYC_GRAPH (lines)));
 
 }
 
@@ -152,6 +174,7 @@ gtk_databox_lines_instance_init (GTypeInstance   *instance,
    lines->priv = g_new0 (GtkDataboxLinesPrivate, 1);
    lines->priv->y_factor = 1.0;
    lines->priv->y_offset = 0.0;
+   lines->priv->plot_style = 1;
    
    g_signal_connect (lines, "notify::length",
                      G_CALLBACK (gtk_databox_lines_complete), NULL);
@@ -232,6 +255,16 @@ gtk_databox_lines_real_draw (GtkDataboxGraph *graph,
 
    for (i = 0; i < len; i++, data++, X++, Y++)
    {
+      if ((lines->priv->plot_style == GTK_DATABOX_LINES_PLOT_STYLE_STEP)
+	  && (i > 0)) {
+	 data->x = (data-1)->x;
+	 data->y =
+	    (gint16) (((*Y  * lines->priv->y_factor)
+		       + lines->priv->y_offset - canvas->top_left_visible.y) 
+		      * canvas->translation_factor.y);
+	 data ++;
+      }
+
       data->x =
         (gint16) ((*X - canvas->top_left_visible.x) 
                    * canvas->translation_factor.x);
@@ -240,13 +273,21 @@ gtk_databox_lines_real_draw (GtkDataboxGraph *graph,
 		   + lines->priv->y_offset - canvas->top_left_visible.y) 
 		  * canvas->translation_factor.y);
    }
+
+   if (lines->priv->plot_style == GTK_DATABOX_LINES_PLOT_STYLE_STEP)
+      len = 2*len - 1;
    
    /* More than 2^16 lines will cause X IO error on most XServers
       (Hint from Paul Barton-Davis) */
+
    for (i = 0; i < len; i += 65536)
    {
-      gdk_draw_lines (canvas->pixmap, graph->gc, lines->priv->data+ i,
-                       MIN (65536, len - i));
+      if (lines->priv->plot_style == GTK_DATABOX_LINES_PLOT_STYLE_POINT)
+	 gdk_draw_points (canvas->pixmap, graph->gc, lines->priv->data+ i,
+			  MIN (65536, len - i));
+      else
+	 gdk_draw_lines (canvas->pixmap, graph->gc, lines->priv->data+ i,
+			 MIN (65536, len - i));
    }
 
    return;

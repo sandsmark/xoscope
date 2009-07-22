@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 2.27 2009/07/22 04:33:14 baccala Exp $
+ * @(#)$Id: display.c,v 2.28 2009/07/22 20:11:14 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -939,12 +939,16 @@ draw_data()
   gchar widget[80];
   GtkStyle *style;
   GdkColor gcolor;
-  GValue yfactor, yoffset;
+  GValue yfactor, yoffset, plotstyle;
 
   bzero(&yfactor, sizeof(GValue));
   g_value_init(&yfactor, G_TYPE_DOUBLE);
   bzero(&yoffset, sizeof(GValue));
   g_value_init(&yoffset, G_TYPE_DOUBLE);
+  bzero(&plotstyle, sizeof(GValue));
+  g_value_init(&plotstyle, G_TYPE_INT);
+
+  g_value_set_int(&plotstyle, scope.mode / 2);
 
   /* Remove the cursors.  We'll put them back in later if they're
    * active.
@@ -1122,17 +1126,6 @@ draw_data()
 	  y = (float)(bit < 0 ? samp[i]
 		      : (bitoff - (samp[i] & (1 << bit) ? 0 : 8)));
 
-	  if (scope.mode >= 4 && i > 0) {
-
-	    /* Step mode.  Draw a horizontal line segment,
-	     * then a vertical one (instead of a single line)
-	     */
-
-	    sl->X[sl->next_point] = l + i * num;
-	    sl->Y[sl->next_point] = sl->Y[sl->next_point - 1];
-	    sl->next_point ++;
-	  }
-
 	  sl->X[sl->next_point] = l + i * num;
 	  sl->Y[sl->next_point] = y;
 	  sl->next_point ++;
@@ -1143,12 +1136,8 @@ draw_data()
 
 	if (sl->next_point > 0) {
 
-	  if (scope.mode < 2)
-	    sl->graph = gtk_databox_points_new (sl->next_point,
-						sl->X, sl->Y, &gcolor, 1);
-	  else
-	    sl->graph = gtk_databox_lines_new (sl->next_point,
-					       sl->X, sl->Y, &gcolor, 1);
+	  sl->graph = gtk_databox_lines_new (sl->next_point,
+					     sl->X, sl->Y, &gcolor, 1);
 
 	  gtk_databox_graph_add (GTK_DATABOX (databox), sl->graph);
 
@@ -1162,18 +1151,11 @@ draw_data()
 	if ((scope.mode % 2 == 0) && (sl->next != NULL)
 	    && (sl->next_point < sl->next->next_point)) {
 
-	  if (scope.mode < 2)
-	    sl->next->graph
-	      = gtk_databox_points_new (sl->next->next_point-sl->next_point+1,
-					sl->next->X + sl->next_point - 1,
-					sl->next->Y + sl->next_point - 1,
-					&gcolor, 1);
-	  else
-	    sl->next->graph
-	      = gtk_databox_lines_new (sl->next->next_point-sl->next_point+1,
-				       sl->next->X + sl->next_point - 1,
-				       sl->next->Y + sl->next_point - 1,
-				       &gcolor, 1);
+	  sl->next->graph
+	    = gtk_databox_lines_new (sl->next->next_point-sl->next_point+1,
+				     sl->next->X + sl->next_point - 1,
+				     sl->next->Y + sl->next_point - 1,
+				     &gcolor, 1);
 
 	  gtk_databox_graph_add (GTK_DATABOX (databox), sl->next->graph);
 	}
@@ -1191,6 +1173,7 @@ draw_data()
 	  if (sl->graph != NULL) {
 	    g_object_set_property((GObject *) sl->graph, "y-factor", &yfactor);
 	    g_object_set_property((GObject *) sl->graph, "y-offset", &yoffset);
+	    g_object_set_property((GObject *) sl->graph, "plot-style", &plotstyle);
 	  }
 	  sl = sl->next;
 	}
