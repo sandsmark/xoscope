@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 2.26 2009/07/20 22:07:37 baccala Exp $
+ * @(#)$Id: display.c,v 2.27 2009/07/22 04:33:14 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -1011,12 +1011,8 @@ draw_data()
        * First, the cursor positions are stored in number of samples
        * (1 based), which means that if we change to a different
        * signal with a different sampling rate, the cursors move
-       * around on the screen!  We'd have to worry about that in this
-       * code, except that handle_key() always does a clear() when it
-       * changes channels - not that I think a clear() is necessary
-       * when we change channels, but at least it makes sure that we
-       * don't get doubly drawn cursors if we move to a channel with a
-       * different sampling rate.
+       * around on the screen!  Also, we should be able to pick
+       * whether they "snap to data points" or not.
        */
 
       if (scope.curs && j == scope.select) {
