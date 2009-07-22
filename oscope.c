@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.c,v 2.10 2009/07/22 20:11:14 baccala Exp $
+ * @(#)$Id: oscope.c,v 2.11 2009/07/22 20:14:08 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -653,7 +653,8 @@ handle_key(unsigned char c)
     scope.grat++;		/* graticule off/on/more */
     if (scope.grat > 2)
       scope.grat = 0;
-    clear();
+    update_text();
+    show_data();
     break;
   case '.':
     scope.behind = !scope.behind; /* graticule behind/in front of signal */

@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: gr_gtk.c,v 2.19 2009/07/22 20:11:14 baccala Exp $
+ * @(#)$Id: gr_gtk.c,v 2.20 2009/07/22 20:14:08 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -240,7 +240,8 @@ graticule(GtkWidget *w, guint data)
     scope.behind = data;
   else
     scope.grat = data - 2;
-  clear();
+  update_text();
+  show_data();
 }
 
 void
