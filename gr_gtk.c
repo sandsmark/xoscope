@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: gr_gtk.c,v 2.17 2009/07/20 22:07:37 baccala Exp $
+ * @(#)$Id: gr_gtk.c,v 2.18 2009/07/22 02:30:09 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -564,15 +564,17 @@ static GtkItemFactoryEntry menu_items[] =
   {"/Channel/Math/sep", NULL, NULL, 0, "<Separator>"},
 
   /* this will need hacked if functions are added / changed in func.c */
-  {"/Channel/Math/Other", NULL, NULL, 0, "<RadioItem>"},
-  {"/Channel/Math/External Command...", "$", mathselect, '$', "/Channel/Math/Other"},
-  {"/Channel/Math/Inv. 1", NULL, mathselect, '0', "/Channel/Math/External Command..."},
-  {"/Channel/Math/Inv. 2", NULL, mathselect, '1', "/Channel/Math/Inv. 1"},
-  {"/Channel/Math/Sum  1+2", NULL, mathselect, '2', "/Channel/Math/Inv. 2"},
-  {"/Channel/Math/Diff 1-2", NULL, mathselect, '3', "/Channel/Math/Sum  1+2"},
-  {"/Channel/Math/Avg. 1,2", NULL, mathselect, '4', "/Channel/Math/Diff 1-2"},
+  {"/Channel/Math/External Command...", "$", mathselect, '$', NULL},
+  {"/Channel/Math/Inv. 1", NULL, mathselect, '0', NULL},
+  {"/Channel/Math/Inv. 2", NULL, mathselect, '1', NULL},
+  {"/Channel/Math/Sum  1+2", NULL, mathselect, '2', NULL},
+  {"/Channel/Math/Diff 1-2", NULL, mathselect, '3', NULL},
+  {"/Channel/Math/Avg. 1,2", NULL, mathselect, '4', NULL},
+#ifdef PLEASE_PUT_THIS_BACK_IN_AT_SOME_POINT
+  /* update endpoint of math functions in fix_widgets when we do */
   {"/Channel/Math/FFT. 1", NULL, mathselect, '5', "/Channel/Math/Avg. 1,2"},
   {"/Channel/Math/FFT. 2", NULL, mathselect, '6', "/Channel/Math/FFT. 1"},
+#endif
 
   {"/Channel/Store", NULL, NULL, 0, "<Branch>"},
   {"/Channel/Store/tear", NULL, NULL, 0, "<Tearoff>"},
@@ -887,26 +889,13 @@ fix_widgets()
      (gtk_item_factory_get_item(factory, "/Help/Keys&Info")), scope.verbose);
 
   if ((p = finditem("/Channel/Math")) &&
-      (q = finditem("/Channel/Math/FFT. 2"))) {
+      (q = finditem("/Channel/Math/Avg. 1,2"))) {
     for (r = p; r <= q; r++) {
-      /* XXX add a check to the function's isvalid() test and a better
-       * way to figure out which (if any) function is active
-       */
+      /* XXX add a check to the function's isvalid() test */
       gtk_widget_set_sensitive
 	(GTK_WIDGET(gtk_item_factory_get_item(factory, r->path)),
 	 scope.select > 1);
 
-      /* Set 'other function' active when we hit it... */
-      if (r == p + 5)
-	gtk_check_menu_item_set_active
-	  (GTK_CHECK_MENU_ITEM(gtk_item_factory_get_item(factory, r->path)),
-	   TRUE);
-
-      /* ...then look for function that actually is active (if it exists) */
-      if (ch[scope.select].signal && (r > p + 5))
-	gtk_check_menu_item_set_active
-	  (GTK_CHECK_MENU_ITEM(gtk_item_factory_get_item(factory, r->path)),
-	   ch[scope.select].signal->savestr[0] == '0' + r - p - 7);
     }
   }
 
