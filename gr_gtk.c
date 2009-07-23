@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: gr_gtk.c,v 2.20 2009/07/22 20:14:08 baccala Exp $
+ * @(#)$Id: gr_gtk.c,v 2.21 2009/07/23 01:44:54 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -194,9 +194,8 @@ void
 datasource(GtkWidget *w, gpointer data)
 {
   if (fixing_widgets) return;
-  if (datasrc_byname(data)) {
-    clear();
-  }
+  datasrc_force_open((DataSrc *) data);
+  clear();
 }
 
 void
@@ -493,6 +492,7 @@ static GtkItemFactoryEntry menu_items[] =
   {"/File/Save...", NULL, hit_key, '#', NULL},
   /*     {"/File/Save as", NULL, NULL, 0, NULL}, */
   {"/File/Device/tear", NULL, NULL, 0, "<Tearoff>"},
+  {"/File/Device/None", NULL, datasource, NULL, NULL},
   {"/File/Device Options...", NULL, option_dialog, 0, NULL},
   {"/File/sep", NULL, NULL, 0, "<Separator>"},
   {"/File/Quit", NULL, hit_key, '\e', NULL},
@@ -1015,7 +1015,7 @@ get_main_menu(GtkWidget *window, GtkWidget ** menubar)
       gtk_menu_append (GTK_MENU (menu), p);
       gtk_signal_connect (GTK_OBJECT (p), "activate",
 			  GTK_SIGNAL_FUNC (datasource),
-			  (gpointer) (datasrcs[i]->name));
+			  (gpointer) (datasrcs[i]));
       gtk_widget_show (p);
     }
   }

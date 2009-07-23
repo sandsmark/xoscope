@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.c,v 2.11 2009/07/22 20:14:08 baccala Exp $
+ * @(#)$Id: oscope.c,v 2.12 2009/07/23 01:44:54 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -287,6 +287,8 @@ datasrc_force_open(DataSrc *new_datasrc)
   datasrc_close();
 
   datasrc = new_datasrc;
+
+  if (datasrc == NULL) return;
 
   for (i=0; i<limit; i++) {
     if (datasrc == datasrcs[i]) datasrci = i;
