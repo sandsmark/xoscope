@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 2.28 2009/07/22 20:11:14 baccala Exp $
+ * @(#)$Id: display.c,v 2.29 2009/07/23 00:23:10 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -1066,12 +1066,8 @@ draw_data()
 	  sl->next = p->signalline[bit < 0 ? 0 : bit];
 	  p->signalline[bit < 0 ? 0 : bit] = sl;
 
-	  /* If we're in step mode, we'll need twice as many display
-	   * points as data points.
-	   */
-
-	  sl->X = g_new0(gfloat, 2 * p->signal->width);
-	  sl->Y = g_new0(gfloat, 2 * p->signal->width);
+	  sl->X = g_new0(gfloat, p->signal->width);
+	  sl->Y = g_new0(gfloat, p->signal->width);
 
 	}
 
