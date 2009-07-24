@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.h,v 2.7 2009/01/15 07:05:59 baccala Exp $
+ * @(#)$Id: oscope.h,v 2.8 2009/07/24 05:48:26 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -24,7 +24,8 @@ extern char *filename;
 extern int in_progress;
 
 typedef struct Scope {		/* The oscilloscope */
-  int mode;
+  int plot_mode;		/* 0 - point; 1 - line; 2 - step */
+  int scroll_mode;		/* 0 - sweep; 1 - accumulate; 2 - stripchart */
   int run;
   int scale;
   int div;

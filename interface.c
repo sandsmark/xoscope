@@ -65,6 +65,7 @@ create_main_window (void)
   GtkWidget *hbox11;
   GtkWidget *exclaim_key_label;
   GtkWidget *line_style_label;
+  GtkWidget *scroll_mode_label;
   GtkWidget *space_key_label;
   GtkWidget *run_stop_label;
   GtkWidget *hbox4;
@@ -396,8 +397,16 @@ create_main_window (void)
   line_style_label = gtk_label_new (_("line style"));
   gtk_widget_set_name (line_style_label, "line_style_label");
   gtk_widget_show (line_style_label);
-  gtk_box_pack_start (GTK_BOX (hbox11), line_style_label, TRUE, TRUE, 0);
+  gtk_box_pack_start (GTK_BOX (hbox11), line_style_label, FALSE, TRUE, 0);
   gtk_misc_set_alignment (GTK_MISC (line_style_label), 0, 0.5);
+  gtk_label_set_width_chars (GTK_LABEL (line_style_label), 5);
+
+  scroll_mode_label = gtk_label_new (_("scroll mode"));
+  gtk_widget_set_name (scroll_mode_label, "scroll_mode_label");
+  gtk_widget_show (scroll_mode_label);
+  gtk_box_pack_start (GTK_BOX (hbox11), scroll_mode_label, TRUE, TRUE, 0);
+  gtk_misc_set_alignment (GTK_MISC (scroll_mode_label), 0, 0.5);
+  gtk_label_set_width_chars (GTK_LABEL (scroll_mode_label), 5);
 
   space_key_label = gtk_label_new (_("(space)"));
   gtk_widget_set_name (space_key_label, "space_key_label");
@@ -1056,6 +1065,7 @@ create_main_window (void)
   GLADE_HOOKUP_OBJECT (main_window, hbox11, "hbox11");
   GLADE_HOOKUP_OBJECT (main_window, exclaim_key_label, "exclaim_key_label");
   GLADE_HOOKUP_OBJECT (main_window, line_style_label, "line_style_label");
+  GLADE_HOOKUP_OBJECT (main_window, scroll_mode_label, "scroll_mode_label");
   GLADE_HOOKUP_OBJECT (main_window, space_key_label, "space_key_label");
   GLADE_HOOKUP_OBJECT (main_window, run_stop_label, "run_stop_label");
   GLADE_HOOKUP_OBJECT (main_window, hbox4, "hbox4");

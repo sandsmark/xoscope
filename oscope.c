@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.c,v 2.12 2009/07/23 01:44:54 baccala Exp $
+ * @(#)$Id: oscope.c,v 2.13 2009/07/24 05:48:26 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -90,7 +90,8 @@ file             %s file to load to restore settings and memory\n\
 	  progname, version, CHANNELS, CHANNELS, DEF_A,
 	  DEF_S, DEF_T, DEF_L,
 	  fonts,		/* the font method for the display */
-	  scope.mode,
+	  /* XXX fix me - plot_mode not backwards compatible */
+	  scope.plot_mode,
 	  scope.grat, def[DEF_B], def[!DEF_B],
 	  onoff[DEF_V], progname);
   exit(error);
@@ -123,7 +124,9 @@ cleanup()
 void
 init_scope()
 {
-  scope.mode = DEF_P;
+  /* XXX fix me - get better plot/scroll mode defaults here */
+  scope.plot_mode = DEF_P / 2;
+  scope.scroll_mode = DEF_P % 2;
   scope.scale = DEF_S;
   scope.div = 1;
   handle_opt('t', DEF_T);
@@ -645,9 +648,13 @@ handle_key(unsigned char c)
     }
     break;
   case '!':
-    scope.mode++;		/* point, point accumulate, line, line acc. */
-    if (scope.mode > 5)
-      scope.mode = 0;
+    scope.scroll_mode++;		/* sweep, accumulate, stripchart */
+    if (scope.scroll_mode > 2) {
+      scope.scroll_mode = 0;
+      scope.plot_mode++;		/* point, line, step */
+      if (scope.plot_mode > 2)
+	scope.plot_mode = 0;
+    }
     update_text();
     show_data();
     break;

@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 2.29 2009/07/23 00:23:10 baccala Exp $
+ * @(#)$Id: display.c,v 2.30 2009/07/24 05:48:26 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -257,13 +257,15 @@ void update_text(void)
   char string[81], widget[81];
   int i;
   Channel *p;
-  static char *strings[] = {
+  static char *plot_styles[] = {
     "Point",
-    "Point Accum.",
     "Line",
-    "Line Accum.",
     "Step",
-    "Step Accum.",
+  };
+  static char *scroll_styles[] = {
+    "",
+    "Accum",
+    "Strip",
   };
   static char *trigs[] = {
     "Auto",
@@ -305,7 +307,10 @@ void update_text(void)
   gtk_label_set_text(GTK_LABEL(LU("data_source_label")),
 		     datasrc ? datasrc->name : "No data source");
 
-  gtk_label_set_text(GTK_LABEL(LU("line_style_label")), strings[scope.mode]);
+  gtk_label_set_text(GTK_LABEL(LU("line_style_label")),
+		     plot_styles[scope.plot_mode]);
+  gtk_label_set_text(GTK_LABEL(LU("scroll_mode_label")),
+		     scroll_styles[scope.scroll_mode]);
 
   strcpy(string, scope.run ? (scope.run > 1 ? "WAIT" : " RUN") : "STOP");
   gtk_label_set_text(GTK_LABEL(LU("run_stop_label")), string);
@@ -939,16 +944,20 @@ draw_data()
   gchar widget[80];
   GtkStyle *style;
   GdkColor gcolor;
-  GValue yfactor, yoffset, plotstyle;
+  GValue yfactor, yoffset, xoffset, plotstyle;
+  SignalLine *prevSL;
+  double x_offset;
 
   bzero(&yfactor, sizeof(GValue));
   g_value_init(&yfactor, G_TYPE_DOUBLE);
   bzero(&yoffset, sizeof(GValue));
   g_value_init(&yoffset, G_TYPE_DOUBLE);
+  bzero(&xoffset, sizeof(GValue));
+  g_value_init(&xoffset, G_TYPE_DOUBLE);
   bzero(&plotstyle, sizeof(GValue));
   g_value_init(&plotstyle, G_TYPE_INT);
 
-  g_value_set_int(&plotstyle, scope.mode / 2);
+  g_value_set_int(&plotstyle, scope.plot_mode);
 
   /* Remove the cursors.  We'll put them back in later if they're
    * active.
@@ -1083,29 +1092,6 @@ draw_data()
 	  sl->graph = NULL;
 	}
 
-	/* If we're not in an accumulate mode, erase anything
-	 * lingering in the databox except the next to last trace,
-	 * because we want to leave the trailing part of it drawn if
-	 * we're in the middle of a sweep.  We do remove it from the
-	 * databox, however.  We'll put it back in later, with fewer
-	 * data points.
-	 */
-
-	if (scope.mode % 2 == 0) {
-
-	  if (sl->next != NULL && sl->next->graph != NULL) {
-	    gtk_databox_graph_remove(GTK_DATABOX(databox), sl->next->graph);
-	    g_object_unref(G_OBJECT(sl->next->graph));
-	    sl->next->graph = NULL;
-	  }
-
-	  if (sl->next != NULL && sl->next->next != NULL) {
-	    free_signalline(sl->next->next);
-	    sl->next->next = NULL;
-	  }
-
-	}
-
 	/* Compute the points we want to draw on the current trace and
 	 * write them into the SignalLine arrays.  The only thing a
 	 * little bit strange is that we might be updating a trace
@@ -1139,21 +1125,102 @@ draw_data()
 
 	}
 
-	/* If we're not in accumulate mode and there's a previous
-	 * trace, draw the part of it to the right of the current
-	 * trace.
-	 */
+	switch (scope.scroll_mode) {
 
-	if ((scope.mode % 2 == 0) && (sl->next != NULL)
-	    && (sl->next_point < sl->next->next_point)) {
+	case 0:
 
-	  sl->next->graph
-	    = gtk_databox_lines_new (sl->next->next_point-sl->next_point+1,
-				     sl->next->X + sl->next_point - 1,
-				     sl->next->Y + sl->next_point - 1,
-				     &gcolor, 1);
+	  /* Sweep mode - erase anything lingering in the databox
+	   * except the next to last trace, because we want to leave
+	   * the trailing part of it drawn if we're in the middle of a
+	   * sweep.  We remove it from the databox, and put put it
+	   * back in with fewer data points.
+	   */
 
-	  gtk_databox_graph_add (GTK_DATABOX (databox), sl->next->graph);
+	  if (sl->next != NULL && sl->next->graph != NULL) {
+	    gtk_databox_graph_remove(GTK_DATABOX(databox), sl->next->graph);
+	    g_object_unref(G_OBJECT(sl->next->graph));
+	    sl->next->graph = NULL;
+	  }
+
+	  if (sl->next != NULL && sl->next->next != NULL) {
+	    free_signalline(sl->next->next);
+	    sl->next->next = NULL;
+	  }
+
+	  if ((sl->next != NULL)
+	      && (sl->next_point < sl->next->next_point)) {
+	    sl->next->graph
+	      = gtk_databox_lines_new (sl->next->next_point-sl->next_point+1,
+				       sl->next->X + sl->next_point - 1,
+				       sl->next->Y + sl->next_point - 1,
+				       &gcolor, 1);
+
+	    gtk_databox_graph_add (GTK_DATABOX (databox), sl->next->graph);
+	  }
+
+	  break;
+
+	case 2:
+
+	  /* Stripchart mode - if there are previous traces, position
+	   * this trace at the right of the databox and line up any
+	   * previous traces to its left.  If there are no previous
+	   * traces, then position this trace at the left of the
+	   * databox.
+	   */
+
+	  /* XXX I'd like to use the first version, but this code is
+	   * too sloppy.
+	   */
+
+#if 0
+	  if (sl->next) {
+	    x_offset = total_horizontal_divisions
+	      * 0.001 * (gfloat) scope.div / scope.scale
+	      - num * (sl->next_point - 1);
+	  } else {
+	    x_offset = 0.0;
+	  }
+#else
+	  x_offset = 0.0;
+	  for (prevSL = sl->next; prevSL; prevSL = prevSL->next) {
+	    if (prevSL->graph) {
+	      x_offset = total_horizontal_divisions
+		* 0.001 * (gfloat) scope.div / scope.scale
+		- num * (sl->next_point - 1);
+	      break;
+	    }
+	  }
+#endif
+
+	  prevSL = sl;
+
+	  while (prevSL != NULL) {
+
+	    if (prevSL->graph) {
+	      g_value_set_double(&xoffset, x_offset);
+	      g_object_set_property((GObject *) prevSL->graph,
+				    "x-offset", &xoffset);
+	    }
+
+	    /* If x_offset is negative at this point, we've just drawn
+	     * a SignalLine partially off the left-hand side of the
+	     * screen, so anything older has scrolled completely out
+	     * of view.
+	     */
+
+	    if (x_offset < 0) {
+	      if (prevSL->next) {
+		free_signalline(prevSL->next);
+		prevSL->next = NULL;
+	      }
+	      break;
+	    }
+
+	    x_offset -=  num * p->signal->width;
+	    prevSL = prevSL->next;
+	  }
+
 	}
 
 	/* Run through all of the SignalLines associated with this
@@ -1275,7 +1342,11 @@ animate(void *data)
 	scope.run = 0;
 	update_text();
       }
-    } else if (in_progress) {
+    } else if (in_progress && (scope.scroll_mode != 2)) {
+      /* If we're in strip chart mode (scroll mode 2), stop
+       * immediately, otherwise wait for the running trace to
+       * complete.
+       */
       datasrc->get_data();
     } else {
       //usleep(100000);		/* no need to suck all CPU cycles */

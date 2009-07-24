@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: file.c,v 2.9 2009/01/17 02:31:16 baccala Exp $
+ * @(#)$Id: file.c,v 2.10 2009/07/24 05:48:26 baccala Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -125,7 +125,8 @@ handle_opt(int opt, char *optarg)
     break;
   case 'p':			/* plotting mode */
   case 'P':
-    scope.mode = limit(strtol(optarg, NULL, 0), 0, 5);
+    scope.plot_mode = limit(strtol(optarg, NULL, 0), 0, 5) / 2;
+    scope.scroll_mode = limit(strtol(optarg, NULL, 0), 0, 5) % 2;
     break;
   case 'g':			/* graticule on/off */
   case 'G':
@@ -272,7 +273,8 @@ writefile(char *filename)
 	  scope.scale, scope.div,
 	  scope.trig - 128, scope.trige, scope.trigch,
 	  scope.cursa, scope.cursb, scope.curs,
-	  scope.mode,
+	  /* XXX fix this - plot_mode not backwards compatable anymore */
+	  scope.plot_mode,
 	  scope.grat,
 	  scope.behind ? "# -b\n" : "",
 	  scope.verbose ? "# -v\n" : "");

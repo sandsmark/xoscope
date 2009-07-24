@@ -28,13 +28,14 @@ enum
 {
    Y_FACTOR = 1,
    Y_OFFSET,
+   X_OFFSET,
    PLOT_STYLE
 };
 
 struct _GtkDataboxLinesPrivate
 {
    GdkPoint *data;
-   double y_factor, y_offset;
+   double y_factor, y_offset, x_offset;
    int plot_style;
 };
 
@@ -55,6 +56,9 @@ gtk_databox_lines_set_property (GObject      *object,
          break;
       case Y_OFFSET:
 	 lines->priv->y_offset = g_value_get_double (value);
+         break;
+      case X_OFFSET:
+	 lines->priv->x_offset = g_value_get_double (value);
          break;
       case PLOT_STYLE:
 	 lines->priv->plot_style = g_value_get_int (value);
@@ -81,6 +85,9 @@ gtk_databox_lines_get_property (GObject      *object,
          break;
       case Y_OFFSET:
 	 g_value_set_double (value, lines->priv->y_offset);
+         break;
+      case X_OFFSET:
+	 g_value_set_double (value, lines->priv->x_offset);
          break;
       case PLOT_STYLE:
 	 g_value_set_int (value, lines->priv->plot_style);
@@ -138,6 +145,16 @@ gtk_databox_lines_class_init (gpointer g_class,
 
    g_object_class_install_property (gobject_class, Y_OFFSET, param_spec);
    
+   param_spec = g_param_spec_double ("x-offset",
+				     "x-offset",
+				     "Number to offset x-coordinates by",
+				     -G_MAXDOUBLE,
+				     G_MAXDOUBLE,
+				     0.0, /* default value */
+				     G_PARAM_READWRITE);
+
+   g_object_class_install_property (gobject_class, X_OFFSET, param_spec);
+   
    param_spec = g_param_spec_int ("plot-style",
 				  "plot-style",
 				  "Plot style: lines, step, points",
@@ -174,6 +191,7 @@ gtk_databox_lines_instance_init (GTypeInstance   *instance,
    lines->priv = g_new0 (GtkDataboxLinesPrivate, 1);
    lines->priv->y_factor = 1.0;
    lines->priv->y_offset = 0.0;
+   lines->priv->x_offset = 0.0;
    lines->priv->plot_style = 1;
    
    g_signal_connect (lines, "notify::length",
@@ -266,7 +284,7 @@ gtk_databox_lines_real_draw (GtkDataboxGraph *graph,
       }
 
       data->x =
-        (gint16) ((*X - canvas->top_left_visible.x) 
+        (gint16) ((*X + lines->priv->x_offset - canvas->top_left_visible.x) 
                    * canvas->translation_factor.x);
       data->y =
         (gint16) (((*Y  * lines->priv->y_factor)
