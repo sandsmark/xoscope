@@ -299,7 +299,7 @@ gdouble dialog_volts;
 void
 bitscope_dialog()
 {
-  GtkWidget *dialog2;
+  GtkWidget *dialog;
   GtkWidget *hscale;
 
   add_pixmap_directory (PACKAGE_DATA_DIR "/pixmaps");
@@ -310,18 +310,18 @@ bitscope_dialog()
    * (except popup menus), just so that you see something after building
    * the project. Delete any components that you don't want shown initially.
    */
-  dialog2 = create_dialog2 ();
-  gtk_widget_show (dialog2);
-  window = dialog2;
+  dialog = create_bitscope_dialog ();
+  gtk_widget_show (dialog);
+  window = dialog;
 
   /* The object of this code is to update the binary "trigger condition"
    * as the analog sliders are moved.
    */
-  hscale = lookup_widget(dialog2, "hscale1");
+  hscale = lookup_widget(dialog, "hscale1");
   gtk_signal_connect (GTK_OBJECT (GTK_RANGE (hscale)->adjustment),
                       "value_changed", GTK_SIGNAL_FUNC (on_value_changed),
                       "0");
-  hscale = lookup_widget(dialog2, "hscale2");
+  hscale = lookup_widget(dialog, "hscale2");
   gtk_signal_connect (GTK_OBJECT (GTK_RANGE (hscale)->adjustment),
                       "value_changed", GTK_SIGNAL_FUNC (on_value_changed),
                       "1");
@@ -329,8 +329,8 @@ bitscope_dialog()
   /* XXX here we need to initially set all the widgets from bs.r */
 
   /* force pages to update each other to current values */
-  gtk_notebook_set_page(GTK_NOTEBOOK(lookup_widget(dialog2, "notebook1")), 1);
-  gtk_notebook_set_page(GTK_NOTEBOOK(lookup_widget(dialog2, "notebook1")), 0);
+  gtk_notebook_set_page(GTK_NOTEBOOK(lookup_widget(dialog, "notebook1")), 1);
+  gtk_notebook_set_page(GTK_NOTEBOOK(lookup_widget(dialog, "notebook1")), 0);
 
 }
 
@@ -459,7 +459,7 @@ on_ok                                  (GtkButton       *button,
 {
   gtk_signal_emit_by_name(GTK_OBJECT(LU("button2")), "clicked");
   printf("ok\n");
-  gtk_widget_destroy(LU("dialog2"));
+  gtk_widget_destroy(LU("bitscope_dialog"));
 /*    gtk_main_quit(); */
 }
 

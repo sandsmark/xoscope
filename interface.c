@@ -1463,9 +1463,9 @@ create_comedi_dialog (void)
 }
 
 GtkWidget*
-create_dialog2 (void)
+create_bitscope_dialog (void)
 {
-  GtkWidget *dialog2;
+  GtkWidget *bitscope_dialog;
   GtkWidget *dialog_vbox1;
   GtkWidget *notebook1;
   GtkWidget *table3;
@@ -1544,12 +1544,12 @@ create_dialog2 (void)
   GtkWidget *button2;
   GtkWidget *button3;
 
-  dialog2 = gtk_dialog_new ();
-  gtk_widget_set_name (dialog2, "dialog2");
-  gtk_window_set_title (GTK_WINDOW (dialog2), _("BitScope"));
-  gtk_window_set_type_hint (GTK_WINDOW (dialog2), GDK_WINDOW_TYPE_HINT_DIALOG);
+  bitscope_dialog = gtk_dialog_new ();
+  gtk_widget_set_name (bitscope_dialog, "bitscope_dialog");
+  gtk_window_set_title (GTK_WINDOW (bitscope_dialog), _("BitScope"));
+  gtk_window_set_type_hint (GTK_WINDOW (bitscope_dialog), GDK_WINDOW_TYPE_HINT_DIALOG);
 
-  dialog_vbox1 = GTK_DIALOG (dialog2)->vbox;
+  dialog_vbox1 = GTK_DIALOG (bitscope_dialog)->vbox;
   gtk_widget_set_name (dialog_vbox1, "dialog_vbox1");
   gtk_widget_show (dialog_vbox1);
 
@@ -2018,7 +2018,7 @@ create_dialog2 (void)
   gtk_notebook_set_tab_label (GTK_NOTEBOOK (notebook1), gtk_notebook_get_nth_page (GTK_NOTEBOOK (notebook1), 2), label4);
   gtk_label_set_justify (GTK_LABEL (label4), GTK_JUSTIFY_CENTER);
 
-  dialog_action_area1 = GTK_DIALOG (dialog2)->action_area;
+  dialog_action_area1 = GTK_DIALOG (bitscope_dialog)->action_area;
   gtk_widget_set_name (dialog_action_area1, "dialog_action_area1");
   gtk_widget_show (dialog_action_area1);
   gtk_button_box_set_layout (GTK_BUTTON_BOX (dialog_action_area1), GTK_BUTTONBOX_END);
@@ -2047,10 +2047,10 @@ create_dialog2 (void)
   gtk_container_add (GTK_CONTAINER (hbuttonbox1), button3);
   GTK_WIDGET_SET_FLAGS (button3, GTK_CAN_DEFAULT);
 
-  g_signal_connect ((gpointer) dialog2, "delete_event",
+  g_signal_connect ((gpointer) bitscope_dialog, "delete_event",
                     G_CALLBACK (gtk_widget_destroy),
                     NULL);
-  g_signal_connect ((gpointer) dialog2, "destroy_event",
+  g_signal_connect ((gpointer) bitscope_dialog, "destroy_event",
                     G_CALLBACK (gtk_widget_destroy),
                     NULL);
   g_signal_connect ((gpointer) notebook1, "switch_page",
@@ -2106,80 +2106,80 @@ create_dialog2 (void)
                     NULL);
   g_signal_connect_swapped ((gpointer) button3, "clicked",
                             G_CALLBACK (gtk_widget_destroy),
-                            GTK_OBJECT (dialog2));
+                            GTK_OBJECT (bitscope_dialog));
 
   /* Store pointers to all widgets, for use by lookup_widget(). */
-  GLADE_HOOKUP_OBJECT_NO_REF (dialog2, dialog2, "dialog2");
-  GLADE_HOOKUP_OBJECT_NO_REF (dialog2, dialog_vbox1, "dialog_vbox1");
-  GLADE_HOOKUP_OBJECT (dialog2, notebook1, "notebook1");
-  GLADE_HOOKUP_OBJECT (dialog2, table3, "table3");
-  GLADE_HOOKUP_OBJECT (dialog2, label23, "label23");
-  GLADE_HOOKUP_OBJECT (dialog2, device_entry, "device_entry");
-  GLADE_HOOKUP_OBJECT (dialog2, label22, "label22");
-  GLADE_HOOKUP_OBJECT (dialog2, table1, "table1");
-  GLADE_HOOKUP_OBJECT (dialog2, label6, "label6");
-  GLADE_HOOKUP_OBJECT (dialog2, label7, "label7");
-  GLADE_HOOKUP_OBJECT (dialog2, label8, "label8");
-  GLADE_HOOKUP_OBJECT (dialog2, label10, "label10");
-  GLADE_HOOKUP_OBJECT (dialog2, vbox1, "vbox1");
-  GLADE_HOOKUP_OBJECT (dialog2, radiobutton12, "radiobutton12");
-  GLADE_HOOKUP_OBJECT (dialog2, radiobutton13, "radiobutton13");
-  GLADE_HOOKUP_OBJECT (dialog2, vbox2, "vbox2");
-  GLADE_HOOKUP_OBJECT (dialog2, radiobutton14, "radiobutton14");
-  GLADE_HOOKUP_OBJECT (dialog2, radiobutton15, "radiobutton15");
-  GLADE_HOOKUP_OBJECT (dialog2, radiobutton16, "radiobutton16");
-  GLADE_HOOKUP_OBJECT (dialog2, radiobutton17, "radiobutton17");
-  GLADE_HOOKUP_OBJECT (dialog2, vbox3, "vbox3");
-  GLADE_HOOKUP_OBJECT (dialog2, radiobutton18, "radiobutton18");
-  GLADE_HOOKUP_OBJECT (dialog2, radiobutton19, "radiobutton19");
-  GLADE_HOOKUP_OBJECT (dialog2, vbox4, "vbox4");
-  GLADE_HOOKUP_OBJECT (dialog2, radiobutton20, "radiobutton20");
-  GLADE_HOOKUP_OBJECT (dialog2, radiobutton21, "radiobutton21");
-  GLADE_HOOKUP_OBJECT (dialog2, radiobutton22, "radiobutton22");
-  GLADE_HOOKUP_OBJECT (dialog2, radiobutton23, "radiobutton23");
-  GLADE_HOOKUP_OBJECT (dialog2, checkbutton2, "checkbutton2");
-  GLADE_HOOKUP_OBJECT (dialog2, checkbutton3, "checkbutton3");
-  GLADE_HOOKUP_OBJECT (dialog2, hbox1, "hbox1");
-  GLADE_HOOKUP_OBJECT (dialog2, radiobutton24, "radiobutton24");
-  GLADE_HOOKUP_OBJECT (dialog2, radiobutton25, "radiobutton25");
-  GLADE_HOOKUP_OBJECT (dialog2, label11, "label11");
-  GLADE_HOOKUP_OBJECT (dialog2, hseparator3, "hseparator3");
-  GLADE_HOOKUP_OBJECT (dialog2, hseparator2, "hseparator2");
-  GLADE_HOOKUP_OBJECT (dialog2, hseparator1, "hseparator1");
-  GLADE_HOOKUP_OBJECT (dialog2, vseparator1, "vseparator1");
-  GLADE_HOOKUP_OBJECT (dialog2, vseparator2, "vseparator2");
-  GLADE_HOOKUP_OBJECT (dialog2, label3, "label3");
-  GLADE_HOOKUP_OBJECT (dialog2, table2, "table2");
-  GLADE_HOOKUP_OBJECT (dialog2, label12, "label12");
-  GLADE_HOOKUP_OBJECT (dialog2, label16, "label16");
-  GLADE_HOOKUP_OBJECT (dialog2, label17, "label17");
-  GLADE_HOOKUP_OBJECT (dialog2, hbox4, "hbox4");
-  GLADE_HOOKUP_OBJECT (dialog2, radiobutton30, "radiobutton30");
-  GLADE_HOOKUP_OBJECT (dialog2, radiobutton31, "radiobutton31");
-  GLADE_HOOKUP_OBJECT (dialog2, hbox5, "hbox5");
-  GLADE_HOOKUP_OBJECT (dialog2, radiobutton38, "radiobutton38");
-  GLADE_HOOKUP_OBJECT (dialog2, radiobutton40, "radiobutton40");
-  GLADE_HOOKUP_OBJECT (dialog2, label15, "label15");
-  GLADE_HOOKUP_OBJECT (dialog2, entry1, "entry1");
-  GLADE_HOOKUP_OBJECT (dialog2, hseparator4, "hseparator4");
-  GLADE_HOOKUP_OBJECT (dialog2, hseparator5, "hseparator5");
-  GLADE_HOOKUP_OBJECT (dialog2, label21, "label21");
-  GLADE_HOOKUP_OBJECT (dialog2, label19, "label19");
-  GLADE_HOOKUP_OBJECT (dialog2, label13, "label13");
-  GLADE_HOOKUP_OBJECT (dialog2, label14, "label14");
-  GLADE_HOOKUP_OBJECT (dialog2, vseparator3, "vseparator3");
-  GLADE_HOOKUP_OBJECT (dialog2, hscale1, "hscale1");
-  GLADE_HOOKUP_OBJECT (dialog2, hscale2, "hscale2");
-  GLADE_HOOKUP_OBJECT (dialog2, hbox3, "hbox3");
-  GLADE_HOOKUP_OBJECT (dialog2, radiobutton28, "radiobutton28");
-  GLADE_HOOKUP_OBJECT (dialog2, radiobutton39, "radiobutton39");
-  GLADE_HOOKUP_OBJECT (dialog2, label4, "label4");
-  GLADE_HOOKUP_OBJECT_NO_REF (dialog2, dialog_action_area1, "dialog_action_area1");
-  GLADE_HOOKUP_OBJECT (dialog2, hbuttonbox1, "hbuttonbox1");
-  GLADE_HOOKUP_OBJECT (dialog2, button1, "button1");
-  GLADE_HOOKUP_OBJECT (dialog2, button2, "button2");
-  GLADE_HOOKUP_OBJECT (dialog2, button3, "button3");
+  GLADE_HOOKUP_OBJECT_NO_REF (bitscope_dialog, bitscope_dialog, "bitscope_dialog");
+  GLADE_HOOKUP_OBJECT_NO_REF (bitscope_dialog, dialog_vbox1, "dialog_vbox1");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, notebook1, "notebook1");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, table3, "table3");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, label23, "label23");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, device_entry, "device_entry");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, label22, "label22");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, table1, "table1");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, label6, "label6");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, label7, "label7");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, label8, "label8");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, label10, "label10");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, vbox1, "vbox1");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, radiobutton12, "radiobutton12");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, radiobutton13, "radiobutton13");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, vbox2, "vbox2");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, radiobutton14, "radiobutton14");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, radiobutton15, "radiobutton15");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, radiobutton16, "radiobutton16");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, radiobutton17, "radiobutton17");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, vbox3, "vbox3");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, radiobutton18, "radiobutton18");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, radiobutton19, "radiobutton19");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, vbox4, "vbox4");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, radiobutton20, "radiobutton20");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, radiobutton21, "radiobutton21");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, radiobutton22, "radiobutton22");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, radiobutton23, "radiobutton23");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, checkbutton2, "checkbutton2");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, checkbutton3, "checkbutton3");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, hbox1, "hbox1");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, radiobutton24, "radiobutton24");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, radiobutton25, "radiobutton25");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, label11, "label11");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, hseparator3, "hseparator3");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, hseparator2, "hseparator2");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, hseparator1, "hseparator1");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, vseparator1, "vseparator1");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, vseparator2, "vseparator2");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, label3, "label3");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, table2, "table2");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, label12, "label12");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, label16, "label16");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, label17, "label17");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, hbox4, "hbox4");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, radiobutton30, "radiobutton30");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, radiobutton31, "radiobutton31");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, hbox5, "hbox5");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, radiobutton38, "radiobutton38");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, radiobutton40, "radiobutton40");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, label15, "label15");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, entry1, "entry1");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, hseparator4, "hseparator4");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, hseparator5, "hseparator5");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, label21, "label21");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, label19, "label19");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, label13, "label13");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, label14, "label14");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, vseparator3, "vseparator3");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, hscale1, "hscale1");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, hscale2, "hscale2");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, hbox3, "hbox3");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, radiobutton28, "radiobutton28");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, radiobutton39, "radiobutton39");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, label4, "label4");
+  GLADE_HOOKUP_OBJECT_NO_REF (bitscope_dialog, dialog_action_area1, "dialog_action_area1");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, hbuttonbox1, "hbuttonbox1");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, button1, "button1");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, button2, "button2");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, button3, "button3");
 
-  return dialog2;
+  return bitscope_dialog;
 }
 
