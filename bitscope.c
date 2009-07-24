@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: bitscope.c,v 2.1 2009/01/15 07:05:59 baccala Exp $
+ * @(#)$Id: bitscope.c,v 2.2 2009/07/24 20:05:56 baccala Exp $
  *
  * Copyright (C) 2000 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -18,6 +18,8 @@
 #include "oscope.h"
 #include "proscope.h"		/* for PSDEBUG macro */
 #include "bitscope.h"
+
+char bitscope_device[80] = BITSCOPE;	/* UNIX device name */
 
 BitScope bs;			/* the BitScope structure */
 
@@ -398,6 +400,7 @@ idbitscope(int fd)
 static int open_bitscope(void)
 {
   int i;
+  static int once = 0;
 
   for (i = 0; i < sizeof(bs.R) / sizeof(bs.R[0]); i++) {
     bs.R[i] = -1;
@@ -405,7 +408,14 @@ static int open_bitscope(void)
 
   bs.probed = 1;
 
-  return init_serial_bitscope();
+  if (!once) {
+    char *p;
+    if ((p = getenv("BITSCOPE")) != NULL) /* first place to look */
+      strncpy(bitscope_device, p, sizeof(bitscope_device));
+    once = 1;
+  }
+
+  return init_serial_bitscope(bitscope_device);
 }
 
 static int nchans(void)

@@ -1469,8 +1469,16 @@ create_bitscope_dialog (void)
   GtkWidget *dialog_vbox1;
   GtkWidget *notebook1;
   GtkWidget *table3;
-  GtkWidget *label23;
-  GtkWidget *device_entry;
+  GtkWidget *bitscope_device_entry;
+  GtkWidget *bitscope_host_entry;
+  GtkWidget *bitscope_internet_button;
+  GSList *bitscope_internet_button_group = NULL;
+  GtkWidget *bitscope_serial_button;
+  GtkWidget *bitscope_port_label;
+  GtkWidget *bitscope_host_label;
+  GtkWidget *bitscope_device_label;
+  GtkWidget *alignment9;
+  GtkWidget *bitscope_port_entry;
   GtkWidget *label22;
   GtkWidget *table1;
   GtkWidget *label6;
@@ -1558,7 +1566,7 @@ create_bitscope_dialog (void)
   gtk_widget_show (notebook1);
   gtk_box_pack_start (GTK_BOX (dialog_vbox1), notebook1, TRUE, TRUE, 0);
 
-  table3 = gtk_table_new (1, 2, FALSE);
+  table3 = gtk_table_new (5, 2, FALSE);
   gtk_widget_set_name (table3, "table3");
   gtk_widget_show (table3);
   gtk_container_add (GTK_CONTAINER (notebook1), table3);
@@ -1566,21 +1574,89 @@ create_bitscope_dialog (void)
   gtk_table_set_row_spacings (GTK_TABLE (table3), 10);
   gtk_table_set_col_spacings (GTK_TABLE (table3), 10);
 
-  label23 = gtk_label_new (_("Device:"));
-  gtk_widget_set_name (label23, "label23");
-  gtk_widget_show (label23);
-  gtk_table_attach (GTK_TABLE (table3), label23, 0, 1, 0, 1,
-                    (GtkAttachOptions) (GTK_FILL),
-                    (GtkAttachOptions) (0), 0, 0);
-  gtk_label_set_justify (GTK_LABEL (label23), GTK_JUSTIFY_CENTER);
-  gtk_misc_set_alignment (GTK_MISC (label23), 0, 0.5);
-
-  device_entry = gtk_entry_new ();
-  gtk_widget_set_name (device_entry, "device_entry");
-  gtk_widget_show (device_entry);
-  gtk_table_attach (GTK_TABLE (table3), device_entry, 1, 2, 0, 1,
+  bitscope_device_entry = gtk_entry_new ();
+  gtk_widget_set_name (bitscope_device_entry, "bitscope_device_entry");
+  gtk_widget_show (bitscope_device_entry);
+  gtk_table_attach (GTK_TABLE (table3), bitscope_device_entry, 1, 2, 1, 2,
                     (GtkAttachOptions) (GTK_EXPAND | GTK_FILL),
                     (GtkAttachOptions) (0), 0, 0);
+  gtk_entry_set_text (GTK_ENTRY (bitscope_device_entry), _("/dev/bitscope"));
+
+  bitscope_host_entry = gtk_entry_new ();
+  gtk_widget_set_name (bitscope_host_entry, "bitscope_host_entry");
+  gtk_widget_show (bitscope_host_entry);
+  gtk_table_attach (GTK_TABLE (table3), bitscope_host_entry, 1, 2, 3, 4,
+                    (GtkAttachOptions) (GTK_EXPAND | GTK_FILL),
+                    (GtkAttachOptions) (0), 0, 0);
+  gtk_widget_set_sensitive (bitscope_host_entry, FALSE);
+  gtk_entry_set_text (GTK_ENTRY (bitscope_host_entry), _("sydney.bitscope.net"));
+  gtk_entry_set_invisible_char (GTK_ENTRY (bitscope_host_entry), 9679);
+
+  bitscope_internet_button = gtk_radio_button_new_with_mnemonic (NULL, _("Internet"));
+  gtk_widget_set_name (bitscope_internet_button, "bitscope_internet_button");
+  gtk_widget_show (bitscope_internet_button);
+  gtk_table_attach (GTK_TABLE (table3), bitscope_internet_button, 0, 2, 2, 3,
+                    (GtkAttachOptions) (GTK_FILL),
+                    (GtkAttachOptions) (0), 0, 0);
+  gtk_widget_set_sensitive (bitscope_internet_button, FALSE);
+  gtk_radio_button_set_group (GTK_RADIO_BUTTON (bitscope_internet_button), bitscope_internet_button_group);
+  bitscope_internet_button_group = gtk_radio_button_get_group (GTK_RADIO_BUTTON (bitscope_internet_button));
+
+  bitscope_serial_button = gtk_radio_button_new_with_mnemonic (NULL, _("Serial / USB"));
+  gtk_widget_set_name (bitscope_serial_button, "bitscope_serial_button");
+  gtk_widget_show (bitscope_serial_button);
+  gtk_table_attach (GTK_TABLE (table3), bitscope_serial_button, 0, 2, 0, 1,
+                    (GtkAttachOptions) (GTK_FILL),
+                    (GtkAttachOptions) (0), 0, 0);
+  gtk_radio_button_set_group (GTK_RADIO_BUTTON (bitscope_serial_button), bitscope_internet_button_group);
+  bitscope_internet_button_group = gtk_radio_button_get_group (GTK_RADIO_BUTTON (bitscope_serial_button));
+  gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (bitscope_serial_button), TRUE);
+
+  bitscope_port_label = gtk_label_new (_("Port:"));
+  gtk_widget_set_name (bitscope_port_label, "bitscope_port_label");
+  gtk_widget_show (bitscope_port_label);
+  gtk_table_attach (GTK_TABLE (table3), bitscope_port_label, 0, 1, 4, 5,
+                    (GtkAttachOptions) (GTK_FILL),
+                    (GtkAttachOptions) (0), 0, 0);
+  gtk_widget_set_sensitive (bitscope_port_label, FALSE);
+  gtk_misc_set_alignment (GTK_MISC (bitscope_port_label), 0, 0.5);
+  gtk_misc_set_padding (GTK_MISC (bitscope_port_label), 22, 0);
+
+  bitscope_host_label = gtk_label_new (_("Host:"));
+  gtk_widget_set_name (bitscope_host_label, "bitscope_host_label");
+  gtk_widget_show (bitscope_host_label);
+  gtk_table_attach (GTK_TABLE (table3), bitscope_host_label, 0, 1, 3, 4,
+                    (GtkAttachOptions) (GTK_FILL),
+                    (GtkAttachOptions) (0), 0, 0);
+  gtk_widget_set_sensitive (bitscope_host_label, FALSE);
+  gtk_misc_set_alignment (GTK_MISC (bitscope_host_label), 0, 0.5);
+  gtk_misc_set_padding (GTK_MISC (bitscope_host_label), 22, 0);
+
+  bitscope_device_label = gtk_label_new (_("Device:"));
+  gtk_widget_set_name (bitscope_device_label, "bitscope_device_label");
+  gtk_widget_show (bitscope_device_label);
+  gtk_table_attach (GTK_TABLE (table3), bitscope_device_label, 0, 1, 1, 2,
+                    (GtkAttachOptions) (GTK_FILL),
+                    (GtkAttachOptions) (0), 0, 0);
+  gtk_label_set_justify (GTK_LABEL (bitscope_device_label), GTK_JUSTIFY_CENTER);
+  gtk_misc_set_alignment (GTK_MISC (bitscope_device_label), 0, 0.5);
+  gtk_misc_set_padding (GTK_MISC (bitscope_device_label), 22, 0);
+
+  alignment9 = gtk_alignment_new (0, 0.5, 0, 1);
+  gtk_widget_set_name (alignment9, "alignment9");
+  gtk_widget_show (alignment9);
+  gtk_table_attach (GTK_TABLE (table3), alignment9, 1, 2, 4, 5,
+                    (GtkAttachOptions) (GTK_FILL),
+                    (GtkAttachOptions) (0), 0, 0);
+
+  bitscope_port_entry = gtk_entry_new ();
+  gtk_widget_set_name (bitscope_port_entry, "bitscope_port_entry");
+  gtk_widget_show (bitscope_port_entry);
+  gtk_container_add (GTK_CONTAINER (alignment9), bitscope_port_entry);
+  gtk_widget_set_sensitive (bitscope_port_entry, FALSE);
+  gtk_entry_set_text (GTK_ENTRY (bitscope_port_entry), _("16384"));
+  gtk_entry_set_invisible_char (GTK_ENTRY (bitscope_port_entry), 9679);
+  gtk_entry_set_width_chars (GTK_ENTRY (bitscope_port_entry), 5);
 
   label22 = gtk_label_new (_("Connection"));
   gtk_widget_set_name (label22, "label22");
@@ -2113,8 +2189,15 @@ create_bitscope_dialog (void)
   GLADE_HOOKUP_OBJECT_NO_REF (bitscope_dialog, dialog_vbox1, "dialog_vbox1");
   GLADE_HOOKUP_OBJECT (bitscope_dialog, notebook1, "notebook1");
   GLADE_HOOKUP_OBJECT (bitscope_dialog, table3, "table3");
-  GLADE_HOOKUP_OBJECT (bitscope_dialog, label23, "label23");
-  GLADE_HOOKUP_OBJECT (bitscope_dialog, device_entry, "device_entry");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, bitscope_device_entry, "bitscope_device_entry");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, bitscope_host_entry, "bitscope_host_entry");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, bitscope_internet_button, "bitscope_internet_button");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, bitscope_serial_button, "bitscope_serial_button");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, bitscope_port_label, "bitscope_port_label");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, bitscope_host_label, "bitscope_host_label");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, bitscope_device_label, "bitscope_device_label");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, alignment9, "alignment9");
+  GLADE_HOOKUP_OBJECT (bitscope_dialog, bitscope_port_entry, "bitscope_port_entry");
   GLADE_HOOKUP_OBJECT (bitscope_dialog, label22, "label22");
   GLADE_HOOKUP_OBJECT (bitscope_dialog, table1, "table1");
   GLADE_HOOKUP_OBJECT (bitscope_dialog, label6, "label6");

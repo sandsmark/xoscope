@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: ser_unix.c,v 2.0 2008/12/17 17:35:46 baccala Exp $
+ * @(#)$Id: ser_unix.c,v 2.1 2009/07/24 20:05:56 baccala Exp $
  *
  * Copyright (C) 1997 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -116,7 +116,7 @@ findscope(char *dev, int i)
 
 /* set [scope].found to non-zero if we find a scope on a serial port */
 int
-init_serial_bitscope(void)
+init_serial_bitscope(char *dev)
 {
   char *p;
 
@@ -126,11 +126,7 @@ init_serial_bitscope(void)
   stbuf.c_cflag = B57600 | CS8 | CLOCAL | CREAD;
   stbuf.c_iflag = IGNPAR;	/* | ICRNL; (this would hose binary dumps) */
 
-  if ((p = getenv("BITSCOPE")) == NULL) /* first place to look */
-    p = BITSCOPE;		/* -D default defined in Makefile */
-  strcpy(device, p);
-
-  return findscope(device, 0);
+  return findscope(dev, 0);
 }
 
 /* set [scope].found to non-zero if we find a scope on a serial port */

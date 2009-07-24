@@ -32,6 +32,8 @@ extern int comedi_bufsize;
 extern int comedi_rate;
 extern int comedi_aref;
 
+extern char bitscope_device[];
+
 static int gui_subdevice = 0;
 
 char *subdevice_types[]={
@@ -314,6 +316,8 @@ bitscope_dialog()
   gtk_widget_show (dialog);
   window = dialog;
 
+  gtk_entry_set_text(GTK_ENTRY(LU("bitscope_device_entry")), bitscope_device);
+
   /* The object of this code is to update the binary "trigger condition"
    * as the analog sliders are moved.
    */
@@ -457,11 +461,11 @@ void
 on_ok                                  (GtkButton       *button,
                                         gpointer         user_data)
 {
+  /* Bitscope OK button - 'click' apply button and exit the dialog */
   gtk_signal_emit_by_name(GTK_OBJECT(LU("button2")), "clicked");
-  printf("ok\n");
   gtk_widget_destroy(LU("bitscope_dialog"));
-/*    gtk_main_quit(); */
 }
+
 
 
 void
@@ -469,7 +473,10 @@ on_apply                               (GtkButton       *button,
                                         gpointer         user_data)
 {
   /* snag the state of all widgets into bs.r & reset BitScope */
-  printf("apply\n");
+  strncpy(bitscope_device,
+	  gtk_entry_get_text(GTK_ENTRY(LU("bitscope_device_entry"))), 80);
+
+  clear();
 }
 
 void
