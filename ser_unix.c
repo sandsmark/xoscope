@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: ser_unix.c,v 2.1 2009/07/24 20:05:56 baccala Exp $
+ * @(#)$Id: ser_unix.c,v 2.2 2009/07/27 04:02:50 baccala Exp $
  *
  * Copyright (C) 1997 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -111,6 +111,7 @@ findscope(char *dev, int i)
 
   sprintf(serial_error, "%s No %s found\n", dev,
 	  i==0 ? "BitScope" : "ProbeScope");
+  close(fd);
   return(0);
 }
 
