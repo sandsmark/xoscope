@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: ser_unix.c,v 2.2 2009/07/27 04:02:50 baccala Exp $
+ * @(#)$Id: ser_unix.c,v 2.3 2009/07/27 04:24:25 baccala Exp $
  *
  * Copyright (C) 1997 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -119,8 +119,6 @@ findscope(char *dev, int i)
 int
 init_serial_bitscope(char *dev)
 {
-  char *p;
-
   /* BitScope serial port settings */
   sflags = O_RDWR | O_NDELAY | O_NOCTTY;
   memset(&stbuf, 0, sizeof(stbuf));
