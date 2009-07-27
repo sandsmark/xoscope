@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 2.31 2009/07/27 03:59:14 baccala Exp $
+ * @(#)$Id: display.c,v 2.32 2009/07/27 15:24:51 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -381,7 +381,7 @@ void update_text(void)
 	SIformat(string, "%g %sV/div",
 		 (double)ch[i].signal->volts * ch[i].div / ch[i].mult / 10000);
       else
-	sprintf(string, "%d / %d", ch[i].mult, ch[i].div);
+	sprintf(string, "%d:%d", ch[i].mult, ch[i].div);
       sprintf(widget, "Ch%1d_scale_label", i+1);
       gtk_label_set_text(GTK_LABEL(LU(widget)), string);
 
