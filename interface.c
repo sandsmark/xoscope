@@ -1654,7 +1654,7 @@ create_bitscope_dialog (void)
   gtk_widget_show (bitscope_port_entry);
   gtk_container_add (GTK_CONTAINER (alignment9), bitscope_port_entry);
   gtk_widget_set_sensitive (bitscope_port_entry, FALSE);
-  gtk_entry_set_text (GTK_ENTRY (bitscope_port_entry), _("16384"));
+  gtk_entry_set_text (GTK_ENTRY (bitscope_port_entry), _("16385"));
   gtk_entry_set_invisible_char (GTK_ENTRY (bitscope_port_entry), 9679);
   gtk_entry_set_width_chars (GTK_ENTRY (bitscope_port_entry), 5);
 
@@ -1902,8 +1902,8 @@ create_bitscope_dialog (void)
 
   label3 = gtk_label_new (_("Input"));
   gtk_widget_set_name (label3, "label3");
-  gtk_widget_show (label3);
   gtk_notebook_set_tab_label (GTK_NOTEBOOK (notebook1), gtk_notebook_get_nth_page (GTK_NOTEBOOK (notebook1), 1), label3);
+  gtk_widget_set_sensitive (label3, FALSE);
   gtk_label_set_justify (GTK_LABEL (label3), GTK_JUSTIFY_CENTER);
 
   table2 = gtk_table_new (10, 3, FALSE);
@@ -2090,8 +2090,8 @@ create_bitscope_dialog (void)
 
   label4 = gtk_label_new (_("Trigger"));
   gtk_widget_set_name (label4, "label4");
-  gtk_widget_show (label4);
   gtk_notebook_set_tab_label (GTK_NOTEBOOK (notebook1), gtk_notebook_get_nth_page (GTK_NOTEBOOK (notebook1), 2), label4);
+  gtk_widget_set_sensitive (label4, FALSE);
   gtk_label_set_justify (GTK_LABEL (label4), GTK_JUSTIFY_CENTER);
 
   dialog_action_area1 = GTK_DIALOG (bitscope_dialog)->action_area;

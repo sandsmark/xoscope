@@ -3985,7 +3985,7 @@
 		      <property name="editable">True</property>
 		      <property name="visibility">True</property>
 		      <property name="max_length">0</property>
-		      <property name="text" translatable="yes">16384</property>
+		      <property name="text" translatable="yes">16385</property>
 		      <property name="has_frame">True</property>
 		      <property name="invisible_char">●</property>
 		      <property name="activates_default">False</property>
@@ -4673,7 +4673,7 @@ Range</property>
 
 	  <child>
 	    <widget class="GtkLabel" id="label3">
-	      <property name="visible">True</property>
+	      <property name="sensitive">False</property>
 	      <property name="label" translatable="yes">Input</property>
 	      <property name="use_underline">False</property>
 	      <property name="use_markup">False</property>
@@ -5208,7 +5208,7 @@ Range</property>
 
 	  <child>
 	    <widget class="GtkLabel" id="label4">
-	      <property name="visible">True</property>
+	      <property name="sensitive">False</property>
 	      <property name="label" translatable="yes">Trigger</property>
 	      <property name="use_underline">False</property>
 	      <property name="use_markup">False</property>

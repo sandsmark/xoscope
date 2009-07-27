@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: bitscope.c,v 2.2 2009/07/24 20:05:56 baccala Exp $
+ * @(#)$Id: bitscope.c,v 2.3 2009/07/27 04:03:12 baccala Exp $
  *
  * Copyright (C) 2000 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -44,30 +44,44 @@ static Signal analogA_signal, analogB_signal, digital_signal;
 void bitscope_dialog() __attribute__ ((weak));
 void bitscope_dialog() {}
 
-/* run CMD command string on bitscope FD or return 0 if unsuccessful */
+/* run CMD command string on bitscope FD or return 0 if unsuccessful
+ *
+ * The command string must be a string of single-character bitscope
+ * commands, each of which echos itself back (with nothing else)
+ */
 static int
 bs_cmd(int fd, char *cmd)
 {
   int i, j, k;
   char c;
 
-/*    if (fd < 3) return(0); */
   in_progress = 0;
   j = strlen(cmd);
   PSDEBUG("bs_cmd: %s\n", cmd);
   for (i = 0; i < j; i++) {
     if (serial_write(fd, cmd + i, 1) == 1) {
-      k = 10;
+      /* Wait up to 50 ms for a reply; for comparison, the FT8U100AX
+       * USB serial port's standard buffering latency is 40 ms.
+       *
+       * XXX this is the kind of thing we need threading for
+       */
+      k = 50;
       while (serial_read(fd, &c, 1) < 1) {
-	if (!k--) return(0);
-	PSDEBUG("cmd sleeping %d\n", k);
-	usleep(1);
+	if (!k--) {
+	  fprintf(stderr, "cmd echo timeout: bs cmd %c\n", cmd[i]);
+	  return(0);
+	}
+	/* PSDEBUG("cmd sleeping %d\n", k); */
+	usleep(1000);
       }
-      if (cmd[i] != c)
+      if (cmd[i] != c) {
 	fprintf(stderr, "bs mismatch @ %d: sent:%c != recv:%c\n", i, cmd[i], c);
+	return(0);
+      }
     } else {
       sprintf(error, "write failed to %d", fd);
       perror(error);
+      return(0);
     }
   }
   return(1);
@@ -75,17 +89,20 @@ bs_cmd(int fd, char *cmd)
 
 /* read N bytes from bitscope FD into BUF, or return 0 if unsuccessful */
 static int
-bs_read(int fd, char *buf, int n)
+bs_read(int fd, unsigned char *buf, int n)
 {
-  int i = 0, j, k = n + 10;
+  int i = 0, j, k = n + 50;
 
   in_progress = 0;
   buf[0] = '\0';
   while (n) {
     if ((j = serial_read(fd, buf + i, n)) < 1) {
-      if (!k--) return(0);
-      PSDEBUG("read sleeping %d\n", k);
-      usleep(1);
+      if (!k--) {
+	PSDEBUG("bs_read timeout\n", 0);
+	return(0);
+      }
+      /* PSDEBUG("read sleeping %d\n", k); */
+      usleep(1000);
     } else {
       n -= j;
       i += j;
@@ -97,12 +114,15 @@ bs_read(int fd, char *buf, int n)
 
 /* asynchronously read N bytes from bitscope FD into BUF, return N when done */
 static int
-bs_read_async(int fd, char *buf, int n, char c)
+bs_read_async(int fd, unsigned char *buf, int n, char c)
 {
-  static char *pos, *end;
+  static unsigned char *pos, *end;
   int i;
 
   if (in_progress) {
+    /* i = end - pos < 64 ? end - pos : 64; */
+    /* if ((i = serial_read(fd, pos, i)) > 0) { */
+      /* fprintf(stderr, "bs_read_async: %d bytes\n", i); */
     if ((i = serial_read(fd, pos, end - pos)) > 0) {
       pos += i;
       if (pos >= end) {
@@ -123,16 +143,17 @@ bs_read_async(int fd, char *buf, int n, char c)
 /* Run IN on bitscope FD and store results in OUT (not including echo) */
 /* Only the last command in IN should produce output; else this won't work */
 static int
-bs_io(int fd, char *in, char *out)
+bs_io(int fd, char *in, unsigned char *out)
 {
   char c;
 
   out[0] = '\0';
   if (!in_progress) {
-    if (in[0] == 'M')
-      bs_cmd(fd, bs.version >= 110 ? "M" : "S");
-    else
-      bs_cmd(fd, in);
+    if (in[0] == 'M') {
+      if (! bs_cmd(fd, bs.version >= 110 ? "M" : "S")) return(0);
+    } else {
+      if (! bs_cmd(fd, in)) return(0);
+    }
   }
   switch (c = in[strlen(in) - 1]) {
   case 'T':
@@ -166,9 +187,10 @@ bs_io(int fd, char *in, char *out)
 static int
 bs_getreg(int fd, int reg)
 {
-  unsigned char i[8], o[8];
+  char i[8], o[8];
+
   sprintf(i, "[%x]@p", reg);
-  if (!bs_io(fd, i, o))
+  if (!bs_io(fd, i, (unsigned char *)o))
     return(-1);
   return strtol(o, NULL, 16);
 }
@@ -184,7 +206,7 @@ bs_getregs(int fd, unsigned char *reg)
   for (i = 3; i < 24; i++) {
     if (!bs_io(fd, "p", buf))
       return(0);
-    reg[i] = strtol(buf, NULL, 16);
+    reg[i] = strtol((char *)buf, NULL, 16);
 //    printf("reg[%d]=%d\n", i, reg[i]);
     if (!bs_io(fd, "n", buf))
       return(0);
@@ -195,7 +217,7 @@ bs_getregs(int fd, unsigned char *reg)
 static int
 bs_putregs(int fd, unsigned char *reg)
 {
-  unsigned char buf[8];
+  char buf[8];
   int i;
 
   if (!bs_cmd(fd, "[3]@"))
@@ -211,15 +233,20 @@ bs_putregs(int fd, unsigned char *reg)
   return(1);
 }
 
+/* Take 50 ms to clear the serial FIFO.  Though almost completely
+ * arbitrary, this number at least meshes with the default 40 ms
+ * latency on the FTDI FT8U100AX.
+ */
+
 static void
 bs_flush_serial()
 {
   int c, byte = 0;
 
-  c = 10;			/* clear serial FIFO */
+  c = 50;
   while ((byte < sizeof(bs.buf)) && c--) {
     byte += serial_read(bs.fd, bs.buf, sizeof(bs.buf) - byte);
-    usleep(1);
+    usleep(1000);
   }
 }
 
@@ -261,7 +288,7 @@ parse_option(char *optarg)
 static int
 bs_changerate(int fd, int dir)
 {
-  unsigned char buf[10];
+  char buf[10];
 
   bs_flush_serial();
   if (dir > 0)
@@ -291,6 +318,8 @@ bs_fixregs(int fd)
 //  bs.r[6] = 127;		/*  scope.trig; ? */
   //  bs.r[6] = 0xff;		/* don't care */
 //  bs.r[7] = TRIGEDGE | TRIGEDGEF2T | LOWER16BNC | TRIGCOMPARE | TRIGANALOG;
+
+  // Trace mode 1 - Channel chop
   bs.r[8] = 1;			/* trace mode, 0-4 */
 
   /* 0: 0, 2, 179 */
@@ -336,8 +365,11 @@ bs_init(int fd)
   bs.found = 1;
   in_progress = 0;
   bs.version = strtol(bs.bcid + 2, NULL, 10);
-  analogA_signal.rate = 25000000;
-  analogB_signal.rate = 25000000;
+  /* analogA_signal.rate = 25000000; */
+  /* analogB_signal.rate = 25000000; */
+  /* We use trace mode 1, channel chop, so each channel is at half rate */
+  analogA_signal.rate = 12500000;
+  analogB_signal.rate = 12500000;
   digital_signal.rate = 25000000;
 //  mem[23].rate = mem[24].rate = mem[25].rate = 12500000;
 
@@ -385,15 +417,20 @@ idbitscope(int fd)
 {
   bs.fd = fd;
 
+  /* XXX shouldn't be tampering with a global var here */
+  in_progress = 0;
+
   flush_serial(bs.fd);
 
   bs_flush_serial();
   if (bs_io(bs.fd, "?", bs.buf) && bs.buf[1] == 'B' && bs.buf[2] == 'C') {
-    strncpy(bs.bcid, bs.buf + 1, sizeof(bs.bcid));
+    strncpy(bs.bcid, (char *)bs.buf + 1, sizeof(bs.bcid));
     bs.bcid[8] = '\0';
     bs_init(bs.fd);
     return(1);		/* BitScope found! */
   }
+
+  bs.fd = -1;
   return(0);
 }
 
@@ -412,6 +449,8 @@ static int open_bitscope(void)
     char *p;
     if ((p = getenv("BITSCOPE")) != NULL) /* first place to look */
       strncpy(bitscope_device, p, sizeof(bitscope_device));
+    /* XXX hokey that this should be here. */
+    bs.fd = -1;
     once = 1;
   }
 
@@ -447,7 +486,36 @@ static Signal * bs_chan(int chan)
 
 static void reset(void)
 {
-  bs.probed = 0;
+  // bs.probed = 0;
+  int count = 10;
+  char in[2] = {in_progress, '\0'};
+
+  if (bs.fd == -1) return;
+
+  if (in_progress) {
+    bs_io(bs.fd, in, bs.buf);
+    while (in_progress && count) {
+      /* sleep up to 50 ms, 10 times, so we could wait a half second */
+      usleep(50000);
+      bs_io(bs.fd, in, bs.buf);
+      count --;
+    }
+  }
+
+  if (in_progress) {
+    fprintf(stderr, "bs_reset: couldn't terminate in_progress transfer\n");
+    in_progress = 0;
+  }
+
+  analogA_signal.num = 0;
+  analogB_signal.num = 0;
+  digital_signal.num = 0;
+
+  analogA_signal.width = min(samples(analogA_signal.rate), 8192);
+  analogB_signal.width = min(samples(analogB_signal.rate), 8192);
+  digital_signal.width = min(samples(digital_signal.rate), 8192*2);
+
+  bs_io(bs.fd, ">T", bs.buf);
 }
 
 /* get pending available data from FD, or initiate new data collection */
@@ -457,7 +525,8 @@ static int bs_getdata(void)
   static int alt = 0, k, n;
   int fd = bs.fd;
 
-  if (!fd) return(0);		/* device open? */
+  if (fd == -1) return(0);		/* device open? */
+
   if (in_progress == 'M') {	/* finish a get */
     if ((n = bs_io(fd, "M", bs.buf))) {
       buff = bs.buf;
@@ -465,14 +534,14 @@ static int bs_getdata(void)
 	while (buff < bs.buf + n) {
 	  if (k >= MAXWID)
 	    break;
-	  if (k > 8192)
+	  if (k >= 8192)
 	    alt = 1;
 	  digital_signal.data[k] = *buff++ - 128;
 	  if (alt == 0) analogA_signal.data[k++] = *buff++ - 128;
-	  else analogB_signal.data[k++] = *buff++ - 128;
+	  else analogB_signal.data[k++ - 8192] = *buff++ - 128;
 	}
-	analogA_signal.num = k > 8192 ? 8192 : k;
-	if (k > 8192) analogB_signal.num = k - 8192;
+	analogA_signal.num = k > analogA_signal.width ? analogA_signal.width : k;
+	if (k >= 8192) analogB_signal.num = k - 8192 > analogB_signal.width ? analogB_signal.width : k - 8192;
 	digital_signal.num = k;
       } else {			/* S mode, hex ASCII */
 	while (*buff != '\0') {
@@ -481,7 +550,7 @@ static int bs_getdata(void)
 	  if (*buff == '\r' || *buff == '\n')
 	    buff++;
 	  else {
-	    n = strtol(buff, NULL, 16);
+	    n = strtol((char *) buff, NULL, 16);
 	    if (alt == 0) analogA_signal.data[k] = (n & 0xff) - 128;
 	    else analogB_signal.data[k] = (n & 0xff) - 128;
 	    digital_signal.data[k] = ((n & 0xff00) >> 8) - 128;
@@ -495,18 +564,27 @@ static int bs_getdata(void)
 	analogB_signal.num = k;
 	digital_signal.num = k;
       }
-      if (k >= samples(analogA_signal.rate) || k >= 16 * 1024) { /* all done */
+      /* XXX once we're done with analogA, we should reset the Spock counter
+       * to read analogB.  And if anything's listening to the digital signal,
+       * we need to read all the way through it.
+       */
+      if (k >= 8192 + analogB_signal.width || k >= 16 * 1024) { /* all done */
+//      if (k >= samples(analogA_signal.rate) || k >= 16 * 1024) { /* all done */
 //      if (k >= 8192 + samples(mem[23].rate) || k >= 16 * 1024) {
 	k = 0;
 	alt = 0;
 	in_progress = 0;
-      } else {		/* still need more, start another */
+      } else {
+	/* Haven't finished reading the current trace, so request
+	 * another block of data.  XXX Should use "A" request if we
+	 * don't need the digital data.
+	 */
 	bs_io(fd, "M", bs.buf);
       }
     }
   } else if (in_progress == 'T') { /* finish a trigger */
     if (bs_io(fd, "T", bs.buf)) {
-      fprintf(stderr, "%s", bs.buf);
+      /* fprintf(stderr, "%s\n", bs.buf); */
       bs_io(fd, "M", bs.buf);	/* start a get */
       analogA_signal.num = 0;
       analogA_signal.frame ++;
