@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 2.30 2009/07/24 05:48:26 baccala Exp $
+ * @(#)$Id: display.c,v 2.31 2009/07/27 03:59:14 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -80,19 +80,75 @@ message(char *message)
   g_timeout_add (2000, clear_message_callback, NULL);
 }
 
+/* Format a number into a string using SI prefixes.  "fmt" should
+ * contain a "%g" for the number and a "%s" for the prefix, i.e:
+ *          "%g %sV"
+ */
+
 void
-format(char *buf, const char *fmt, float num)
+SIformat(char *buf, const char *fmt, double num)
 {
   int power=0;
 
-  /* Round off num to nearest 1% */
+  /* Round off num to nearest .1% */
 
-  while (num > 100) num /= 10, power ++;
-  while ((num > 0) && (num < 10)) num *= 10, power --;
+  while (num > 1000) num /= 10, power ++;
+  while (num < 100) num *= 10, power --;
   num = rint(num);
-  num *= pow(10.0, power);
 
-  sprintf(buf, fmt, num >= 1000 ? num / 1000 : num, num >= 1000 ? "" : "m");
+  /* Special case to make sure we get "1 ms/div" and not "1000 us/div" */
+  if (num == 1000) num /= 10, power ++;
+
+  /* 'num' is now between 100 and 1000; original num is (num * 10^power) */
+
+  switch (power+1) {
+  case -13:
+  case -12:
+  case -11:
+    sprintf(buf, fmt, num * pow(10.0, power+12), "p");
+    break;
+
+  case -10:
+  case -9:
+  case -8:
+    sprintf(buf, fmt, num * pow(10.0, power+9), "n");
+    break;
+
+  case -7:
+  case -6:
+  case -5:
+    /* use UTF-8 micro sign */
+    sprintf(buf, fmt, num * pow(10.0, power+6), "\302\265");
+    break;
+
+  case -4:
+  case -3:
+  case -2:
+    sprintf(buf, fmt, num * pow(10.0, power+3), "m");
+    break;
+
+  case -1:
+  case 0:
+  case 1:
+  default:
+    /* This is a reasonable default, since %g will use scientific
+     * notation if the exponent is less than -4 or greater than 5.
+     */
+    sprintf(buf, fmt, num * pow(10.0, power), "");
+    break;
+
+  case 2:
+  case 3:
+  case 4:
+    sprintf(buf, fmt, num * pow(10.0, power-3), "k");
+    break;
+
+  case 5:
+  case 6:
+  case 7:
+    sprintf(buf, fmt, num * pow(10.0, power-6), "M");
+    break;
+  }
 }
 
 void
@@ -290,8 +346,8 @@ void update_text(void)
 
     if (trigsig->volts > 0) {
       char minibuf[256];
-      format(minibuf, "%g %sV",
-	     (scope.trig) * trigsig->volts / 320);
+      SIformat(minibuf, "%g %sV",
+	     (scope.trig) * trigsig->volts / 320000);
       sprintf(string, "%s Trigger @ %s", trigs[scope.trige], minibuf);
     } else {
       sprintf(string, "%s Trigger @ %d",
@@ -322,8 +378,8 @@ void update_text(void)
     if (ch[i].signal) {
 
       if (!ch[i].bits && ch[i].signal->volts)
-	format(string, "%g %sV/div",
-	       (float)ch[i].signal->volts * ch[i].div / ch[i].mult / 10);
+	SIformat(string, "%g %sV/div",
+		 (double)ch[i].signal->volts * ch[i].div / ch[i].mult / 10000);
       else
 	sprintf(string, "%d / %d", ch[i].mult, ch[i].div);
       sprintf(widget, "Ch%1d_scale_label", i+1);
@@ -382,9 +438,7 @@ void update_text(void)
 
   }
 
-  /* Use UTF-8 micro sign */
-  i = 1000 * scope.div / scope.scale;
-  sprintf(string, "%d %ss/div", i > 999 ? i / 1000: i, i > 999 ? "m" : "\302\265");
+  SIformat(string, "%g %ss/div", (float) scope.div / scope.scale / 1000.0);
   gtk_label_set_text(GTK_LABEL(LU("timebase_label")), string);
 
   if (p->signal) {
@@ -407,7 +461,7 @@ void update_text(void)
 
     if (p->signal->rate > 0) {
 
-      sprintf(string, "%d S/s", p->signal->rate);
+      SIformat(string, "%g %sS/s", (float)p->signal->rate);
       gtk_label_set_text(GTK_LABEL(LU("sample_rate_label")), string);
 
     } else if (p->signal->rate < 0) {
@@ -926,6 +980,11 @@ gfloat cursoraX[2], cursoraY[2], cursorbX[2], cursorbY[2];
 GtkDataboxGraph *cursora = NULL;
 GtkDataboxGraph *cursorb = NULL;
 
+int min(int a, int b)
+{
+  return a < b ? a : b;
+}
+
 int max(int a, int b)
 {
   return a > b ? a : b;
@@ -1132,8 +1191,8 @@ draw_data()
 	  /* Sweep mode - erase anything lingering in the databox
 	   * except the next to last trace, because we want to leave
 	   * the trailing part of it drawn if we're in the middle of a
-	   * sweep.  We remove it from the databox, and put put it
-	   * back in with fewer data points.
+	   * sweep.  We remove it from the databox, and put it back in
+	   * with fewer data points.
 	   */
 
 	  if (sl->next != NULL && sl->next->graph != NULL) {
@@ -1147,6 +1206,13 @@ draw_data()
 	    sl->next->next = NULL;
 	  }
 
+	  /* XXX I'd like the old trace to start at the same
+	   * x-coordinate that the new trace ends at, but that creates
+	   * a special case if the "new" trace is zero-length.
+	   * Just shows how badly this code needs a cleanup.
+	   */
+
+#if 0
 	  if ((sl->next != NULL)
 	      && (sl->next_point < sl->next->next_point)) {
 	    sl->next->graph
@@ -1154,7 +1220,15 @@ draw_data()
 				       sl->next->X + sl->next_point - 1,
 				       sl->next->Y + sl->next_point - 1,
 				       &gcolor, 1);
-
+#else
+	  if ((sl->next != NULL)
+	      && (sl->next_point < sl->next->next_point)) {
+	    sl->next->graph
+	      = gtk_databox_lines_new (sl->next->next_point-sl->next_point,
+				       sl->next->X + sl->next_point,
+				       sl->next->Y + sl->next_point,
+				       &gcolor, 1);
+#endif
 	    gtk_databox_graph_add (GTK_DATABOX (databox), sl->next->graph);
 	  }
 
