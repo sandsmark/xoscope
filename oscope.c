@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.c,v 2.13 2009/07/24 05:48:26 baccala Exp $
+ * @(#)$Id: oscope.c,v 2.14 2009/07/27 04:01:38 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -560,13 +560,15 @@ handle_key(unsigned char c)
     if (scope.div > 1)		/* decrease time scale, zoom in */
       scope.div = scaledown(scope.div);
     else
-      scope.scale = scaleup(scope.scale, 5000);
+      /* this corresponds to a minimum time scale of 2 ns/div */
+      scope.scale = scaleup(scope.scale, 500000);
     timebase_changed();
     break;
   case '9':
     if (scope.scale > 1)	/* increase time scale, zoom out */
       scope.scale = scaledown(scope.scale);
     else
+      /* this corresponds to a maximum time scale of 2 sec/div */
       scope.div = scaleup(scope.div, 2000);
     timebase_changed();
     break;
