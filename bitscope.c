@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: bitscope.c,v 2.3 2009/07/27 04:03:12 baccala Exp $
+ * @(#)$Id: bitscope.c,v 2.4 2009/07/28 00:12:04 baccala Exp $
  *
  * Copyright (C) 2000 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -486,9 +486,17 @@ static Signal * bs_chan(int chan)
 
 static void reset(void)
 {
-  // bs.probed = 0;
   int count = 10;
   char in[2] = {in_progress, '\0'};
+
+  /* Clear bs.probed, so that if we didn't find a bitscope on the
+   * serial port, we'll probe again the next time nchans() is called.
+   *
+   * It's unclear to me just when we should re-attempt a probe, since
+   * the user could plug the device in at any time.
+   */
+
+  bs.probed = 0;
 
   if (bs.fd == -1) return;
 
