@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: proscope.c,v 2.1 2009/01/15 07:05:59 baccala Exp $
+ * @(#)$Id: proscope.c,v 2.2 2009/07/30 02:18:35 baccala Exp $
  *
  * Copyright (C) 1997 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -11,6 +11,7 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include "proscope.h"
 #include "oscope.h"

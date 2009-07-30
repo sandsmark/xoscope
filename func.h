@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: func.h,v 2.0 2008/12/17 17:35:46 baccala Exp $
+ * @(#)$Id: func.h,v 2.1 2009/07/30 02:18:35 baccala Exp $
  *
  * Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -35,8 +35,8 @@ void next_func(void);
 void prev_func(void);
 int function_bynum_on_channel(int, Channel *);
 
-void start_command_on_channel(char *, Channel *);
-void startcommand(char *);
+void start_command_on_channel(const char *, Channel *);
+void startcommand(const char *);
 
 void init_math();
 

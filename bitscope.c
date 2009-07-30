@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: bitscope.c,v 2.6 2009/07/30 01:50:18 baccala Exp $
+ * @(#)$Id: bitscope.c,v 2.7 2009/07/30 02:18:35 baccala Exp $
  *
  * Copyright (C) 2000 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -191,6 +191,12 @@ bs_io(int fd, char *in, unsigned char *out)
   return(1);
 }
 
+#if 0
+
+/* We don't use this function right now, because we never get
+ * individual registers.  Might need it again in the future.
+ */
+
 static int
 bs_getreg(int fd, int reg)
 {
@@ -201,6 +207,8 @@ bs_getreg(int fd, int reg)
     return(-1);
   return strtol(o, NULL, 16);
 }
+
+#endif
 
 static int
 bs_getregs(int fd, unsigned char *reg)

@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.c,v 2.15 2009/07/30 02:07:32 baccala Exp $
+ * @(#)$Id: oscope.c,v 2.16 2009/07/30 02:18:35 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -448,8 +448,7 @@ handle_key(unsigned char c)
     return;
   }
   switch (c) {
-  case 0:
-  case -1:			/* no key pressed */
+  case 0:			/* no key pressed */
     break;
   case '\'':			/* toggle manual cursors */
     scope.curs = ! scope.curs;

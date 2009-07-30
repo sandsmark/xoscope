@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: gr_gtk.c,v 2.22 2009/07/24 05:48:26 baccala Exp $
+ * @(#)$Id: gr_gtk.c,v 2.23 2009/07/30 02:18:35 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -492,7 +492,7 @@ static GtkItemFactoryEntry menu_items[] =
   {"/File/Save...", NULL, hit_key, '#', NULL},
   /*     {"/File/Save as", NULL, NULL, 0, NULL}, */
   {"/File/Device/tear", NULL, NULL, 0, "<Tearoff>"},
-  {"/File/Device/None", NULL, datasource, NULL, NULL},
+  {"/File/Device/None", NULL, datasource, 0, NULL},
   {"/File/Device Options...", NULL, option_dialog, 0, NULL},
   {"/File/sep", NULL, NULL, 0, "<Separator>"},
   {"/File/Quit", NULL, hit_key, '\e', NULL},

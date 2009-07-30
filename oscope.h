@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.h,v 2.9 2009/07/30 02:07:32 baccala Exp $
+ * @(#)$Id: oscope.h,v 2.10 2009/07/30 02:18:35 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -223,10 +223,10 @@ void	init_channels();
 int	samples();
 void	loadfile();
 void	savefile();
-void	startcommand();
 char *	split_field(char *, int, int);
 
 int	datasrc_byname(char *);
+void	datasrc_force_open(DataSrc *);
 
 int	max(int, int);
 int	min(int, int);

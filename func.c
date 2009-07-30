@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: func.c,v 2.3 2009/01/17 02:31:16 baccala Exp $
+ * @(#)$Id: func.c,v 2.4 2009/07/30 02:18:35 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -102,7 +102,7 @@ static struct external *externals = NULL;
  */
 
 void
-start_command_on_channel(char *command, Channel *ch)
+start_command_on_channel(const char *command, Channel *ch)
 {
   struct external *ext;
   int pid;
@@ -176,7 +176,7 @@ start_command_on_channel(char *command, Channel *ch)
 }
 
 void
-startcommand(char *command)
+startcommand(const char *command)
 {
   if (scope.select > 1) {
     start_command_on_channel(command, &ch[scope.select]);

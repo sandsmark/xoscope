@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 2.34 2009/07/30 02:07:32 baccala Exp $
+ * @(#)$Id: display.c,v 2.35 2009/07/30 02:18:35 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -62,7 +62,7 @@ gboolean clear_message_callback(gpointer ignored)
 }
 
 void
-message(char *message)
+message(const char *message)
 {
   if (databox_message == NULL) {
     GdkColor gcolor;
@@ -72,8 +72,10 @@ message(char *message)
 					     GTK_DATABOX_MARKER_NONE);
   }
 
+  /* XXX gtk_databox_marker_set_label() should take a const char pointer */
+
   gtk_databox_marker_set_label(GTK_DATABOX_MARKER(databox_message), 0,
-			       GTK_DATABOX_TEXT_N, message, FALSE);
+			       GTK_DATABOX_TEXT_N, (char *)message, FALSE);
   gtk_databox_graph_add (GTK_DATABOX(databox), databox_message);
   gtk_databox_redraw (GTK_DATABOX (databox));
 
