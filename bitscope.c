@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: bitscope.c,v 2.4 2009/07/28 00:12:04 baccala Exp $
+ * @(#)$Id: bitscope.c,v 2.5 2009/07/30 01:40:40 baccala Exp $
  *
  * Copyright (C) 2000 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -25,24 +25,9 @@ BitScope bs;			/* the BitScope structure */
 
 static Signal analogA_signal, analogB_signal, digital_signal;
 
-/* use real read and write except on DOS where they are emulated */
-#ifndef GO32
-#define serial_read(a, b, c)	read(a, b, c)
-#define serial_write(a, b, c)	write(a, b, c)
-#endif
+/* This function is defined by Glade in callbacks.c */
 
-/* This function is defined as do-nothing and weak, meaning it can be
- * overridden by the linker without error.  It's used to start the X
- * Windows GTK options dialog for Bitscope, and is defined in this way
- * so that this object file can be used either with or without GTK.
- * If this causes compiler problems, just comment out the attribute
- * line and leave the do-nothing function.  You will then need to
- * comment out both lines to generate an object file that can be used
- * with GTK.
- */
-
-void bitscope_dialog() __attribute__ ((weak));
-void bitscope_dialog() {}
+extern void bitscope_dialog();
 
 /* run CMD command string on bitscope FD or return 0 if unsuccessful
  *
@@ -59,14 +44,14 @@ bs_cmd(int fd, char *cmd)
   j = strlen(cmd);
   PSDEBUG("bs_cmd: %s\n", cmd);
   for (i = 0; i < j; i++) {
-    if (serial_write(fd, cmd + i, 1) == 1) {
+    if (write(fd, cmd + i, 1) == 1) {
       /* Wait up to 50 ms for a reply; for comparison, the FT8U100AX
        * USB serial port's standard buffering latency is 40 ms.
        *
        * XXX this is the kind of thing we need threading for
        */
       k = 50;
-      while (serial_read(fd, &c, 1) < 1) {
+      while (read(fd, &c, 1) < 1) {
 	if (!k--) {
 	  fprintf(stderr, "cmd echo timeout: bs cmd %c\n", cmd[i]);
 	  return(0);
@@ -96,7 +81,7 @@ bs_read(int fd, unsigned char *buf, int n)
   in_progress = 0;
   buf[0] = '\0';
   while (n) {
-    if ((j = serial_read(fd, buf + i, n)) < 1) {
+    if ((j = read(fd, buf + i, n)) < 1) {
       if (!k--) {
 	PSDEBUG("bs_read timeout\n", 0);
 	return(0);
@@ -121,9 +106,9 @@ bs_read_async(int fd, unsigned char *buf, int n, char c)
 
   if (in_progress) {
     /* i = end - pos < 64 ? end - pos : 64; */
-    /* if ((i = serial_read(fd, pos, i)) > 0) { */
+    /* if ((i = read(fd, pos, i)) > 0) { */
       /* fprintf(stderr, "bs_read_async: %d bytes\n", i); */
-    if ((i = serial_read(fd, pos, end - pos)) > 0) {
+    if ((i = read(fd, pos, end - pos)) > 0) {
       pos += i;
       if (pos >= end) {
 	in_progress = 0;
@@ -245,7 +230,7 @@ bs_flush_serial()
 
   c = 50;
   while ((byte < sizeof(bs.buf)) && c--) {
-    byte += serial_read(bs.fd, bs.buf, sizeof(bs.buf) - byte);
+    byte += read(bs.fd, bs.buf, sizeof(bs.buf) - byte);
     usleep(1000);
   }
 }
