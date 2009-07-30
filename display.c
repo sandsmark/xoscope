@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 2.32 2009/07/27 15:24:51 baccala Exp $
+ * @(#)$Id: display.c,v 2.33 2009/07/30 00:37:24 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -563,18 +563,16 @@ void update_text(void)
  *
  * The rounding is done by computing the base ten logarithm of what
  * the mV-per-division value would be if we just used the target
- * mult/div ratio.  Then we throw away the integer part, leaving
- * a number between 0 and 1 corresponding to a leading digit between
- * 1 and 10.  By comparing this to the logarithms of 7.5 (.875),
- * 3.5 (.544), and 1.5 (.176), we pick a target of 10 (1.0),
- * 5 (0.7), 2 (0.3), or 1 (0.0), and subtract out the corresponding
- * logarithm.  The difference is the power of ten we need to multiply
- * mult/div by to get to our target.  At this point, we'd like a nice
- * algorithm to find the closest rational fraction to a given real
- * number, but I don't know of one.  Instead, we just multiply
- * mult/div by 1000, then multiply the logarithm's power into
- * the largest of either mult or div.  It works within 1%, which
- * is the accuracy we display the voltage scale with.
+ * mult/div ratio.  Then we throw away the integer part, leaving a
+ * number between 0 and 1 corresponding to a leading digit between 1
+ * and 10.  By comparing this to the logarithms of 7.5 (.875), 3.5
+ * (.544), and 1.5 (.176), we pick a target of 10 (1.0), 5 (0.7), 2
+ * (0.3), or 1 (0.0), and subtract out the corresponding logarithm.
+ * The difference is the power of ten we need to multiply mult/div by
+ * to get to our target.  At this point, we multiply mult/div by
+ * 10000, then multiply the logarithm's power into the largest of
+ * either mult or div.  It works within .1%, which is the accuracy we
+ * display the voltage scale with.
  */
 
 void
@@ -596,8 +594,8 @@ roundoff_multipliers(Channel *p)
     else if (logmV > .544) logmV = logmV - 0.7;
     else if (logmV > .176) logmV = logmV - 0.3;
 
-    p->mult = p->target_mult * 1000;
-    p->div = p->target_div * 1000;
+    p->mult = p->target_mult * 10000;
+    p->div = p->target_div * 10000;
  
     if (p->mult > p->div) {
       p->mult *= pow(10.0, logmV);
