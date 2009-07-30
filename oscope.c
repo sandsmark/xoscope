@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.c,v 2.14 2009/07/27 04:01:38 baccala Exp $
+ * @(#)$Id: oscope.c,v 2.15 2009/07/30 02:07:32 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -391,6 +391,16 @@ void
 loadfile(char *file)
 {
   readfile(filename = file);
+}
+
+int min(int a, int b)
+{
+  return a < b ? a : b;
+}
+
+int max(int a, int b)
+{
+  return a > b ? a : b;
 }
 
 /* handle single key commands */

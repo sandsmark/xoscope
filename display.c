@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 2.33 2009/07/30 00:37:24 baccala Exp $
+ * @(#)$Id: display.c,v 2.34 2009/07/30 02:07:32 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -977,16 +977,6 @@ gfloat cursoraX[2], cursoraY[2], cursorbX[2], cursorbY[2];
 
 GtkDataboxGraph *cursora = NULL;
 GtkDataboxGraph *cursorb = NULL;
-
-int min(int a, int b)
-{
-  return a < b ? a : b;
-}
-
-int max(int a, int b)
-{
-  return a > b ? a : b;
-}
 
 void
 draw_data()

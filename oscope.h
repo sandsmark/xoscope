@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.h,v 2.8 2009/07/24 05:48:26 baccala Exp $
+ * @(#)$Id: oscope.h,v 2.9 2009/07/30 02:07:32 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -227,6 +227,9 @@ void	startcommand();
 char *	split_field(char *, int, int);
 
 int	datasrc_byname(char *);
+
+int	max(int, int);
+int	min(int, int);
 
 extern char serial_error[];
 
