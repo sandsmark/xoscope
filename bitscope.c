@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: bitscope.c,v 2.5 2009/07/30 01:40:40 baccala Exp $
+ * @(#)$Id: bitscope.c,v 2.6 2009/07/30 01:50:18 baccala Exp $
  *
  * Copyright (C) 2000 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -72,7 +72,11 @@ bs_cmd(int fd, char *cmd)
   return(1);
 }
 
-/* read N bytes from bitscope FD into BUF, or return 0 if unsuccessful */
+/* read N bytes from bitscope FD into BUF, or return 0 if unsuccessful
+ *
+ * block for up to 50+N milliseconds for the reply
+ */
+
 static int
 bs_read(int fd, unsigned char *buf, int n)
 {
@@ -97,7 +101,14 @@ bs_read(int fd, unsigned char *buf, int n)
   return(1);
 }
 
-/* asynchronously read N bytes from bitscope FD into BUF, return N when done */
+/* asynchronously read N bytes from bitscope FD into BUF, return N when done
+ *
+ * attempts a single read (and will block if it does) and if doesn't
+ * get the number of bytes required will return 0, save some static
+ * variables to indicate where we are in the transfer and leave
+ * in_progress set to the running command code
+ */
+
 static int
 bs_read_async(int fd, unsigned char *buf, int n, char c)
 {
@@ -125,8 +136,19 @@ bs_read_async(int fd, unsigned char *buf, int n, char c)
   return(0);
 }
 
-/* Run IN on bitscope FD and store results in OUT (not including echo) */
-/* Only the last command in IN should produce output; else this won't work */
+/* Run IN on bitscope FD and store results in OUT (not including echo)
+ *
+ * Only the last command in IN should produce output; else this won't work
+ *
+ * If the last command is "T", "M", "A", or "S" (i.e, start a trace or
+ * one of the three commands that reads sampled data) the read is done
+ * asynchronously and this function might return 0, in which case it
+ * should be called again (and again) with the same tailing command
+ * and OUT buffer until that commands completes.
+ *
+ * For any other command, this function will block waiting for it.
+ */
+
 static int
 bs_io(int fd, char *in, unsigned char *out)
 {
@@ -346,7 +368,6 @@ bs_init(int fd)
     "Logic An.",
   };
 
-  if (fd < 3) return;
   bs.found = 1;
   in_progress = 0;
   bs.version = strtol(bs.bcid + 2, NULL, 10);
