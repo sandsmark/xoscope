@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 
-# @(#)$Id: Makefile.am,v 2.14 2009/06/26 19:00:03 baccala Exp $
+# @(#)$Id: Makefile.am,v 2.15 2009/07/30 02:37:25 baccala Exp $
 
 # Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
 
@@ -31,7 +31,7 @@ hardware/HARDWARE hardware/buff.fig hardware/buff.ps \
 hardware/buff2.fig hardware/buff2.ps hardware/pcb.fig hardware/pcb.ps \
 hardware/xoscope-components.png hardware/xoscope-copper.png
 
-src = oscope.c file.c func.c fft.c realfft.c display.c proscope.c	\
+src = oscope.c file.c func.c display.c proscope.c	\
 bitscope.c sc_linux.c ser_unix.c
 
 if COMEDI

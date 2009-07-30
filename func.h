@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: func.h,v 2.1 2009/07/30 02:18:35 baccala Exp $
+ * @(#)$Id: func.h,v 2.2 2009/07/30 02:37:25 baccala Exp $
  *
  * Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -47,7 +47,3 @@ void do_math();
 void cleanup_math();
 
 void measure_data(Channel *, struct signal_stats *);
-
-void init_fft();			/* in fft.c */
-
-void fft();				/* in fft.c */

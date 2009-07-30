@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: func.c,v 2.4 2009/07/30 02:18:35 baccala Exp $
+ * @(#)$Id: func.c,v 2.5 2009/07/30 02:37:25 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -19,7 +19,6 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include "oscope.h"
-#include "fft.h"
 #include "display.h"
 #include "func.h"
 
@@ -372,12 +371,17 @@ avg(Signal *dest)
   }
 }
 
+#if 0
+
 /* Fast Fourier Transform of channels 0 and 1
  *
  * The point of the dest->frame calculation is that the value changes
  * whenever the data changes, but if the data is constant, it doesn't
  * change.  The display code only looks at changes in frame number to
  * decide when to redraw a signal; the actual value doesn't matter.
+ *
+ * XXX I've ripped this code out and would like to put it back in at
+ * some point.  Probably should use the fftw library when I do.
  */
 
 void
@@ -401,6 +405,8 @@ fft2(Signal *dest)
 
   fft(ch[1].signal->data, dest->data);
 }
+
+#endif
 
 /* isvalid() functions for the various math functions.
  *
@@ -673,7 +679,7 @@ init_math()
     funcarray[i].signal.savestr[0] = '0' + i;
     funcarray[i].signal.savestr[1] = '\0';
   }
-  init_fft();
+  /* init_fft(); */
   once=1;
 }
 
@@ -726,7 +732,7 @@ do_math()
 void
 cleanup_math()
 {
-  EndFFT();
+  /* EndFFT(); */
 }
 
 /* measure the given channel */
