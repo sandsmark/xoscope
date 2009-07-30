@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 
-# @(#)$Id: Makefile.am,v 2.15 2009/07/30 02:37:25 baccala Exp $
+# @(#)$Id: Makefile.am,v 2.16 2009/07/30 02:38:24 baccala Exp $
 
 # Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
 
@@ -11,7 +11,7 @@
 man_MANS = xoscope.1
 
 noinst_HEADERS = com_gtk.h display.h file.h oscope.h bitscope.h	\
-config.h fft.h func.h proscope.h xoscope.rc.h
+config.h func.h proscope.h xoscope.rc.h
 
 bin_PROGRAMS = xoscope
 
