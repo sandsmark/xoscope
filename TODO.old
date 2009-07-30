@@ -349,3 +349,7 @@ v2.0: DONE.
 	structure.
 
 v2.0: DONE.  Executable is now 531 KB.
+
+99	completed mini TODOs
+
+	shouldn't lose display information when moving signal up/down

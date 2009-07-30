@@ -211,7 +211,6 @@ and believe this will work nicely.
 	investigate RTAI scheduling issues - how badly do we need anti-jitter?
 	ability to resize to a small(er) window
 	COMEDI gain control
-	shouldn't lose display information when moving signal up/down
 	time scale normalization - when it's done and how
 	noise causing false triggers on 16-bit data sources
 	should we note clipping?  older versions did
@@ -219,3 +218,9 @@ and believe this will work nicely.
 	make sure -m option works (screen size)
 	cursors - should always show same voltage left/right
 	cursors - move around if sampling rate on active channel changes
+	fix GTK widgets so they don't keep "wiggling around"
+	allow user to specify an rc file
+	maintain scrollbar position on timebase change
+	save entire display state on a file save
+	import/export signals in standard formats
+	put FFT code back in
