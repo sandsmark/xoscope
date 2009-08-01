@@ -200,6 +200,15 @@ and believe this will work nicely.
 
 38	X-Y mode
 
+39	Fix problems relating to signalline/display code
+
+	What to do with history when settings like analog/digital are changed?
+
+	We want the changes to be 'undo'able, but it doesn't really make
+	sense to keep the history around - does it?
+
+	Figuring out cursor data values
+
 99	mini TODOs
 
 	new defaults - default device, default min update interval

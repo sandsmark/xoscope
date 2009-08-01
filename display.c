@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 2.35 2009/07/30 02:18:35 baccala Exp $
+ * @(#)$Id: display.c,v 2.36 2009/08/01 02:39:06 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -1323,14 +1323,15 @@ draw_data()
 
     if (! p->show) {
       for (bit = start ; bit <= end ; bit++) {
-	for (sl = p->signalline[bit < 0 ? 0 : bit]; sl != NULL; sl = sl->next) {
-	  if (sl->graph != NULL) {
-	    gtk_databox_graph_remove(GTK_DATABOX(databox), sl->graph);
-	    g_object_unref(G_OBJECT(sl->graph));
-	    sl->graph = NULL;
-	  }
-	}
+	free_signalline(p->signalline[bit < 0 ? 0 : bit]);
+	p->signalline[bit < 0 ? 0 : bit] = NULL;
       }
+    }
+
+    if (!p->bits) end=0;
+    for (bit = end+1; bit < 16; bit++) {
+      free_signalline(p->signalline[bit < 0 ? 0 : bit]);
+      p->signalline[bit < 0 ? 0 : bit] = NULL;
     }
   }
 

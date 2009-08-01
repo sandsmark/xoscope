@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.c,v 2.16 2009/07/30 02:18:35 baccala Exp $
+ * @(#)$Id: oscope.c,v 2.17 2009/08/01 02:39:06 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -510,12 +510,14 @@ handle_key(unsigned char c)
   case '~':
     if ((p->bits += 2) > 16)
       p->bits = 0;
-    clear();
+    show_data();
+    update_text();
     break;
   case '`':
     if ((p->bits -= 2) < 0)
       p->bits = 16;
-    clear();
+    show_data();
+    update_text();
     break;
   case '}':
     if (p->target_div > 1)		/* increase scale */
