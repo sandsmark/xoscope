@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: bitscope.c,v 2.7 2009/07/30 02:18:35 baccala Exp $
+ * @(#)$Id: bitscope.c,v 2.8 2009/08/01 02:47:48 baccala Exp $
  *
  * Copyright (C) 2000 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -35,7 +35,7 @@ extern void bitscope_dialog();
  * commands, each of which echos itself back (with nothing else)
  */
 static int
-bs_cmd(int fd, char *cmd)
+bs_cmd(char *cmd)
 {
   int i, j, k;
   char c;
@@ -44,14 +44,14 @@ bs_cmd(int fd, char *cmd)
   j = strlen(cmd);
   PSDEBUG("bs_cmd: %s\n", cmd);
   for (i = 0; i < j; i++) {
-    if (write(fd, cmd + i, 1) == 1) {
+    if (write(bs.fd, cmd + i, 1) == 1) {
       /* Wait up to 50 ms for a reply; for comparison, the FT8U100AX
        * USB serial port's standard buffering latency is 40 ms.
        *
        * XXX this is the kind of thing we need threading for
        */
       k = 50;
-      while (read(fd, &c, 1) < 1) {
+      while (read(bs.fd, &c, 1) < 1) {
 	if (!k--) {
 	  fprintf(stderr, "cmd echo timeout: bs cmd %c\n", cmd[i]);
 	  return(0);
@@ -64,7 +64,7 @@ bs_cmd(int fd, char *cmd)
 	return(0);
       }
     } else {
-      sprintf(error, "write failed to %d", fd);
+      sprintf(error, "write failed to %d", bs.fd);
       perror(error);
       return(0);
     }
@@ -78,14 +78,14 @@ bs_cmd(int fd, char *cmd)
  */
 
 static int
-bs_read(int fd, unsigned char *buf, int n)
+bs_read(unsigned char *buf, int n)
 {
   int i = 0, j, k = n + 50;
 
   in_progress = 0;
   buf[0] = '\0';
   while (n) {
-    if ((j = read(fd, buf + i, n)) < 1) {
+    if ((j = read(bs.fd, buf + i, n)) < 1) {
       if (!k--) {
 	PSDEBUG("bs_read timeout\n", 0);
 	return(0);
@@ -110,16 +110,16 @@ bs_read(int fd, unsigned char *buf, int n)
  */
 
 static int
-bs_read_async(int fd, unsigned char *buf, int n, char c)
+bs_read_async(unsigned char *buf, int n, char c)
 {
   static unsigned char *pos, *end;
   int i;
 
   if (in_progress) {
     /* i = end - pos < 64 ? end - pos : 64; */
-    /* if ((i = read(fd, pos, i)) > 0) { */
+    /* if ((i = read(bs.fd, pos, i)) > 0) { */
       /* fprintf(stderr, "bs_read_async: %d bytes\n", i); */
-    if ((i = read(fd, pos, end - pos)) > 0) {
+    if ((i = read(bs.fd, pos, end - pos)) > 0) {
       pos += i;
       if (pos >= end) {
 	in_progress = 0;
@@ -150,42 +150,42 @@ bs_read_async(int fd, unsigned char *buf, int n, char c)
  */
 
 static int
-bs_io(int fd, char *in, unsigned char *out)
+bs_io(char *in, unsigned char *out)
 {
   char c;
 
   out[0] = '\0';
   if (!in_progress) {
     if (in[0] == 'M') {
-      if (! bs_cmd(fd, bs.version >= 110 ? "M" : "S")) return(0);
+      if (! bs_cmd(bs.version >= 110 ? "M" : "S")) return(0);
     } else {
-      if (! bs_cmd(fd, in)) return(0);
+      if (! bs_cmd(in)) return(0);
     }
   }
   switch (c = in[strlen(in) - 1]) {
   case 'T':
-    return bs_read_async(fd, out, 6, c);
+    return bs_read_async(out, 6, c);
   case 'M':
     if (bs.version >= 110)
-      return bs_read_async(fd, out, R15 * 2, c);
+      return bs_read_async(out, R15 * 2, c);
   case 'A':
     if (bs.version >= 110)
-      return bs_read_async(fd, out, R15, c);
+      return bs_read_async(out, R15, c);
   case 'S':			/* DDAA, per sample + newlines per 16 */
-    return bs_read_async(fd, out, R15 * 5 + (R15 / 16) + 1, c);
+    return bs_read_async(out, R15 * 5 + (R15 / 16) + 1, c);
   case 'P':
     if (bs.version >= 110)
-      return bs_read(fd, out, 14);
+      return bs_read(out, 14);
     break;
   case 0:			/* least used last for efficiency */
   case '?':
-    return bs_read(fd, out, 10);
+    return bs_read(out, 10);
   case 'p':
-    return bs_read(fd, out, 4);
+    return bs_read(out, 4);
   case 'R':
   case 'W':
     if (bs.version >= 110)
-      return bs_read(fd, out, 4);
+      return bs_read(out, 4);
   }
   in_progress = 0;
   return(1);
@@ -198,12 +198,12 @@ bs_io(int fd, char *in, unsigned char *out)
  */
 
 static int
-bs_getreg(int fd, int reg)
+bs_getreg(int reg)
 {
   char i[8], o[8];
 
   sprintf(i, "[%x]@p", reg);
-  if (!bs_io(fd, i, (unsigned char *)o))
+  if (!bs_io(i, (unsigned char *)o))
     return(-1);
   return strtol(o, NULL, 16);
 }
@@ -211,38 +211,38 @@ bs_getreg(int fd, int reg)
 #endif
 
 static int
-bs_getregs(int fd, unsigned char *reg)
+bs_getregs(unsigned char *reg)
 {
   unsigned char buf[8];
   int i;
 
-  if (!bs_cmd(fd, "[3]@"))
+  if (!bs_cmd("[3]@"))
     return(0);
   for (i = 3; i < 24; i++) {
-    if (!bs_io(fd, "p", buf))
+    if (!bs_io("p", buf))
       return(0);
     reg[i] = strtol((char *)buf, NULL, 16);
 //    printf("reg[%d]=%d\n", i, reg[i]);
-    if (!bs_io(fd, "n", buf))
+    if (!bs_io("n", buf))
       return(0);
   }
   return(1);
 }
 
 static int
-bs_putregs(int fd, unsigned char *reg)
+bs_putregs(unsigned char *reg)
 {
   char buf[8];
   int i;
 
-  if (!bs_cmd(fd, "[3]@"))
+  if (!bs_cmd("[3]@"))
     return(0);
   for (i = 3; i < 24; i++) {
     if (reg[i])
       sprintf(buf, "[%x]sn", reg[i]);
     else
       sprintf(buf, "[sn");
-    if (!bs_cmd(fd, buf))
+    if (!bs_cmd(buf))
       return(0);
   }
   return(1);
@@ -254,7 +254,7 @@ bs_putregs(int fd, unsigned char *reg)
  */
 
 static void
-bs_flush_serial()
+bs_flush_serial(void)
 {
   int c, byte = 0;
 
@@ -301,7 +301,7 @@ parse_option(char *optarg)
 
 
 static int
-bs_changerate(int fd, int dir)
+bs_changerate(int dir)
 {
   char buf[10];
 
@@ -313,18 +313,13 @@ bs_changerate(int fd, int dir)
   /* XXX need to set rate in Signal structures here - is this formula right? */
 //  mem[23].rate = mem[24].rate = mem[25].rate = 1250000 / (19 + 3 * (R13 + 1));
   sprintf(buf, "[d]@[%x]s", bs.r[13]);
-  bs_cmd(fd, buf);
+  bs_cmd(buf);
   return 1;
-}
-
-static int changerate(int dir)
-{
-  return bs_changerate(bs.fd, dir);
 }
 
 
 static void
-bs_fixregs(int fd)
+bs_fixregs(void)
 {
   int i;
 
@@ -348,7 +343,7 @@ bs_fixregs(int fd)
   bs.r[20] = 63;			/* PRETD	pre trigger delay */
   SETWORD(&bs.r[11], 53);	/* PTD		post trigger delay */
   bs.r[13] = 1;
-  bs_changerate(fd, 0);
+  bs_changerate(0);
 
 //  bs.r[14] = PRIMARY(RANGE1200 | CHANNELA | ZZCLK)
 //    | SECONDARY(RANGE1200 | CHANNELB | ZZCLK);
@@ -362,7 +357,7 @@ bs_fixregs(int fd)
 
 /* initialize previously identified BitScope FD */
 static void
-bs_init(int fd)
+bs_init(void)
 {
   static int volts[] = {
      130 * 5 / 2,  600 * 5 / 2,  1200 * 5 / 2,  3160 * 5 / 2,
@@ -400,9 +395,9 @@ bs_init(int fd)
   digital_signal.data = malloc(MAXWID * sizeof(short));
 
 //  printf("bs_init\n");
-  bs_getregs(fd, bs.r);
-  bs_fixregs(fd);
-  bs_putregs(fd, bs.r);
+  bs_getregs(bs.r);
+  bs_fixregs();
+  bs_putregs(bs.r);
 
   strcpy(digital_signal.name, labels[6]);
 
@@ -437,10 +432,10 @@ idbitscope(int fd)
   flush_serial(bs.fd);
 
   bs_flush_serial();
-  if (bs_io(bs.fd, "?", bs.buf) && bs.buf[1] == 'B' && bs.buf[2] == 'C') {
+  if (bs_io("?", bs.buf) && bs.buf[1] == 'B' && bs.buf[2] == 'C') {
     strncpy(bs.bcid, (char *)bs.buf + 1, sizeof(bs.bcid));
     bs.bcid[8] = '\0';
-    bs_init(bs.fd);
+    bs_init();
     return(1);		/* BitScope found! */
   }
 
@@ -515,11 +510,11 @@ static void reset(void)
   if (bs.fd == -1) return;
 
   if (in_progress) {
-    bs_io(bs.fd, in, bs.buf);
+    bs_io(in, bs.buf);
     while (in_progress && count) {
       /* sleep up to 50 ms, 10 times, so we could wait a half second */
       usleep(50000);
-      bs_io(bs.fd, in, bs.buf);
+      bs_io(in, bs.buf);
       count --;
     }
   }
@@ -537,7 +532,7 @@ static void reset(void)
   analogB_signal.width = min(samples(analogB_signal.rate), 8192);
   digital_signal.width = min(samples(digital_signal.rate), 8192*2);
 
-  bs_io(bs.fd, ">T", bs.buf);
+  bs_io(">T", bs.buf);
 }
 
 /* get pending available data from FD, or initiate new data collection */
@@ -545,12 +540,11 @@ static int bs_getdata(void)
 {
   static unsigned char *buff;
   static int alt = 0, k, n;
-  int fd = bs.fd;
 
-  if (fd == -1) return(0);		/* device open? */
+  if (bs.fd == -1) return(0);		/* device open? */
 
   if (in_progress == 'M') {	/* finish a get */
-    if ((n = bs_io(fd, "M", bs.buf))) {
+    if ((n = bs_io("M", bs.buf))) {
       buff = bs.buf;
       if (bs.version >= 110) { /* M mode, simple bytes */
 	while (buff < bs.buf + n) {
@@ -601,13 +595,13 @@ static int bs_getdata(void)
 	 * another block of data.  XXX Should use "A" request if we
 	 * don't need the digital data.
 	 */
-	bs_io(fd, "M", bs.buf);
+	bs_io("M", bs.buf);
       }
     }
   } else if (in_progress == 'T') { /* finish a trigger */
-    if (bs_io(fd, "T", bs.buf)) {
+    if (bs_io("T", bs.buf)) {
       /* fprintf(stderr, "%s\n", bs.buf); */
-      bs_io(fd, "M", bs.buf);	/* start a get */
+      bs_io("M", bs.buf);	/* start a get */
       analogA_signal.num = 0;
       analogA_signal.frame ++;
       analogB_signal.num = 0;
@@ -618,7 +612,7 @@ static int bs_getdata(void)
     } else
       return(0);
   } else {			/* start a trigger */
-    return(bs_io(fd, ">T", bs.buf));
+    return(bs_io(">T", bs.buf));
   }
   return(1);
 }
@@ -649,7 +643,7 @@ DataSrc datasrc_bs = {
   bs_chan,
   NULL, /* set_trigger, */
   NULL, /* clear_trigger, */
-  changerate,
+  bs_changerate,
   NULL,		/* set_width */
   reset,
   serial_fd,
