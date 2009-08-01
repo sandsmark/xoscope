@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: bitscope.c,v 2.8 2009/08/01 02:47:48 baccala Exp $
+ * @(#)$Id: bitscope.c,v 2.9 2009/08/01 03:26:29 baccala Exp $
  *
  * Copyright (C) 2000 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -374,13 +374,14 @@ bs_init(void)
   bs.found = 1;
   in_progress = 0;
   bs.version = strtol(bs.bcid + 2, NULL, 10);
-  /* analogA_signal.rate = 25000000; */
-  /* analogB_signal.rate = 25000000; */
-  /* We use trace mode 1, channel chop, so each channel is at half rate */
-  analogA_signal.rate = 12500000;
-  analogB_signal.rate = 12500000;
-  digital_signal.rate = 25000000;
-//  mem[23].rate = mem[24].rate = mem[25].rate = 12500000;
+  bs.clock_rate = 25000000;	/* Original BitScope clock rate - 25 MHz */
+
+  /* We use trace mode 1, channel chop, so each analog channel is at
+   * half rate
+   */
+  analogA_signal.rate = bs.clock_rate / 2;
+  analogB_signal.rate = bs.clock_rate / 2;
+  digital_signal.rate = bs.clock_rate;
 
   analogA_signal.width = MAXWID;
   analogB_signal.width = MAXWID;
@@ -394,7 +395,6 @@ bs_init(void)
   analogB_signal.data = malloc(MAXWID * sizeof(short));
   digital_signal.data = malloc(MAXWID * sizeof(short));
 
-//  printf("bs_init\n");
   bs_getregs(bs.r);
   bs_fixregs();
   bs_putregs(bs.r);

@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: bitscope.h,v 2.0 2008/12/17 17:35:46 baccala Exp $
+ * @(#)$Id: bitscope.h,v 2.1 2009/08/01 03:26:29 baccala Exp $
  *
  * Copyright (C) 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -64,6 +64,7 @@ typedef struct BitScope {	/* The state of the BitScope */
   short found;
   char bcid[12];		/* ? output, minus <CR>s */
   int version;			/* numeric version equivalent */
+  int clock_rate;		/* Hz */
   int fd;			/* file descriptor */
   unsigned char r[24];		/* registers */
   int R[24];			/* register overrides from file load */
