@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: bitscope.c,v 2.9 2009/08/01 03:26:29 baccala Exp $
+ * @(#)$Id: bitscope.c,v 2.10 2009/08/01 21:14:30 baccala Exp $
  *
  * Copyright (C) 2000 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -269,7 +269,7 @@ bs_flush_serial(void)
 static char *
 save_option(int i)
 {
-  int regs[] = {0, 5, 6, 7, 14}; /* regs to save */
+  int regs[] = {5, 6, 7, 14}; /* regs to save */
   static char buf[32];
 
   if (i < sizeof(regs) / sizeof(regs[0])) {
