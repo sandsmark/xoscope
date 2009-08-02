@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.c,v 2.18 2009/08/02 02:47:47 baccala Exp $
+ * @(#)$Id: oscope.c,v 2.19 2009/08/02 03:26:02 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -127,8 +127,7 @@ init_scope()
   /* XXX fix me - get better plot/scroll mode defaults here */
   scope.plot_mode = DEF_P / 2;
   scope.scroll_mode = DEF_P % 2;
-  scope.scale = DEF_S;
-  scope.div = 1;
+  scope.scale = 1.0 / DEF_S;
   handle_opt('t', DEF_T);
   handle_opt('l', DEF_L);
   scope.grat = DEF_G;
@@ -162,11 +161,11 @@ init_channels()
 
 /* samples needed to draw a current display of RATE
  *
- * scope.div / scope.scale gives us the timebase in milliseconds per
- * divisions.  Multiply by 10 to get millseconds per screen, divide by
- * 1000 to get seconds per screen, multiply by rate (in samples/sec)
- * to get samples per screen, and add one so rounding doesn't
- * make us end a capture before the end of the screen.
+ * scope.scale gives us the timebase in milliseconds per divisions.
+ * Multiply by 10 to get millseconds per screen, divide by 1000 to get
+ * seconds per screen, multiply by rate (in samples/sec) to get
+ * samples per screen, and add one so rounding doesn't make us end a
+ * capture before the end of the screen.
  */
 
 int
@@ -174,7 +173,7 @@ samples(int rate)
 {
   static unsigned long int r;
 
-  r = rate * 10 * scope.div / scope.scale / 1000 + 1;
+  r = rate * 10 * scope.scale / 1000 + 1;
 
   if (r > MAXWID) r = MAXWID;
   return (r);
@@ -210,6 +209,62 @@ scaledown(int num)
   else num /= 2;
   if (num < 1) num = 1;
   return(num);
+}
+
+/* scale num downward like a scope does
+ *
+ * We compute the base ten logarithm of the original number.  Then we
+ * throw away the integer part, leaving a number between 0 and 1
+ * corresponding to a leading digit between 1 and 10.  By comparing
+ * this to the logarithms of 7.5 (.875), 3.5 (.544), and 1.5 (.176),
+ * we round off to 10 (1.0), 5 (0.7), 2 (0.3), or 1 (0.0), and pick
+ * corresponding rounded-down targets of 5 (0.7), 2 (0.3), 1 (0.0), or
+ * .5 (-0.3) and subtract out the corresponding logarithm.  The
+ * difference is the power of ten we need to multiply by to get to our
+ * target.
+ */
+
+#define LOG10  1.0
+#define LOG7_5 0.87506
+#define LOG5   0.69897
+#define LOG3_5 0.54407
+#define LOG2   0.30103
+#define LOG1_5 0.17609
+#define LOG1   0.0
+#define LOG0_5 (-LOG2)
+
+double scaledown_float(double num, double minimum)
+{
+  double log;
+
+  log = log10(num);
+  log -= floor(log);
+
+  if (log > LOG7_5) log = LOG5 - log;
+  else if (log > LOG3_5) log = LOG2 - log;
+  else if (log > LOG1_5) log = LOG1 - log;
+  else log = LOG0_5 - log;
+
+  num *= pow(10.0, log);
+
+  return (num > minimum) ? num : minimum;
+}
+
+double scaleup_float(double num, double maximum)
+{
+  double log;
+
+  log = log10(num);
+  log -= floor(log);
+
+  if (log > LOG7_5) log = LOG10 + LOG2 - log;
+  else if (log > LOG3_5) log = LOG10 - log;
+  else if (log > LOG1_5) log = LOG5 - log;
+  else log = LOG2 - log;
+
+  num *= pow(10.0, log);
+
+  return (num < maximum) ? num : maximum;
 }
 
 /* Close the current data source */
@@ -568,19 +623,20 @@ handle_key(unsigned char c)
       message("Math can not run on Channel 1 or 2");
     break;
   case '0':
-    if (scope.div > 1)		/* decrease time scale, zoom in */
-      scope.div = scaledown(scope.div);
-    else
-      /* this corresponds to a minimum time scale of 2 ns/div */
-      scope.scale = scaleup(scope.scale, 500000);
+    /* this corresponds to a minimum time scale of 2 ns/div */
+    scope.scale = scaledown_float(scope.scale, 1.0/500000);
     timebase_changed();
     break;
   case '9':
+    /* this corresponds to a maximum time scale of 2 sec/div */
+    scope.scale = scaleup_float(scope.scale, 2000);
+#if 0
     if (scope.scale > 1)	/* increase time scale, zoom out */
       scope.scale = scaledown(scope.scale);
     else
       /* this corresponds to a maximum time scale of 2 sec/div */
       scope.div = scaleup(scope.div, 2000);
+#endif
     timebase_changed();
     break;
   case '=':

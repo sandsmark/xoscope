@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: file.c,v 2.10 2009/07/24 05:48:26 baccala Exp $
+ * @(#)$Id: file.c,v 2.11 2009/08/02 03:26:02 baccala Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -75,9 +75,12 @@ handle_opt(int opt, char *optarg)
     break;
   case 's':			/* scale (zoom) */
   case 'S':
+#if 0
+    /* XXX FIX ME */
     scope.scale = limit(strtol(p = optarg, NULL, 0), 1, 1000);
     if ((q = strchr(p, '/')) != NULL)
       scope.div = limit(strtol(++q, NULL, 0), 1, 2000);
+#endif
     break;
   case 't':			/* trigger */
   case 'T':
@@ -263,14 +266,14 @@ writefile(char *filename)
   }
 
   fprintf(file, "# -a %d\n\
-# -s %d/%d\n\
+# -s %f\n\
 # -t %d:%d:%d\n\
 # -l %d:%d:%d\n\
 # -p %d\n\
 # -g %d\n\
 %s%s",
 	  scope.select + 1,
-	  scope.scale, scope.div,
+	  scope.scale,
 	  scope.trig - 128, scope.trige, scope.trigch,
 	  scope.cursa, scope.cursb, scope.curs,
 	  /* XXX fix this - plot_mode not backwards compatable anymore */

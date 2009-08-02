@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 2.36 2009/08/01 02:39:06 baccala Exp $
+ * @(#)$Id: display.c,v 2.37 2009/08/02 03:26:02 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -440,7 +440,7 @@ void update_text(void)
 
   }
 
-  SIformat(string, "%g %ss/div", (float) scope.div / scope.scale / 1000.0);
+  SIformat(string, "%g %ss/div", scope.scale / 1000.0);
   gtk_label_set_text(GTK_LABEL(LU("timebase_label")), string);
 
   if (p->signal) {
@@ -472,12 +472,12 @@ void update_text(void)
        * negative of the frequency step for each point in the
        * transform, times 10.  Since there are 44 x-coordinates in a
        * division, after applying the scope's current time base
-       * multiplier (scope.div / scope.scale), we multiply by 44/10 to
-       * get the number of Hz in a division.
+       * multiplier (scope.scale), we multiply by 44/10 to get the
+       * number of Hz in a division.
        */
 
-      sprintf(string, "%d Hz/div FFT",
-	      (- p->signal->rate) * 44 * scope.div / scope.scale / 10);
+      sprintf(string, "%f Hz/div FFT",
+	      (- p->signal->rate) * 44 * scope.scale / 10);
       gtk_label_set_text(GTK_LABEL(LU("sample_rate_label")), string);
 
     } else {
@@ -745,13 +745,13 @@ void configure_databox(void)
    int j;
 
    /* The first thing we want to figure out is the maximum time span
-    * of any of our displayed signals.  The scope's base rate of
-    * (scope.div / scope.scale) is in ms/div; 10 (minor) divs are
-    * visible on the screen at once, so the maximum time span (in
-    * seconds) is at least...
+    * of any of our displayed signals.  The scope's base rate
+    * (scope.scale) is in ms/div; 10 (minor) divs are visible on the
+    * screen at once, so the maximum time span (in seconds) is at
+    * least...
     */
 
-   upper_time_limit = 10 * 0.001 * (gfloat) scope.div / scope.scale;
+   upper_time_limit = 10 * 0.001 * scope.scale;
 
    /* But it might be more, if we have stuff stored... */
 
@@ -783,7 +783,7 @@ void configure_databox(void)
 
    for (total_horizontal_divisions = 10;
 	upper_time_limit > (total_horizontal_divisions + 0.5)
-	  * 0.001 * (gfloat) scope.div / scope.scale;
+	  * 0.001 * scope.scale;
 	total_horizontal_divisions += 5);
 
    /* Now set the total canvas size of the databox */
@@ -791,8 +791,7 @@ void configure_databox(void)
    topleft.x = 0;
    topleft.y = 1;
 
-   bottomright.x = total_horizontal_divisions
-     * 0.001 * (gfloat) scope.div / scope.scale;
+   bottomright.x = total_horizontal_divisions * 0.001 * scope.scale;
    bottomright.y = -1;
 
    gtk_databox_set_canvas(GTK_DATABOX(databox), topleft, bottomright);
@@ -801,7 +800,7 @@ void configure_databox(void)
     * call also resets the databox viewport to its left most position.
     */
 
-   bottomright.x = 10 * 0.001 * (gfloat) scope.div / scope.scale;
+   bottomright.x = 10 * 0.001 * scope.scale;
    gtk_databox_set_visible_canvas(GTK_DATABOX(databox), topleft, bottomright);
 
    /* Temporary message is always centered on screen */
@@ -1239,8 +1238,7 @@ draw_data()
 
 #if 0
 	  if (sl->next) {
-	    x_offset = total_horizontal_divisions
-	      * 0.001 * (gfloat) scope.div / scope.scale
+	    x_offset = total_horizontal_divisions * 0.001 * scope.scale
 	      - num * (sl->next_point - 1);
 	  } else {
 	    x_offset = 0.0;
@@ -1249,8 +1247,7 @@ draw_data()
 	  x_offset = 0.0;
 	  for (prevSL = sl->next; prevSL; prevSL = prevSL->next) {
 	    if (prevSL->graph) {
-	      x_offset = total_horizontal_divisions
-		* 0.001 * (gfloat) scope.div / scope.scale
+	      x_offset = total_horizontal_divisions * 0.001 * scope.scale
 		- num * (sl->next_point - 1);
 	      break;
 	    }
@@ -1351,7 +1348,7 @@ show_data(void)
 
   do_math();
 
-  if ((scope.scale >= 100) || !in_progress)
+  if ((scope.scale < 100) || !in_progress)
     measure_data(&ch[scope.select], &stats);
 
   update_dynamic_text();
