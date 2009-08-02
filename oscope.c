@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.c,v 2.17 2009/08/01 02:39:06 baccala Exp $
+ * @(#)$Id: oscope.c,v 2.18 2009/08/02 02:47:47 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -622,13 +622,13 @@ handle_key(unsigned char c)
     }
     break;
   case '(':
-    if (datasrc && datasrc->change_rate(-1)) {
+    if (datasrc && datasrc->change_rate && datasrc->change_rate(-1)) {
       in_progress = 0;
       clear();
     }
     break;
   case ')':
-    if (datasrc && datasrc->change_rate(1)) {
+    if (datasrc && datasrc->change_rate && datasrc->change_rate(1)) {
       in_progress = 0;
       clear();
     }

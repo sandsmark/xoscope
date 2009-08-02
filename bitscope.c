@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: bitscope.c,v 2.10 2009/08/01 21:14:30 baccala Exp $
+ * @(#)$Id: bitscope.c,v 2.11 2009/08/02 02:47:47 baccala Exp $
  *
  * Copyright (C) 2000 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -387,6 +387,8 @@ bs_init(void)
   analogB_signal.width = MAXWID;
   digital_signal.width = MAXWID;
 
+  digital_signal.bits = 8;
+
   if (analogA_signal.data != NULL) free(analogA_signal.data);
   if (analogB_signal.data != NULL) free(analogB_signal.data);
   if (digital_signal.data != NULL) free(digital_signal.data);
@@ -411,12 +413,17 @@ bs_init(void)
 				+ (bs.r[0] & 0x01 ? 4 : 0)];
     analogB_signal.volts = volts[((bs.r[14] >> 4) & RANGE3160)
 				+ (bs.r[0] & 0x10 ? 4 : 0)];
+#if 0
     strcpy(analogA_signal.name,
 	   labels[((bs.r[14] & PRIMARY(CHANNELA)) ? 1 : 0)
 		 + ((bs.r[0] & 0x01) ? 2 : 0)]);
     strcpy(analogB_signal.name,
 	   labels[((bs.r[14] & SECONDARY(CHANNELA)) ? 1 : 0)
 		 + ((bs.r[0] & 0x10) ? 2 : 0)]);
+#else
+    strcpy(analogA_signal.name, "BNC A");
+    strcpy(analogB_signal.name, "BNC B");
+#endif
   }
 }
 
@@ -524,13 +531,45 @@ static void reset(void)
     in_progress = 0;
   }
 
-  analogA_signal.num = 0;
-  analogB_signal.num = 0;
-  digital_signal.num = 0;
+  bs.analog_captures = 0;
+  bs.digital_captures = 0;
+  bs.capture_length = 0;
 
-  analogA_signal.width = min(samples(analogA_signal.rate), 8192);
-  analogB_signal.width = min(samples(analogB_signal.rate), 8192);
-  digital_signal.width = min(samples(digital_signal.rate), 8192*2);
+  if (analogA_signal.listeners > 0) {
+    bs.analog_captures |= 1;
+    analogA_signal.num = 0;
+    analogA_signal.width = min(samples(analogA_signal.rate), 8192);
+    analogA_signal.rate = bs.clock_rate;
+    bs.capture_length = analogA_signal.width;
+  }
+
+  if (analogB_signal.listeners > 0) {
+    bs.analog_captures |= 2;
+    analogB_signal.num = 0;
+    analogB_signal.width = min(samples(analogB_signal.rate), 8192);
+    analogB_signal.rate = bs.clock_rate;
+    bs.capture_length = analogB_signal.width;
+  }
+
+  /* If both signals are being captured, we're in channel chop mode,
+   * so the capture length is twice whichever one is the maximum and
+   * the capture rate is half the device's clock rate.
+   */
+
+  if (bs.analog_captures == 3) {
+    bs.capture_length = 2 * max(analogA_signal.width, analogB_signal.width);
+    analogA_signal.rate = bs.clock_rate / 2;
+    analogB_signal.rate = bs.clock_rate / 2;
+  }
+
+  if (digital_signal.listeners > 0) {
+    bs.digital_captures = 1;
+    digital_signal.num = 0;
+    digital_signal.width = min(samples(digital_signal.rate), 8192*2);
+    bs.capture_length = max(bs.capture_length, digital_signal.width);
+  }
+
+  /* XXX actually set registers for correct analog capture */
 
   bs_io(">T", bs.buf);
 }
@@ -539,56 +578,79 @@ static void reset(void)
 static int bs_getdata(void)
 {
   static unsigned char *buff;
-  static int alt = 0, k, n;
+  static int k;
+  long data;
+  int n, digital_data, analog_data;
 
   if (bs.fd == -1) return(0);		/* device open? */
 
   if (in_progress == 'M') {	/* finish a get */
     if ((n = bs_io("M", bs.buf))) {
       buff = bs.buf;
-      if (bs.version >= 110) { /* M mode, simple bytes */
-	while (buff < bs.buf + n) {
-	  if (k >= MAXWID)
-	    break;
-	  if (k >= 8192)
-	    alt = 1;
-	  digital_signal.data[k] = *buff++ - 128;
-	  if (alt == 0) analogA_signal.data[k++] = *buff++ - 128;
-	  else analogB_signal.data[k++ - 8192] = *buff++ - 128;
-	}
-	analogA_signal.num = k > analogA_signal.width ? analogA_signal.width : k;
-	if (k >= 8192) analogB_signal.num = k - 8192 > analogB_signal.width ? analogB_signal.width : k - 8192;
-	digital_signal.num = k;
-      } else {			/* S mode, hex ASCII */
-	while (*buff != '\0') {
-	  if (k >= MAXWID)
-	    break;
-	  if (*buff == '\r' || *buff == '\n')
+      while (buff < bs.buf + n) {
+	if (bs.version >= 110) {	/* M mode, simple D/A bytes */
+	  digital_data = *buff++;
+	  analog_data = *buff++ - 128;
+	} else {			/* S mode, D/A hex ASCII */
+	  if (*buff == '\r' || *buff == '\n') {
 	    buff++;
-	  else {
-	    n = strtol((char *) buff, NULL, 16);
-	    if (alt == 0) analogA_signal.data[k] = (n & 0xff) - 128;
-	    else analogB_signal.data[k] = (n & 0xff) - 128;
-	    digital_signal.data[k] = ((n & 0xff00) >> 8) - 128;
-	    buff += 5;
-	    if (alt) k++;
-	    alt = !alt;
+	    continue;
 	  }
+	  /* next five bytes are four hex ASCII chars, then a comma */
+	  data = strtol((char *) buff, NULL, 16);
+	  digital_data = (data >> 8);
+	  analog_data = (data & 0xff) - 128;
+	  buff += 5;
 	}
-	/* XXX this code is different from 'M', shouldn't it be the same? */
-	analogA_signal.num = k;
-	analogB_signal.num = k;
-	digital_signal.num = k;
+
+	if (k >= MAXWID)
+	  break;
+
+	if (bs.digital_captures) digital_signal.data[k] = digital_data;
+
+	switch (bs.analog_captures) {
+	case 1:
+	  analogA_signal.data[k] = analog_data;
+	  break;
+	case 2:
+	  analogB_signal.data[k] = analog_data;
+	  break;
+	case 3:
+	  /* Both channels alternately captured in chop mode
+	   *
+	   * XXX this code is definitely wrong - default is to capture
+	   * 50 samples at a time from each channel
+	   */
+	  if ((k % 2) == 0) {
+	    analogA_signal.data[k/2] = analog_data;
+	  } else {
+	    analogB_signal.data[k/2] = analog_data;
+	  }
+	  break;
+	}
+
+	k++;
       }
-      /* XXX once we're done with analogA, we should reset the Spock counter
-       * to read analogB.  And if anything's listening to the digital signal,
-       * we need to read all the way through it.
-       */
-      if (k >= 8192 + analogB_signal.width || k >= 16 * 1024) { /* all done */
-//      if (k >= samples(analogA_signal.rate) || k >= 16 * 1024) { /* all done */
-//      if (k >= 8192 + samples(mem[23].rate) || k >= 16 * 1024) {
+
+      if (bs.digital_captures) {
+	digital_signal.num = min(digital_signal.width, k);
+      }
+
+      switch (bs.analog_captures) {
+      case 1:
+	analogA_signal.num = min(analogA_signal.width, k);
+	break;
+      case 2:
+	analogB_signal.num = min(analogB_signal.width, k);
+	break;
+      case 3:
+	analogA_signal.num = min(analogA_signal.width, k/2);
+	analogB_signal.num = min(analogB_signal.width, k/2);
+	break;
+      }
+
+      if (k >= bs.capture_length) { /* all done */
 	k = 0;
-	alt = 0;
 	in_progress = 0;
       } else {
 	/* Haven't finished reading the current trace, so request
@@ -600,7 +662,15 @@ static int bs_getdata(void)
     }
   } else if (in_progress == 'T') { /* finish a trigger */
     if (bs_io("T", bs.buf)) {
-      /* fprintf(stderr, "%s\n", bs.buf); */
+      /* The current get logic starts reading at the current value of
+       * the address counter.  This makes sense if we've completely
+       * filled the capture RAM (and maybe wrapped).  On the other
+       * hand, if we didn't fill the capture RAM, we should use ">M"
+       * to reset the counter first.  Also, the best that I can figure
+       * out the channel chop operation, 50 samples are taken from one
+       * channel, followed by 50 from the other, and I don't see any
+       * good way to figure out which samples came from where.
+       */
       bs_io("M", bs.buf);	/* start a get */
       analogA_signal.num = 0;
       analogA_signal.frame ++;
@@ -643,7 +713,7 @@ DataSrc datasrc_bs = {
   bs_chan,
   NULL, /* set_trigger, */
   NULL, /* clear_trigger, */
-  bs_changerate,
+  NULL, /* bs_changerate, */
   NULL,		/* set_width */
   reset,
   serial_fd,

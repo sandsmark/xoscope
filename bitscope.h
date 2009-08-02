@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: bitscope.h,v 2.1 2009/08/01 03:26:29 baccala Exp $
+ * @(#)$Id: bitscope.h,v 2.2 2009/08/02 02:47:47 baccala Exp $
  *
  * Copyright (C) 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -65,6 +65,9 @@ typedef struct BitScope {	/* The state of the BitScope */
   char bcid[12];		/* ? output, minus <CR>s */
   int version;			/* numeric version equivalent */
   int clock_rate;		/* Hz */
+  short analog_captures;	/* 0: none; 1: chan A; 2: chan B; 3: both*/
+  short digital_captures;	/* 0 or 1 (single digital channel) */
+  int capture_length;
   int fd;			/* file descriptor */
   unsigned char r[24];		/* registers */
   int R[24];			/* register overrides from file load */
