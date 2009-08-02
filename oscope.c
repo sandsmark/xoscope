@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.c,v 2.19 2009/08/02 03:26:02 baccala Exp $
+ * @(#)$Id: oscope.c,v 2.20 2009/08/02 05:12:33 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -151,8 +151,7 @@ init_channels()
   for (i = 0 ; i < CHANNELS ; i++) {
     bzero(&ch[i], sizeof(Channel));
     ch[i].signal = NULL;
-    ch[i].target_mult = 1;
-    ch[i].target_div = 1;
+    ch[i].scale = 1.0;
     ch[i].pos = 0;
     ch[i].show = 0;
     ch[i].bits = 0;
@@ -179,49 +178,21 @@ samples(int rate)
   return (r);
 }
 
-/* scale num upward like a scope does, to max */
-int
-scaleup(int num, int max)
-{
-  int i;
-
-  i = num;
-  while (!(i % 10)) {
-    i /= 10;
-  }
-  if (i == 2) num = num * 5 / 2;
-  else num *= 2;
-  if (num > max) num = max;
-  return(num);
-}
-
-/* scale num downward like a scope does */
-int
-scaledown(int num)
-{
-  int i;
-
-  i = num;
-  while (!(i % 10)) {
-    i /= 10;
-  }
-  if (i == 5) num = num * 2 / 5;
-  else num /= 2;
-  if (num < 1) num = 1;
-  return(num);
-}
-
-/* scale num downward like a scope does
+/* scaledown/roundoff/scaleup: scale numbers like a scope does
  *
  * We compute the base ten logarithm of the original number.  Then we
  * throw away the integer part, leaving a number between 0 and 1
  * corresponding to a leading digit between 1 and 10.  By comparing
- * this to the logarithms of 7.5 (.875), 3.5 (.544), and 1.5 (.176),
- * we round off to 10 (1.0), 5 (0.7), 2 (0.3), or 1 (0.0), and pick
- * corresponding rounded-down targets of 5 (0.7), 2 (0.3), 1 (0.0), or
- * .5 (-0.3) and subtract out the corresponding logarithm.  The
+ * this to the logarithms of 7.5, 3.5, and 1.5, we either round off to
+ * 10, 5, 2, or 1, or pick corresponding rounded-down or rounded-up
+ * targets and subtract out the corresponding logarithm.  The
  * difference is the power of ten we need to multiply by to get to our
  * target.
+ *
+ * The functions can also be supplied by a 'multiplier'.  This is to
+ * handle the case where the display is calibrated and presented in
+ * mV, but the number that's being scaled is a pixel ratio.  We scale
+ * so that (num * multiplier) is "snapped" to 1, 2, or 5.
  */
 
 #define LOG10  1.0
@@ -233,11 +204,11 @@ scaledown(int num)
 #define LOG1   0.0
 #define LOG0_5 (-LOG2)
 
-double scaledown_float(double num, double minimum)
+double scaledown(double num, double minimum, double multiplier)
 {
   double log;
 
-  log = log10(num);
+  log = log10(num * multiplier);
   log -= floor(log);
 
   if (log > LOG7_5) log = LOG5 - log;
@@ -250,11 +221,28 @@ double scaledown_float(double num, double minimum)
   return (num > minimum) ? num : minimum;
 }
 
-double scaleup_float(double num, double maximum)
+double roundoff(double num, double multiplier)
 {
   double log;
 
-  log = log10(num);
+  log = log10(num * multiplier);
+  log -= floor(log);
+
+  if (log > LOG7_5) log = LOG10 - log;
+  else if (log > LOG3_5) log = LOG5 - log;
+  else if (log > LOG1_5) log = LOG2 - log;
+  else log = LOG1 - log;
+
+  num *= pow(10.0, log);
+
+  return num;
+}
+
+double scaleup(double num, double maximum, double multiplier)
+{
+  double log;
+
+  log = log10(num * multiplier);
   log -= floor(log);
 
   if (log > LOG7_5) log = LOG10 + LOG2 - log;
@@ -575,22 +563,24 @@ handle_key(unsigned char c)
     update_text();
     break;
   case '}':
-    if (p->target_div > 1)		/* increase scale */
-      p->target_div = scaledown(p->target_div);
-    else
-      p->target_mult = scaleup(p->target_mult, 100);
-    roundoff_multipliers(p);
-    update_text();
-    show_data();
+    if (p->signal) {		/* increase scale - 100x is the max */
+      if (p->signal->volts != 0)
+	p->scale = scaleup(p->scale, 100, 1.0/p->signal->volts);
+      else
+	p->scale = scaleup(p->scale, 100, 1);
+      update_text();
+      show_data();
+    }
     break;
   case '{':
-    if (p->target_mult > 1)		/* decrease scale */
-      p->target_mult = scaledown(p->target_mult);
-    else
-      p->target_div = scaleup(p->target_div, 100);
-    roundoff_multipliers(p);
-    update_text();
-    show_data();
+    if (p->signal) {		/* decrease scale - 1:100 is the min */
+      if (p->signal->volts != 0)
+	p->scale = scaledown(p->scale, .01, 1.0/p->signal->volts);
+      else
+	p->scale = scaledown(p->scale, .01, 1);
+      update_text();
+      show_data();
+    }
     break;
   case ']':
     p->pos += 0.1;		/* position up */
@@ -624,19 +614,12 @@ handle_key(unsigned char c)
     break;
   case '0':
     /* this corresponds to a minimum time scale of 2 ns/div */
-    scope.scale = scaledown_float(scope.scale, 1.0/500000);
+    scope.scale = scaledown(scope.scale, 1.0/500000, 1);
     timebase_changed();
     break;
   case '9':
     /* this corresponds to a maximum time scale of 2 sec/div */
-    scope.scale = scaleup_float(scope.scale, 2000);
-#if 0
-    if (scope.scale > 1)	/* increase time scale, zoom out */
-      scope.scale = scaledown(scope.scale);
-    else
-      /* this corresponds to a maximum time scale of 2 sec/div */
-      scope.div = scaleup(scope.div, 2000);
-#endif
+    scope.scale = scaleup(scope.scale, 2000, 1);
     timebase_changed();
     break;
   case '=':

@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: file.c,v 2.11 2009/08/02 03:26:02 baccala Exp $
+ * @(#)$Id: file.c,v 2.12 2009/08/02 05:12:33 baccala Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -194,14 +194,20 @@ handle_opt(int opt, char *optarg)
 	s->bits = limit(strtol(++q, NULL, 0), 0, 16);
 	p = q;
       }
+
+      /* The scale can be specified as either a floating point number
+       * (new format), or a ratio like 1/100 (old format).
+       */
+
       if ((q = strchr(p, ':')) != NULL) {
-	s->target_mult = limit(strtol(++q, NULL, 0), 1, 100);
+	s->scale = strtod(++q, NULL);
 	p = q;
       }
       if ((q = strchr(p, '/')) != NULL) {
-	s->target_div = limit(strtol(++q, NULL, 0), 1, 100);
+	s->scale /= limit(strtol(++q, NULL, 0), 1, 100);
 	p = q;
       }
+
       if ((q = strchr(p, ':')) != NULL) {
 	if (*++q >= '0' && *q <= '9') {
 	  if (*q > '0') {
@@ -284,9 +290,8 @@ writefile(char *filename)
   for (i = 0 ; i < CHANNELS ; i++) {
     p = &ch[i];
     if (p->signal) {
-      fprintf(file, "# -%d %s%d.%d:%d/%d:%s\n", i + 1, p->show ? "" : "+",
-	      -(int)(p->pos*100), p->bits, p->target_mult, p->target_div,
-	      p->signal->savestr);
+      fprintf(file, "# -%d %s%d.%d:%f:%s\n", i + 1, p->show ? "" : "+",
+	      -(int)(p->pos*100), p->bits, p->scale, p->signal->savestr);
     }
   }
   /* XXX code need to be carefully checked out */

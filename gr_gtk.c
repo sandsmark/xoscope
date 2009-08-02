@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: gr_gtk.c,v 2.23 2009/07/30 02:18:35 baccala Exp $
+ * @(#)$Id: gr_gtk.c,v 2.24 2009/08/02 05:12:33 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -317,8 +317,7 @@ setscale(GtkWidget *w, guint data)
   int mul[] = {50, 20, 10, 5, 2, 1, 1, 1,  1,  1,  1};
   int div[] = {1,   1,  1, 1, 1, 1, 2, 5, 10, 20, 50};
 
-  ch[scope.select].target_mult = mul[data];
-  ch[scope.select].target_div = div[data];
+  ch[scope.select].scale = (double) mul[data] / div[data];
   clear();
 }
 

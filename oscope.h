@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.h,v 2.11 2009/08/02 03:26:02 baccala Exp $
+ * @(#)$Id: oscope.h,v 2.12 2009/08/02 05:12:33 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -200,13 +200,10 @@ typedef struct Channel {	/* The display channels */
   SignalLine *signalline[16];	/* 16 - could have up to 16 bits per sample,
 				 * thus, up to 16 signal lines per channel
 				 * in digital mode */
-  int old_frame;		/* last frame number plotted */
-  int mult;			/* A scaling ratio we multiply samples by */
-  int div;
-  int target_mult;		/* The target scaling ratio */
-  int target_div;
+  double scale;			/* Scaling factor we multiply samples by */
   gfloat pos;			/* Location of zero line on scope display;
 				 * 0 is center; 1 is top; -1 is bottom */
+  int old_frame;		/* last frame number plotted */
   int color;
   int show;
   int bits;
@@ -226,6 +223,8 @@ char *	split_field(char *, int, int);
 
 int	datasrc_byname(char *);
 void	datasrc_force_open(DataSrc *);
+
+double	roundoff(double, double);
 
 int	max(int, int);
 int	min(int, int);
