@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: bitscope.c,v 2.11 2009/08/02 02:47:47 baccala Exp $
+ * @(#)$Id: bitscope.c,v 2.12 2009/08/04 03:20:58 baccala Exp $
  *
  * Copyright (C) 2000 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -29,52 +29,15 @@ static Signal analogA_signal, analogB_signal, digital_signal;
 
 extern void bitscope_dialog();
 
-/* run CMD command string on bitscope FD or return 0 if unsuccessful
- *
- * The command string must be a string of single-character bitscope
- * commands, each of which echos itself back (with nothing else)
- */
-static int
-bs_cmd(char *cmd)
-{
-  int i, j, k;
-  char c;
-
-  in_progress = 0;
-  j = strlen(cmd);
-  PSDEBUG("bs_cmd: %s\n", cmd);
-  for (i = 0; i < j; i++) {
-    if (write(bs.fd, cmd + i, 1) == 1) {
-      /* Wait up to 50 ms for a reply; for comparison, the FT8U100AX
-       * USB serial port's standard buffering latency is 40 ms.
-       *
-       * XXX this is the kind of thing we need threading for
-       */
-      k = 50;
-      while (read(bs.fd, &c, 1) < 1) {
-	if (!k--) {
-	  fprintf(stderr, "cmd echo timeout: bs cmd %c\n", cmd[i]);
-	  return(0);
-	}
-	/* PSDEBUG("cmd sleeping %d\n", k); */
-	usleep(1000);
-      }
-      if (cmd[i] != c) {
-	fprintf(stderr, "bs mismatch @ %d: sent:%c != recv:%c\n", i, cmd[i], c);
-	return(0);
-      }
-    } else {
-      sprintf(error, "write failed to %d", bs.fd);
-      perror(error);
-      return(0);
-    }
-  }
-  return(1);
-}
-
 /* read N bytes from bitscope FD into BUF, or return 0 if unsuccessful
  *
  * block for up to 50+N milliseconds for the reply
+ *
+ * For comparison, the FT8U100AX USB serial port's standard buffering
+ * latency (the maximum time it will buffer data for) is 40 ms.
+ *
+ * XXX this is the kind of thing we need threading for, because the
+ * windowing system freezes while this routine blocks
  */
 
 static int
@@ -103,9 +66,12 @@ bs_read(unsigned char *buf, int n)
 
 /* asynchronously read N bytes from bitscope FD into BUF, return N when done
  *
- * attempts a single read (and will block if it does) and if doesn't
- * get the number of bytes required will return 0, save some static
- * variables to indicate where we are in the transfer and leave
+ * if an asynchronous read isn't in progress, it will flag one as
+ * started (using in_progress) and return 0
+ *
+ * otherwise, it attempts a single read (and might block) and if
+ * doesn't get the number of bytes required will return 0, save some
+ * static variables to indicate where we are in the transfer and leave
  * in_progress set to the running command code
  */
 
@@ -116,9 +82,6 @@ bs_read_async(unsigned char *buf, int n, char c)
   int i;
 
   if (in_progress) {
-    /* i = end - pos < 64 ? end - pos : 64; */
-    /* if ((i = read(bs.fd, pos, i)) > 0) { */
-      /* fprintf(stderr, "bs_read_async: %d bytes\n", i); */
     if ((i = read(bs.fd, pos, end - pos)) > 0) {
       pos += i;
       if (pos >= end) {
@@ -130,10 +93,41 @@ bs_read_async(unsigned char *buf, int n, char c)
     return(0);
   }
   pos = buf;
-  *pos = '\0';
+  /* *pos = '\0'; */
   end = pos + n;
   in_progress = c;
   return(0);
+}
+
+/* run CMD command string on bitscope FD or return 0 if unsuccessful
+ *
+ * The command string must be a string of single-character bitscope
+ * commands, each of which echos itself back (with nothing else)
+ */
+static int
+bs_cmd(char *cmd)
+{
+  int i, j, k;
+  unsigned char c[2];
+
+  in_progress = 0;
+  j = strlen(cmd);
+  PSDEBUG("bs_cmd: %s\n", cmd);
+  for (i = 0; i < j; i++) {
+    if (write(bs.fd, cmd + i, 1) == 1) {
+      k = 50;
+      bs_read(c, 1);
+      if (cmd[i] != c[0]) {
+	fprintf(stderr, "bs mismatch @ %d: sent:%c != recv:%c\n", i, cmd[i], c[0]);
+	return(0);
+      }
+    } else {
+      sprintf(error, "write failed to %d", bs.fd);
+      perror(error);
+      return(0);
+    }
+  }
+  return(1);
 }
 
 /* Run IN on bitscope FD and store results in OUT (not including echo)
