@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: acconfig.h,v 2.3 2009/01/14 18:21:06 baccala Exp $
+ * @(#)$Id: acconfig.h,v 2.4 2009/08/14 03:17:30 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -71,9 +71,3 @@
 
 /* FFT length, shorter than minimum screen width and multiple of 2 (512) */
 #define FFTLEN	512
-
-/* preferred path to probescope serial device ("/dev/probescope") */
-#define PROBESCOPE "/dev/probescope"
-
-/* preferred path to bitscope serial device ("/dev/bitscope") */
-#define BITSCOPE "/dev/bitscope"
