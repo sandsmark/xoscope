@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.c,v 2.20 2009/08/02 05:12:33 baccala Exp $
+ * @(#)$Id: oscope.c,v 2.21 2009/08/14 03:08:15 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -22,7 +22,7 @@
 /* global program structures */
 Scope scope;
 
-extern DataSrc datasrc_sc, datasrc_ps, datasrc_bs;
+extern DataSrc datasrc_sc;
 #ifdef HAVE_LIBESD
 extern DataSrc datasrc_esd;
 #endif
@@ -37,9 +37,7 @@ DataSrc *datasrcs[] = {
 #ifdef HAVE_LIBESD
   &datasrc_esd,
 #endif
-  &datasrc_sc,
-  &datasrc_ps,
-  &datasrc_bs
+  &datasrc_sc
 };
 
 int ndatasrcs = sizeof(datasrcs)/sizeof(DataSrc *);
@@ -72,7 +70,7 @@ usage(int error)
 \n\
 Startup Options  Description (defaults)               version %s\n\
 -h               this Help message and exit\n\
--D <datasrc>     select named data source (COMEDI/Soundcard/ESD/Bitscope/etc)\n\
+-D <datasrc>     select named data source (COMEDI/Soundcard/ESD)\n\
 -o <option>      specify data source specific options\n\
 -# <code>        #=1-%d, code=pos[.bits][:scale[:func#, mem a-z or cmd]] (0:1/1)\n\
 -a <channel>     set the Active channel: 1-%d                  (%d)\n\

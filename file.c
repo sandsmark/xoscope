@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: file.c,v 2.12 2009/08/02 05:12:33 baccala Exp $
+ * @(#)$Id: file.c,v 2.13 2009/08/14 03:08:15 baccala Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -54,10 +54,9 @@ handle_opt(int opt, char *optarg)
   case 'O':
     /* Older data file format used -o for BitScope only, and printed
      * BitScope options even if BitScope wasn't enabled, so if we're
-     * reading an older file, only process -o if data source is BitScope
+     * reading an older file, never process -o
      */
-    if ((datasrc != NULL) &&
-	(!backwards_compat_1_10 || !strcasecmp(datasrc->name, "BitScope"))) {
+    if ((datasrc != NULL) && !backwards_compat_1_10) {
       if ((datasrc->set_option == NULL)
 	  || (datasrc->set_option(optarg) == 0)) {
 	fprintf(stderr, "Couldn't set option %s\n\n", optarg);
@@ -331,55 +330,6 @@ writefile(char *filename)
   message(error);
 }
 
-/* Backwards compatibility with older file format that didn't
- * explicitly specify a data source, so we make another pass over the
- * entire file to try and figure out / guess our source before
- * continuing to parse the file.  Basically, an "-x" suggests
- * either BitScope or ProbeScope, and a "-z" suggests either
- * soundcard or ESD.  Neither suggests Soundcard and ProbeScope
- * together.  Both suggest no input device at all.
- */
-
-void
-guess_input_device_pre_1_10(char *filename)
-{
-  FILE *file;
-  char buff[256];
-  int xseen=0, zseen=0;
-
-  if ((file = fopen(filename, "r")) == NULL) {
-    sprintf(error, "%s: can't read %s", progname, filename);
-    message(error);
-    return;
-  }
-
-  while (fgets(buff, sizeof(buff), file)) {
-    if (!strncmp("# -x", buff, 4)) xseen=1;
-    else if (!strncmp("# -z", buff, 4)) zseen=1;
-  }
-
-  if (!zseen && xseen) {
-    /* BitScope or ProbeScope */
-    if (!datasrc_byname("Bitscope") && !datasrc_byname("Probescope")) {
-      fprintf(stderr, "Couldn't find either a Bitscope or Probescope\n");
-    }
-  } else if (!zseen && !xseen) {
-    if (!datasrc_byname("Probescope")
-	&& !datasrc_byname("ESD")
-	&& !datasrc_byname("Soundcard")) {
-      fprintf(stderr, "Couldn't find either a Probescope or sound device\n");
-    }
-    /* ESD/Soundcard/ProbeScope */
-  } else if (zseen && !xseen) {
-    /* ESD/Soundcard */
-    if (!datasrc_byname("ESD") && !datasrc_byname("Soundcard")) {
-      fprintf(stderr, "Couldn't find a sound device\n");
-    }
-  } else {
-    /* None - don't have a NULL input device (maybe we should) */
-  }
-}
-
 /* read scope settings and memory buffers from given filename */
 void
 readfile(char *filename)
@@ -403,7 +353,6 @@ readfile(char *filename)
     if (buff[0] == '#') {
       if (sscanf(buff, "# %*s version %d.%d", &version[0], &version[1]) == 2) {
 	if ((version[0] <= 1) && (version[1] < 10)) {
-	  guess_input_device_pre_1_10(filename);
 	  backwards_compat_1_10 = 1;
 	}
 	if (version[0] == 1) {

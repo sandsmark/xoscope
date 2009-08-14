@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 
-# @(#)$Id: Makefile.am,v 2.16 2009/07/30 02:38:24 baccala Exp $
+# @(#)$Id: Makefile.am,v 2.17 2009/08/14 03:08:15 baccala Exp $
 
 # Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
 
@@ -10,8 +10,8 @@
 
 man_MANS = xoscope.1
 
-noinst_HEADERS = com_gtk.h display.h file.h oscope.h bitscope.h	\
-config.h func.h proscope.h xoscope.rc.h
+noinst_HEADERS = com_gtk.h display.h file.h oscope.h \
+config.h func.h xoscope.rc.h
 
 bin_PROGRAMS = xoscope
 
@@ -31,8 +31,7 @@ hardware/HARDWARE hardware/buff.fig hardware/buff.ps \
 hardware/buff2.fig hardware/buff2.ps hardware/pcb.fig hardware/pcb.ps \
 hardware/xoscope-components.png hardware/xoscope-copper.png
 
-src = oscope.c file.c func.c display.c proscope.c	\
-bitscope.c sc_linux.c ser_unix.c
+src = oscope.c file.c func.c display.c sc_linux.c
 
 if COMEDI
 comedisrc = comedi.c

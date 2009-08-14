@@ -4,4 +4,3 @@
 
 GtkWidget* create_main_window (void);
 GtkWidget* create_comedi_dialog (void);
-GtkWidget* create_bitscope_dialog (void);
