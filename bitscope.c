@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: bitscope.c,v 2.12 2009/08/04 03:20:58 baccala Exp $
+ * @(#)$Id: bitscope.c,v 2.13 2009/08/14 02:44:58 baccala Exp $
  *
  * Copyright (C) 2000 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -15,6 +15,9 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
 #include "oscope.h"
 #include "proscope.h"		/* for PSDEBUG macro */
 #include "bitscope.h"
@@ -28,6 +31,64 @@ static Signal analogA_signal, analogB_signal, digital_signal;
 /* This function is defined by Glade in callbacks.c */
 
 extern void bitscope_dialog();
+
+static int bs_rawread(unsigned char *buf, int n)
+{
+  static unsigned char network_buffer[4096];
+  static int valid = 0;
+  static int next = 0;
+
+  /* XXX Assume that nothing calls us with a buffer bigger than 4096 */
+
+  /* XXX ignores 4 byte header, including data sequence number */
+
+  if (bs.UDP_connected) {
+    if (!valid) {
+      valid = recv(bs.fd, network_buffer, sizeof(network_buffer), 0);
+      if (valid == -1) {
+	perror("recv");
+	valid = 0;
+	return 0;
+      }
+      valid -= 4;
+      next = 0;
+      if (valid <= 0) {
+	fprintf(stderr, "Too small packet received\n");
+	valid = 0;
+	return 0;
+      }
+    }
+    if (valid <= n) {
+      memcpy(buf, network_buffer+4+next, valid);
+      n = valid;
+      valid = 0;
+      return n;
+    } else {
+      memcpy(buf, network_buffer+4+next, n);
+      valid -= n;
+      next += n;
+      return n;
+    }
+  } else {
+    return read(bs.fd, buf, n);
+  }
+}
+
+static int bs_rawwrite(char *buf, int n)
+{
+  unsigned char network_buffer[4096];
+
+  /* XXX Assume that nothing calls us with a buffer bigger than 4096 */
+
+  if (bs.UDP_connected) {
+    network_buffer[0] = 'a';	/* Command ID */
+    memcpy(network_buffer+1, buf, n);
+    return sendto(bs.fd, network_buffer, n+1, 0,
+		  (struct sockaddr *) &bs.UDPaddr, sizeof(bs.UDPaddr)) - 1;
+  } else {
+    return write(bs.fd, buf, n);
+  }
+}
 
 /* read N bytes from bitscope FD into BUF, or return 0 if unsuccessful
  *
@@ -48,7 +109,7 @@ bs_read(unsigned char *buf, int n)
   in_progress = 0;
   buf[0] = '\0';
   while (n) {
-    if ((j = read(bs.fd, buf + i, n)) < 1) {
+    if ((j = bs_rawread(buf + i, n)) < 1) {
       if (!k--) {
 	PSDEBUG("bs_read timeout\n", 0);
 	return(0);
@@ -82,7 +143,7 @@ bs_read_async(unsigned char *buf, int n, char c)
   int i;
 
   if (in_progress) {
-    if ((i = read(bs.fd, pos, end - pos)) > 0) {
+    if ((i = bs_rawread(pos, end - pos)) > 0) {
       pos += i;
       if (pos >= end) {
 	in_progress = 0;
@@ -107,23 +168,22 @@ bs_read_async(unsigned char *buf, int n, char c)
 static int
 bs_cmd(char *cmd)
 {
-  int i, j, k;
+  int i, j;
   unsigned char c[2];
 
   in_progress = 0;
   j = strlen(cmd);
   PSDEBUG("bs_cmd: %s\n", cmd);
+  if (bs_rawwrite(cmd, j) != j) {
+    sprintf(error, "write failed to %d", bs.fd);
+    perror(error);
+    return(0);
+  }
   for (i = 0; i < j; i++) {
-    if (write(bs.fd, cmd + i, 1) == 1) {
-      k = 50;
-      bs_read(c, 1);
-      if (cmd[i] != c[0]) {
-	fprintf(stderr, "bs mismatch @ %d: sent:%c != recv:%c\n", i, cmd[i], c[0]);
-	return(0);
-      }
-    } else {
-      sprintf(error, "write failed to %d", bs.fd);
-      perror(error);
+    bs_read(c, 1);
+    if (cmd[i] != c[0]) {
+      fprintf(stderr, "bs mismatch @ %d: sent:%c != recv:%c\n",
+	      i, cmd[i], c[0]);
       return(0);
     }
   }
@@ -252,6 +312,8 @@ bs_flush_serial(void)
 {
   int c, byte = 0;
 
+  if (bs.UDP_connected) return;
+
   c = 50;
   while ((byte < sizeof(bs.buf)) && c--) {
     byte += read(bs.fd, bs.buf, sizeof(bs.buf) - byte);
@@ -320,8 +382,9 @@ bs_fixregs(void)
   bs.r[3] = bs.r[4] = 0;
 //  bs.r[5] = 0;
 //  bs.r[6] = 127;		/*  scope.trig; ? */
-  //  bs.r[6] = 0xff;		/* don't care */
-//  bs.r[7] = TRIGEDGE | TRIGEDGEF2T | LOWER16BNC | TRIGCOMPARE | TRIGANALOG;
+  bs.r[6] = 0xff;		/* don't care */
+  //  bs.r[7] = TRIGEDGE | TRIGEDGEF2T | LOWER16BNC | TRIGCOMPARE | TRIGANALOG;
+  bs.r[7] = TRIGLEVEL | LOWER16BNC | TRIGCOMPARE | TRIGANALOG;
 
   // Trace mode 1 - Channel chop
   bs.r[8] = 1;			/* trace mode, 0-4 */
@@ -430,9 +493,11 @@ idbitscope(int fd)
   /* XXX shouldn't be tampering with a global var here */
   in_progress = 0;
 
-  flush_serial(bs.fd);
+  if (!bs.UDP_connected) {
+    flush_serial(bs.fd);
+    bs_flush_serial();
+  }
 
-  bs_flush_serial();
   if (bs_io("?", bs.buf) && bs.buf[1] == 'B' && bs.buf[2] == 'C') {
     strncpy(bs.bcid, (char *)bs.buf + 1, sizeof(bs.bcid));
     bs.bcid[8] = '\0';
@@ -464,7 +529,30 @@ static int open_bitscope(void)
     once = 1;
   }
 
-  return init_serial_bitscope(bitscope_device);
+  bs.UDP_connected = 1;
+
+  if (bs.UDP_connected) {
+    struct hostent *host;
+    struct sockaddr_in local_addr;
+
+    bs.UDPaddr.sin_family = AF_INET;
+    bs.UDPaddr.sin_port = htons(16385);
+    host = gethostbyname("sydney.bitscope.net");
+    memcpy(&bs.UDPaddr.sin_addr, host->h_addr, host->h_length);
+
+    bs.fd = socket(PF_INET, SOCK_DGRAM, 0);
+
+    bzero(&local_addr, sizeof(local_addr));
+    local_addr.sin_family = AF_INET;
+    local_addr.sin_addr.s_addr = INADDR_ANY; 
+    if (bind(bs.fd, (struct sockaddr *) &local_addr, sizeof(local_addr)) == -1) {
+      perror("bind");
+    }
+
+    return idbitscope(bs.fd);
+  } else {
+    return init_serial_bitscope(bitscope_device);
+  }
 }
 
 static int nchans(void)

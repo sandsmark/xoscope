@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: bitscope.h,v 2.2 2009/08/02 02:47:47 baccala Exp $
+ * @(#)$Id: bitscope.h,v 2.3 2009/08/14 02:44:58 baccala Exp $
  *
  * Copyright (C) 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -8,6 +8,9 @@
  * This file defines BitScope serial bits and function prototypes.
  *
  */
+
+#include <sys/socket.h>
+#include <netinet/in.h>
 
 /* BitScope serial data protocol bit definitions */
 
@@ -62,6 +65,8 @@
 typedef struct BitScope {	/* The state of the BitScope */
   short probed;
   short found;
+  short UDP_connected;
+  struct sockaddr_in UDPaddr;
   char bcid[12];		/* ? output, minus <CR>s */
   int version;			/* numeric version equivalent */
   int clock_rate;		/* Hz */
