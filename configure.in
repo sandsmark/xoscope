@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
 
-dnl @(#)$Id: configure.in,v 2.13 2012/10/24 22:14:34 baccala Exp $
+dnl @(#)$Id: configure.in,v 2.14 2012/10/24 22:20:33 baccala Exp $
 
 dnl Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
 
@@ -20,31 +20,16 @@ PKG_CHECK_MODULES(GTK, gtk+-2.0 >= 2.2)
 #PKG_CHECK_MODULES(GTKDATABOX, gtkdatabox)
 #AC_CONFIG_SUBDIRS(gtkdatabox-0.6.0.0)
 
-dnl Set PACKAGE_DATA_DIR in config.h.
-if test "x${datadir}" = 'x${prefix}/share'; then
-  if test "x${prefix}" = "xNONE"; then
-    AC_DEFINE_UNQUOTED(PACKAGE_DATA_DIR, ["${ac_default_prefix}/share/${PACKAGE}"], [Package data dir])
-  else
-    AC_DEFINE_UNQUOTED(PACKAGE_DATA_DIR, ["${prefix}/share/${PACKAGE}"], [Package data dir])
-  fi
-else
-  AC_DEFINE_UNQUOTED(PACKAGE_DATA_DIR, ["${datadir}/${PACKAGE}"], [Package data dir])
-fi
-
 dnl Set PACKAGE_LIBEXEC_DIR in config.h.
 if test "x${libexecdir}" = 'x${exec_prefix}/libexec'; then
   if test "x${prefix}" = "xNONE"; then
-    AC_DEFINE_UNQUOTED(PACKAGE_LIBEXEC_DIR, "${ac_default_prefix}/libexec/${PACKAGE}", [Package libexec dir])
+    AC_DEFINE_UNQUOTED(PACKAGE_LIBEXEC_DIR, "${ac_default_prefix}/libexec/${PACKAGE}", [External programs directory (where to find operl)])
   else
-    AC_DEFINE_UNQUOTED(PACKAGE_LIBEXEC_DIR, "${exec_prefix}/libexec/${PACKAGE}", [Package libexec dir])
+    AC_DEFINE_UNQUOTED(PACKAGE_LIBEXEC_DIR, "${exec_prefix}/libexec/${PACKAGE}", [External programs directory (where to find operl)])
   fi
 else
-  AC_DEFINE_UNQUOTED(PACKAGE_LIBEXEC_DIR, "${libexecdir}/${PACKAGE}", [Package libexec dir])
+  AC_DEFINE_UNQUOTED(PACKAGE_LIBEXEC_DIR, "${libexecdir}/${PACKAGE}", [External programs directory (where to find operl)])
 fi
-
-dnl Set PACKAGE_SOURCE_DIR in config.h.
-packagesrcdir=`cd $srcdir && pwd`
-AC_DEFINE_UNQUOTED(PACKAGE_SOURCE_DIR, "${packagesrcdir}", [Package source dir])
 
 dnl Use -Wall if we have gcc.
 changequote(,)dnl
@@ -136,15 +121,11 @@ AC_DEFINE(DEF_R, 44100, [sample rate in Hz])
 AC_DEFINE(DEF_S, 10, [time scale in ms/div])
 AC_DEFINE(DEF_T, "0:0:x", [trigger level])
 AC_DEFINE(DEF_L, "1:1:0", [cursor lines])
-AC_DEFINE(DEF_D, 4, [DMA buffer])
-AC_DEFINE(DEF_F, "", [console font])
 AC_DEFINE(DEF_FX, "8x16", [X11 font])
 AC_DEFINE(DEF_P, 2, [plot mode 2 (lines, sweep)])
 AC_DEFINE(DEF_G, 2, [full graticle display])
 AC_DEFINE(DEF_B, 0, [graticle in front of data])
 AC_DEFINE(DEF_V, 0, [verbose display off])
-AC_DEFINE(DEF_X, 0, [don't use sound card])
-AC_DEFINE(DEF_Z, 0, [don't search for Serial Scope])
 
 AC_DEFINE(MAXWID, 1024 * 256, [maximum number of samples stored in memories])
 
