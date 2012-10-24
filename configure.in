@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
 
-dnl @(#)$Id: configure.in,v 2.12 2012/10/23 23:43:46 baccala Exp $
+dnl @(#)$Id: configure.in,v 2.13 2012/10/24 22:14:34 baccala Exp $
 
 dnl Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
 
@@ -23,28 +23,28 @@ PKG_CHECK_MODULES(GTK, gtk+-2.0 >= 2.2)
 dnl Set PACKAGE_DATA_DIR in config.h.
 if test "x${datadir}" = 'x${prefix}/share'; then
   if test "x${prefix}" = "xNONE"; then
-    AC_DEFINE_UNQUOTED(PACKAGE_DATA_DIR, "${ac_default_prefix}/share/${PACKAGE}")
+    AC_DEFINE_UNQUOTED(PACKAGE_DATA_DIR, ["${ac_default_prefix}/share/${PACKAGE}"], [Package data dir])
   else
-    AC_DEFINE_UNQUOTED(PACKAGE_DATA_DIR, "${prefix}/share/${PACKAGE}")
+    AC_DEFINE_UNQUOTED(PACKAGE_DATA_DIR, ["${prefix}/share/${PACKAGE}"], [Package data dir])
   fi
 else
-  AC_DEFINE_UNQUOTED(PACKAGE_DATA_DIR, "${datadir}/${PACKAGE}")
+  AC_DEFINE_UNQUOTED(PACKAGE_DATA_DIR, ["${datadir}/${PACKAGE}"], [Package data dir])
 fi
 
 dnl Set PACKAGE_LIBEXEC_DIR in config.h.
 if test "x${libexecdir}" = 'x${exec_prefix}/libexec'; then
   if test "x${prefix}" = "xNONE"; then
-    AC_DEFINE_UNQUOTED(PACKAGE_LIBEXEC_DIR, "${ac_default_prefix}/libexec/${PACKAGE}")
+    AC_DEFINE_UNQUOTED(PACKAGE_LIBEXEC_DIR, "${ac_default_prefix}/libexec/${PACKAGE}", [Package libexec dir])
   else
-    AC_DEFINE_UNQUOTED(PACKAGE_LIBEXEC_DIR, "${exec_prefix}/libexec/${PACKAGE}")
+    AC_DEFINE_UNQUOTED(PACKAGE_LIBEXEC_DIR, "${exec_prefix}/libexec/${PACKAGE}", [Package libexec dir])
   fi
 else
-  AC_DEFINE_UNQUOTED(PACKAGE_LIBEXEC_DIR, "${libexecdir}/${PACKAGE}")
+  AC_DEFINE_UNQUOTED(PACKAGE_LIBEXEC_DIR, "${libexecdir}/${PACKAGE}", [Package libexec dir])
 fi
 
 dnl Set PACKAGE_SOURCE_DIR in config.h.
 packagesrcdir=`cd $srcdir && pwd`
-AC_DEFINE_UNQUOTED(PACKAGE_SOURCE_DIR, "${packagesrcdir}")
+AC_DEFINE_UNQUOTED(PACKAGE_SOURCE_DIR, "${packagesrcdir}", [Package source dir])
 
 dnl Use -Wall if we have gcc.
 changequote(,)dnl
@@ -128,6 +128,42 @@ AC_PROG_GCC_TRADITIONAL
 AC_HEADER_MAJOR
 AC_TYPE_SIGNAL
 AC_CHECK_FUNCS(getcwd putenv select strdup strstr strtol)
+
+dnl Program defaults for the command-line options (original values)
+
+AC_DEFINE(DEF_A, 1, [active channel])
+AC_DEFINE(DEF_R, 44100, [sample rate in Hz])
+AC_DEFINE(DEF_S, 10, [time scale in ms/div])
+AC_DEFINE(DEF_T, "0:0:x", [trigger level])
+AC_DEFINE(DEF_L, "1:1:0", [cursor lines])
+AC_DEFINE(DEF_D, 4, [DMA buffer])
+AC_DEFINE(DEF_F, "", [console font])
+AC_DEFINE(DEF_FX, "8x16", [X11 font])
+AC_DEFINE(DEF_P, 2, [plot mode 2 (lines, sweep)])
+AC_DEFINE(DEF_G, 2, [full graticle display])
+AC_DEFINE(DEF_B, 0, [graticle in front of data])
+AC_DEFINE(DEF_V, 0, [verbose display off])
+AC_DEFINE(DEF_X, 0, [don't use sound card])
+AC_DEFINE(DEF_Z, 0, [don't search for Serial Scope])
+
+AC_DEFINE(MAXWID, 1024 * 256, [maximum number of samples stored in memories])
+
+AC_DEFINE(SAMPLESKIP, 32, [samples to discard after a reset])
+
+AC_DEFINE(DISCARDBUF, 16384, [maximum samples to discard at each pass if we have too many])
+
+AC_DEFINE(CHANNELS, 8, [max number of channels])
+
+AC_DEFINE(MSECREFRESH, 30, [minimum number of milliseconds between refresh on libsx version])
+
+AC_DEFINE(HELPCOMMAND, "man -Tutf8 xoscope 2>&1", [shell command for X11 help])
+
+AC_DEFINE(FILENAME, "oscope.dat", [default file name])
+
+AC_DEFINE(COMMAND, "operl '$x + $y'", [default external command pipe])
+
+AC_DEFINE(FFTLEN, 512, [FFT length, shorter than minimum screen width and multiple of 2])
+
 
 AC_OUTPUT([
 operl

@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 
-# @(#)$Id: Makefile.am,v 2.18 2012/10/23 23:43:46 baccala Exp $
+# @(#)$Id: Makefile.am,v 2.19 2012/10/24 22:14:33 baccala Exp $
 
 # Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
 
@@ -71,7 +71,7 @@ xoscope.rc.h: $(top_srcdir)/xoscope.rc
 	sed -e 's/"/\\"/g' -e 's/^/"/' -e 's/$$/",/' $< >> $@
 	echo "NULL };" >> $@
 
-gr_gtk.o:: xoscope.rc.h
+gr_gtk.o: xoscope.rc.h
 
 install-data-local:
 	@$(NORMAL_INSTALL)
