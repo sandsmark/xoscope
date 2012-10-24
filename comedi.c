@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: comedi.c,v 2.6 2009/07/19 05:15:53 baccala Exp $
+ * @(#)$Id: comedi.c,v 2.7 2012/10/24 21:09:20 baccala Exp $
  *
  * Author: Brent Baccala <baccala@freesoft.org>
  *
@@ -356,13 +356,15 @@ static int start_comedi_running(void)
       maxdata=comedi_get_maxdata(comedi_dev,
 				 comedi_subdevice,
 				 0);
-      capture->signal->volts
-	= (comedi_rng->max - comedi_rng->min)
-	* 1000 * 320 / maxdata;
+      if (comedi_rng != NULL) {
+	capture->signal->volts
+	  = (comedi_rng->max - comedi_rng->min)
+	  * 1000 * 320 / maxdata;
+      }
 
       if (zero_value<0) {
 	      // we have to set zero value
-	      if ((comedi_rng->min<0)&&(comedi_rng->max>0)) {
+	      if ((comedi_rng != NULL) && (comedi_rng->min<0)&&(comedi_rng->max>0)) {
 		      // we are bipolar
 		      zero_value=maxdata/2;
 	      } else {
