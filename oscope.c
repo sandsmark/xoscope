@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.c,v 2.21 2009/08/14 03:08:15 baccala Exp $
+ * @(#)$Id: oscope.c,v 2.22 2012/10/25 19:32:41 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -621,21 +621,21 @@ handle_key(unsigned char c)
     timebase_changed();
     break;
   case '=':
-    if (datasrc->set_trigger) {	/* increase trigger */
+    if (datasrc && datasrc->set_trigger) {	/* increase trigger */
       scope.trig += 8;
       datasrc->set_trigger(scope.trigch, &scope.trig, scope.trige);
       clear();
     }
     break;
   case '-':
-    if (datasrc->set_trigger) {	/* decrease trigger */
+    if (datasrc && datasrc->set_trigger) {	/* decrease trigger */
       scope.trig -= 8;
       datasrc->set_trigger(scope.trigch, &scope.trig, scope.trige);
       clear();
     }
     break;
   case '_':			/* change trigger channel */
-    if (scope.trige != 0 && datasrc->set_trigger) {
+    if (scope.trige != 0 && datasrc && datasrc->set_trigger) {
       do {
 	scope.trigch ++;
 	if (scope.trigch >= datasrc->nchans()) scope.trigch = 0;
@@ -645,7 +645,7 @@ handle_key(unsigned char c)
     }
     break;
   case '+':
-    if (datasrc->set_trigger) {	/* change trigger type */
+    if (datasrc && datasrc->set_trigger) {	/* change trigger type */
       do {
 	scope.trige++;
 	if (scope.trige > 2)
@@ -773,8 +773,8 @@ main(int argc, char **argv)
     filename = argv[optind];
     readfile(filename);
   } else if (!datasrc && ! datasrc_first()) {
-    fprintf(stderr, "No valid data sources found... exiting\n");
 #if 0
+    fprintf(stderr, "No valid data sources found... exiting\n");
     exit(1);
 #endif
   }

@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 2.38 2009/08/02 05:12:33 baccala Exp $
+ * @(#)$Id: display.c,v 2.39 2012/10/25 19:32:41 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -246,6 +246,10 @@ void update_dynamic_text(void)
       sprintf(string, " Max:%3d - Min:%4d = %3d Pk-Pk ",
 	      stats.max, stats.min, stats.max - stats.min);
     gtk_label_set_text(GTK_LABEL(LU("min_max_label")), string);
+
+  } else {
+    gtk_label_set_text(GTK_LABEL(LU("period_label")), "");
+    gtk_label_set_text(GTK_LABEL(LU("min_max_label")), "");
   }
 
   if (math_warning) {
@@ -300,11 +304,19 @@ void update_dynamic_text(void)
   time(&sec);
   if (sec != prev) {
 
-    sprintf(string, "fps:%3d", frames);
-    gtk_label_set_text(GTK_LABEL(LU("fps_label")), string);
+    if (prev != 0) {
+      sprintf(string, "fps:%3d", frames);
+      gtk_label_set_text(GTK_LABEL(LU("fps_label")), string);
+    } else {
+      gtk_label_set_text(GTK_LABEL(LU("fps_label")), "");
+    }
 
     frames = 0;
-    prev = sec;
+    if (datasrc) {
+      prev = sec;
+    } else {
+      prev = 0;
+    }
   }
 
   frames++;
@@ -343,7 +355,10 @@ void update_text(void)
   setup_help_text(GTK_WIDGET(LU("graticule_position_help_label")), NULL);
 
 
-  if (scope.trige) {
+  if (!datasrc) {
+    gtk_label_set_text(GTK_LABEL(LU("trigger_label")), "");
+    gtk_label_set_text(GTK_LABEL(LU("trigger_source_label")), "");
+  } else if (scope.trige) {
     Signal *trigsig = datasrc->chan(scope.trigch);
 
     if (trigsig->volts > 0) {
@@ -363,15 +378,19 @@ void update_text(void)
   }
 
   gtk_label_set_text(GTK_LABEL(LU("data_source_label")),
-		     datasrc ? datasrc->name : "No data source");
+		     datasrc ? datasrc->name : "No source");
 
   gtk_label_set_text(GTK_LABEL(LU("line_style_label")),
 		     plot_styles[scope.plot_mode]);
   gtk_label_set_text(GTK_LABEL(LU("scroll_mode_label")),
 		     scroll_styles[scope.scroll_mode]);
 
-  strcpy(string, scope.run ? (scope.run > 1 ? "WAIT" : " RUN") : "STOP");
-  gtk_label_set_text(GTK_LABEL(LU("run_stop_label")), string);
+  if (datasrc) {
+    strcpy(string, scope.run ? (scope.run > 1 ? "WAIT" : " RUN") : "STOP");
+    gtk_label_set_text(GTK_LABEL(LU("run_stop_label")), string);
+  } else {
+    gtk_label_set_text(GTK_LABEL(LU("run_stop_label")), "");
+  }
 
 
   /* sides of graticule */
