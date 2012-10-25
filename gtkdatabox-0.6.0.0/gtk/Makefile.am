@@ -31,6 +31,5 @@ AM_CFLAGS			=\
 			-O2\
 			-Wall -pedantic\
 			-DG_DISABLE_DEPRECATED\
-			-DGDK_DISABLE_DEPRECATED\
 			-DGDK_PIXBUF_DISABLE_DEPRECATED\
 			`pkg-config gtk+-2.0 --cflags`
