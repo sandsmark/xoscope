@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.h,v 2.12 2009/08/02 05:12:33 baccala Exp $
+ * @(#)$Id: oscope.h,v 2.13 2012/10/31 04:31:03 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -132,7 +132,7 @@ typedef struct DataSrc {	/* A source of data samples */
    * Function pointer can be NULL if there's no status info to display.
    */
 
-  char *	(* status_str)(int i);
+  const char *	(* status_str)(int i);
 
   /* These functions are called when the option1 (*) or option2 (^)
    * keys are pressed and should return 1 to do a datasrc->reset.
@@ -145,9 +145,9 @@ typedef struct DataSrc {	/* A source of data samples */
    */
 
   int		(* option1)(void);
-  char *	(* option1str)(void);
+  const char *	(* option1str)(void);
   int		(* option2)(void);
-  char *	(* option2str)(void);
+  const char *	(* option2str)(void);
 
   /* set_option()/save_option()
    *

@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 2.39 2012/10/25 19:32:41 baccala Exp $
+ * @(#)$Id: display.c,v 2.40 2012/10/31 04:31:03 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -224,7 +224,7 @@ void update_dynamic_text(void)
   static time_t prev = 0;
   static int frames = 0;
   char string[81], widget[81];
-  char *s;
+  const char *s;
   int i;
   time_t sec;
   Channel *p;

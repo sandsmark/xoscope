@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: sc_linux.c,v 2.5 2009/07/20 21:31:30 baccala Exp $
+ * @(#)$Id: sc_linux.c,v 2.6 2012/10/31 04:31:03 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -53,8 +53,8 @@ static int trigmode = 0;
 static int triglev;
 static int trigch;
 
-static char * snd_errormsg1 = NULL;
-static char * snd_errormsg2 = NULL;
+static const char * snd_errormsg1 = NULL;
+static const char * snd_errormsg2 = NULL;
 
 #ifdef HAVE_LIBESD
 static char * esd_errormsg1 = NULL;
@@ -77,7 +77,7 @@ void esdsc_gtk_option_dialog() {}
 
 /* close the sound device */
 static void
-close_sound_card()
+close_OSS_sound_card()
 {
   if (snd >= 0) {
     close(snd);
@@ -92,7 +92,7 @@ check_status_ioctl(int d, int request, void *argp, int line)
   if (ioctl(d, request, argp) < 0) {
     snd_errormsg1 = "sound ioctl";
     snd_errormsg2 = strerror(errno);
-    close_sound_card();
+    close_OSS_sound_card();
   }
 }
 
@@ -142,7 +142,7 @@ open_ESD(void)
 
 /* turn the sound device (/dev/dsp) on */
 static int
-open_sound_card(void)
+open_OSS_sound_card(void)
 {
   int rate = sound_card_rate;
   int chan = 2;
@@ -205,8 +205,8 @@ reset_sound_card(void)
 
   if (snd >= 0) {
 
-    close_sound_card();
-    open_sound_card();
+    close_OSS_sound_card();
+    open_OSS_sound_card();
 
     if (snd < 0) return;
 
@@ -229,7 +229,7 @@ static int esd_nchans(void)
 
 static int sc_nchans(void)
 {
-  if (snd == -2) open_sound_card();
+  if (snd == -2) open_OSS_sound_card();
 
   return (snd >= 0) ? sc_chans : 0;
 }
@@ -428,7 +428,7 @@ get_data()
   return(1);
 }
 
-static char * snd_status_str(int i)
+static const char * snd_status_str(int i)
 {
 #ifdef DEBUG
   static char string[16];
@@ -449,7 +449,7 @@ static char * snd_status_str(int i)
 
 #ifdef HAVE_LIBESD
 
-static char * esd_status_str(int i)
+static const char * esd_status_str(int i)
 {
   switch (i) {
   case 0:
