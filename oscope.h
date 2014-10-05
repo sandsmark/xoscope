@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.h,v 2.13 2012/10/31 04:31:03 baccala Exp $
+ * @(#)$Id: oscope.h,v 2.14 2014/10/05 15:43:54 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -13,6 +13,11 @@
 #include <gtkdatabox_graph.h>
 
 #include "config.h"
+
+extern char alsaDevice[];
+extern char alsaDeviceName[];
+
+#define SND_QUERY_INTERVALL 10 // we check for new data every SND_QUERY_INTERVALL ms
 
 /* global program variables */
 extern char *progname;

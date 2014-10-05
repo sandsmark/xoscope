@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: display.c,v 2.40 2012/10/31 04:31:03 baccala Exp $
+ * @(#)$Id: display.c,v 2.41 2014/10/05 15:43:54 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -1363,7 +1363,7 @@ animate(void *data)
 
   prev_time = current_time;
   if (datasrc) setinputfd(datasrc->fd());
-  settimeout(0);
+  settimeout(SND_QUERY_INTERVALL);
 
   clip = 0;
   if (datasrc) {

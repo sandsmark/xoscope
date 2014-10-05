@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: oscope.c,v 2.22 2012/10/25 19:32:41 baccala Exp $
+ * @(#)$Id: oscope.c,v 2.23 2014/10/05 15:43:54 baccala Exp $
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -128,6 +128,7 @@ init_scope()
   scope.scale = 1.0 / DEF_S;
   handle_opt('t', DEF_T);
   handle_opt('l', DEF_L);
+  handle_opt('A', DEFAULT_ALSADEVICE);
   scope.grat = DEF_G;
   scope.behind = DEF_B;
   scope.run = 1;

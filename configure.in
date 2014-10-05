@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
 
-dnl @(#)$Id: configure.in,v 2.14 2012/10/24 22:20:33 baccala Exp $
+dnl @(#)$Id: configure.in,v 2.15 2014/10/05 15:43:54 baccala Exp $
 
 dnl Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
 
@@ -59,6 +59,7 @@ AC_PATH_PROG(RANLIB, ranlib)
 dnl Checks for libraries.
 AC_CHECK_LIB(esd, esd_monitor_stream)
 AC_CHECK_LIB(m, sin)
+AC_CHECK_LIB(asound, snd_pcm_hw_params)
 
 AC_ARG_WITH([comedi],
 	[AS_HELP_STRING([--with-comedi],
@@ -145,6 +146,7 @@ AC_DEFINE(COMMAND, "operl '$x + $y'", [default external command pipe])
 
 AC_DEFINE(FFTLEN, 512, [FFT length, shorter than minimum screen width and multiple of 2])
 
+AC_DEFINE(DEFAULT_ALSADEVICE, ["plughw:0,0"], [default ALSA soundcard device])
 
 AC_OUTPUT([
 operl

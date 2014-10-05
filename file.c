@@ -1,5 +1,5 @@
 /*
- * @(#)$Id: file.c,v 2.13 2009/08/14 03:08:15 baccala Exp $
+ * @(#)$Id: file.c,v 2.14 2014/10/05 15:43:54 baccala Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
  *
@@ -155,8 +155,11 @@ handle_opt(int opt, char *optarg)
   case 'Z':
     break;
   case 'a':			/* Active (selected) channel */
-  case 'A':
     scope.select = limit(strtol(optarg, NULL, 0) - 1, 0, CHANNELS - 1);
+    break;
+  case 'A':
+    sprintf(alsaDevice, "%s", optarg);
+    sprintf(alsaDeviceName, "Alsa: %s", optarg);
     break;
   case 'h':			/* help */
   case 'H':
