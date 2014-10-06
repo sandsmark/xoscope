@@ -6,7 +6,7 @@ dnl Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
 
 dnl (see the files README and COPYING for more details)
 
-AC_INIT(configure.in)
+AC_INIT(configure.ac)
 AM_INIT_AUTOMAKE(xoscope, 2.0)
 AM_CONFIG_HEADER(config.h)
 
@@ -94,6 +94,7 @@ dnl automake variable based on the result of an autoconf test.  See
 dnl "Defining C Preprocessor Symbols" in the autoconf info docs.
 
 AM_CONDITIONAL(COMEDI, test "$ac_cv_lib_comedi_comedi_open" = "yes")
+AM_CONDITIONAL(ESD, test "$ac_cv_lib_esd_esd_monitor_stream" = "yes")
 
 AC_SUBST(XOSCOPE)
 

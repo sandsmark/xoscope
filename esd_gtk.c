@@ -1,6 +1,4 @@
 /*
- * @(#)$Id: sc_linux_gtk.c,v 2.1 2009/06/26 05:18:48 baccala Exp $
- *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
  * (see the files README and COPYING for more details)

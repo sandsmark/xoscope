@@ -39,6 +39,10 @@ else
 comedisrc =
 endif
 
+if ESD
+esdsrc = esd.c esd_gtk.c
+endif
+
 GTKDATABOX_CFLAGS = -I $(top_srcdir)/gtkdatabox-0.6.0.0/gtk
 GTKDATABOX_LIBS = $(top_builddir)/gtkdatabox-0.6.0.0/gtk/libgtkdatabox.a
 
@@ -55,7 +59,7 @@ SUBDIRS = gtkdatabox-0.6.0.0/gtk
 INCLUDES = @GTK_CFLAGS@ $(GTKDATABOX_CFLAGS)
 GUI_LIB = callbacks.c callbacks.h interface.c interface.h support.c support.h
 
-xoscope_SOURCES = $(src) $(comedisrc) $(GUI_LIB) com_gtk.c gr_gtk.c sc_linux_gtk.c
+xoscope_SOURCES = $(src) $(comedisrc) $(esdsrc) $(GUI_LIB) com_gtk.c gr_gtk.c
 xoscope_LDADD = @GTK_LIBS@ $(GTKDATABOX_LIBS)
 
 # offt_SOURCES = offt.c fft.c realfft.c
