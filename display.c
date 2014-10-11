@@ -28,7 +28,7 @@
 #include <gtkdatabox_points.h>
 #include <gtkdatabox_lines.h>
 #include <gtkdatabox_grid.h>
-#include <gtkdatabox_marker.h>
+#include <gtkdatabox_markers.h>
 
 extern GtkWidget *databox;
 
@@ -57,7 +57,7 @@ gfloat databox_message_Y = 0.0;
 gboolean clear_message_callback(gpointer ignored)
 {
   gtk_databox_graph_remove (GTK_DATABOX(databox), databox_message);
-  gtk_databox_redraw (GTK_DATABOX (databox));
+  gtk_widget_queue_draw (databox);
   return FALSE;
 }
 
@@ -67,17 +67,17 @@ message(const char *message)
   if (databox_message == NULL) {
     GdkColor gcolor;
     gcolor.red = gcolor.green = gcolor.blue = 65535;
-    databox_message = gtk_databox_marker_new(1, &databox_message_X,
-					     &databox_message_Y, &gcolor, 0,
-					     GTK_DATABOX_MARKER_NONE);
+    databox_message = gtk_databox_markers_new(1, &databox_message_X,
+					      &databox_message_Y, &gcolor, 0,
+					      GTK_DATABOX_MARKERS_NONE);
   }
 
-  /* XXX gtk_databox_marker_set_label() should take a const char pointer */
+  /* XXX gtk_databox_markers_set_label() should take a const char pointer */
 
-  gtk_databox_marker_set_label(GTK_DATABOX_MARKER(databox_message), 0,
-			       GTK_DATABOX_TEXT_N, (char *)message, FALSE);
+  gtk_databox_markers_set_label(GTK_DATABOX_MARKERS(databox_message), 0,
+				GTK_DATABOX_MARKERS_TEXT_N, (char *)message, FALSE);
   gtk_databox_graph_add (GTK_DATABOX(databox), databox_message);
-  gtk_databox_redraw (GTK_DATABOX (databox));
+  gtk_widget_queue_draw (databox);
 
   g_timeout_add (2000, clear_message_callback, NULL);
 }
@@ -645,10 +645,12 @@ create_graticule()
   graticule_minor_graph = gtk_databox_grid_new (9, 9, &gcolor, 1);
   graticule_major_graph = gtk_databox_grid_new (1, 1, &gcolor, 1);
 
+#ifdef GTK_DATABOX_GRID_DOTTED_LINES
   gtk_databox_grid_set_line_style(GTK_DATABOX_GRID(graticule_major_graph),
 				  GTK_DATABOX_GRID_SOLID_LINES);
   gtk_databox_grid_set_line_style(GTK_DATABOX_GRID(graticule_minor_graph),
 				  GTK_DATABOX_GRID_DOTTED_LINES);
+#endif
 
   recompute_graticule();
 }
@@ -698,9 +700,11 @@ void clear_databox(void)
  * means setting things on the databox more than anything else.
  */
 
+static gboolean y_offset_property_exists;
+
 void configure_databox(void)
 {
-   GtkDataboxValue topleft, bottomright;
+   GtkDataboxValueRectangle rect;
    gfloat upper_time_limit;
    int j;
 
@@ -748,23 +752,23 @@ void configure_databox(void)
 
    /* Now set the total canvas size of the databox */
 
-   topleft.x = 0;
-   topleft.y = 1;
+   rect.x1 = 0;
+   rect.y1 = 1;
 
-   bottomright.x = total_horizontal_divisions * 0.001 * scope.scale;
-   bottomright.y = -1;
+   rect.x2 = total_horizontal_divisions * 0.001 * scope.scale;
+   rect.y2 = -1;
 
-   gtk_databox_set_canvas(GTK_DATABOX(databox), topleft, bottomright);
+   gtk_databox_set_total_limits(GTK_DATABOX(databox), rect.x1, rect.x2, rect.y1, rect.y2);
 
    /* A slight adjustment gets us our visible area.  Note that this
     * call also resets the databox viewport to its left most position.
     */
 
-   bottomright.x = 10 * 0.001 * scope.scale;
-   gtk_databox_set_visible_canvas(GTK_DATABOX(databox), topleft, bottomright);
+   rect.x2 = 10 * 0.001 * scope.scale;
+   gtk_databox_set_visible_limits(GTK_DATABOX(databox), rect.x1, rect.x2, rect.y1, rect.y2);
 
    /* Temporary message is always centered on screen */
-   databox_message_X = bottomright.x / 2;
+   databox_message_X = rect.x2 / 2;
 
    /* Decide if we need a scrollbar or not */
 
@@ -772,6 +776,23 @@ void configure_databox(void)
      gtk_widget_show(GTK_WIDGET(LU("databox_hscrollbar")));
    } else {
      gtk_widget_hide(GTK_WIDGET(LU("databox_hscrollbar")));
+   }
+
+   /* Figure out if we can set a y-offset on databox lines, or whether
+    * we'll have to add offsets to the points when we load them into
+    * the array.
+    *
+    * XXX could be done by 'configure'
+    */
+
+   {
+     gfloat X, Y;
+     GdkColor gcolor;
+     GtkDataboxGraph *line = gtk_databox_lines_new(1, &X, &Y, &gcolor, 1);
+
+     y_offset_property_exists = (g_object_class_find_property(G_OBJECT_GET_CLASS(line), "y-offset") != NULL);
+
+     g_object_unref(line);
    }
 
    /* And recompute the graticule grids */
@@ -1122,8 +1143,13 @@ draw_data()
 	   * Screen used to be 480 y-coords tall; now it's -1 to +1
 	   */
 
-	  y = (float)(bit < 0 ? samp[i]
-		      : (bitoff - (samp[i] & (1 << bit) ? 0 : 8)));
+	  if (y_offset_property_exists) {
+	    y = (float)(bit < 0 ? samp[i]
+			: (bitoff - (samp[i] & (1 << bit) ? 0 : 8)));
+	  } else {
+	    y = (float)((bit < 0 ? samp[i]
+			 : (bitoff - (samp[i] & (1 << bit) ? 0 : 8)))) * p->scale/240 + p->pos;
+	  }
 
 	  sl->X[sl->next_point] = l + i * num;
 	  sl->Y[sl->next_point] = y;
@@ -1262,13 +1288,15 @@ draw_data()
 	 * sense.
 	 */
 
-	while (sl != NULL) {
-	  if (sl->graph != NULL) {
-	    g_object_set_property((GObject *) sl->graph, "y-factor", &yfactor);
-	    g_object_set_property((GObject *) sl->graph, "y-offset", &yoffset);
-	    g_object_set_property((GObject *) sl->graph, "plot-style", &plotstyle);
+	if (y_offset_property_exists) {
+	  while (sl != NULL) {
+	    if (sl->graph != NULL) {
+	      g_object_set_property((GObject *) sl->graph, "y-factor", &yfactor);
+	      g_object_set_property((GObject *) sl->graph, "y-offset", &yoffset);
+	      g_object_set_property((GObject *) sl->graph, "plot-style", &plotstyle);
+	    }
+	    sl = sl->next;
 	  }
-	  sl = sl->next;
 	}
 
       }
@@ -1330,7 +1358,7 @@ show_data(void)
     draw_graticule();
   }
 
-  gtk_databox_redraw (GTK_DATABOX (databox));
+  gtk_widget_queue_draw (databox);
 }
 
 /* animate() - get and plot some data

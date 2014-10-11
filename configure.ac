@@ -17,8 +17,7 @@ AC_HEADER_STDC
 
 PKG_CHECK_MODULES(GTK, gtk+-2.0 >= 2.2)
 
-#PKG_CHECK_MODULES(GTKDATABOX, gtkdatabox)
-#AC_CONFIG_SUBDIRS(gtkdatabox-0.6.0.0)
+PKG_CHECK_MODULES(GTKDATABOX, gtkdatabox)
 
 dnl Set PACKAGE_LIBEXEC_DIR in config.h.
 if test "x${libexecdir}" = 'x${exec_prefix}/libexec'; then
@@ -152,5 +151,4 @@ AC_DEFINE(DEFAULT_ALSADEVICE, ["plughw:0,0"], [default ALSA soundcard device])
 AC_OUTPUT([
 operl
 Makefile
-gtkdatabox-0.6.0.0/gtk/Makefile
 ])

@@ -1055,7 +1055,8 @@ on_databox_button_press_event          (GtkWidget       *widget,
   l = p->signal->delay * num / 10000;
 
   if (scope.curs) {
-#if 1
+    // XXX what's all this?
+#if 0
     GtkDataboxCoord coord;
     GtkDataboxValue value;
     coord.x = event->x;
@@ -1063,7 +1064,7 @@ on_databox_button_press_event          (GtkWidget       *widget,
     value = gtk_databox_value_from_coord (GTK_DATABOX(databox), coord);
     x = value.x;
 #else
-    x = gtk_databox_pixel_to_value_x (databox, event->x);
+    x = gtk_databox_pixel_to_value_x (GTK_DATABOX(databox), event->x);
 #endif
     cursor = rintf((x - l) / num) + 1;
 #if 0
@@ -1224,7 +1225,7 @@ init_widgets()
   gtk_box_reorder_child(GTK_BOX(LU("vbox1")), menubar, 0);
   gtk_widget_show(menubar);
 
-  gtk_databox_set_hadjustment (GTK_DATABOX (databox),
+  gtk_databox_set_adjustment_x (GTK_DATABOX (databox),
 			       gtk_range_get_adjustment (GTK_RANGE (LU("databox_hscrollbar"))));
 
   gtk_widget_show(glade_window);

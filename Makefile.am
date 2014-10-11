@@ -43,9 +43,6 @@ if ESD
 esdsrc = esd.c esd_gtk.c
 endif
 
-GTKDATABOX_CFLAGS = -I $(top_srcdir)/gtkdatabox-0.6.0.0/gtk
-GTKDATABOX_LIBS = $(top_builddir)/gtkdatabox-0.6.0.0/gtk/libgtkdatabox.a
-
 # Some bit of explaination is needed here for GUI_LIB.  automake won't
 # let us include source files in a subdirectory on a _SOURCES line,
 # and we do want all the auto-magically generated glade stuff confined
@@ -55,7 +52,6 @@ GTKDATABOX_LIBS = $(top_builddir)/gtkdatabox-0.6.0.0/gtk/libgtkdatabox.a
 # trick used in things like comedi.c (see comments there) won't work
 # for a library.  So we put .o files in.
 
-SUBDIRS = gtkdatabox-0.6.0.0/gtk
 INCLUDES = @GTK_CFLAGS@ $(GTKDATABOX_CFLAGS)
 GUI_LIB = callbacks.c callbacks.h interface.c interface.h support.c support.h
 
