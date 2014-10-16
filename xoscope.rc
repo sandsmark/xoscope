@@ -28,6 +28,8 @@ widget "main_window.*.databox_hscrollbar" style "red_scrollbar"
 #widget "main_window.*_label" style "label_font"
 widget "main_window.*_label" style "white"
 
+widget "*.data_source_label" style "white"
+widget "*.fps_label" style "white"
 widget "*.sample_rate_label" style "green"
 widget "*.samples_per_frame_label" style "green"
 widget "*.period_label" style "green"
