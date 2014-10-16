@@ -26,7 +26,7 @@
 #include "file.h"
 #include "com_gtk.h"
 
-#include "xoscope.rc.h"
+/* #include "xoscope.rc.h" */
 
 char my_filename[FILENAME_MAX] = "";
 GdkFont *font;
@@ -1183,11 +1183,13 @@ button_event(GtkWidget *widget, GdkEventButton *event, gpointer data)
 GtkWidget *
 create_databox (void)
 {
+#if 0
    /* This is a global var - our one, unique, databox */
    databox = gtk_databox_new();
                                       
    gtk_databox_set_enable_zoom(GTK_DATABOX(databox), FALSE);
    gtk_databox_set_enable_selection(GTK_DATABOX(databox), FALSE);
+#endif
 
    return databox;
 }
@@ -1198,7 +1200,7 @@ GtkWidget * create_main_window();
 void
 init_widgets()
 {
-  char ** xoscope_rc_ptr = xoscope_rc;
+  /* char ** xoscope_rc_ptr = xoscope_rc;*/
 
   /* I don't like the added complexity of having to install rc files
    * (and the related problems if they can't be found), so instead of
@@ -1206,10 +1208,13 @@ init_widgets()
    * loaded as a series of strings.
    */
 
-  /* gtk_rc_parse("xoscope.rc"); */
+#if 1
+  gtk_rc_parse("xoscope.rc");
+#else
   for (xoscope_rc_ptr=xoscope_rc; *xoscope_rc_ptr != NULL; xoscope_rc_ptr++) {
     gtk_rc_parse_string(*xoscope_rc_ptr);
   }
+#endif
 
   glade_window = create_main_window();
 

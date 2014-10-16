@@ -635,7 +635,7 @@ create_graticule()
    * around the databox, which is its BACKGROUND color.
    */
 
-  style = gtk_widget_get_style(GTK_WIDGET(LU("databox_frame")));
+  style = gtk_widget_get_style(GTK_WIDGET(LU("databox_aspectframe")));
   gcolor = style->bg[GTK_STATE_NORMAL];
 
   /* the minor graticule grid - the scope display is divided into a

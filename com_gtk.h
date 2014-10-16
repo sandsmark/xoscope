@@ -9,8 +9,12 @@
  *
  */
 
-GtkWidget *menubar;
-GtkWidget *glade_window;
+extern GtkWidget *menubar;
+extern GtkWidget *glade_window;
+extern GtkWidget *bitscope_options_dialog;
+extern GtkWidget *comedi_options_dialog;
+extern GtkWidget *alsa_options_dialog;
+extern GtkWidget *databox;
 
 gint expose_event();
 gint key_press_event();

@@ -8,8 +8,6 @@
 #include "display.h"
 
 #include "callbacks.h"
-#include "interface.h"
-#include "support.h"
 
 GtkWidget *window;
 

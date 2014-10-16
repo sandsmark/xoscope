@@ -31,7 +31,7 @@ hardware/HARDWARE hardware/buff.fig hardware/buff.ps \
 hardware/buff2.fig hardware/buff2.ps hardware/pcb.fig hardware/pcb.ps \
 hardware/xoscope-components.png hardware/xoscope-copper.png
 
-src = oscope.c file.c func.c display.c sc_linux.c
+src = oscope.c file.c func.c display.c sc_linux.c sc_linux_gtk.c
 
 if COMEDI
 comedisrc = comedi.c
@@ -53,10 +53,11 @@ endif
 # for a library.  So we put .o files in.
 
 INCLUDES = @GTK_CFLAGS@ $(GTKDATABOX_CFLAGS)
-GUI_LIB = callbacks.c callbacks.h interface.c interface.h support.c support.h
+GUI_LIB = callbacks.c callbacks.h
 
 xoscope_SOURCES = $(src) $(comedisrc) $(esdsrc) $(GUI_LIB) com_gtk.c gr_gtk.c
 xoscope_LDADD = @GTK_LIBS@ $(GTKDATABOX_LIBS)
+xoscope_LDFLAGS = -Wl,--export-dynamic
 
 # offt_SOURCES = offt.c fft.c realfft.c
 
@@ -66,12 +67,16 @@ xoscope_LDADD = @GTK_LIBS@ $(GTKDATABOX_LIBS)
 # I compile in the rc file so I don't have to worry about what happens
 # if it can't be found at runtime.
 
-xoscope.rc.h: $(top_srcdir)/xoscope.rc
+xoscope.rc.h: $(top_srcdir)/xoscope.rc $(top_srcdir)/xoscope.glade
 	echo "char * xoscope_rc[] = {" > $@
-	sed -e 's/"/\\"/g' -e 's/^/"/' -e 's/$$/",/' $< >> $@
+	sed -e 's/"/\\"/g' -e 's/^/"/' -e 's/$$/",/' $(top_srcdir)/xoscope.rc >> $@
 	echo "NULL };" >> $@
+	echo "char * gladestring = " >> $@
+	sed -e 's/"/\\"/g' -e 's/^/"/' -e 's/$$/"/' $(top_srcdir)/xoscope.glade >> $@
+	echo ";" >> $@
 
-gr_gtk.o: xoscope.rc.h
+#gr_gtk.o: xoscope.rc.h
+com_gtk.o: xoscope.rc.h
 
 install-data-local:
 	@$(NORMAL_INSTALL)
