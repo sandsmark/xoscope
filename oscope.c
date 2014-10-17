@@ -435,16 +435,6 @@ loadfile(char *file)
   readfile(filename = file);
 }
 
-int min(int a, int b)
-{
-  return a < b ? a : b;
-}
-
-int max(int a, int b)
-{
-  return a > b ? a : b;
-}
-
 /* handle single key commands */
 void
 handle_key(unsigned char c)
@@ -465,7 +455,15 @@ handle_key(unsigned char c)
    */
 
   displayed_samples = p->signal ? samples(p->signal->rate) : 0;
-  max_samples = p->signal ? max(samples(p->signal->rate), p->signal->num) : 0;
+  if ( p->signal ) {
+    if ( samples(p->signal->rate) > p->signal->num ) {
+      max_samples = samples(p->signal->rate);
+    } else {
+      max_samples = p->signal->num;
+    }
+  } else {
+    max_samples = 0;
+  }
 
   if (c >= 'A' && c <= 'Z') {
     if (p->signal) {
