@@ -216,14 +216,14 @@ typedef struct Channel {	/* The display channels */
 extern Channel ch[CHANNELS];
 
 /* functions that are called by files other than oscope.c */
-void	usage();
+void	usage(int);
 void	handle_key(unsigned char);
 void	cleanup();
 void	init_scope();
 void	init_channels();
-int	samples();
-void	loadfile();
-void	savefile();
+int	samples(int);
+void	loadfile(char *);
+void	savefile(char *);
 char *	split_field(char *, int, int);
 
 int	datasrc_byname(char *);

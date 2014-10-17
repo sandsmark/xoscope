@@ -160,7 +160,7 @@ make_help_text_visible(GtkWidget *widget, gpointer ignored)
     gtk_container_forall(GTK_CONTAINER(widget), make_help_text_visible, NULL);
   } else {
     const gchar * name = gtk_widget_get_name(widget);
-    if (name != NULL &&
+    if ((name != NULL) && (strlen(name) >= 11) &&
 	(!strcmp(name + strlen(name) - 11, "_help_label")
 	 || !strcmp(name + strlen(name) - 10, "_key_label"))) {
       gtk_label_set_text(GTK_LABEL(widget), g_object_get_data(G_OBJECT(widget), "visible-text"));
@@ -175,7 +175,7 @@ make_help_text_invisible(GtkWidget *widget, gpointer ignored)
     gtk_container_forall(GTK_CONTAINER(widget), make_help_text_invisible, NULL);
   } else {
     const gchar * name = gtk_widget_get_name(widget);
-    if (name != NULL &&
+    if ((name != NULL) && (strlen(name) >= 11) &&
 	(!strcmp(name + strlen(name) - 11, "_help_label")
 	 || !strcmp(name + strlen(name) - 10, "_key_label"))) {
       gtk_label_set_markup(GTK_LABEL(widget), g_object_get_data(G_OBJECT(widget), "invisible-text"));
@@ -198,7 +198,7 @@ setup_help_text(GtkWidget *widget, gpointer ignored)
     gtk_container_forall(GTK_CONTAINER(widget), setup_help_text, NULL);
   } else {
     const gchar * name = gtk_widget_get_name(widget);
-    if (name != NULL &&
+    if ((name != NULL) && (strlen(name) >= 11) &&
 	(!strcmp(name + strlen(name) - 11, "_help_label")
 	 || !strcmp(name + strlen(name) - 10, "_key_label"))) {
       const gchar * text = gtk_label_get_label(GTK_LABEL(widget));
@@ -926,6 +926,8 @@ clear()
 	ch[i].scale = roundoff(ch[i].scale, 1);
     }
   }
+
+  memset((void *)&stats, 0, sizeof(stats)); 
 
   show_data();
   update_text();

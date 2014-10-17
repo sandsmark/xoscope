@@ -36,9 +36,11 @@ void	animate();
 int	col();
 
 void	AddTimeOut();
-void	LoadSaveFile();
+void	LoadSaveFile(int);
 void	ExternCommand();
 char *	GetFile();
 char *	GetString();
 int	GetYesNo();
-int	OpenDisplay();
+int	OpenDisplay(int, char **);
+
+void	setup_help_text(GtkWidget *, gpointer);

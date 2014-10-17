@@ -1222,7 +1222,7 @@ init_widgets()
 
   glade_window = create_main_window();
 
-  setup_help_text(glade_window);
+  setup_help_text(glade_window, NULL);
 
 #if 0
   gtk_signal_connect(GTK_OBJECT(window), "delete_event",
