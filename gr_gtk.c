@@ -322,15 +322,18 @@ setscale(GtkWidget *w, guint data)
 }
 
 void
+set_trigger_level(GtkWidget *w, guint data)
+{
+  change_trigger(scope.trigch, data, scope.trige);
+
+  clear();
+}
+
+void
 setposition(GtkWidget *w, guint data)
 {
-  if (data >= 100) {
-    change_trigger(scope.trigch, (data - 100) * 8, scope.trige);
-  } else if (data <= -100) {
-    change_trigger(scope.trigch, (data + 100) * 8, scope.trige);
-  } else {
-    ch[scope.select].pos = data * 16;
-  }
+  ch[scope.select].pos = data;
+
   clear();
 }
 
@@ -532,27 +535,27 @@ static GtkItemFactoryEntry menu_items[] =
   {"/Channel/Position/up", "]", hit_key, ']', NULL},
   {"/Channel/Position/down", "[", hit_key, '[', NULL},
   {"/Channel/Position/sep", NULL, NULL, 0, "<Separator>"},
-  {"/Channel/Position/160", NULL, setposition, 10, NULL},
-  {"/Channel/Position/144", NULL, setposition, 9, NULL},
-  {"/Channel/Position/128", NULL, setposition, 8, NULL},
-  {"/Channel/Position/112", NULL, setposition, 7, NULL},
-  {"/Channel/Position/96", NULL, setposition, 6, NULL},
-  {"/Channel/Position/80", NULL, setposition, 5, NULL},
-  {"/Channel/Position/64", NULL, setposition, 4, NULL},
-  {"/Channel/Position/48", NULL, setposition, 3, NULL},
-  {"/Channel/Position/32", NULL, setposition, 2, NULL},
-  {"/Channel/Position/16", NULL, setposition, 1, NULL},
+  {"/Channel/Position/160", NULL, setposition, 160, NULL},
+  {"/Channel/Position/144", NULL, setposition, 144, NULL},
+  {"/Channel/Position/128", NULL, setposition, 128, NULL},
+  {"/Channel/Position/112", NULL, setposition, 112, NULL},
+  {"/Channel/Position/96", NULL, setposition, 96, NULL},
+  {"/Channel/Position/80", NULL, setposition, 80, NULL},
+  {"/Channel/Position/64", NULL, setposition, 64, NULL},
+  {"/Channel/Position/48", NULL, setposition, 48, NULL},
+  {"/Channel/Position/32", NULL, setposition, 32, NULL},
+  {"/Channel/Position/16", NULL, setposition, 16, NULL},
   {"/Channel/Position/0", NULL, setposition, 0, NULL},
-  {"/Channel/Position/-16", NULL, setposition, -1, NULL},
-  {"/Channel/Position/-32", NULL, setposition, -2, NULL},
-  {"/Channel/Position/-48", NULL, setposition, -3, NULL},
-  {"/Channel/Position/-64", NULL, setposition, -4, NULL},
-  {"/Channel/Position/-80", NULL, setposition, -5, NULL},
-  {"/Channel/Position/-96", NULL, setposition, -6, NULL},
-  {"/Channel/Position/-112", NULL, setposition, -7, NULL},
-  {"/Channel/Position/-128", NULL, setposition, -8, NULL},
-  {"/Channel/Position/-144", NULL, setposition, -9, NULL},
-  {"/Channel/Position/-160", NULL, setposition, -10, NULL},
+  {"/Channel/Position/-16", NULL, setposition, -16, NULL},
+  {"/Channel/Position/-32", NULL, setposition, -32, NULL},
+  {"/Channel/Position/-48", NULL, setposition, -48, NULL},
+  {"/Channel/Position/-64", NULL, setposition, -64, NULL},
+  {"/Channel/Position/-80", NULL, setposition, -80, NULL},
+  {"/Channel/Position/-96", NULL, setposition, -96, NULL},
+  {"/Channel/Position/-112", NULL, setposition, -112, NULL},
+  {"/Channel/Position/-128", NULL, setposition, -128, NULL},
+  {"/Channel/Position/-144", NULL, setposition, -144, NULL},
+  {"/Channel/Position/-160", NULL, setposition, -160, NULL},
 
   {"/Channel/Bits", NULL, NULL, 0, "<Branch>"},
   {"/Channel/Bits/tear", NULL, NULL, 0, "<Tearoff>"},
@@ -663,40 +666,40 @@ static GtkItemFactoryEntry menu_items[] =
   {"/Trigger/Position up", "=", hit_key, '=', NULL},
   {"/Trigger/Position down", "-", hit_key, '-', NULL},
   {"/Trigger/Position Positive", NULL, NULL, 0, "<Branch>"},
-  {"/Trigger/Position Positive/120", NULL, setposition, 115, NULL},
-  {"/Trigger/Position Positive/112", NULL, setposition, 114, NULL},
-  {"/Trigger/Position Positive/104", NULL, setposition, 113, NULL},
-  {"/Trigger/Position Positive/96", NULL, setposition, 112, NULL},
-  {"/Trigger/Position Positive/88", NULL, setposition, 111, NULL},
-  {"/Trigger/Position Positive/80", NULL, setposition, 110, NULL},
-  {"/Trigger/Position Positive/72", NULL, setposition, 109, NULL},
-  {"/Trigger/Position Positive/64", NULL, setposition, 108, NULL},
-  {"/Trigger/Position Positive/56", NULL, setposition, 107, NULL},
-  {"/Trigger/Position Positive/48", NULL, setposition, 106, NULL},
-  {"/Trigger/Position Positive/40", NULL, setposition, 105, NULL},
-  {"/Trigger/Position Positive/32", NULL, setposition, 104, NULL},
-  {"/Trigger/Position Positive/24", NULL, setposition, 103, NULL},
-  {"/Trigger/Position Positive/16", NULL, setposition, 102, NULL},
-  {"/Trigger/Position Positive/8", NULL, setposition, 101, NULL},
-  {"/Trigger/Position Positive/0", NULL, setposition, 100, NULL},
+  {"/Trigger/Position Positive/120", NULL, set_trigger_level, 120, NULL},
+  {"/Trigger/Position Positive/112", NULL, set_trigger_level, 112, NULL},
+  {"/Trigger/Position Positive/104", NULL, set_trigger_level, 104, NULL},
+  {"/Trigger/Position Positive/96", NULL, set_trigger_level, 96, NULL},
+  {"/Trigger/Position Positive/88", NULL, set_trigger_level, 88, NULL},
+  {"/Trigger/Position Positive/80", NULL, set_trigger_level, 80, NULL},
+  {"/Trigger/Position Positive/72", NULL, set_trigger_level, 72, NULL},
+  {"/Trigger/Position Positive/64", NULL, set_trigger_level, 64, NULL},
+  {"/Trigger/Position Positive/56", NULL, set_trigger_level, 56, NULL},
+  {"/Trigger/Position Positive/48", NULL, set_trigger_level, 48, NULL},
+  {"/Trigger/Position Positive/40", NULL, set_trigger_level, 40, NULL},
+  {"/Trigger/Position Positive/32", NULL, set_trigger_level, 32, NULL},
+  {"/Trigger/Position Positive/24", NULL, set_trigger_level, 24, NULL},
+  {"/Trigger/Position Positive/16", NULL, set_trigger_level, 16, NULL},
+  {"/Trigger/Position Positive/8", NULL, set_trigger_level, 8, NULL},
+  {"/Trigger/Position Positive/0", NULL, set_trigger_level, 0, NULL},
   {"/Trigger/Position Negative", NULL, NULL, 0, "<Branch>"},
-  {"/Trigger/Position Negative/0", NULL, setposition, -100, NULL},
-  {"/Trigger/Position Negative/-8", NULL, setposition, -101, NULL},
-  {"/Trigger/Position Negative/-16", NULL, setposition, -102, NULL},
-  {"/Trigger/Position Negative/-24", NULL, setposition, -103, NULL},
-  {"/Trigger/Position Negative/-32", NULL, setposition, -104, NULL},
-  {"/Trigger/Position Negative/-40", NULL, setposition, -105, NULL},
-  {"/Trigger/Position Negative/-48", NULL, setposition, -106, NULL},
-  {"/Trigger/Position Negative/-56", NULL, setposition, -107, NULL},
-  {"/Trigger/Position Negative/-64", NULL, setposition, -108, NULL},
-  {"/Trigger/Position Negative/-72", NULL, setposition, -109, NULL},
-  {"/Trigger/Position Negative/-80", NULL, setposition, -110, NULL},
-  {"/Trigger/Position Negative/-88", NULL, setposition, -111, NULL},
-  {"/Trigger/Position Negative/-96", NULL, setposition, -112, NULL},
-  {"/Trigger/Position Negative/-104", NULL, setposition, -113, NULL},
-  {"/Trigger/Position Negative/-112", NULL, setposition, -114, NULL},
-  {"/Trigger/Position Negative/-120", NULL, setposition, -115, NULL},
-  {"/Trigger/Position Negative/-128", NULL, setposition, -116, NULL},
+  {"/Trigger/Position Negative/0", NULL, set_trigger_level, 0, NULL},
+  {"/Trigger/Position Negative/-8", NULL, set_trigger_level, -8, NULL},
+  {"/Trigger/Position Negative/-16", NULL, set_trigger_level, -16, NULL},
+  {"/Trigger/Position Negative/-24", NULL, set_trigger_level, -24, NULL},
+  {"/Trigger/Position Negative/-32", NULL, set_trigger_level, -32, NULL},
+  {"/Trigger/Position Negative/-40", NULL, set_trigger_level, -40, NULL},
+  {"/Trigger/Position Negative/-48", NULL, set_trigger_level, -48, NULL},
+  {"/Trigger/Position Negative/-56", NULL, set_trigger_level, -56, NULL},
+  {"/Trigger/Position Negative/-64", NULL, set_trigger_level, -64, NULL},
+  {"/Trigger/Position Negative/-72", NULL, set_trigger_level, -72, NULL},
+  {"/Trigger/Position Negative/-80", NULL, set_trigger_level, -80, NULL},
+  {"/Trigger/Position Negative/-88", NULL, set_trigger_level, -88, NULL},
+  {"/Trigger/Position Negative/-96", NULL, set_trigger_level, -96, NULL},
+  {"/Trigger/Position Negative/-104", NULL, set_trigger_level, -104, NULL},
+  {"/Trigger/Position Negative/-112", NULL, set_trigger_level, -112, NULL},
+  {"/Trigger/Position Negative/-120", NULL, set_trigger_level, -120, NULL},
+  {"/Trigger/Position Negative/-128", NULL, set_trigger_level, -128, NULL},
 
   {"/Scope", NULL, NULL, 0, "<Branch>"},
   {"/Scope/tear", NULL, NULL, 0, "<Tearoff>"},
@@ -1183,6 +1186,7 @@ button_event(GtkWidget *widget, GdkEventButton *event, gpointer data)
 GtkWidget *
 create_databox (void)
 {
+  // XXX why is this commented out? (Gerhard commented it out)
 #if 0
    /* This is a global var - our one, unique, databox */
    databox = gtk_databox_new();
