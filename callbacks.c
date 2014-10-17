@@ -6,12 +6,11 @@
 
 #include "oscope.h"
 #include "display.h"
+#include "com_gtk.h"
 
 #include "callbacks.h"
 
 GtkWidget *window;
-
-#define LU(label)	lookup_widget(GTK_WIDGET(window), label)
 
 #ifdef HAVE_LIBCOMEDI
 
