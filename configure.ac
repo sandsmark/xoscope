@@ -58,7 +58,6 @@ AC_PATH_PROG(RANLIB, ranlib)
 dnl Checks for libraries.
 AC_CHECK_LIB(esd, esd_monitor_stream)
 AC_CHECK_LIB(m, sin)
-AC_CHECK_LIB(asound, snd_pcm_hw_params)
 
 AC_ARG_WITH([comedi],
 	[AS_HELP_STRING([--with-comedi],
@@ -86,6 +85,8 @@ main() {
 	  AC_MSG_RESULT(4)
 	fi
 ])
+
+AC_CHECK_LIB(asound, snd_pcm_hw_params)
 
 dnl This, believe it or not, is the suggested syntax for checking the
 dnl result of a previously run test - in our case, for setting an
