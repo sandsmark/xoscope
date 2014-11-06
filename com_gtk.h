@@ -24,7 +24,6 @@ void hit_key();
 GtkWidget* lookup_widget(GtkWidget *widget, const gchar *widget_name);
 #define LU(label)       lookup_widget(glade_window, label)
 
-GtkWidget *create_dialog2 ();
 GtkWidget *create_comedi_dialog ();
 
 void on_main_window_destroy (GtkObject *object, gpointer user_data);

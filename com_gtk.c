@@ -22,7 +22,6 @@
 
 GtkWidget *menubar = NULL;
 GtkWidget *glade_window = NULL;
-GtkWidget *bitscope_options_dialog = NULL;
 GtkWidget *comedi_options_dialog = NULL;
 GtkWidget *alsa_options_dialog = NULL;
 GtkWidget *databox = NULL;
@@ -89,6 +88,7 @@ set_name_property(GtkWidget *widget, GtkBuilder *builder)
 
 	g_value_init (&g_value, G_TYPE_STRING);
 	g_value_set_string (&g_value, gtk_buildable_get_name(GTK_BUILDABLE (widget)));
+	/* fprintf(stderr, "%s\n", gtk_buildable_get_name(GTK_BUILDABLE (widget))); */
 	gtk_buildable_set_buildable_property(GTK_BUILDABLE (widget), builder, "name", &g_value);
 }
  
@@ -178,10 +178,23 @@ create_main_window()
 
    	glade_window 			= GTK_WIDGET (gtk_builder_get_object (builder, "main_window"));
 	comedi_options_dialog 	= GTK_WIDGET (gtk_builder_get_object (builder, "comedi_dialog"));
-	bitscope_options_dialog = GTK_WIDGET (gtk_builder_get_object (builder, "dialog2"));
 	alsa_options_dialog 	= GTK_WIDGET (gtk_builder_get_object (builder, "alsa_options_dialog"));
 	databox 				= GTK_WIDGET (gtk_builder_get_object (builder, "databox"));
  
+	/* Run this loop TWICE to make sure all rc settings take. */
+
+	gslWidgets = gtk_builder_get_objects(builder);
+ 	for (iterator = gslWidgets; iterator; iterator = iterator->next) {
+ 		if(is_GtkWidget(G_TYPE_FROM_INSTANCE(iterator->data))){
+			set_name_property((GtkWidget*)(iterator->data), builder);
+			store_reference((GtkWidget*)(iterator->data));
+ 		}
+ 		else{
+			continue;
+ 		}
+ 	}
+	g_slist_free(gslWidgets);
+
 	gslWidgets = gtk_builder_get_objects(builder);
  	for (iterator = gslWidgets; iterator; iterator = iterator->next) {
  		if(is_GtkWidget(G_TYPE_FROM_INSTANCE(iterator->data))){
@@ -204,12 +217,6 @@ void
 on_main_window_check_resize()
 {
 	fprintf(stderr, "on_main_window_frame_event()\n");
-}
-
-GtkWidget *
-create_dialog2 ()
-{
-	return(bitscope_options_dialog);
 }
 
 GtkWidget *
