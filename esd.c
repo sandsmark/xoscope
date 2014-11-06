@@ -323,7 +323,7 @@ static int option1_esd(void)
   return 1;
 }
 
-static char * option1str_esd(void)
+static const char * option1str_esd(void)
 {
   static char string[16];
 

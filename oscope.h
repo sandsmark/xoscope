@@ -224,7 +224,7 @@ void	init_channels();
 int	samples(int);
 void	loadfile(char *);
 void	savefile(char *);
-char *	split_field(char *, int, int);
+const char *	split_field(const char *, int, int);
 
 int	datasrc_byname(char *);
 void	datasrc_force_open(DataSrc *);

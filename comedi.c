@@ -929,10 +929,10 @@ static int get_data(void)
 }
 
 
-static char * status_str(int i)
+static const char * status_str(int i)
 {
   static char buffer[16];
-  char *error = comedi_strerror(comedi_error);
+  const char *error = comedi_strerror(comedi_error);
 
   switch (i) {
   case 0:
@@ -1007,7 +1007,7 @@ static int option1(void)
   return 1;
 }
 
-static char * option1str(void)
+static const char * option1str(void)
 {
   if (! (subdevice_flags & (SDF_GROUND | SDF_DIFF | SDF_COMMON))) {
     return NULL;

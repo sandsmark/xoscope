@@ -792,13 +792,14 @@ main(int argc, char **argv)
  * 2, otherwise return field 1.
  */
 
-char * split_field(char *str, int fieldtwo, int limit)
+const char * split_field(const char *str, int fieldtwo, int limit)
 {
   static char buffer[256];
-  char *sp_index = NULL;
   int i;
 
   if (strlen(str) > limit) {
+
+    char * buf_index = NULL;
 
     if (!fieldtwo) {
 
@@ -806,18 +807,19 @@ char * split_field(char *str, int fieldtwo, int limit)
 	buffer[i] = str[i];
 
 	if (str[i] == ' ') {
-	  sp_index = &buffer[i];
+	  buf_index = &buffer[i];
 	}
       }
 
-      if (sp_index) {
-	*sp_index = '\0';
+      if (buf_index) {
+	*buf_index = '\0';
       } else {
 	buffer[i] = '\0';
       }
 
     } else {
 
+      const char *sp_index = NULL;
 
       for (i=0; i<limit; i++) {
 
