@@ -26,8 +26,6 @@ static int esd = -2;		/* file descriptor for ESD */
 static int esdblock = 0;	/* 1 to block ESD; 0 to non-block */
 static int esdrecord = 0;	/* 1 to use ESD record mode; 0 to use ESD monitor mode */
 
-static int sc_chans = 0;
-
 /* Signal structures we're capturing into */
 static Signal left_sig = {"Left Mix", "a"};
 static Signal right_sig = {"Right Mix", "b"};
