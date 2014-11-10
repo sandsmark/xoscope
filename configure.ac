@@ -88,6 +88,10 @@ main() {
 
 AC_CHECK_LIB(asound, snd_pcm_hw_params)
 
+dnl Check for optional features in gtkdatabox library
+AC_CHECK_LIB(gtkdatabox, gtk_databox_grid_set_line_style, [AC_DEFINE([HAVE_GRID_LINESTYLE], [1],
+                          [Define if gtkdatabox supports setting grid line styles.])])
+
 dnl This, believe it or not, is the suggested syntax for checking the
 dnl result of a previously run test - in our case, for setting an
 dnl automake variable based on the result of an autoconf test.  See

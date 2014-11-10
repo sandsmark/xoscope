@@ -645,7 +645,7 @@ create_graticule()
   graticule_minor_graph = gtk_databox_grid_new (9, 9, &gcolor, 1);
   graticule_major_graph = gtk_databox_grid_new (1, 1, &gcolor, 1);
 
-#ifdef GTK_DATABOX_GRID_DOTTED_LINES
+#ifdef HAVE_GRID_LINESTYLE
   gtk_databox_grid_set_line_style(GTK_DATABOX_GRID(graticule_major_graph),
 				  GTK_DATABOX_GRID_SOLID_LINES);
   gtk_databox_grid_set_line_style(GTK_DATABOX_GRID(graticule_minor_graph),
