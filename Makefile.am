@@ -26,7 +26,7 @@ bin_PROGRAMS = xoscope
 EXTRA_DIST = $(man_MANS) $(noinst_HEADERS) \
 README.f51 TODO TODO.old audio.dat bitscope.dat 	\
 count.dat ofreq.ini oscope.dat oscope.lsm xoscope.rc	\
-patch.f51 proscope.dat xoscope.glade xoscope.png \
+patch.f51 proscope.dat xoscope.glade xoscope.png xoscope.desktop xoscope.spec \
 hardware/HARDWARE hardware/buff.fig hardware/buff.ps \
 hardware/buff2.fig hardware/buff2.ps hardware/pcb.fig hardware/pcb.ps \
 hardware/xoscope-components.png hardware/xoscope-copper.png

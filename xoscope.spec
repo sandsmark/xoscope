@@ -3,7 +3,6 @@
 Name:		xoscope
 Version:	2.0
 Release:	0.2%{?dist}
-#BuildArch:	i686
 License:	GPL
 Group:		X11/Applications
 URL:		http://xoscope.sourceforge.net/
@@ -12,32 +11,15 @@ Packager:	Franta Hanzlik
 Summary:	xoscope - digital oscilloscope on PC
 Summary(pl.UTF-8):	xoscope - cyfrowy oscyloskop na PC
 Source0:	http://dl.sourceforge.net/xoscope/%{name}-%{version}.tgz
-Source1:	xoscope.desktop
-Source2:	xoscope.png
-Source3:	xoscope-at-fedora
-Source4:	xoscope-screenshot_23.7.2012_09:09:47.png
-Source5:	xoscope-screenshot_23.7.2012_09:10:42.png
-Source6:	xoscope-screenshot_23.7.2012_09:10:59.png
-Source7:	xoscope-screenshot_23.7.2012_09:21:01.png
-Source8:	xoscope-screenshot_23.7.2012_09:23:39.png
-Source9:	xoscope-screenshot_23.7.2012_09:24:01.png
-Source10:	xoscope-screenshot_23.7.2012_09:24:10.png
-Source11:	xoscope-screenshot_23.7.2012_09:41:57.png
-Source12:	xoscope-screenshot_23.7.2012_09:50:02.png
-Patch0:		xoscope-Makefile.am.patch
-Patch1:		xoscope-comedi.patch
-Patch2:		xoscope-gtkdatabox.c.patch
 BuildRequires:	autoconf
 BuildRequires:	automake
 BuildRequires:	esound-devel
 BuildRequires:	gtk2-devel >= 2.18
 BuildRequires:	libtool
-BuildRequires:	perl-devel
 BuildRequires:	comedilib-devel
-# xoscope se musi spoustet pomoci padsp wrapperu, tedy:
-Requires:	pulseaudio-utils
-Requires:	pulseaudio-esound-compat
-BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
+BuildRequires:  gtkdatabox-devel
+BuildRequires:	desktop-file-utils
+BuildRoot:	%{tmpdir}/%{name}-%{version}
  
 %description
 x*oscope is a digital oscilloscope that uses a sound card (via
@@ -56,9 +38,6 @@ osziFOX).
  
 %prep
 %setup -q
-%patch0 -p1
-%patch1 -p1
-%patch2 -p1
  
 %build
 %{__aclocal}
@@ -74,14 +53,11 @@ rm -rf $RPM_BUILD_ROOT
  
 %{__make} install DESTDIR=$RPM_BUILD_ROOT
 
-desktop-file-install --vendor=fedora --dir=${RPM_BUILD_ROOT}%{_datadir}/applications %{SOURCE1}
+desktop-file-install --vendor=fedora --dir=${RPM_BUILD_ROOT}%{_datadir}/applications xoscope.desktop
 
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/pixmaps
-install -p -m 0644 %SOURCE2 ${RPM_BUILD_ROOT}%{_datadir}/pixmaps
+install -p -m 0644 xoscope.png ${RPM_BUILD_ROOT}%{_datadir}/pixmaps
 install -d -p -m 0755 ${RPM_BUILD_ROOT}%{_docdir}/%{name}-%{version}/contrib
-install -p -m 644 -t ${RPM_BUILD_ROOT}%{_docdir}/%{name}-%{version}/contrib %SOURCE3
-install -p -m 644 -t ${RPM_BUILD_ROOT}%{_docdir}/%{name}-%{version}/contrib %{SOURCE4}\
- %{SOURCE5} %{SOURCE6} %{SOURCE7} %{SOURCE8} %{SOURCE9} %{SOURCE10} %{SOURCE11} %{SOURCE12}
  
 %clean
 rm -rf $RPM_BUILD_ROOT
