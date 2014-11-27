@@ -50,10 +50,6 @@ static const char * snd_errormsg2 = NULL;
  * this causes compiler problems, just comment out the attribute lines
  * and leave the do-nothing functions.
  */
-
-/*void sc_gtk_option_dialog() __attribute__ ((weak));*/
-/*void sc_gtk_option_dialog() {}*/
-
 void alsa_gtk_option_dialog() __attribute__ ((weak));
 
 /* close the sound device */
@@ -219,8 +215,6 @@ open_sound_card(void)
     return 0;
   }
   /* fprintf(stderr,"open_sound_card\n"); */
-
-//   snd_pcm_hw_params_free (params);
 
   if ((rc = snd_pcm_prepare (handle)) < 0) {
     snd_errormsg1 = "snd_pcm_prepare() failed ";
@@ -426,7 +420,6 @@ sc_get_data()
       /* EPIPE means overrun */
 /*      fprintf(stderr, "overrun occurred\n");*/
 	    snd_pcm_recover(handle, rdCnt, TRUE);
-/*		usleep(100); */
       	return(sc_get_data());
 
    } 
@@ -506,7 +499,6 @@ sc_get_data()
 /* 	fprintf(stderr, "sc_get_data returns at %d\n", __LINE__);*/
 	return(1);
 }
-
 
 static const char * snd_status_str(int i)
 {
@@ -603,3 +595,4 @@ DataSrc datasrc_sc = {
   sc_save_option,
   alsa_gtk_option_dialog,  /* gtk_options */
 };
+
