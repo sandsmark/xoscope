@@ -17,23 +17,16 @@
 #include <errno.h>
 #include <stdlib.h>		/* for abs() */
 #include <sys/ioctl.h>
-/*GERHARD*/
 #include <alsa/asoundlib.h>
 #include <linux/soundcard.h>
-/*GERHARD*/
 #include "oscope.h"		/* program defaults */
 
-/*GERHARD*/
 #define DEFAULT_ALSADEVICE "plughw:0,0"
 char	alsaDevice[32] = "\0";
 char 	alsaDeviceName[64] = "\0";
 double	alsa_volts = 0.0;
-/*GERHARD*/
-
-/*GERHARD*/
 static snd_pcm_t *handle 	= NULL;
 snd_pcm_format_t pcm_format = 0;
-/*GERHARD*/
 
 static int sc_chans = 0;
 static int sound_card_rate = DEF_R;	/* sampling rate of sound card */
@@ -46,10 +39,8 @@ static int trigmode = 0;
 static int triglev;
 static int trigch;
 
-/*GERHARD*/
 static const char * snd_errormsg1 = NULL;
 static const char * snd_errormsg2 = NULL;
-/*GERHARD*/
 
 /* This function is defined as do-nothing and weak, meaning it can be
  * overridden by the linker without error.  It's used for the X
@@ -58,19 +49,12 @@ static const char * snd_errormsg2 = NULL;
  * this causes compiler problems, just comment out the attribute lines
  * and leave the do-nothing functions.
  */
-
-/*GERHARD*/
-/*void sc_gtk_option_dialog() __attribute__ ((weak));*/
-/*void sc_gtk_option_dialog() {}*/
-
 void alsa_gtk_option_dialog() __attribute__ ((weak));
-/*GERHARD*/
 
 /* close the sound device */
 static void
 close_sound_card()
 {
-/*GERHARD*/
   /* fprintf(stderr,"close_sound_card\n"); */
   if (handle != NULL) {
 	snd_pcm_drop(handle);
@@ -81,21 +65,6 @@ close_sound_card()
   }
 }
 
-/*GERHARD*/
-/* show system error and close sound device if given ioctl status is bad */
-/*static void*/
-/*check_status_ioctl(int d, int request, void *argp, int line)*/
-/*{*/
-/*  if (ioctl(d, request, argp) < 0) {*/
-/*    snd_errormsg1 = "sound ioctl";*/
-/*    snd_errormsg2 = strerror(errno);*/
-/*    close_sound_card();*/
-/*  }*/
-/*}*/
-/*GERHARD*/
-
-
-/*GERHARD*/
 static int
 open_sound_card(void)
 {
@@ -104,9 +73,7 @@ open_sound_card(void)
   int bits = 8;
   int rc;
   snd_pcm_hw_params_t *params;
-/*GERHARD*/
   int dir = 0;
-/*GERHARD*/
   snd_pcm_uframes_t pcm_frames;
  
 /*  fprintf(stderr, "open_sound_card() sound_card_rate=%d\n", sound_card_rate); */
@@ -248,8 +215,6 @@ open_sound_card(void)
   }
   /* fprintf(stderr,"open_sound_card\n"); */
 
-//   snd_pcm_hw_params_free (params);
-
   if ((rc = snd_pcm_prepare (handle)) < 0) {
     snd_errormsg1 = "snd_pcm_prepare() failed ";
     snd_errormsg2 = snd_strerror(rc);
@@ -259,12 +224,10 @@ open_sound_card(void)
 
   return 1;
 }
-/*GERHARD*/
 
 static void
 reset_sound_card(void)
 {
-/*GERHARD*/
   	static unsigned char *junk = NULL; 
   	
 	/* fprintf(stderr,"reset_sound_card()\n"); */
@@ -276,9 +239,7 @@ reset_sound_card(void)
    		return;
   		}
 	}
-/*GERHARD*/
 
-/*GERHARD*/
   	if(handle != NULL){
     	close_sound_card();
    		open_sound_card();
@@ -287,23 +248,18 @@ reset_sound_card(void)
  			return;
 		snd_pcm_readi(handle, junk, SAMPLESKIP);
   	}
-/*GERHARD*/
 }
 
 static int sc_nchans(void)
 {
-/*GERHARD*/
   if (handle == NULL) 
   	open_sound_card();
   return (handle != NULL) ? sc_chans : 0;
-/*GERHARD*/
 }
 
 static int fd(void)
 {
-/*GERHARD*/
 	return(-1);
-/*GERHARD*/
 }
 
 static Signal *sc_chan(int chan)
@@ -376,12 +332,10 @@ reset(void)
 
   right_sig.num = 0;
   right_sig.frame ++;
-/*GERHARD*/
   left_sig.volts = alsa_volts;
   right_sig.volts = alsa_volts;
 
   in_progress = 0;
-/*GERHARD*/
 }
 
 /* set_width(int)
@@ -401,7 +355,6 @@ static void set_width(int width)
   if (right_sig.data != NULL) free(right_sig.data);
 
   	left_sig.data = malloc(width * sizeof(short));
-/*GERHARD*/
 	if(left_sig.data == NULL){
 		fprintf(stderr, "set_width(), malloc failed, %s\n", strerror(errno));
 		exit(0);
@@ -411,11 +364,9 @@ static void set_width(int width)
 		fprintf(stderr, "set_width(), malloc failed, %s\n", strerror(errno));
 		exit(0);
 	}
-/*GERHARD*/
 }
 
 
-/*GERHARD*/
 /* get data from ALSA sound system, */
 /* return value is 0 when we wait for a trigger event or on error, otherwise 1 */
 /* in_progress: 0 when we start a new plot, when a plot is in progress, number of samples read. */
@@ -467,7 +418,6 @@ sc_get_data()
       /* EPIPE means overrun */
 /*      fprintf(stderr, "overrun occurred\n");*/
 	    snd_pcm_recover(handle, rdCnt, TRUE);
-/*		usleep(100); */
       	return(sc_get_data());
 
    } 
@@ -547,10 +497,7 @@ sc_get_data()
 /* 	fprintf(stderr, "sc_get_data returns at %d\n", __LINE__);*/
 	return(1);
 }
-/*GERHARD*/
 
-
-/*GERHARD*/
 static const char * snd_status_str(int i)
 {
 #ifdef DEBUG
@@ -574,7 +521,6 @@ static const char * snd_status_str(int i)
   }
   return NULL;
 }
-/*GERHARD*/
 
 #ifdef DEBUG
 static char * option1str_sc(void)
@@ -621,9 +567,7 @@ static char * sc_save_option(int i)
 }
 
 DataSrc datasrc_sc = {
-/*GERHARD*/
   alsaDeviceName,
-/*GERHARD*/
   sc_nchans,
   sc_chan,
   set_trigger,
@@ -631,10 +575,8 @@ DataSrc datasrc_sc = {
   change_rate,
   set_width,
   reset,
-/*GERHARD*/
   fd,	//should be REALY unused....
   sc_get_data,
-/*GERHARD*/
   snd_status_str,
 #ifdef DEBUG
   NULL,
@@ -651,3 +593,4 @@ DataSrc datasrc_sc = {
   sc_save_option,
   alsa_gtk_option_dialog,  /* gtk_options */
 };
+
