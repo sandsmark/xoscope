@@ -25,6 +25,7 @@
 char	alsaDevice[32] = "\0";
 char 	alsaDeviceName[64] = "\0";
 double	alsa_volts = 0.0;
+
 static snd_pcm_t *handle 	= NULL;
 snd_pcm_format_t pcm_format = 0;
 
@@ -332,6 +333,7 @@ reset(void)
 
   right_sig.num = 0;
   right_sig.frame ++;
+
   left_sig.volts = alsa_volts;
   right_sig.volts = alsa_volts;
 

@@ -17,8 +17,6 @@
 #include "display.h"
 #include "com_gtk.h"
 
-static int temp_rec;
-
 /* dialog to set the mV / steps for ALSA-Input */
 
 /* from oscope.h 
