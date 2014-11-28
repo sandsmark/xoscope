@@ -333,7 +333,7 @@ void
 setposition(GtkWidget *w, guint data)
 {
   ch[scope.select].pos = data;
-
+	
   clear();
 }
 
@@ -524,16 +524,16 @@ static GtkItemFactoryEntry menu_items[] =
   {"/Channel/Scale/2", NULL, setscale, 4, NULL},
   {"/Channel/Scale/1", NULL, setscale, 5, NULL},
   /* How the ? do you put a / in a menu ? Just use \ until I figure it out. */
-  {"/Channel/Scale/1\\2", NULL, setscale, 6, NULL},
-  {"/Channel/Scale/1\\5", NULL, setscale, 7, NULL},
-  {"/Channel/Scale/1\\10", NULL, setscale, 8, NULL},
-  {"/Channel/Scale/1\\20", NULL, setscale, 9, NULL},
-  {"/Channel/Scale/1\\50", NULL, setscale, 10, NULL},
+  {"/Channel/Scale/1\\\\2", NULL, setscale, 6, NULL},
+  {"/Channel/Scale/1\\\\5", NULL, setscale, 7, NULL},
+  {"/Channel/Scale/1\\\\10", NULL, setscale, 8, NULL},
+  {"/Channel/Scale/1\\\\20", NULL, setscale, 9, NULL},
+  {"/Channel/Scale/1\\\\50", NULL, setscale, 10, NULL},
 
   {"/Channel/Position", NULL, NULL, 0, "<Branch>"},
   {"/Channel/Position/tear", NULL, NULL, 0, "<Tearoff>"},
-  {"/Channel/Position/up", "]", hit_key, ']', NULL},
-  {"/Channel/Position/down", "[", hit_key, '[', NULL},
+  {"/Channel/Position/up", "[", hit_key, '[', NULL},
+  {"/Channel/Position/down", "]", hit_key, ']', NULL},
   {"/Channel/Position/sep", NULL, NULL, 0, "<Separator>"},
   {"/Channel/Position/160", NULL, setposition, 160, NULL},
   {"/Channel/Position/144", NULL, setposition, 144, NULL},
@@ -1183,6 +1183,8 @@ button_event(GtkWidget *widget, GdkEventButton *event, gpointer data)
 
 #endif
 
+
+
 GtkWidget *
 create_databox (void)
 {
@@ -1204,7 +1206,7 @@ GtkWidget * create_main_window();
 void
 init_widgets()
 {
-  /* char ** xoscope_rc_ptr = xoscope_rc;*/
+/*  char ** xoscope_rc_ptr = xoscope_rc;*/
 
   /* I don't like the added complexity of having to install rc files
    * (and the related problems if they can't be found), so instead of
@@ -1221,7 +1223,7 @@ init_widgets()
 #endif
 
   glade_window = create_main_window();
-
+	
   setup_help_text(glade_window, NULL);
 
 #if 0
