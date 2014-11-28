@@ -19,8 +19,10 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include "oscope.h"
+#include "fft.h"
 #include "display.h"
 #include "func.h"
+#include "com_gtk.h"
 
 Signal mem[26];		/* 26 memories, corresponding to 26 letters */
 
@@ -44,6 +46,7 @@ recall(Signal *signal)
   recall_on_channel(signal, &ch[scope.select]);
 }
 
+extern int in_progress;
 /* store the currently selected signal to the given memory register */
 void
 save(char c)
@@ -62,8 +65,12 @@ save(char c)
     free(mem[i].data);
   }
   mem[i].data = malloc(ch[scope.select].signal->width * sizeof(short));
-  memcpy(mem[i].data, ch[scope.select].signal->data,
-	 ch[scope.select].signal->width * sizeof(short));
+  if(mem[i].data == NULL){
+  	fprintf(stderr, "malloc failed in save()\n");
+  	exit(0);
+  } 
+  memcpy(mem[i].data, ch[scope.select].signal->data, ch[scope.select].signal->width * sizeof(short));
+  
   mem[i].rate = ch[scope.select].signal->rate;
   mem[i].num = ch[scope.select].signal->num;
   mem[i].width = ch[scope.select].signal->width;
@@ -101,7 +108,7 @@ static struct external *externals = NULL;
  */
 
 void
-start_command_on_channel(const char *command, Channel *ch)
+start_command_on_channel(const char *command, Channel *ch_select)
 {
   struct external *ext;
   int pid;
@@ -136,6 +143,11 @@ start_command_on_channel(const char *command, Channel *ch)
     if ((oscopepath = getenv("OSCOPEPATH")) == NULL)
       oscopepath = PACKAGE_LIBEXEC_DIR;
     if ((path = malloc(strlen(oscopepath) + 6)) != NULL) {
+	  if(path == NULL){
+	  	fprintf(stderr, "malloc failed in start_command_on_channel() for path\n");
+	  	exit(0);
+	  } 
+    
       sprintf(path,"PATH=%s", oscopepath);
       putenv(path);
       /* putenv() requires buffer to stick around, so no free(),
@@ -166,12 +178,25 @@ start_command_on_channel(const char *command, Channel *ch)
   ext->from = from[0];
   ext->to = to[1];
 
+	ext->signal.data = malloc(ch[0].signal->width * sizeof(short));
+    if(ext->signal.data == NULL){
+	  	fprintf(stderr, "malloc failed in start_command_on_channel() for signal.data\n");
+	  	exit(0);
+	} 
+	ext->signal.width = ch[0].signal->width;
+	ext->signal.num = ch[0].signal->num;
+	ext->signal.rate = ch[0].signal->rate;
+	ext->signal.delay = ch[0].signal->delay;
+	ext->signal.bits = ch[0].signal->bits;
+/*	fprintf(stderr, "start_command_on_channel: width = %d\n", ext->signal.width);*/
+
   ext->next = externals;
   externals = ext;
 
   message(command);
 
-  recall_on_channel(&ext->signal, ch);
+  recall_on_channel(&ext->signal, ch_select);
+	ch[scope.select].show = 1;
 }
 
 void
@@ -182,6 +207,28 @@ startcommand(const char *command)
     clear();
   }
 }
+
+void
+restart_command_on_channel(void)
+{
+	struct external *ext;
+
+
+	for (ext = externals; ext != NULL; ext = ext->next) {
+/*		fprintf(stderr, "1. restart_command_on_channel: width = %d\n", ext->signal.width);*/
+		if(ext->signal.data != NULL)
+			free(ext->signal.data);
+		ext->signal.data = malloc(ch[0].signal->width * sizeof(short));	
+  		if(ext->signal.data == NULL){
+	  		fprintf(stderr, "malloc failed in restart_command_on_channel() for signal.data\n");
+	  		exit(0);
+		} 
+		ext->signal.width = ch[0].signal->width;
+		ext->signal.num = ch[0].signal->num;
+/*		fprintf(stderr, "2. restart_command_on_channel: width = %d\n", ext->signal.width);*/
+	}
+}
+
 
 /* Check everything on the externals list; run what needs to be run,
  * and clean up anything left linguring behind.
@@ -213,7 +260,6 @@ run_externals(void)
 	  ext->last_frame_ch1 = ch[1].signal->frame;
 	  ext->signal.frame ++;
 	  ext->signal.num = 0;
-
 	}
 
 	/* We may already have sent and received part of a frame, so
@@ -235,6 +281,11 @@ run_externals(void)
 	    errors ++;
 	  if (read(ext->from, c++, sizeof(short)) != sizeof(short))
 	    errors ++;
+		
+		if(errors){
+			fprintf(stderr, "run_externals() r/w-error. ch[0].signal->num=%d, ext->signal.num=%d i=%d\n", ch[0].signal->num, ext->signal.num, i);
+			return;
+		}
 	}
 	ext->signal.num = i;
 
@@ -319,6 +370,7 @@ sum(Signal *dest)
 
   dest->frame = ch[0].signal->frame + ch[1].signal->frame;
   dest->num = ch[0].signal->num;
+
   if (dest->num > ch[1].signal->num) dest->num = ch[1].signal->num;
 
   for (i = 0 ; i < dest->num ; i++) {
@@ -341,6 +393,7 @@ diff(Signal *dest)
 
   dest->frame = ch[0].signal->frame + ch[1].signal->frame;
   dest->num = ch[0].signal->num;
+
   if (dest->num > ch[1].signal->num) dest->num = ch[1].signal->num;
 
   for (i = 0 ; i < dest->num ; i++) {
@@ -364,6 +417,7 @@ avg(Signal *dest)
 
   dest->frame = ch[0].signal->frame + ch[1].signal->frame;
   dest->num = ch[0].signal->num;
+
   if (dest->num > ch[1].signal->num) dest->num = ch[1].signal->num;
 
   for (i = 0 ; i < dest->num ; i++) {
@@ -435,8 +489,13 @@ int ch1active(Signal *dest)
 
   if (dest->width != ch[0].signal->width) {
     dest->width = ch[0].signal->width;
-    if (dest->data != NULL) free(dest->data);
-    dest->data = malloc(dest->width * sizeof(short));
+    if (dest->data != NULL) 
+      free(dest->data);
+      dest->data = malloc(ch[0].signal->width * sizeof(short));
+      if(dest->data == NULL){
+	  	fprintf(stderr, "malloc failed in ch1active()\n");
+	  	exit(0);
+	  } 
   }
 
   return 1;
@@ -458,8 +517,13 @@ int ch2active(Signal *dest)
 
   if (dest->width != ch[1].signal->width) {
     dest->width = ch[1].signal->width;
-    if (dest->data != NULL) free(dest->data);
-    dest->data = malloc(dest->width * sizeof(short));
+    if (dest->data != NULL) 
+      free(dest->data);
+    dest->data = malloc(ch[1].signal->width * sizeof(short));
+    if(dest->data == NULL){
+	  	fprintf(stderr, "malloc failed in ch2active()\n");
+	  	exit(0);
+	} 
   }
 
   return 1;
@@ -490,7 +554,11 @@ int chs12active(Signal *dest)
   if (dest->width != ch[0].signal->width) {
     dest->width = ch[0].signal->width;
     if (dest->data != NULL) free(dest->data);
-    dest->data = malloc(dest->width * sizeof(short));
+      dest->data = malloc(ch[0].signal->width * sizeof(short));
+      if(dest->data == NULL){
+	  	fprintf(stderr, "malloc failed in ch12active()\n");
+	  	exit(0);
+	  } 
   }
 
   return 1;
@@ -515,13 +583,13 @@ int ch1FFTactive(Signal *dest)
   dest->num = 0;
   dest->volts = 0;
 
-  if (ch[0].signal == NULL) {
-    dest->rate = 0;
-    return 0;
+  	if (ch[0].signal == NULL) {
+    	dest->rate = 0;
+    	return 0;
   } else {
     dest->rate = -ch[0].signal->rate / 80;
-    return 1;
-  }
+	return 1;
+}
 }
 
 int ch2FFTactive(Signal *dest)
@@ -530,13 +598,13 @@ int ch2FFTactive(Signal *dest)
   dest->num = 0;
   dest->volts = 0;
 
-  if (ch[1].signal == NULL) {
-    dest->rate = 0;
-    return 0;
+  	if (ch[1].signal == NULL) {
+    	dest->rate = 0;
+    	return 0;
   } else {
     dest->rate = -ch[1].signal->rate / 80;
-    return 1;
-  }
+	return 1;
+}
 }
 
 struct func {
@@ -550,9 +618,9 @@ struct func funcarray[] =
 {
   {inv1, "Inv. 1  ", ch1active},
   {inv2, "Inv. 2  ", ch2active},
-  {sum, "Sum  1+2", chs12active},
+  {sum,  "Sum  1+2", chs12active},
   {diff, "Diff 1-2", chs12active},
-  {avg, "Avg. 1,2", chs12active},
+  {avg,  "Avg. 1,2", chs12active},
   /* {fft1, "FFT. 1  ", ch1FFTactive}, */
   /* {fft2, "FFT. 2  ", ch2FFTactive}, */
 };

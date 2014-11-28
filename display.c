@@ -68,8 +68,8 @@ message(const char *message)
     GdkColor gcolor;
     gcolor.red = gcolor.green = gcolor.blue = 65535;
     databox_message = gtk_databox_markers_new(1, &databox_message_X,
-					      &databox_message_Y, &gcolor, 0,
-					      GTK_DATABOX_MARKERS_NONE);
+					     &databox_message_Y, &gcolor, 0,
+					     GTK_DATABOX_MARKERS_NONE);
   }
 
   /* XXX gtk_databox_markers_set_label() should take a const char pointer */
@@ -210,6 +210,7 @@ setup_help_text(GtkWidget *widget, gpointer ignored)
       strcpy(saved_text, text);
       g_object_set_data(G_OBJECT(widget), "visible-text", saved_text);
       g_object_set_data(G_OBJECT(widget), "invisible-text", modified_text);
+
     }
   }
 }
@@ -232,20 +233,20 @@ void update_dynamic_text(void)
   p = &ch[scope.select];
 
   /* always draw the dynamic text, if signal is analog (bits == 0) */
-  if (p->signal && (p->signal->bits == 0)) {
+  if (p->signal && (p->signal->bits == 0) ) {
 
-    sprintf(string, "  Period of %6d us = %6d Hz  ", stats.time,  stats.freq);
-    gtk_label_set_text(GTK_LABEL(LU("period_label")), string);
+    	sprintf(string, "  Period of %6d us = %6d Hz  ", stats.time,  stats.freq);
+    	gtk_label_set_text(GTK_LABEL(LU("period_label")), string);
 
-    if (p->signal->volts)
-      sprintf(string, "   %7.5g - %7.5g = %7.5g mV   ",
-	      (float)stats.max * p->signal->volts / 320,
-	      (float)stats.min * p->signal->volts / 320,
-	      ((float)stats.max - stats.min) * p->signal->volts / 320);
-    else
-      sprintf(string, " Max:%3d - Min:%4d = %3d Pk-Pk ",
-	      stats.max, stats.min, stats.max - stats.min);
-    gtk_label_set_text(GTK_LABEL(LU("min_max_label")), string);
+    	if (p->signal->volts)
+      		sprintf(string, "   %7.5g - %7.5g = %7.5g mV   ",
+	      		(float)stats.max * p->signal->volts / 320,
+	      		(float)stats.min * p->signal->volts / 320,
+	      		((float)stats.max - stats.min) * p->signal->volts / 320);
+   	 	else
+      		sprintf(string, " Max:%3d - Min:%4d = %3d Pk-Pk ",
+	      		stats.max, stats.min, stats.max - stats.min);
+    	gtk_label_set_text(GTK_LABEL(LU("min_max_label")), string);
 
   } else {
     gtk_label_set_text(GTK_LABEL(LU("period_label")), "");
@@ -305,15 +306,15 @@ void update_dynamic_text(void)
   if (sec != prev) {
 
     if (prev != 0) {
-      sprintf(string, "fps:%3d", frames);
-      gtk_label_set_text(GTK_LABEL(LU("fps_label")), string);
+    sprintf(string, "fps:%3d", frames);
+    gtk_label_set_text(GTK_LABEL(LU("fps_label")), string);
     } else {
       gtk_label_set_text(GTK_LABEL(LU("fps_label")), "");
     }
 
     frames = 0;
     if (datasrc) {
-      prev = sec;
+    prev = sec;
     } else {
       prev = 0;
     }
@@ -386,8 +387,8 @@ void update_text(void)
 		     scroll_styles[scope.scroll_mode]);
 
   if (datasrc) {
-    strcpy(string, scope.run ? (scope.run > 1 ? "WAIT" : " RUN") : "STOP");
-    gtk_label_set_text(GTK_LABEL(LU("run_stop_label")), string);
+  strcpy(string, scope.run ? (scope.run > 1 ? "WAIT" : " RUN") : "STOP");
+  gtk_label_set_text(GTK_LABEL(LU("run_stop_label")), string);
   } else {
     gtk_label_set_text(GTK_LABEL(LU("run_stop_label")), "");
   }
@@ -727,7 +728,7 @@ void configure_databox(void)
      if (p->show && p->signal) {
        if ((p->signal->rate > 0) &&
 	   (gfloat) p->signal->num / p->signal->rate > upper_time_limit) {
-	 upper_time_limit = (gfloat) p->signal->num / p->signal->rate;
+	 		upper_time_limit = (gfloat) p->signal->num / p->signal->rate;
        }
      }
    }
@@ -745,7 +746,7 @@ void configure_databox(void)
     * this calculation could overflow int total_horizontal_divisions.
     */
 
-   for (total_horizontal_divisions = 10;
+	for (total_horizontal_divisions = 10; 
 	upper_time_limit > (total_horizontal_divisions + 0.5)
 	  * 0.001 * scope.scale;
 	total_horizontal_divisions += 5);
@@ -808,44 +809,46 @@ void timebase_changed(void)
    * it disappearing.
    */
 
-  if (datasrc && scope.run) {
+ 	if (datasrc && scope.run) {
 
-    clear_databox();
+		clear_databox();
 
-    /* In oscope.h, I wrote "Only after reset() has been called are
-     * the rate and volts fields in the Signal structures guaranteed
-     * valid".  So... we reset() once to make sure the rate and volts
-     * fields are valid, then use the rate field in the first active
-     * channel to set the capture width to the number of samples
-     * required to fill the screen at that rate, then reset() again to
-     * (re)start the capture.
-     *
-     * XXX Probably reset() needs to be split into two functions -
-     * say reset() and start_sweep(), so then our sequence is
-     * reset(), set_width(), start_sweep()
-     *
-     * XXX Also seems a little hokey the way we run through the
-     * channels.  Implicit here is the code's current design
-     * that all the channels for a data source have the
-     * same rate and frame width.
-     */
+		/* In oscope.h, I wrote "Only after reset() has been called are
+		 * the rate and volts fields in the Signal structures guaranteed
+		 * valid".  So... we reset() once to make sure the rate and volts
+		 * fields are valid, then use the rate field in the first active
+		 * channel to set the capture width to the number of samples
+		 * required to fill the screen at that rate, then reset() again to
+		 * (re)start the capture.
+		 *
+		 * XXX Probably reset() needs to be split into two functions -
+		 * say reset() and start_sweep(), so then our sequence is
+		 * reset(), set_width(), start_sweep()
+		 *
+		 * XXX Also seems a little hokey the way we run through the
+		 * channels.  Implicit here is the code's current design
+		 * that all the channels for a data source have the
+		 * same rate and frame width.
+		 */
 
-    datasrc->reset();
-    if (datasrc->set_width) {
-      int i;
-      for (i=0; i<datasrc->nchans(); i++) {
-	if (datasrc->chan(i)->listeners > 0) {
-	  datasrc->set_width(samples(datasrc->chan(i)->rate));
-	  break;
+		datasrc->reset();
+		if (datasrc->set_width) {
+			int i;
+			for (i=0; i<datasrc->nchans(); i++) {
+				if (datasrc->chan(i)->listeners > 0) {
+					datasrc->set_width(samples(datasrc->chan(i)->rate));
+					break;
+				}
+			}
+			datasrc->reset();
+		}
+		setinputfd(datasrc->fd());
 	}
-      }
-      datasrc->reset();
-    }
-    setinputfd(datasrc->fd());
-  }
 
-  configure_databox();
-  update_text();
+	configure_databox();
+	restart_command_on_channel();
+	update_math_signals();
+	update_text();
 }
 
 /* clear() - one of the most important functions in the program,
@@ -894,10 +897,10 @@ clear()
     if (datasrc->set_width) {
       int i;
       for (i=0; i<datasrc->nchans(); i++) {
-	if (datasrc->chan(i)->listeners > 0) {
-	  datasrc->set_width(samples(datasrc->chan(i)->rate));
-	  break;
-	}
+		if (datasrc->chan(i)->listeners > 0) {
+	  		datasrc->set_width(samples(datasrc->chan(i)->rate));
+	  		break;
+		}
       }
       datasrc->reset();
     }
@@ -909,7 +912,6 @@ clear()
   /* This also updates the 'volts' and 'rate' fields in the math
    * signals
    */
-
   math_warning = update_math_signals();
 
   for (i = 0; i < CHANNELS; i++) {
@@ -924,7 +926,7 @@ clear()
 	ch[i].scale = roundoff(ch[i].scale, 1.0/ch[i].signal->volts);
       else
 	ch[i].scale = roundoff(ch[i].scale, 1);
-    }
+  }
   }
 
   memset((void *)&stats, 0, sizeof(stats)); 
@@ -1047,9 +1049,13 @@ draw_data()
        */
 
       if (p->signal->rate > 0) {
-	num = (gfloat) 1 / p->signal->rate;
-      } else {
-	num = (gfloat) 1 / 1000;
+		num = (gfloat) 1 / p->signal->rate;
+      } 
+      else if (p->signal->rate < 0) {
+ 		num = (gfloat) -1 / p->signal->rate;
+      } 
+     else {
+		num = (gfloat) 1 / 1000;
       }
 
       /* Compute left offset based on delay specified by the signal
@@ -1103,7 +1109,7 @@ draw_data()
 	if ((sl == NULL) ||
 	    (p->signal->frame != p->old_frame) || (p->old_frame == 0)) {
 
-	  /* New signal line, so we need a new SignalLine structure */
+	  	/* New signal line, so we need a new SignalLine structure */
 
 	  sl = (SignalLine *) malloc(sizeof(SignalLine));
 	  if (sl == NULL) {
@@ -1121,29 +1127,27 @@ draw_data()
 	}
 
 
-	/* If we're continuing a running sweep, remove the existing
-	 * trace from the databox.  We'll put it back in later, with
-	 * more data points.
-	 */
+		/* If we're continuing a running sweep, remove the existing
+	 	 * trace from the databox.  We'll put it back in later, with
+	 	 * more data points.
+	 	 */
 
-	if (sl->graph != NULL) {
-	  gtk_databox_graph_remove(GTK_DATABOX(databox), sl->graph);
-	  g_object_unref(G_OBJECT(sl->graph));
-	  sl->graph = NULL;
-	}
+		if (sl->graph != NULL) {
+	  		gtk_databox_graph_remove(GTK_DATABOX(databox), sl->graph);
+	  		g_object_unref(G_OBJECT(sl->graph));
+	  		sl->graph = NULL;
+		}
 
-	/* Compute the points we want to draw on the current trace and
-	 * write them into the SignalLine arrays.  The only thing a
-	 * little bit strange is that we might be updating a trace
-	 * that's already partially drawn; that's why we start at
-	 * sl->next_point and not 0.
-	 */
-
-	for (i = sl->next_point; i < p->signal->num; i++) {
-
-	  /* Hardwired: 8 y-coords is height of digital line
-	   * Screen used to be 480 y-coords tall; now it's -1 to +1
-	   */
+		/* Compute the points we want to draw on the current trace and
+	 	 * write them into the SignalLine arrays.  The only thing a
+	 	 * little bit strange is that we might be updating a trace
+	 	 * that's already partially drawn; that's why we start at
+	 	 * sl->next_point and not 0.
+	 	 */
+		for (i = sl->next_point; i < p->signal->num; i++) {
+	  		/* Hardwired: 8 y-coords is height of digital line
+	   		 * Screen used to be 480 y-coords tall; now it's -1 to +1
+	   		 */
 
 	  if (y_offset_property_exists) {
 	    y = (float)(bit < 0 ? samp[i]
@@ -1151,24 +1155,23 @@ draw_data()
 	  } else {
 	    y = (float)((bit < 0 ? samp[i]
 			 : (bitoff - (samp[i] & (1 << bit) ? 0 : 8)))) * p->scale/240 + p->pos;
-	  }
+	  		}
 
-	  sl->X[sl->next_point] = l + i * num;
-	  sl->Y[sl->next_point] = y;
-	  sl->next_point ++;
+	  		sl->X[sl->next_point] = l + i * num;
+	  		sl->Y[sl->next_point] = y;
+	  		sl->next_point ++;
+		}
 
-	}
+		/* Add the current trace to the databox */
 
-	/* Add the current trace to the databox */
-
-	if (sl->next_point > 0) {
+		if (sl->next_point > 0) {
 
 	  sl->graph = gtk_databox_lines_new (sl->next_point,
 					     sl->X, sl->Y, &gcolor, 1);
 
-	  gtk_databox_graph_add (GTK_DATABOX (databox), sl->graph);
+	  		gtk_databox_graph_add (GTK_DATABOX (databox), sl->graph);
 
-	}
+		}
 
 	switch (scope.scroll_mode) {
 
@@ -1179,7 +1182,7 @@ draw_data()
 	   * the trailing part of it drawn if we're in the middle of a
 	   * sweep.  We remove it from the databox, and put it back in
 	   * with fewer data points.
-	   */
+	 	 */
 
 	  if (sl->next != NULL && sl->next->graph != NULL) {
 	    gtk_databox_graph_remove(GTK_DATABOX(databox), sl->next->graph);
@@ -1203,9 +1206,9 @@ draw_data()
 	      && (sl->next_point < sl->next->next_point)) {
 	    sl->next->graph
 	      = gtk_databox_lines_new (sl->next->next_point-sl->next_point+1,
-				       sl->next->X + sl->next_point - 1,
-				       sl->next->Y + sl->next_point - 1,
-				       &gcolor, 1);
+	    												  sl->next->X + sl->next_point - 1,
+													      sl->next->Y + sl->next_point - 1,
+													      &gcolor, 1);
 #else
 	  if ((sl->next != NULL)
 	      && (sl->next_point < sl->next->next_point)) {
@@ -1213,10 +1216,10 @@ draw_data()
 	      = gtk_databox_lines_new (sl->next->next_point-sl->next_point,
 				       sl->next->X + sl->next_point,
 				       sl->next->Y + sl->next_point,
-				       &gcolor, 1);
+				       									  &gcolor, 1);
 #endif
-	    gtk_databox_graph_add (GTK_DATABOX (databox), sl->next->graph);
-	  }
+	  		gtk_databox_graph_add (GTK_DATABOX (databox), sl->next->graph);
+		}
 
 	  break;
 
@@ -1301,9 +1304,9 @@ draw_data()
 	  }
 	}
 
-      }
+	}
 
-      p->old_frame = p->signal->frame;
+	p->old_frame = p->signal->frame;
 
 #if 0
       /* Draw tick marks on left and right sides of display showing zero pos */
@@ -1370,7 +1373,7 @@ show_data(void)
 void
 animate(void *data)
 {
-  static struct timeval current_time, prev_time;
+  	static struct timeval current_time, prev_time;
 
   /* To avoid hammering the X server, don't do anything if it's been
    * less than scope.min_interval milliseconds (default 50) since the
@@ -1379,19 +1382,19 @@ animate(void *data)
    * milliseconds from now.
    */
 
-  gettimeofday(&current_time, NULL);
+	gettimeofday(&current_time, NULL);
 
   if ((prev_time.tv_sec <= current_time.tv_sec)
       && (prev_time.tv_sec + 10 > current_time.tv_sec)
       && (1000000 * (current_time.tv_sec - prev_time.tv_sec)
 	  + current_time.tv_usec - prev_time.tv_usec
-	  < 1000 * scope.min_interval)) {
+	  																			< 1000 * scope.min_interval)) {
     settimeout(scope.min_interval);
-    setinputfd(-1);
-    return;
-  }
-
-  prev_time = current_time;
+		setinputfd(-1);
+		return;
+	}
+	
+	prev_time = current_time;
   if (datasrc) setinputfd(datasrc->fd());
   settimeout(SND_QUERY_INTERVALL);
 
@@ -1400,8 +1403,8 @@ animate(void *data)
     if (scope.run) {
       triggered = datasrc->get_data();
       if (triggered && scope.run > 1) { /* auto-stop single-shot wait */
-	scope.run = 0;
-	update_text();
+		scope.run = 0;
+		update_text();
       }
     } else if (in_progress && (scope.scroll_mode != 2)) {
       /* If we're in strip chart mode (scroll mode 2), stop
@@ -1414,5 +1417,5 @@ animate(void *data)
       setinputfd(-1);		/* scope not running, so why listen? */
     }
   }
-  show_data();
+  		show_data();
 }

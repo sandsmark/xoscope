@@ -32,15 +32,15 @@ void	timebase_changed(void);
 void	clear();
 void	message(const char *);
 void	cleanup_display();
-void	animate();
-int	col();
+void	animate(void *);
+int		col();
 
 void	AddTimeOut();
 void	LoadSaveFile(int);
 void	ExternCommand();
 char *	GetFile();
 char *	GetString();
-int	GetYesNo();
+int		GetYesNo();
 int	OpenDisplay(int, char **);
 
 void	setup_help_text(GtkWidget *, gpointer);

@@ -6,9 +6,9 @@ dnl Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
 
 dnl (see the files README and COPYING for more details)
 
-AC_INIT(configure.ac)
-AM_INIT_AUTOMAKE(xoscope, 2.0)
-AM_CONFIG_HEADER(config.h)
+AC_INIT([xoscope], [2.0])
+AM_INIT_AUTOMAKE
+AC_CONFIG_HEADERS(config.h)
 
 AC_ISC_POSIX
 AC_PROG_CC
@@ -20,15 +20,15 @@ PKG_CHECK_MODULES(GTK, gtk+-2.0 >= 2.2)
 PKG_CHECK_MODULES(GTKDATABOX, gtkdatabox)
 
 dnl Set PACKAGE_LIBEXEC_DIR in config.h.
-if test "x${libexecdir}" = 'x${exec_prefix}/libexec'; then
-  if test "x${prefix}" = "xNONE"; then
-    AC_DEFINE_UNQUOTED(PACKAGE_LIBEXEC_DIR, "${ac_default_prefix}/libexec/${PACKAGE}", [External programs directory (where to find operl)])
-  else
-    AC_DEFINE_UNQUOTED(PACKAGE_LIBEXEC_DIR, "${exec_prefix}/libexec/${PACKAGE}", [External programs directory (where to find operl)])
-  fi
-else
-  AC_DEFINE_UNQUOTED(PACKAGE_LIBEXEC_DIR, "${libexecdir}/${PACKAGE}", [External programs directory (where to find operl)])
-fi
+dnl if test "x${libexecdir}" = 'x${exec_prefix}/libexec'; then
+dnl   if test "x${prefix}" = "xNONE"; then
+dnl     AC_DEFINE_UNQUOTED(PACKAGE_LIBEXEC_DIR, "${ac_default_prefix}/libexec/${PACKAGE}", [External programs directory (where to find operl)])
+dnl   else
+dnl     AC_DEFINE_UNQUOTED(PACKAGE_LIBEXEC_DIR, "${exec_prefix}/libexec/${PACKAGE}", [External programs directory (where to find operl)])
+dnl   fi
+dnl else
+dnl   AC_DEFINE_UNQUOTED(PACKAGE_LIBEXEC_DIR, "${libexecdir}/${PACKAGE}", [External programs directory (where to find operl)])
+dnl fi
 
 dnl Use -Wall if we have gcc.
 changequote(,)dnl
@@ -58,6 +58,8 @@ AC_PATH_PROG(RANLIB, ranlib)
 dnl Checks for libraries.
 AC_CHECK_LIB(esd, esd_monitor_stream)
 AC_CHECK_LIB(m, sin)
+AC_CHECK_LIB(asound, snd_pcm_hw_params)
+AC_CHECK_LIB(gtkdatabox, gtk_databox_graph_add)
 
 AC_ARG_WITH([comedi],
 	[AS_HELP_STRING([--with-comedi],
