@@ -583,11 +583,8 @@ static GtkItemFactoryEntry menu_items[] =
   {"/Channel/Math/Sum  1+2", NULL, mathselect, '2', NULL},
   {"/Channel/Math/Diff 1-2", NULL, mathselect, '3', NULL},
   {"/Channel/Math/Avg. 1,2", NULL, mathselect, '4', NULL},
-#ifdef PLEASE_PUT_THIS_BACK_IN_AT_SOME_POINT
-  /* update endpoint of math functions in fix_widgets when we do */
-  {"/Channel/Math/FFT. 1", NULL, mathselect, '5', "/Channel/Math/Avg. 1,2"},
-  {"/Channel/Math/FFT. 2", NULL, mathselect, '6', "/Channel/Math/FFT. 1"},
-#endif
+  {"/Channel/Math/FFT. 1", NULL, mathselect, '5', NULL},
+  {"/Channel/Math/FFT. 2", NULL, mathselect, '6', NULL},
 
   {"/Channel/Store", NULL, NULL, 0, "<Branch>"},
   {"/Channel/Store/tear", NULL, NULL, 0, "<Tearoff>"},

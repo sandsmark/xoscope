@@ -48,3 +48,7 @@ void do_math();
 void cleanup_math();
 
 void measure_data(Channel *, struct signal_stats *);
+
+void init_fft(void);			    /* in fft.c */
+
+void fft(short *, short *, int);	/* in fft.c */

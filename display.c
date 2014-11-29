@@ -398,14 +398,25 @@ void update_text(void)
   for (i = 0 ; i < CHANNELS ; i++) {
 
     if (ch[i].signal) {
-
-      if (!ch[i].bits && ch[i].signal->volts)
-	SIformat(string, "%g %sV/div",
-		 (double)ch[i].signal->volts / ch[i].scale / 10000);
-      else if (ch[i].scale > 1.0)
-	sprintf(string, "%d:1", (int) rint(ch[i].scale));
-      else
-	sprintf(string, "1:%d", (int) rint(1.0/ch[i].scale));
+        if (ch[i].signal->rate > 0) {
+            if (!ch[i].bits && ch[i].signal->volts)
+                SIformat(string, "%g %sV/div", (double)ch[i].signal->volts / ch[i].scale / 10000);
+            else if (ch[i].scale > 1.0)
+                sprintf(string, "%d:1", (int) rint(ch[i].scale));
+            else
+                sprintf(string, "1:%d", (int) rint(1.0/ch[i].scale));
+        }
+        else { 
+            /* Special case for a Fourier Transform.  
+             * ch[i].signal->rate is negative.
+             * The x-scaling for a FFT (Hz/div) is calculated in chXFFTactive()
+             * and rounded to some "nice" value.
+             * This value is stored in the volts member ofthe signal structure.
+             * Not nice, but I didn't want to add a new member. 
+             */
+            SIformat(string, "%g %sHz/div FFT", ch[i].signal->volts);
+        }        
+            
       sprintf(widget, "Ch%1d_scale_label", i+1);
       gtk_label_set_text(GTK_LABEL(LU(widget)), string);
 
@@ -489,17 +500,10 @@ void update_text(void)
       gtk_label_set_text(GTK_LABEL(LU("sample_rate_label")), string);
 
     } else if (p->signal->rate < 0) {
-
-      /* Special case for a Fourier Transform.  p->signal->rate is the
-       * negative of the frequency step for each point in the
-       * transform, times 10.  Since there are 44 x-coordinates in a
-       * division, after applying the scope's current time base
-       * multiplier (scope.scale), we multiply by 44/10 to get the
-       * number of Hz in a division.
+      /* scaling i.e. Hz/div is now displayed at sides of the graticule.
+       * Here we just display the sample rate of the input to the FFT
        */
-
-      sprintf(string, "%f Hz/div FFT",
-	      (- p->signal->rate) * 44 * scope.scale / 10);
+      SIformat(string, "%g %sS/s", (float)-p->signal->rate);
       gtk_label_set_text(GTK_LABEL(LU("sample_rate_label")), string);
 
     } else {

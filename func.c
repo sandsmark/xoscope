@@ -425,41 +425,64 @@ avg(Signal *dest)
   }
 }
 
-#if 0
-
 /* Fast Fourier Transform of channels 0 and 1
  *
  * The point of the dest->frame calculation is that the value changes
  * whenever the data changes, but if the data is constant, it doesn't
  * change.  The display code only looks at changes in frame number to
  * decide when to redraw a signal; the actual value doesn't matter.
- *
- * XXX I've ripped this code out and would like to put it back in at
- * some point.  Probably should use the fftw library when I do.
  */
 
 void
 fft1(Signal *dest)
 {
-  if (ch[0].signal == NULL) return;
-
-  dest->num = 440;
-  dest->frame = 10000 * ch[0].signal->frame + ch[0].signal->num;
-
-  fft(ch[0].signal->data, dest->data);
+	if (ch[0].signal == NULL) 
+		return;
+	if(ch[0].signal->width < FFTLEN){
+		bzero(dest->data, sizeof(short) * FFTLEN);
+		return;
+	}
+	
+	fft(ch[0].signal->data, dest->data, ch[0].signal->width);
 }
+
+#define FFT_TEST
+#ifndef FFT_TEST
+void
+fft2(Signal *dest)
+{
+	if (ch[1].signal == NULL) 
+		return;
+	if(ch[1].signal->width < FFTLEN){
+		bzero(dest->data, sizeof(short) * FFTLEN);
+		return;
+	}
+	
+	fft(ch[1].signal->data, dest->data, ch[1].signal->width);
+}
+
+#else
+void
+make_sin(short * data, double freq, int rate)
+{
+	int i;
+	for(i = 0; i < FFTLEN; i++){
+		data[i] = sin( 360.0 * ((1.0/((double)rate/freq)) * i) * M_PI / 180.0) * 100;
+	}
+} 
 
 void
 fft2(Signal *dest)
 {
-  if (ch[1].signal == NULL) return;
+	short testdata[FFTLEN];
+	int i;
 
-  dest->num = 440;
-  dest->frame = 10000 * ch[1].signal->frame + ch[1].signal->num;
+	make_sin(testdata, 2500.0, ch[1].signal->rate);
+	fft(testdata, dest->data, FFTLEN);
 
-  fft(ch[1].signal->data, dest->data);
+	for(i = 0; i<FFTLEN; i+=51)
+		dest->data[i] = -80;	
 }
-
 #endif
 
 /* isvalid() functions for the various math functions.
@@ -566,45 +589,123 @@ int chs12active(Signal *dest)
 
 /* special isvalid() functions for FFT
  *
- * A considerable majority of the code in fft.c is devoted to scaling
- * the FFT so that it fits in WINDOW_RIGHT - WINDOW_LEFT = 540 - 100 =
- * 440 values.  The stored rate (negated to indicate that it's in
- * Hz/sample, not samples/sec), is the frequency increment of each
- * sample value in Hz, times 10.  Since the maximum frequency in
- * an FFT is half the sampling rate, we divide that sampling rate
- * by two, then by 440 to get Hz per sample, then multiply by 10,
- * for a net of dividing by 88.  This is also how we get a value
- * of 440 for dest->num (used above, in actual FFT functions).
+ * First, it allocates memory for the generated fft.
+ *
+ * Second, it sets the "rate", so that the increment 
+ * from grid line to grid line is some "nice" value.
+ * (a muliple of 500 Hz if increment is > 1kHz, otherwise
+ * a multiple of 100 hZ.
+ * 
+ * Third: this value is stored in the "volts" member of
+ * the dest signal structure. It is only displayed in the label.  
  */
 
 int ch1FFTactive(Signal *dest)
 {
-  dest->frame = 0;
-  dest->num = 0;
-  dest->volts = 0;
+	gfloat	left, right;
+	int		HzDiv, HzDivAdj;
 
   	if (ch[0].signal == NULL) {
     	dest->rate = 0;
     	return 0;
-  } else {
-    dest->rate = -ch[0].signal->rate / 80;
+  	} 
+
+	if(ch[0].signal->width < FFTLEN){
+		message("Too few samples to run FFT");
+/*		fprintf(stderr,"ch1FFTactive(): Too few samples to run FFT\n");*/
+    	return 0;
+  	} 
+
+	dest->width = 	FFTLEN / 2;
+  	dest->num = 	FFTLEN / 2;
+  	dest->frame = 	0;
+	dest->bits = 	0;
+	dest->delay = 	0;
+
+	if(dest->data == NULL)
+		dest->data = malloc(FFTLEN * sizeof(short));
+    if(dest->data == NULL){
+	    fprintf(stderr, "malloc failed in ch1FFTactive()\n");
+	  	exit(0);
+	} 
+	bzero(dest->data, FFTLEN * sizeof(short));
+
+	// (signal->rate / 2) = max FFT-freq
+	HzDiv = ch[0].signal->rate / 2 / total_horizontal_divisions; 
+	if(HzDiv > 1000)
+		HzDivAdj = HzDiv - (HzDiv % 500) + 500;
+	else
+		HzDivAdj = HzDiv - (HzDiv % 100) + 100;
+
+  	dest->volts = HzDivAdj;
+
+	gtk_databox_get_visible_limits(GTK_DATABOX(databox), &left, &right, NULL, NULL);
+    dest->rate = -FFTLEN/(right - left)/2; 
+/* 	fprintf(stderr,"ch1FFTactive(): dest->rate=%d -> ", dest->rate);*/
+
+	dest->rate *= (gfloat)HzDivAdj / (gfloat)HzDiv;
+/*	fprintf(stderr,"%d\n", dest->rate);*/
+
+/*	fprintf(stderr,"ch1FFTactive(): ch[0].signal->rate=%d\n", ch[0].signal->rate);*/
+/*	fprintf(stderr,"ch1FFTactive(): left=%f, right=%f, total_horizontal_divisions=%d\n", 
+                                                left, right, total_horizontal_divisions);*/
+/*	fprintf(stderr,"ch1FFTactive(): Hz/div=%d -> %d\n", HzDiv, HzDivAdj);*/
+/*	fprintf(stderr,"ch1FFTactive(): ch[1].signal->rate=%d, dest->rate=%d\n", 
+                                                ch[1].signal->rate, dest->rate);*/
 	return 1;
-}
 }
 
 int ch2FFTactive(Signal *dest)
 {
-  dest->frame = 0;
-  dest->num = 0;
-  dest->volts = 0;
+	gfloat	left, right;
+	int		HzDiv, HzDivAdj;
 
   	if (ch[1].signal == NULL) {
     	dest->rate = 0;
     	return 0;
-  } else {
-    dest->rate = -ch[1].signal->rate / 80;
+  	} 
+
+	if(ch[1].signal->width < FFTLEN){
+		message("Too few samples to run FFT");
+    	return 0;
+  	} 
+
+	dest->width = 	FFTLEN / 2;
+  	dest->num = 	FFTLEN / 2;
+  	dest->frame = 	0;
+	dest->bits = 	0;
+	dest->delay = 	0;
+
+	if(dest->data == NULL)
+		dest->data = malloc(FFTLEN * sizeof(short));
+    if(dest->data == NULL){
+        fprintf(stderr, "malloc failed in ch2FFTactive()\n");
+	  	exit(0);
+    } 
+	bzero(dest->data, FFTLEN * sizeof(short));
+
+	// (signal->rate / 2) = max FFT-freq
+	HzDiv = ch[1].signal->rate / 2 / total_horizontal_divisions; 
+	if(HzDiv > 1000)
+		HzDivAdj = HzDiv - (HzDiv % 500) + 500;
+	else
+		HzDivAdj = HzDiv - (HzDiv % 100) + 100;
+  	dest->volts = HzDivAdj;
+
+	gtk_databox_get_visible_limits(GTK_DATABOX(databox), &left, &right, NULL, NULL);
+    dest->rate = -FFTLEN/(right - left)/2; 
+/* 	fprintf(stderr,"ch2FFTactive(): dest->rate=%d -> ", dest->rate);*/
+
+	dest->rate *= (gfloat)HzDivAdj / (gfloat)HzDiv;
+/*	fprintf(stderr,"%d\n", dest->rate);*/
+
+/*	fprintf(stderr,"ch2FFTactive(): ch[1].signal->rate=%d\n", ch[1].signal->rate);*/
+/*	fprintf(stderr,"ch2FFTactive(): left=%f, right=%f, total_horizontal_divisions=%d\n", 
+                                            left, right, total_horizontal_divisions);*/
+/*	fprintf(stderr,"ch2FFTactive(): Hz/div=%d -> %d\n", HzDiv, HzDivAdj);*/
+/*	fprintf(stderr,"ch2FFTactive(): ch[1].signal->rate=%d, dest->rate=%d\n", 
+                                            ch[1].signal->rate, dest->rate);*/
 	return 1;
-}
 }
 
 struct func {
@@ -621,8 +722,8 @@ struct func funcarray[] =
   {sum,  "Sum  1+2", chs12active},
   {diff, "Diff 1-2", chs12active},
   {avg,  "Avg. 1,2", chs12active},
-  /* {fft1, "FFT. 1  ", ch1FFTactive}, */
-  /* {fft2, "FFT. 2  ", ch2FFTactive}, */
+  {fft1, "FFT. 1  ", ch1FFTactive}, 
+  {fft2, "FFT. 2  ", ch2FFTactive}, 
 };
 
 /* the total number of "functions" */
@@ -747,7 +848,7 @@ init_math()
     funcarray[i].signal.savestr[0] = '0' + i;
     funcarray[i].signal.savestr[1] = '\0';
   }
-  /* init_fft(); */
+  init_fft();
   once=1;
 }
 
@@ -800,14 +901,14 @@ do_math()
 void
 cleanup_math()
 {
-  /* EndFFT(); */
+  EndFFT();
 }
 
 /* measure the given channel */
 void
 measure_data(Channel *sig, struct signal_stats *stats) {
   static long int i, j, prev;
-  int min, max, midpoint;
+  int min=0, max=0, midpoint=0;
   float first = 0, last = 0, count = 0, imax = 0;
 
   stats->min = 0;

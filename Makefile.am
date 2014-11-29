@@ -32,8 +32,7 @@ hardware/buff2.fig hardware/buff2.ps hardware/pcb.fig hardware/pcb.ps \
 hardware/xoscope-components.png hardware/xoscope-copper.png
 
 src = oscope.c file.c func.c display.c sc_linux.c sc_linux_gtk.c
-#fftsrc = fft.c realfft.c
-fftsrc =
+fftsrc = fft.c realfft.c
 guisrc = callbacks.c com_gtk.c gr_gtk.c
 
 if COMEDI

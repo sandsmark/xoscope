@@ -21,6 +21,7 @@
 
 extern char fontname[];
 extern char fonts[];
+extern int total_horizontal_divisions;
 
 void	init_widgets()		/* exported from display.c */;
 void	mainloop();

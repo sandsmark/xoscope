@@ -71,6 +71,7 @@ usage(int error)
 Startup Options  Description (defaults)               version %s\n\
 -h               this Help message and exit\n\
 -D <datasrc>     select named data source (COMEDI/Soundcard/ESD)\n\
+-A <device>      select named ALSA-device on soundcard        (%s)\n\
 -o <option>      specify data source specific options\n\
 -# <code>        #=1-%d, code=pos[.bits][:scale[:func#, mem a-z or cmd]] (0:1/1)\n\
 -a <channel>     set the Active channel: 1-%d                  (%d)\n\
@@ -85,7 +86,7 @@ Startup Options  Description (defaults)               version %s\n\
 -v               turn Verbose key help display %s\n\
 file             %s file to load to restore settings and memory\n\
 ",
-	  progname, version, CHANNELS, CHANNELS, DEF_A,
+	  progname, version, DEFAULT_ALSADEVICE, CHANNELS, CHANNELS, DEF_A,
 	  DEF_S, DEF_T, DEF_L,
 	  fonts,		/* the font method for the display */
 	  /* XXX fix me - plot_mode not backwards compatible */
