@@ -19,7 +19,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include "oscope.h"
-#include "fft.h"
+/* #include "fft.h" */
 #include "display.h"
 #include "func.h"
 #include "com_gtk.h"

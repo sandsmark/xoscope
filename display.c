@@ -678,7 +678,7 @@ void free_signalline(SignalLine *sl)
     g_free(sl->X);
     g_free(sl->Y);
 
-    free(sl);
+    g_free(sl);
     sl = slnext;
   }
 }
@@ -703,9 +703,14 @@ void clear_databox(void)
  * timebase.  Since the floating point values plotted within the
  * databox are always stored in seconds, selecting a new timebase
  * means setting things on the databox more than anything else.
+ *
+ * We also figure whether various set-able properties exist that we'll
+ * use if they're there, or emultate otherwise.
  */
 
-static gboolean y_offset_property_exists;
+static gboolean x_offset_property_exists = 0;
+static gboolean y_offset_property_exists = 0;
+static gboolean y_factor_property_exists = 0;
 
 void configure_databox(void)
 {
@@ -783,7 +788,7 @@ void configure_databox(void)
      gtk_widget_hide(GTK_WIDGET(LU("databox_hscrollbar")));
    }
 
-   /* Figure out if we can set a y-offset on databox lines, or whether
+   /* Figure out if we can set offsets on databox lines, or whether
     * we'll have to add offsets to the points when we load them into
     * the array.
     *
@@ -795,7 +800,9 @@ void configure_databox(void)
      GdkColor gcolor;
      GtkDataboxGraph *line = gtk_databox_lines_new(1, &X, &Y, &gcolor, 1);
 
+     x_offset_property_exists = (g_object_class_find_property(G_OBJECT_GET_CLASS(line), "x-offset") != NULL);
      y_offset_property_exists = (g_object_class_find_property(G_OBJECT_GET_CLASS(line), "y-offset") != NULL);
+     y_factor_property_exists = (g_object_class_find_property(G_OBJECT_GET_CLASS(line), "y-factor") != NULL);
 
      g_object_unref(line);
    }
@@ -969,7 +976,9 @@ draw_graticule()
 
 /* draw_data()
  *
- * write the data into the databox
+ * Writes the signals into the databox.  Called from show_data(),
+ * which will queue an expose event for the databox after this
+ * function is done.
  */
 
 gfloat cursoraX[2], cursoraY[2], cursorbX[2], cursorbY[2];
@@ -982,28 +991,15 @@ draw_data()
 {
   static int i, j, bit, start, end;
   gfloat y;
-  int bitoff;
-  gfloat num, l;
+  gfloat num, left_offset;
   Channel *p;
   SignalLine *sl;
   short *samp;
   gchar widget[80];
   GtkStyle *style;
   GdkColor gcolor;
-  GValue yfactor, yoffset, xoffset, plotstyle;
   SignalLine *prevSL;
   double x_offset;
-
-  bzero(&yfactor, sizeof(GValue));
-  g_value_init(&yfactor, G_TYPE_DOUBLE);
-  bzero(&yoffset, sizeof(GValue));
-  g_value_init(&yoffset, G_TYPE_DOUBLE);
-  bzero(&xoffset, sizeof(GValue));
-  g_value_init(&xoffset, G_TYPE_DOUBLE);
-  bzero(&plotstyle, sizeof(GValue));
-  g_value_init(&plotstyle, G_TYPE_INT);
-
-  g_value_set_int(&plotstyle, scope.plot_mode);
 
   /* Remove the cursors.  We'll put them back in later if they're
    * active.
@@ -1040,9 +1036,6 @@ draw_data()
       style = gtk_widget_get_style(GTK_WIDGET(LU(widget)));
       gcolor = style->fg[GTK_STATE_NORMAL];
 
-      g_value_set_double(&yfactor, (double)p->scale / 240);
-      g_value_set_double(&yoffset, (double)p->pos);
-
       samp = p->signal->data;
 
       /* Compute num, the number of seconds per sample, based on the
@@ -1062,11 +1055,11 @@ draw_data()
 		num = (gfloat) 1 / 1000;
       }
 
-      /* Compute left offset based on delay specified by the signal
+      /* Compute left_offset based on delay specified by the signal
        * (which is in ten-thousandths of samples).
        */
 
-      l = p->signal->delay * num / 10000;
+      left_offset = p->signal->delay * num / 10000;
 
       /* Draw the cursors, if needed.
        *
@@ -1079,8 +1072,8 @@ draw_data()
        */
 
       if (scope.curs && j == scope.select) {
-	cursoraX[0] = cursoraX[1] = l + (scope.cursa-1) * num;
-	cursorbX[0] = cursorbX[1] = l + (scope.cursb-1) * num;
+	cursoraX[0] = cursoraX[1] = left_offset + (scope.cursa-1) * num;
+	cursorbX[0] = cursorbX[1] = left_offset + (scope.cursb-1) * num;
 	cursoraY[0] = cursorbY[0] = -1;
 	cursoraY[1] = cursorbY[1] = +1;
 
@@ -1101,9 +1094,6 @@ draw_data()
 
       for (bit = start ; bit <= end ; bit++) {
 
-	/* Hardwired: 16 y-coords between bits in digital mode */
-	bitoff = bit * 16 - end * 8 + 4;
-
 	/* SignalLine structures contain all the stored information
 	 * about the (x,y) coordinates we've drawn already and may
 	 * need to erase
@@ -1115,19 +1105,20 @@ draw_data()
 
 	  	/* New signal line, so we need a new SignalLine structure */
 
-	  sl = (SignalLine *) malloc(sizeof(SignalLine));
-	  if (sl == NULL) {
-	    perror("xoscope: malloc(SignalLine)");
-	    break;
-	  }
-	  bzero(sl, sizeof(SignalLine));
+	  sl = g_new0(SignalLine, 1);
 
 	  sl->next = p->signalline[bit < 0 ? 0 : bit];
 	  p->signalline[bit < 0 ? 0 : bit] = sl;
 
-	  sl->X = g_new0(gfloat, p->signal->width);
-	  sl->Y = g_new0(gfloat, p->signal->width);
+	  /* we double the size of these array in case we're in step
+	   * mode, when we draw two vertices for every data point
+	   */
 
+	  sl->X = g_new0(gfloat, 2 * p->signal->width);
+	  sl->Y = g_new0(gfloat, 2 * p->signal->width);
+	  sl->data = g_new0(short, p->signal->width);
+
+	  sl->y_scale = 1.0;
 	}
 
 
@@ -1149,33 +1140,19 @@ draw_data()
 	 	 * sl->next_point and not 0.
 	 	 */
 		for (i = sl->next_point; i < p->signal->num; i++) {
-	  		/* Hardwired: 8 y-coords is height of digital line
-	   		 * Screen used to be 480 y-coords tall; now it's -1 to +1
-	   		 */
 
-	  if (y_offset_property_exists) {
-	    y = (float)(bit < 0 ? samp[i]
-			: (bitoff - (samp[i] & (1 << bit) ? 0 : 8)));
+	  if (bit < 0) {
+	    sl->data[sl->next_point] = samp[i];
 	  } else {
-	    y = (float)((bit < 0 ? samp[i]
-			 : (bitoff - (samp[i] & (1 << bit) ? 0 : 8)))) * p->scale/240 + p->pos;
-	  		}
+	    sl->data[sl->next_point] = (samp[i] >> bit) & 1;
+	  }
 
-	  		sl->X[sl->next_point] = l + i * num;
-	  		sl->Y[sl->next_point] = y;
-	  		sl->next_point ++;
-		}
+	  sl->X[sl->next_point] = left_offset + i * num;
+	  sl->Y[sl->next_point] = sl->data[sl->next_point];
+	  sl->next_point ++;
+	}
 
-		/* Add the current trace to the databox */
-
-		if (sl->next_point > 0) {
-
-	  sl->graph = gtk_databox_lines_new (sl->next_point,
-					     sl->X, sl->Y, &gcolor, 1);
-
-	  		gtk_databox_graph_add (GTK_DATABOX (databox), sl->graph);
-
-		}
+	/* Depending on the scroll mode, manage previous traces */
 
 	switch (scope.scroll_mode) {
 
@@ -1210,63 +1187,64 @@ draw_data()
 	      && (sl->next_point < sl->next->next_point)) {
 	    sl->next->graph
 	      = gtk_databox_lines_new (sl->next->next_point-sl->next_point+1,
-	    												  sl->next->X + sl->next_point - 1,
-													      sl->next->Y + sl->next_point - 1,
-													      &gcolor, 1);
+				       sl->next->X + sl->next_point - 1,
+				       sl->next->Y + sl->next_point - 1,
+				       &gcolor, 1);
+	    gtk_databox_graph_add (GTK_DATABOX (databox), sl->next->graph);
+	  }
 #else
 	  if ((sl->next != NULL)
 	      && (sl->next_point < sl->next->next_point)) {
-	    sl->next->graph
-	      = gtk_databox_lines_new (sl->next->next_point-sl->next_point,
-				       sl->next->X + sl->next_point,
-				       sl->next->Y + sl->next_point,
-				       									  &gcolor, 1);
+	    switch (scope.plot_mode) {
+	    case 0: /* points */
+	      sl->next->graph
+		= gtk_databox_points_new (sl->next->next_point-sl->next_point,
+					  sl->next->X + sl->next_point,
+					  sl->next->Y + sl->next_point,
+					  &gcolor, 1);
+	      break;
+	    case 1: /* lines */
+	      sl->next->graph
+		= gtk_databox_lines_new (sl->next->next_point-sl->next_point,
+					 sl->next->X + sl->next_point,
+					 sl->next->Y + sl->next_point,
+					 &gcolor, 1);
+	      break;
+	    case 2: /* step */
+	      sl->next->graph
+		= gtk_databox_lines_new (2*(sl->next->next_point - sl->next_point) - 1,
+					 sl->next->X + 2 * sl->next_point,
+					 sl->next->Y + 2 * sl->next_point,
+					 &gcolor, 1);
+	      break;
+	    }
+	    gtk_databox_graph_add (GTK_DATABOX (databox), sl->next->graph);
+	  }
 #endif
-	  		gtk_databox_graph_add (GTK_DATABOX (databox), sl->next->graph);
-		}
+
+	  break;
+
+	case 1:
+
+	  /* Accumulate mode - do nothing, letting traces pile up
+	   * in the databox.
+	   *
+	   * XXX this can lead to memory and CPU exhaustion with
+	   * thousands of traces piling up on a fast timebase
+	   */
 
 	  break;
 
 	case 2:
 
-	  /* Stripchart mode - if there are previous traces, position
-	   * this trace at the right of the databox and line up any
-	   * previous traces to its left.  If there are no previous
-	   * traces, then position this trace at the left of the
-	   * databox.
+	  /* Stripchart mode - position this trace at the right of the
+	   * databox and line up any previous traces to its left
 	   */
 
-	  /* XXX I'd like to use the first version, but this code is
-	   * too sloppy.
-	   */
+	  x_offset = total_horizontal_divisions * 0.001 * scope.scale
+	    - num * (sl->next_point - 1);
 
-#if 0
-	  if (sl->next) {
-	    x_offset = total_horizontal_divisions * 0.001 * scope.scale
-	      - num * (sl->next_point - 1);
-	  } else {
-	    x_offset = 0.0;
-	  }
-#else
-	  x_offset = 0.0;
-	  for (prevSL = sl->next; prevSL; prevSL = prevSL->next) {
-	    if (prevSL->graph) {
-	      x_offset = total_horizontal_divisions * 0.001 * scope.scale
-		- num * (sl->next_point - 1);
-	      break;
-	    }
-	  }
-#endif
-
-	  prevSL = sl;
-
-	  while (prevSL != NULL) {
-
-	    if (prevSL->graph) {
-	      g_value_set_double(&xoffset, x_offset);
-	      g_object_set_property((GObject *) prevSL->graph,
-				    "x-offset", &xoffset);
-	    }
+	  for (prevSL = sl; prevSL != NULL; prevSL = prevSL->next) {
 
 	    /* If x_offset is negative at this point, we've just drawn
 	     * a SignalLine partially off the left-hand side of the
@@ -1274,37 +1252,105 @@ draw_data()
 	     * of view.
 	     */
 
-	    if (x_offset < 0) {
-	      if (prevSL->next) {
-		free_signalline(prevSL->next);
-		prevSL->next = NULL;
-	      }
-	      break;
+	    prevSL->x_offset = x_offset;
+
+	    if ((x_offset < 0) && prevSL->next) {
+	      free_signalline(prevSL->next);
+	      prevSL->next = NULL;
 	    }
 
-	    x_offset -=  num * p->signal->width;
-	    prevSL = prevSL->next;
+	    x_offset -= num * p->signal->width;
 	  }
+	}
+
+	/* The scale is applied first, then the offset */
+
+	sl->y_scale = (double)p->scale / 240;
+	sl->y_offset = (double)p->pos;
+
+	/* If we're in digital mode, increase the scale by eight and
+	 * shift the offset by sixteen for each bit.  This hardwires
+	 * eight as the height of a digital line and sixteen as the
+	 * inter-line spacing.  We also shift the entire digital plot
+	 * by the number of bits times eight plus four to center it.
+	 */
+
+	if (bit >= 0) {
+	  int bitoff = bit * 16 - end * 8 + 4;
+
+	  sl->y_offset += bitoff * sl->y_scale;
+	  sl->y_scale *= 8;
+	}
+	// fprintf(stderr, "offset %f scale %f\n", sl->y_offset, sl->y_scale);
+
+	/* Add the current trace to the databox */
+
+	if (sl->next_point > 0) {
+
+	  switch (scope.plot_mode) {
+	  case 0: /* points */
+	    sl->graph = gtk_databox_points_new (sl->next_point,
+						sl->X, sl->Y, &gcolor, 1);
+	    break;
+	  case 1: /* lines */
+	    sl->graph = gtk_databox_lines_new (sl->next_point,
+					       sl->X, sl->Y, &gcolor, 1);
+	    break;
+	  case 2: /* step */
+	    sl->graph = gtk_databox_lines_new (2 * sl->next_point - 1,
+					       sl->X, sl->Y, &gcolor, 1);
+	    break;
+	  }
+
+	  gtk_databox_graph_add (GTK_DATABOX (databox), sl->graph);
 
 	}
 
 	/* Run through all of the SignalLines associated with this
-	 * trace and set the y-factor and y-offset for all of them.
-	 * This ensures that if we're in accumulate mode and change
-	 * the scale or position of the channel, all of the
+	 * trace and set the scaling factors and offsets for all of
+	 * them.  This ensures that if we're in accumulate mode and
+	 * change the scale or position of the channel, all of the
 	 * accumulated traces move together.  Not quite what you'd
 	 * expect from a real scope, but I think this makes the most
 	 * sense.
+	 *
+	 * XXX save left_offset in the SignalLine structure rather
+	 * than use the one for the current signal
 	 */
 
-	if (y_offset_property_exists) {
-	  while (sl != NULL) {
-	    if (sl->graph != NULL) {
-	      g_object_set_property((GObject *) sl->graph, "y-factor", &yfactor);
-	      g_object_set_property((GObject *) sl->graph, "y-offset", &yoffset);
-	      g_object_set_property((GObject *) sl->graph, "plot-style", &plotstyle);
+	for (prevSL = sl; prevSL != NULL; prevSL = prevSL->next) {
+	  if (prevSL->graph != NULL) {
+	    if (x_offset_property_exists && y_offset_property_exists && y_factor_property_exists) {
+
+	      GValue gvalue;
+
+	      bzero(&gvalue, sizeof(GValue));
+	      g_value_init(&gvalue, G_TYPE_DOUBLE);
+
+	      g_value_set_double(&gvalue, prevSL->x_offset);
+	      g_object_set_property((GObject *) prevSL->graph, "x-offset", &gvalue);
+
+	      g_value_set_double(&gvalue, prevSL->y_scale);
+	      g_object_set_property((GObject *) prevSL->graph, "y-factor", &gvalue);
+
+	      g_value_set_double(&gvalue, prevSL->y_offset);
+	      g_object_set_property((GObject *) prevSL->graph, "y-offset", &gvalue);
+
+	      g_value_unset(&gvalue);
+	      //g_object_set_property((GObject *) prevSL->graph, "plot-style", &plotstyle);
+	    } else {
+	      for (i = 0; i < prevSL->next_point; i++) {
+		if ((scope.plot_mode != 2) || (i == 0)) {
+		  prevSL->X[i] = prevSL->x_offset + left_offset + i * num;
+		  prevSL->Y[i] = prevSL->y_offset + prevSL->data[i] * prevSL->y_scale;
+		} else {
+		  prevSL->X[2*i] = prevSL->x_offset + left_offset + i * num;
+		  prevSL->Y[2*i] = prevSL->y_offset + prevSL->data[i] * prevSL->y_scale;
+		  prevSL->X[2*i - 1] = prevSL->X[2*i - 2];
+		  prevSL->Y[2*i - 1] = prevSL->Y[2*i];
+		}
+	      }
 	    }
-	    sl = sl->next;
 	  }
 	}
 
@@ -1338,8 +1384,6 @@ draw_data()
     }
   }
 
-  g_value_unset(&yoffset);
-  g_value_unset(&yfactor);
 }
 
 /* calculate any math and plot the results and the graticule */
