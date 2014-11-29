@@ -446,7 +446,7 @@ fft1(Signal *dest)
 	fft(ch[0].signal->data, dest->data, ch[0].signal->width);
 }
 
-#define FFT_TEST
+/*#define FFT_TEST*/
 #ifndef FFT_TEST
 void
 fft2(Signal *dest)
