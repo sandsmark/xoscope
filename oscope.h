@@ -198,6 +198,10 @@ typedef struct SignalLine {
   GtkDataboxGraph *graph;
   gfloat *X;
   gfloat *Y;
+  short *data;
+  double x_offset;
+  double y_offset;
+  double y_scale;
 } SignalLine;
 
 typedef struct Channel {	/* The display channels */
