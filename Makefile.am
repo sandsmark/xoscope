@@ -11,7 +11,7 @@
 man_MANS = xoscope.1
 
 noinst_HEADERS = com_gtk.h display.h file.h oscope.h \
-config.h func.h xoscope.rc.h callbacks.h
+config.h func.h xoscope.rc.h callbacks.h fft.h
 
 bin_PROGRAMS = xoscope
 
