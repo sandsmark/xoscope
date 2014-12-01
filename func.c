@@ -19,7 +19,7 @@
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-#include "oscope.h"
+#include "xoscope.h"
 /* #include "fft.h" */
 #include "display.h"
 #include "func.h"

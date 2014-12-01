@@ -7,7 +7,7 @@
 #include <gtk/gtk.h>
 #include <gdk/gdkkeysyms.h>
 
-#include "oscope.h"
+#include "xoscope.h"
 #include "display.h"
 #include "xoscope_gtk.h"
 

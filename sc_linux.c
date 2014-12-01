@@ -20,7 +20,7 @@
 #include <sys/ioctl.h>
 #include <alsa/asoundlib.h>
 #include <linux/soundcard.h>
-#include "oscope.h"		/* program defaults */
+#include "xoscope.h"		/* program defaults */
 
 #define DEFAULT_ALSADEVICE "plughw:0,0"
 char	alsaDevice[32] = "\0";

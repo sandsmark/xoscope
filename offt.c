@@ -38,7 +38,7 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include "oscope.h"		/* for MAXWID */
+#include "xoscope.h"		/* for MAXWID */
 #include "fft.h"		/* for EndFFT */
 #include "func.h"		/* for init_fft() and fft() */
 

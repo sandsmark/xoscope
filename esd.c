@@ -16,7 +16,7 @@
 #include <errno.h>
 #include <stdlib.h>		/* for abs() */
 #include <sys/ioctl.h>
-#include "oscope.h"		/* program defaults */
+#include "xoscope.h"		/* program defaults */
 #include <esd.h>
 
 #define ESDDEVICE "ESounD"

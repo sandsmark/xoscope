@@ -10,7 +10,7 @@
 
 man_MANS = xoscope.1
 
-noinst_HEADERS = xoscope_gtk.h display.h file.h oscope.h \
+noinst_HEADERS = xoscope_gtk.h display.h file.h xoscope.h \
 config.h func.h xoscope.rc.h fft.h
 
 bin_PROGRAMS = xoscope
@@ -25,13 +25,13 @@ bin_PROGRAMS = xoscope
 
 EXTRA_DIST = $(man_MANS) $(noinst_HEADERS) \
 README.f51 TODO TODO.old audio.dat bitscope.dat 	\
-count.dat ofreq.ini oscope.dat oscope.lsm xoscope.rc	\
+count.dat ofreq.ini oscope.dat xoscope.lsm xoscope.rc	\
 patch.f51 proscope.dat xoscope.glade xoscope.png xoscope.desktop xoscope.spec \
 hardware/HARDWARE hardware/buff.fig hardware/buff.ps \
 hardware/buff2.fig hardware/buff2.ps hardware/pcb.fig hardware/pcb.ps \
 hardware/xoscope-components.png hardware/xoscope-copper.png
 
-src = oscope.c file.c func.c display.c sc_linux.c sc_linux_gtk.c
+src = xoscope.c file.c func.c display.c sc_linux.c sc_linux_gtk.c
 fftsrc = fft.c realfft.c
 guisrc = xoscope_gtk.c
 

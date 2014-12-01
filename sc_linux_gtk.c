@@ -14,13 +14,13 @@
 #include <stdlib.h>
 #include <math.h>
 #include <gtk/gtk.h>
-#include "oscope.h"
+#include "xoscope.h"
 #include "display.h"
 #include "xoscope_gtk.h"
 
 /* dialog to set the mV / steps for ALSA-Input */
 
-/* from oscope.h 
+/* from xoscope.h 
    typedef struct Signal {
    ...
    int volts; * millivolts per 320 sample values *

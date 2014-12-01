@@ -14,7 +14,7 @@
 
 #include <math.h>
 #include <string.h>
-#include "oscope.h"
+#include "xoscope.h"
 #include "fft.h"
 
 /* these are all constants in oscope's context */

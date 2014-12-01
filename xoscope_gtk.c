@@ -22,7 +22,7 @@
 #include <math.h>
 
 #include <string.h>
-#include "oscope.h"		/* program defaults */
+#include "xoscope.h"		/* program defaults */
 #include "display.h"
 #include "func.h"
 #include "file.h"

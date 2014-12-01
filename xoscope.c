@@ -15,7 +15,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <math.h>
-#include "oscope.h"		/* program defaults */
+#include "xoscope.h"		/* program defaults */
 #include "display.h"		/* display routines */
 #include "func.h"		/* signal math functions */
 #include "file.h"		/* file I/O functions */

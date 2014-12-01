@@ -17,7 +17,7 @@
 #include <time.h>
 #include <sys/time.h>
 #include <math.h>
-#include "oscope.h"		/* program defaults */
+#include "xoscope.h"		/* program defaults */
 #include "display.h"
 #include "func.h"
 
@@ -804,7 +804,7 @@ void timebase_changed(void)
 
 	clear_databox();
 
-	/* In oscope.h, I wrote "Only after reset() has been called are the rate and volts fields in
+	/* In xoscope.h, I wrote "Only after reset() has been called are the rate and volts fields in
 	 * the Signal structures guaranteed valid".  So... we reset() once to make sure the rate and
 	 * volts fields are valid, then use the rate field in the first active channel to set the
 	 * capture width to the number of samples required to fill the screen at that rate, then
@@ -857,7 +857,7 @@ void clear()
 
     if (datasrc) {
 
-	/* In oscope.h, I wrote "Only after reset() has been called are the rate and volts fields in
+	/* In xoscope.h, I wrote "Only after reset() has been called are the rate and volts fields in
 	 * the Signal structures guaranteed valid".  So... we reset() once to make sure the rate and
 	 * volts fields are valid, then use the rate field in the first active channel to set the
 	 * capture width to the number of samples required to fill the screen at that rate, then

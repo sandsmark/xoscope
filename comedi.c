@@ -27,7 +27,7 @@
 #include <sys/time.h>
 #include <sys/poll.h>
 #include <comedilib.h>
-#include "oscope.h"		/* program defaults */
+#include "xoscope.h"		/* program defaults */
 #include "func.h"
 
 #define COMEDI_RANGE 0		/* XXX user should set this */

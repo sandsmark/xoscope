@@ -16,7 +16,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <gtk/gtk.h>
-#include "oscope.h"
+#include "xoscope.h"
 #include "display.h"
 
 static int temp_rec;
