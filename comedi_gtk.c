@@ -88,7 +88,7 @@ void device_changed(void)
     char buf[64];
     int i;
 
-    gtk_entry_set_text(GTK_ENTRY(LU("device_entry")), comedi_devname);
+    gtk_entry_set_text(GTK_ENTRY(LU("comedi_device_entry")), comedi_devname);
 
     /* If we couldn't open the current COMEDI device (comedi_dev is NULL), we want everything except
      * the device name field (and its label) to be greyed out.  I don't know if GTK's designers
@@ -100,7 +100,7 @@ void device_changed(void)
 			      (GtkCallback) gtk_widget_set_sensitive,
 			      (gpointer) FALSE);
 	gtk_widget_set_sensitive(LU("device_label"), TRUE);
-	gtk_widget_set_sensitive(LU("device_entry"), TRUE);
+	gtk_widget_set_sensitive(LU("comedi_device_entry"), TRUE);
 	/* XXX maybe put something here - add "none" to subdevice list */
 	return;
     } else {
@@ -191,7 +191,7 @@ void comedi_save_options(void)
     char buf[64];
 
     snprintf(buf, sizeof(buf), "device=%s",
-	     gtk_entry_get_text(GTK_ENTRY(LU("device_entry"))));
+	     gtk_entry_get_text(GTK_ENTRY(LU("comedi_device_entry"))));
     datasrc->set_option(buf);
 
     snprintf(buf, sizeof(buf), "rate=%s",
@@ -229,7 +229,7 @@ void comedi_save_options(void)
 void
 on_device_entry_changed (GtkEditable *editable, gpointer user_data)
 {
-    if (strcmp(gtk_entry_get_text(GTK_ENTRY(LU("device_entry"))),
+    if (strcmp(gtk_entry_get_text(GTK_ENTRY(LU("comedi_device_entry"))),
 	       comedi_devname) == 0) {
 	gtk_container_foreach(GTK_CONTAINER(LU("option_table")),
 			      (GtkCallback) gtk_widget_set_sensitive,
@@ -239,7 +239,7 @@ on_device_entry_changed (GtkEditable *editable, gpointer user_data)
 			      (GtkCallback) gtk_widget_set_sensitive,
 			      (gpointer) FALSE);
 	gtk_widget_set_sensitive(LU("device_label"), TRUE);
-	gtk_widget_set_sensitive(LU("device_entry"), TRUE);
+	gtk_widget_set_sensitive(LU("comedi_device_entry"), TRUE);
     }
 }
 
@@ -252,7 +252,7 @@ comedi_on_ok(GtkButton *button, gpointer user_data)
 {
 #ifdef HAVE_LIBCOMEDI
     comedi_save_options();
-    gtk_widget_destroy(window);
+    gtk_widget_hide(window);
     menu = NULL;
 #endif
 }

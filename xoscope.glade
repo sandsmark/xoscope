@@ -214,6 +214,7 @@
                     <property name="receives_default">False</property>
                     <property name="use_action_appearance">False</property>
                     <property name="use_underline">True</property>
+                    <signal name="clicked" handler="comedi_on_ok" swapped="no"/>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -230,6 +231,7 @@
                     <property name="receives_default">False</property>
                     <property name="use_action_appearance">False</property>
                     <property name="use_underline">True</property>
+                    <signal name="clicked" handler="comedi_on_apply" swapped="no"/>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -246,6 +248,7 @@
                     <property name="receives_default">False</property>
                     <property name="use_action_appearance">False</property>
                     <property name="use_underline">True</property>
+                    <signal name="clicked" handler="gtk_widget_hide" object="comedi_dialog" swapped="yes"/>
                   </object>
                   <packing>
                     <property name="expand">False</property>

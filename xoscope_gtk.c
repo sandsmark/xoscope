@@ -142,32 +142,23 @@ void store_reference(GtkWidget* widget)
     }
 }
 
-GtkWidget * lookup_widget(GtkWidget *widget, const gchar  *widget_name)
-{
-    GtkWidget *parent, *found_widget;
+GtkBuilder * builder; 
 
-    for (;;){
-	if (GTK_IS_MENU (widget))
-	    parent = gtk_menu_get_attach_widget (GTK_MENU (widget));
-	else
-	    parent = widget->parent;
-	if (!parent)
-	    parent = (GtkWidget*) g_object_get_data (G_OBJECT (widget), "GladeParentKey");
-	if (parent == NULL)
-	    break;
-	widget = parent;
+GtkWidget * lookup_widget(const gchar * widget_name)
+{
+    GtkWidget *found_widget;
+
+    found_widget = (GtkWidget *) gtk_builder_get_object(builder, widget_name);
+
+    if (!found_widget) {
+	g_warning ("Widget not found: %s", widget_name);
     }
 
-    found_widget = (GtkWidget*) g_object_get_data (G_OBJECT (widget),
-						   widget_name);
-    if (!found_widget)
-	g_warning ("Widget not found: %s", widget_name);
     return found_widget;
 }
 
 GtkWidget * create_main_window(void)
 {
-    GtkBuilder			*builder; 
     GError 			*err = NULL;
     GSList			*gslWidgets, *iterator = NULL;
     char 			**xoscope_rc_ptr = xoscope_rc;
@@ -220,7 +211,6 @@ GtkWidget * create_main_window(void)
     g_slist_free(gslWidgets);
 
     gtk_builder_connect_signals(builder, NULL);
-    g_object_unref (G_OBJECT (builder));
 
     return(glade_window);
 }

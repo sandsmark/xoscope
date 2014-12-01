@@ -17,8 +17,8 @@ extern GtkWidget *comedi_options_dialog;
 extern GtkWidget *alsa_options_dialog;
 extern GtkWidget *databox;
 
-GtkWidget* lookup_widget(GtkWidget *widget, const gchar *widget_name);
-#define LU(label)       lookup_widget(glade_window, label)
+GtkWidget * lookup_widget(const gchar *widget_name);
+#define LU(label)       lookup_widget(label)
 
 GtkWidget *create_comedi_dialog (void);
 
