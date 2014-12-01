@@ -1,7 +1,5 @@
 /* -*- mode: C++; fill-column: 100; c-basic-offset: 4; -*-
  *
- * @(#)$Id: file.h,v 2.0 2008/12/17 17:35:46 baccala Exp $
- *
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
  *
  * (see the files README and COPYING for more details)

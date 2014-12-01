@@ -1,7 +1,5 @@
 /* -*- mode: C++; fill-column: 100; c-basic-offset: 4; -*-
  *
- * @(#)$Id: gr_gtk.c,v 2.24 2009/08/02 05:12:33 baccala Exp $
- *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
  * (see the files README and COPYING for more details)

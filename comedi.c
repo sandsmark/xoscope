@@ -1,7 +1,5 @@
 /* -*- mode: C++; fill-column: 100; c-basic-offset: 4; -*-
  *
- * @(#)$Id: comedi.c,v 2.7 2012/10/24 21:09:20 baccala Exp $
- *
  * Author: Brent Baccala <baccala@freesoft.org>
  *
  * Public domain.

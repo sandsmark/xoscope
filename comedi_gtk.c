@@ -1,4 +1,11 @@
 /* -*- mode: C++; fill-column: 100; c-basic-offset: 4; -*-
+ *
+ * Author: Brent Baccala <baccala@freesoft.org>
+ *
+ * Public domain.
+ *
+ * This file implements the COMEDI GUI component.
+ *
  */
 
 #include <stdio.h>

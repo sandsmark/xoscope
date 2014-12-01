@@ -4,12 +4,10 @@
  *
  * (see the files README and COPYING for more details)
  *
- * This file implements the ESD GUI.  It's just setting the esdrecord
- * option on or off.  The old value is found via a save_option() call
- * (esdrecord is assumed to be option #1).  We keep a temp_rec
- * variable in case the user closes or cancels the dialog without
- * clicking 'Accept'.  On 'Accept', we set the variable by forming an
- * ASCII option string and doing a set_option().
+ * This file implements the ESD GUI.  It's just setting the esdrecord option on or off.  The old
+ * value is found via a save_option() call (esdrecord is assumed to be option #1).  We keep a
+ * temp_rec variable in case the user closes or cancels the dialog without clicking 'Accept'.  On
+ * 'Accept', we set the variable by forming an ASCII option string and doing a set_option().
  *
  */
 

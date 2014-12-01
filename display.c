@@ -1,7 +1,5 @@
 /* -*- mode: C++; fill-column: 100; c-basic-offset: 4; -*-
  *
- * @(#)$Id: display.c,v 2.41 2014/10/05 15:43:54 baccala Exp $
- *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
  * (see the files README and COPYING for more details)

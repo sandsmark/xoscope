@@ -1,7 +1,5 @@
 /* -*- mode: C++; fill-column: 100; c-basic-offset: 4; -*-
  *
- * @(#)$Id: sc_linux.c,v 2.7 2014/10/05 15:43:54 baccala Exp $
- *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  * Copyright (C) 2014 Gerhard Schiller <gerhard.schiller@gmail.com>
  *

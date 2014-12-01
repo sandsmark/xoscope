@@ -1,12 +1,10 @@
 /* -*- mode: C++; fill-column: 100; c-basic-offset: 4; -*-
  *
- * @(#)$Id: func.h,v 2.2 2009/07/30 02:37:25 baccala Exp $
- *
  * Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
  *
  * (see the files README and COPYING for more details)
  *
- * oscope math function definitions and prototypes
+ * xoscope math function definitions and prototypes
  *
  */
 

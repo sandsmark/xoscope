@@ -1,13 +1,12 @@
 /* -*- mode: C++; fill-column: 100; c-basic-offset: 4; -*-
  *
- * @(#)$Id: sc_linux_gtk.c,v 2.1 2009/06/26 05:18:48 baccala Exp $
- *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  * Copyright (C) 2014 Gerhard Schiller <gerhard.schiller@gmail.com>
  *
  * (see the files README and COPYING for more details)
  *
  * This file implements the ALSA soundcard GUI.
+ *
  */
 
 #include <stdio.h>
