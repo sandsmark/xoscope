@@ -16,7 +16,7 @@
 #include <gtk/gtk.h>
 #include "oscope.h"
 #include "display.h"
-#include "com_gtk.h"
+#include "xoscope_gtk.h"
 
 /* dialog to set the mV / steps for ALSA-Input */
 

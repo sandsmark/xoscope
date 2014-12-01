@@ -23,7 +23,7 @@
 /* #include "fft.h" */
 #include "display.h"
 #include "func.h"
-#include "com_gtk.h"
+#include "xoscope_gtk.h"
 
 Signal mem[26];		/* 26 memories, corresponding to 26 letters */
 

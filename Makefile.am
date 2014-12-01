@@ -10,7 +10,7 @@
 
 man_MANS = xoscope.1
 
-noinst_HEADERS = com_gtk.h display.h file.h oscope.h \
+noinst_HEADERS = xoscope_gtk.h display.h file.h oscope.h \
 config.h func.h xoscope.rc.h fft.h
 
 bin_PROGRAMS = xoscope
@@ -33,7 +33,7 @@ hardware/xoscope-components.png hardware/xoscope-copper.png
 
 src = oscope.c file.c func.c display.c sc_linux.c sc_linux_gtk.c
 fftsrc = fft.c realfft.c
-guisrc = com_gtk.c gr_gtk.c
+guisrc = xoscope_gtk.c
 
 if COMEDI
 comedisrc = comedi.c comedi_gtk.c
@@ -74,8 +74,7 @@ xoscope.rc.h: $(top_srcdir)/xoscope.rc $(top_srcdir)/xoscope.glade
 	sed -e 's/"/\\"/g' -e 's/^/"/' -e 's/$$/"/' $(top_srcdir)/xoscope.glade >> $@
 	echo ";" >> $@
 
-#gr_gtk.o: xoscope.rc.h
-com_gtk.o: xoscope.rc.h
+xoscope_gtk.o: xoscope.rc.h
 
 install-data-local:
 	@$(NORMAL_INSTALL)

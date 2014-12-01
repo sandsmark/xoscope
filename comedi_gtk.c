@@ -9,7 +9,7 @@
 
 #include "oscope.h"
 #include "display.h"
-#include "com_gtk.h"
+#include "xoscope_gtk.h"
 
 GtkWidget *window;
 

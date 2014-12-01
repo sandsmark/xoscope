@@ -21,7 +21,7 @@
 #include "display.h"
 #include "func.h"
 
-#include "com_gtk.h"
+#include "xoscope_gtk.h"
 #include <glib.h>
 #include <glib-object.h>
 #include <gtk/gtk.h>
