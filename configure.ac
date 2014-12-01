@@ -16,8 +16,8 @@ AM_PROG_CC_STDC
 AC_HEADER_STDC
 
 PKG_CHECK_MODULES(GTK, gtk+-2.0 >= 2.2)
-
 PKG_CHECK_MODULES(GTKDATABOX, gtkdatabox)
+PKG_CHECK_MODULES(FFTW3, fftw3)
 
 dnl Set PACKAGE_LIBEXEC_DIR in config.h.
 dnl if test "x${libexecdir}" = 'x${exec_prefix}/libexec'; then
@@ -59,6 +59,7 @@ dnl Checks for libraries.
 AC_CHECK_LIB(esd, esd_monitor_stream)
 AC_CHECK_LIB(m, sin)
 AC_CHECK_LIB(gtkdatabox, gtk_databox_graph_add)
+AC_CHECK_LIB(fftw3, fftw_execute)
 
 AC_ARG_WITH([comedi],
 	[AS_HELP_STRING([--with-comedi],

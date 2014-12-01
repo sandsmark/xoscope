@@ -18,7 +18,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include "xoscope.h"
-/* #include "fft.h" */
+#include "fft.h" 
 #include "display.h"
 #include "func.h"
 #include "xoscope_gtk.h"
@@ -422,13 +422,13 @@ void avg(Signal *dest)
 void fft1(Signal *dest)
 {
     if (ch[0].signal == NULL) 
-	return;
+        return;
     if(ch[0].signal->width < FFTLEN){
-	bzero(dest->data, sizeof(short) * FFTLEN);
+        bzero(dest->data, sizeof(short) * FFTLEN);
 	return;
     }
 	
-    fft(ch[0].signal->data, dest->data, ch[0].signal->width);
+    fftW(ch[0].signal->data, dest->data, ch[0].signal->width);
 }
 
 /*#define FFT_TEST*/
@@ -436,13 +436,13 @@ void fft1(Signal *dest)
 void fft2(Signal *dest)
 {
     if (ch[1].signal == NULL) 
-	return;
+        return;
     if(ch[1].signal->width < FFTLEN){
-	bzero(dest->data, sizeof(short) * FFTLEN);
+        bzero(dest->data, sizeof(short) * FFTLEN);
 	return;
     }
 	
-    fft(ch[1].signal->data, dest->data, ch[1].signal->width);
+    fftW(ch[1].signal->data, dest->data, ch[1].signal->width);
 }
 
 #else
@@ -460,10 +460,10 @@ void fft2(Signal *dest)
     int i;
 
     make_sin(testdata, 2500.0, ch[1].signal->rate);
-    fft(testdata, dest->data, FFTLEN);
+    fftW(testdata, dest->data, FFTLEN);
 
     for(i = 0; i<FFTLEN; i+=51)
-	dest->data[i] = -80;	
+        dest->data[i] = -80;	
 }
 #endif
 
@@ -817,7 +817,7 @@ void init_math(void)
 	funcarray[i].signal.savestr[0] = '0' + i;
 	funcarray[i].signal.savestr[1] = '\0';
     }
-    init_fft();
+    InitializeFFTW(FFTLEN);
     once=1;
 }
 
@@ -865,7 +865,7 @@ void do_math(void)
 
 void cleanup_math(void)
 {
-    EndFFT();
+    EndFFTW();
 }
 
 /* measure the given channel */

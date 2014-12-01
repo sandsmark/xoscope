@@ -4,86 +4,77 @@
  *
  * (see the files README and COPYING for more details)
  *
- * This file implements internal & external FFT function for xoscope.  It is mostly pieces cut and
- * pasted from freq's freq.c and setupsub.c for easier synchronization with that program.
+ * This file implements the interface to the FFTW-library for xoscope.  
  *
  */
-
-#include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <math.h>
+#include <fftw3.h>
 #include "xoscope.h"
-#include "fft.h"
+#include "fft.h"       
 
-/* these are all constants in oscope's context */
-#define WINDOW_RIGHT			FFTLEN
-#define WINDOW_LEFT			0
+double          *dp = NULL;
+fftw_complex    *cp = NULL;
+fftw_plan       plan;
 
-#define fftlen				FFTLEN
-#define freq_scalefactor		1
-#define freq_base			0
-#define SampleRate			44100
-#define shift				0
-
-/* for the fft function: x position to bin number map, and data buffer */
-int x[WINDOW_RIGHT-WINDOW_LEFT+1];     /* Array of bin #'s displayed */
-int x2[WINDOW_RIGHT-WINDOW_LEFT+1];    /* Array of terminal bin #'s */
-int *pX,*pX2;
-short fftdata[FFTLEN];
-short displayval[FFTLEN/2];
-int *bri;
-short *pDisplayval;
-short *pOut;
 
 /* Fast Fourier Transform of in to out */
-
-void fft(short *in, short *out, int inLen)
+void fftW(short *in, short *out, int inLen)
 {
-    int i;
-    long a2 = 0;	/* Variables for computing Sqrt/Log of Amplitude^2 */
-    short *p1, *p2;	/* Various indexing pointers */
-
-    p1=fftdata;
-    p2=in;
-    for(i = 0; i < inLen && i < fftlen; i++) {
-	*p1++ = *p2++;
+    double  r, i, mag;
+    int     k, max;
+    
+    for(k = 0; k < inLen && k < FFTLEN; k++) {
+	    dp[k] = (double)in[k];
     }
-      
-    RealFFT(fftdata);
 
-    /* Use sqrt(a2) in averaging mode and linear-amplitude mode */
-    /* Use pointers for indexing to speed things up a bit. */
-    bri = BitReversed;
-    pDisplayval = displayval;
-    for(i = 0; i < fftlen / 2; i++){
-	/* Compute the magnitude */
-	register long re = fftdata[*bri];
-	register long im = fftdata[(*bri)+1];
+	fftw_execute(plan);
 
-	if((a2 = re*re + im*im) < 0) {		/* Watch for possible overflow */
-	    a2 = 0;
+	max = (FFTLEN / 2) + 1;
+	for (k = 0; k < max; k++) {
+		r = cp[k][0];
+		i = cp[k][1];
+		mag = sqrt((r * r) + (i * i));
+/*		printf("%d %lf %lf %lf\n", k, r, i, mag);*/
+
+    	if (mag >= (1<<(sizeof(short) * 8 - 1))) {		/* avoid overflowing the short */
+    	    mag = (1<<(sizeof(short) * 8 - 1)) - 1;     /* max short = 2^15 */
+    	} 
+		out[k] = (short)mag;
 	}
-			
-	if (a2 >= (1<<22)) {			/* avoid overflowing the short */
-	    *pDisplayval  = (1<<15) - 1;	/* max short = 2^15 = sqrt(2^22)*16 */
-	} else {
-	    *pDisplayval = sqrt(a2)*16;
-	}
-
-	bri++;
-	pDisplayval++;
-    }
-    /*fprintf(stderr, "num values in displayval: %ld\n", pDisplayval - displayval - 1);*/
-
-    pX = x;
-    pX2 = x2;
-    pOut = out;
-
-    memcpy(out, displayval, sizeof(short)*fftlen/2);
 }
 
-/* initialize global buffers for FFT */
-
-void init_fft(void)
+void InitializeFFTW(int fftlen)
 {
-    InitializeFFT(fftlen);
+	if(dp == NULL){
+	    if((dp = (double *)malloc(sizeof (double) * fftlen)) == NULL){
+    	    fprintf(stderr, "malloc failed in InitializeFFTW()\n");
+	        exit(0);
+	    }
+	} 
+	memset(dp, 0, sizeof (double) * fftlen);
+	    
+	if(cp == NULL){
+        if((cp = (fftw_complex *)fftw_malloc(sizeof (fftw_complex) * fftlen)) == NULL){;
+    	    fprintf(stderr, "malloc failed in InitializeFFTW()\n");
+	        exit(0);
+	    }
+	}
+	memset(cp, 0, sizeof (fftw_complex) * fftlen);
+
+	plan = fftw_plan_dft_r2c_1d(fftlen, dp, cp, FFTW_MEASURE);
 }
+
+void EndFFTW(void)
+{
+	fftw_destroy_plan(plan);
+
+    free(dp);
+    dp = NULL;
+    
+    free(cp);
+    cp = NULL;
+}
+
