@@ -52,8 +52,7 @@ static const char * snd_errormsg2 = NULL;
 void alsa_gtk_option_dialog() __attribute__ ((weak));
 
 /* close the sound device */
-static void
-close_sound_card()
+static void close_sound_card()
 {
     /* fprintf(stderr,"close_sound_card\n"); */
     if (handle != NULL) {
@@ -65,8 +64,7 @@ close_sound_card()
     }
 }
 
-static int
-open_sound_card(void)
+static int open_sound_card(void)
 {
     unsigned int rate = sound_card_rate;
     unsigned int chan = 2;
@@ -121,15 +119,13 @@ open_sound_card(void)
 
     /* Signed 16-bit little-endian format */
     rc = -1;
-    if(bits == 8){
+    if (bits == 8) {
   	rc = snd_pcm_hw_params_set_format(handle, params, SND_PCM_FORMAT_U8);
   	pcm_format = SND_PCM_FORMAT_U8;
-    }
-    else if(bits == 16){
+    } else if (bits == 16) {
    	rc = snd_pcm_hw_params_set_format(handle, params, SND_PCM_FORMAT_S16_LE);
   	pcm_format = SND_PCM_FORMAT_S16_LE;
-    }
-    else{
+    } else {
 	snd_errormsg1 = "Wrong number of bits";
 	snd_errormsg2 = "";
 	fprintf(stderr, "%s\n%s\n", snd_errormsg1, snd_errormsg2);
@@ -151,13 +147,13 @@ open_sound_card(void)
 	return 0;
     }
  
-    if(bits == 8 && pcm_format != SND_PCM_FORMAT_U8){
+    if (bits == 8 && pcm_format != SND_PCM_FORMAT_U8) {
 	snd_errormsg1 = "Can't set 8-bit format (SND_PCM_FORMAT_U8)";
 	fprintf(stderr, "%s\n%s\n", snd_errormsg1, snd_errormsg2);
 	return 0;
     }
  
-    if(bits == 16 && pcm_format != SND_PCM_FORMAT_S16_LE){
+    if (bits == 16 && pcm_format != SND_PCM_FORMAT_S16_LE) {
 	snd_errormsg1 = "Can't set 16-bit format (SND_PCM_FORMAT_S16_LE)";
 	fprintf(stderr, "%s\n%s\n", snd_errormsg1, snd_errormsg2);
 	return 0;
@@ -187,7 +183,7 @@ open_sound_card(void)
 	fprintf(stderr, "%s\n%s\n", snd_errormsg1, snd_errormsg2);
 	return 0;
     }
-    if(rate != sound_card_rate){
+    if (rate != sound_card_rate) {
 	snd_errormsg1 = "requested sample rate not available ";
 	fprintf(stderr, "%s\n%s\n", snd_errormsg1, snd_errormsg2);
  	return 0;
@@ -225,14 +221,13 @@ open_sound_card(void)
     return 1;
 }
 
-static void
-reset_sound_card(void)
+static void reset_sound_card(void)
 {
     static unsigned char *junk = NULL; 
   	
     /* fprintf(stderr,"reset_sound_card()\n"); */
-    if(junk == NULL){
-	if(!(junk =  malloc((SAMPLESKIP * snd_pcm_format_width(pcm_format) / 8) * 2))) {
+    if (junk == NULL) {
+	if (!(junk =  malloc((SAMPLESKIP * snd_pcm_format_width(pcm_format) / 8) * 2))) {
 	    snd_errormsg1 = "malloc() failed " ;
 	    snd_errormsg2 = strerror(errno);
 	    fprintf(stderr, "%s\n%s\n", snd_errormsg1, snd_errormsg2);
@@ -240,26 +235,28 @@ reset_sound_card(void)
 	}
     }
 
-    if(handle != NULL){
+    if (handle != NULL) {
     	close_sound_card();
 	open_sound_card();
 
-	if(handle == NULL)
+	if (handle == NULL) {
 	    return;
+	}
 	snd_pcm_readi(handle, junk, SAMPLESKIP);
     }
 }
 
 static int sc_nchans(void)
 {
-    if (handle == NULL) 
+    if (handle == NULL) {
   	open_sound_card();
+    }
     return (handle != NULL) ? sc_chans : 0;
 }
 
 static int fd(void)
 {
-    return(-1);
+    return -1;
 }
 
 static Signal *sc_chan(int chan)
@@ -345,7 +342,6 @@ static void reset(void)
 
 static void set_width(int width)
 {
-
     /* fprintf(stderr, "set_width(%d)\n", width); */
     left_sig.width = width;
     right_sig.width = width;
@@ -354,12 +350,12 @@ static void set_width(int width)
     if (right_sig.data != NULL) free(right_sig.data);
 
     left_sig.data = malloc(width * sizeof(short));
-    if(left_sig.data == NULL){
+    if (left_sig.data == NULL) {
 	fprintf(stderr, "set_width(), malloc failed, %s\n", strerror(errno));
 	exit(0);
     }
     right_sig.data = malloc(width * sizeof(short));
-    if(right_sig.data == NULL){
+    if (right_sig.data == NULL) {
 	fprintf(stderr, "set_width(), malloc failed, %s\n", strerror(errno));
 	exit(0);
     }
@@ -378,13 +374,13 @@ static int sc_get_data()
 
     // fprintf(stderr, "sc_get_data(%d %d)\n", in_progress,(MAXWID * snd_pcm_format_width(pcm_format) / 8) * 2);
  
-    if(handle == NULL){
+    if (handle == NULL) {
 	fprintf(stderr, "sc_get_data() handle == NULL\n");
-	return(0);
+	return 0;
     }
 	
-    if(buffer == NULL){
-	if(!(buffer =  malloc((MAXWID * snd_pcm_format_width(pcm_format) / 8) * 2))) {
+    if (buffer == NULL) {
+	if (!(buffer =  malloc((MAXWID * snd_pcm_format_width(pcm_format) / 8) * 2))) {
 	    snd_errormsg1 = "malloc() failed ";
 	    snd_errormsg2 = strerror(errno);
 	    fprintf(stderr, "%s\n%s\n", snd_errormsg1, snd_errormsg2);
@@ -406,8 +402,7 @@ static int sc_get_data()
 	    /*   			fprintf(stderr, "sc_get_data(): discarding\n");*/
 	    ;
 
-    } 
-    else {
+    } else {
 	/* XXX this ends up discarding everything after a complete read */
 	rdCnt = snd_pcm_readi(handle, buffer, MAXWID);
     }
@@ -416,15 +411,13 @@ static int sc_get_data()
 	/* EPIPE means overrun */
 	/*      fprintf(stderr, "overrun occurred\n");*/
 	snd_pcm_recover(handle, rdCnt, TRUE);
-      	return(sc_get_data());
-
-    } 
-    else if (rdCnt < 0) {
+      	return sc_get_data();
+    } else if (rdCnt < 0) {
 	/*    	fprintf(stderr,*/
 	/*       		"error from snd_pcm_readi(): %d %s\n", rdCnt, snd_strerror(rdCnt));*/
 	snd_pcm_recover(handle, rdCnt, TRUE);
-	usleep(1000); 
-    	return(0); 
+	usleep(1000);
+    	return 0;
 	/*      	return(sc_get_data());*/
     } 
 
@@ -437,25 +430,25 @@ static int sc_get_data()
 	    while (((i+1)*2 <= rdCnt) && 
 		   ((buffer[2*i + trigch] < triglev) || (buffer[2*(i-1) + trigch] >= triglev))) 
 		i ++;
-    	} 
-    	else if (trigmode == 2) {
+    	} else if (trigmode == 2) {
 	    i ++;
 	    while (((i+1)*2 <= rdCnt) && 
 		   ((buffer[2*i + trigch] > triglev) || (buffer[2*(i-1) + trigch] <= triglev))) 
 		i ++;
     	}
 
-	if ((i+1)*2 > rdCnt){	/* haven't triggered within the screen */
+	if ((i+1)*2 > rdCnt) {	/* haven't triggered within the screen */
 	    /*  			fprintf(stderr, "sc_get_data returns at %d\n", __LINE__);*/
-	    return(0);		/* give up and keep previous samples */
+	    return 0;		/* give up and keep previous samples */
 	}
 	delay = 0;
 
 	if (trigmode) {
 	    int last = buffer[2*(i-1) + trigch] - 127;
 	    int current = buffer[2*i + trigch] - 127;
-	    if (last != current)
+	    if (last != current) {
 		delay = abs(10000 * (current - (triglev - 127)) / (current - last));
+	    }
     	}
 
 	left_sig.data[0] = buffer[2*i] - 127;
@@ -473,11 +466,13 @@ static int sc_get_data()
     }
 
     while ((i+1)*2 <= rdCnt) {
-	if (in_progress >= left_sig.width) // enough samples for a screen
+	if (in_progress >= left_sig.width) { // enough samples for a screen
 	    break;
+	}
 #if 0
-    	if (*buff == 0 || *buff == 255)
+    	if (*buff == 0 || *buff == 255) {
 	    clip = i % 2 + 1;
+	}
 #endif
 	left_sig.data[in_progress] = buffer[2*i] - 127;
 	right_sig.data[in_progress] = buffer[2*i + 1] - 127;
@@ -489,11 +484,11 @@ static int sc_get_data()
     left_sig.num = in_progress;
     right_sig.num = in_progress;
 
-    if (in_progress >= left_sig.width){ // enough samples for a screen
+    if (in_progress >= left_sig.width) { // enough samples for a screen
 	in_progress = 0;
     }
     /* 	fprintf(stderr, "sc_get_data returns at %d\n", __LINE__);*/
-    return(1);
+    return 1;
 }
 
 static const char * snd_status_str(int i)
@@ -510,12 +505,16 @@ static const char * snd_status_str(int i)
 	    strcpy(msg1, snd_errormsg1);
 	    strcat(msg1, alsaDevice);
 	    return (const char*)msg1;
+	} else {
+	    return "";
 	}
-	else return "";
     
     case 2:
-	if (snd_errormsg2) return snd_errormsg2;
-	else return "";
+	if (snd_errormsg2) {
+	    return snd_errormsg2;
+	} else {
+	    return "";
+	}
     }
     return NULL;
 }

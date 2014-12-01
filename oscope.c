@@ -141,8 +141,9 @@ void init_channels()
     int i;
     static int first = 1;
 
-    if (!first)
+    if (!first) {
 	do_math();			/* XXX halt currently running commands */
+    }
     first = 0;
     for (i = 0 ; i < CHANNELS ; i++) {
 	bzero(&ch[i], sizeof(Channel));
@@ -168,8 +169,11 @@ int samples(int rate)
 
     r = rate * 10 * scope.scale / 1000 + 1;
 
-    if (r > MAXWID) r = MAXWID;
-    return (r);
+    if (r > MAXWID) {
+	r = MAXWID;
+    }
+
+    return r;
 }
 
 /* scaledown/roundoff/scaleup: scale numbers like a scope does
@@ -201,10 +205,15 @@ double scaledown(double num, double minimum, double multiplier)
     log = log10(num * multiplier);
     log -= floor(log);
 
-    if (log > LOG7_5) log = LOG5 - log;
-    else if (log > LOG3_5) log = LOG2 - log;
-    else if (log > LOG1_5) log = LOG1 - log;
-    else log = LOG0_5 - log;
+    if (log > LOG7_5) {
+	log = LOG5 - log;
+    } else if (log > LOG3_5) {
+	log = LOG2 - log;
+    } else if (log > LOG1_5) {
+	log = LOG1 - log;
+    } else {
+	log = LOG0_5 - log;
+    }
 
     num *= pow(10.0, log);
 
@@ -218,10 +227,15 @@ double roundoff(double num, double multiplier)
     log = log10(num * multiplier);
     log -= floor(log);
 
-    if (log > LOG7_5) log = LOG10 - log;
-    else if (log > LOG3_5) log = LOG5 - log;
-    else if (log > LOG1_5) log = LOG2 - log;
-    else log = LOG1 - log;
+    if (log > LOG7_5) {
+	log = LOG10 - log;
+    } else if (log > LOG3_5) {
+	log = LOG5 - log;
+    } else if (log > LOG1_5) {
+	log = LOG2 - log;
+    } else {
+	log = LOG1 - log;
+    }
 
     num *= pow(10.0, log);
 
@@ -235,10 +249,15 @@ double scaleup(double num, double maximum, double multiplier)
     log = log10(num * multiplier);
     log -= floor(log);
 
-    if (log > LOG7_5) log = LOG10 + LOG2 - log;
-    else if (log > LOG3_5) log = LOG10 - log;
-    else if (log > LOG1_5) log = LOG5 - log;
-    else log = LOG2 - log;
+    if (log > LOG7_5) {
+	log = LOG10 + LOG2 - log;
+    } else if (log > LOG3_5) {
+	log = LOG10 - log;
+    } else if (log > LOG1_5) {
+	log = LOG5 - log;
+    } else {
+	log = LOG2 - log;
+    }
 
     num *= pow(10.0, log);
 
@@ -253,7 +272,10 @@ void datasrc_close(void)
 
     if (datasrc) {
 
-	if (datasrc->clear_trigger) datasrc->clear_trigger();
+	if (datasrc->clear_trigger) {
+	    datasrc->clear_trigger();
+	}
+
 	scope.trige = 0;
 
 	/* clear listeners on our signal channels prior to close */
@@ -307,7 +329,6 @@ int datasrc_open(DataSrc *new_datasrc)
     }
 
     return 0;
-
 }
 
 /* Open a data source even if it's open function returns 0 */
@@ -321,7 +342,9 @@ void datasrc_force_open(DataSrc *new_datasrc)
 
     datasrc = new_datasrc;
 
-    if (datasrc == NULL) return;
+    if (datasrc == NULL) {
+	return;
+    }
 
     for (i=0; i<limit; i++) {
 	if (datasrc == datasrcs[i]) datasrci = i;
@@ -478,43 +501,51 @@ void handle_key(unsigned char c)
 	show_data();
 	break;
     case 'q' - 96:		/* -96 is CTRL keys */
-	if ((scope.cursa -= displayed_samples / 20) < 1)
+	if ((scope.cursa -= displayed_samples / 20) < 1) {
 	    scope.cursa = max_samples - 1;
+	}
 	show_data();
 	break;
     case 'w' - 96:
-	if ((scope.cursa += displayed_samples / 20) >= max_samples)
+	if ((scope.cursa += displayed_samples / 20) >= max_samples) {
 	    scope.cursa = 1;
+	}
 	show_data();
 	break;
     case 'e' - 96:
-	if (--scope.cursa < 1)
+	if (--scope.cursa < 1) {
 	    scope.cursa = max_samples - 1;
+	}
 	show_data();
 	break;
     case 'r' - 96:
-	if (++scope.cursa >= max_samples)
+	if (++scope.cursa >= max_samples) {
 	    scope.cursa = 1;
+	}
 	show_data();
 	break;
     case 'a' - 96:
-	if ((scope.cursb -= displayed_samples / 20) < 1)
+	if ((scope.cursb -= displayed_samples / 20) < 1) {
 	    scope.cursb = max_samples - 1;
+	}
 	show_data();
 	break;
     case 's' - 96:
-	if ((scope.cursb += displayed_samples / 20) >= max_samples)
+	if ((scope.cursb += displayed_samples / 20) >= max_samples) {
 	    scope.cursb = 1;
+	}
 	show_data();
 	break;
     case 'd' - 96:
-	if (--scope.cursb < 1)
+	if (--scope.cursb < 1) {
 	    scope.cursb = max_samples - 1;
+	}
 	show_data();
 	break;
     case 'f' - 96:
-	if (++scope.cursb >= max_samples)
+	if (++scope.cursb >= max_samples) {
 	    scope.cursb = 1;
+	}
 	show_data();
 	break;
     case '\t':
@@ -527,48 +558,60 @@ void handle_key(unsigned char c)
 	update_text();
 	break;
     case '~':
-	if ((p->bits += 2) > 16)
+	if ((p->bits += 2) > 16) {
 	    p->bits = 0;
+	}
 	show_data();
 	update_text();
 	break;
     case '`':
-	if ((p->bits -= 2) < 0)
+	if ((p->bits -= 2) < 0) {
 	    p->bits = 16;
+	}
 	show_data();
 	update_text();
 	break;
     case '}':
 	if (p->signal) {		/* increase scale - 100x is the max */
-	    if (p->signal->volts != 0)
+	    if (p->signal->volts != 0) {
 		p->scale = scaleup(p->scale, 100, 1.0/p->signal->volts);
-	    else
+	    } else {
 		p->scale = scaleup(p->scale, 100, 1);
+	    }
 	    update_text();
 	    show_data();
 	}
 	break;
     case '{':
 	if (p->signal) {		/* decrease scale - 1:100 is the min */
-	    if (p->signal->volts != 0)
+	    if (p->signal->volts != 0) {
 		p->scale = scaledown(p->scale, .01, 1.0/p->signal->volts);
-	    else
+	    } else {
 		p->scale = scaledown(p->scale, .01, 1);
+	    }
 	    update_text();
 	    show_data();
 	}
 	break;
     case ']':
 	p->pos += 0.1;		/* position up */
-	if (p->pos < -1) p->pos = -1;
-	if (p->pos * p->pos < 0.0001) p->pos = 0;
+	if (p->pos < -1) {
+	    p->pos = -1;
+	}
+	if (p->pos * p->pos < 0.0001) {
+	    p->pos = 0;
+	}
 	update_text();
 	show_data();
 	break;
     case '[':
 	p->pos -= 0.1;		/* position down */
-	if (p->pos > 1) p->pos = 1;
-	if (p->pos * p->pos < 0.0001) p->pos = 0;
+	if (p->pos > 1) {
+	    p->pos = 1;
+	}
+	if (p->pos * p->pos < 0.0001) {
+	    p->pos = 0;
+	}
 	update_text();
 	show_data();
 	break;
@@ -577,16 +620,18 @@ void handle_key(unsigned char c)
 	    next_func();
 	    p->show = 1;
 	    clear();
-	} else
+	} else {
 	    message("Math can not run on Channel 1 or 2");
+	}
 	break;
     case ':':
 	if (scope.select > 1) {	/* previous math function */
 	    prev_func();
 	    p->show = 1;
 	    clear();
-	} else
+	} else {
 	    message("Math can not run on Channel 1 or 2");
+	}
 	break;
     case '0':
 	/* this corresponds to a minimum time scale of 2 ns/div */
@@ -616,7 +661,9 @@ void handle_key(unsigned char c)
 	if (scope.trige != 0 && datasrc && datasrc->set_trigger) {
 	    do {
 		scope.trigch ++;
-		if (scope.trigch >= datasrc->nchans()) scope.trigch = 0;
+		if (scope.trigch >= datasrc->nchans()) {
+		    scope.trigch = 0;
+		}
 	    } while (datasrc->set_trigger(scope.trigch,
 					  &scope.trig, scope.trige) == 0);
 	    clear();
@@ -626,10 +673,12 @@ void handle_key(unsigned char c)
 	if (datasrc && datasrc->set_trigger) {	/* change trigger type */
 	    do {
 		scope.trige++;
-		if (scope.trige > 2)
+		if (scope.trige > 2) {
 		    scope.trige = 0;
-		if (scope.trige == 0 && datasrc->clear_trigger)
+		}
+		if (scope.trige == 0 && datasrc->clear_trigger) {
 		    datasrc->clear_trigger();
+		}
 	    } while ((scope.trige != 0) &&
 		     (datasrc->set_trigger(scope.trigch,
 					   &scope.trig, scope.trige) == 0));
@@ -655,10 +704,11 @@ void handle_key(unsigned char c)
 	LoadSaveFile(1);
 	break;
     case '$':			/* run external math */
-	if (scope.select > 1)
+	if (scope.select > 1) {
 	    ExternCommand();
-	else
+	} else {
 	    message("Pipes can not run on Channel 1 or 2");
+	}
 	break;
     case '&':			/* toggle between various data sources */
 	if (datasrc_next()) {
@@ -680,16 +730,18 @@ void handle_key(unsigned char c)
 	if (scope.scroll_mode > 2) {
 	    scope.scroll_mode = 0;
 	    scope.plot_mode++;		/* point, line, step */
-	    if (scope.plot_mode > 2)
+	    if (scope.plot_mode > 2) {
 		scope.plot_mode = 0;
+	    }
 	}
 	update_text();
 	show_data();
 	break;
     case ',':
 	scope.grat++;		/* graticule off/on/more */
-	if (scope.grat > 2)
+	if (scope.grat > 2) {
 	    scope.grat = 0;
+	}
 	update_text();
 	show_data();
 	break;
@@ -704,10 +756,12 @@ void handle_key(unsigned char c)
 	break;
     case ' ':
 	scope.run++;		/* run / wait / stop */
-	if (scope.run > 2)
+	if (scope.run > 2) {
 	    scope.run = 0;
-	if ((scope.run == 1) && datasrc)
+	}
+	if ((scope.run == 1) && datasrc) {
 	    setinputfd(datasrc->fd());	/* were stopped, so now start */
+	}
 	update_text();
 	break;
     case '\r':
@@ -733,15 +787,17 @@ void handle_key(unsigned char c)
 int main(int argc, char **argv)
 {
     progname = strrchr(argv[0], '/');
-    if (progname == NULL)
+    if (progname == NULL) {
 	progname = argv[0];		/* global for error messages, usage */
-    else
+    } else {
 	progname++;
+    }
     init_scope();
     init_channels();
     init_math();
-    if ((argc = OpenDisplay(argc, argv)) == FALSE)
+    if ((argc = OpenDisplay(argc, argv)) == FALSE) {
 	exit(1);
+    }
     parse_args(argc, argv);
     init_widgets();
     clear();
@@ -823,8 +879,11 @@ const char * split_field(const char *str, int fieldtwo, int limit)
 
 	/* Length of string less than limit */
 
-	if (fieldtwo) return "";
-	else return str;
+	if (fieldtwo) {
+	    return "";
+	} else {
+	    return str;
+	}
 
     }
 }

@@ -23,10 +23,11 @@ int backwards_compat_2_0 = 0;	/* TRUE if parsing a pre-2.0 save file */
 /* force num to stay within the range lo - hi */
 int limit(int num, int lo, int hi)
 {
-    if (num < lo)
+    if (num < lo) {
 	num = lo;
-    if (num > hi)
+    } else if (num > hi) {
 	num = hi;
+    }
     return(num);
 }
 
@@ -43,7 +44,9 @@ void handle_opt(int opt, char *optarg)
 
     switch (opt) {
     case 'D':			/* data source selection */
-	if ((p = index(optarg, '\n')) != NULL) *p = '\0';
+	if ((p = index(optarg, '\n')) != NULL) {
+	    *p = '\0';
+	}
 	if (!datasrc_byname(optarg)) {
 	    fprintf(stderr, "Couldn't find data source %s\n\n", optarg);
 	    usage(1);
@@ -75,8 +78,9 @@ void handle_opt(int opt, char *optarg)
 #if 0
 	/* XXX FIX ME */
 	scope.scale = limit(strtol(p = optarg, NULL, 0), 1, 1000);
-	if ((q = strchr(p, '/')) != NULL)
+	if ((q = strchr(p, '/')) != NULL) {
 	    scope.div = limit(strtol(++q, NULL, 0), 1, 2000);
+	}
 #endif
 	break;
     case 't':			/* trigger */
@@ -87,18 +91,21 @@ void handle_opt(int opt, char *optarg)
 	    p = q;
 	}
 	if ((q = strchr(p, ':')) != NULL) {
-	    if (*(++q) == 'x' || *q == 'X')
+	    if (*(++q) == 'x' || *q == 'X') {
 		scope.trigch = 0;
-	    else if (*q == 'y' || *q == 'Y')
+	    } else if (*q == 'y' || *q == 'Y') {
 		scope.trigch = 1;
-	    else
+	    } else {
 		scope.trigch = strtol(q, NULL, 0);
+	    }
 	}
 	if (datasrc && datasrc->set_trigger
 	    && datasrc->set_trigger(scope.trigch,
 				    &scope.trig, scope.trige) == 0) {
 	    /* Unable to set trigger, so clear it */
-	    if (datasrc && datasrc->clear_trigger) datasrc->clear_trigger();
+	    if (datasrc && datasrc->clear_trigger) {
+		datasrc->clear_trigger();
+	    }
 	    scope.trige = 0;
 	}
 	break;
@@ -184,9 +191,14 @@ void handle_opt(int opt, char *optarg)
 	     * display (the most common), the data part was 320 pixels tall, so we divide by 160,
 	     * negative since the old number's zero point was at the top.
 	     */
+
 	    s->pos = limit(-strtol(p, NULL, 0), -1280, 1280);
-	    if (backwards_compat_2_0) s->pos /= -160;
-	    else s->pos /= 100;
+
+	    if (backwards_compat_2_0) {
+		s->pos /= -160;
+	    } else {
+		s->pos /= 100;
+	    }
 
 	    if ((q = strchr(p, '.')) != NULL) {
 		s->bits = limit(strtol(++q, NULL, 0), 0, 16);
@@ -263,7 +275,9 @@ void writefile(char *filename)
 
     if (datasrc->save_option != NULL) {
 	for (i=0; (s = datasrc->save_option(i)) != NULL; i++) {
-	    if (s[0] != '\0') fprintf(file, "# -o %s\n", s);
+	    if (s[0] != '\0') {
+		fprintf(file, "# -o %s\n", s);
+	    }
 	}
     }
 
@@ -292,10 +306,12 @@ void writefile(char *filename)
     }
     /* XXX code need to be carefully checked out */
     for (i = 0 ; i < 26 ; i++) {
-	if (mem[i].num >  0)
+	if (mem[i].num > 0) {
 	    chan[k++] = i;
-	if (mem[i].num > l)
+	}
+	if (mem[i].num > l) {
 	    l = mem[i].num;
+	}
     }
     if (k) {
 	for (i = 0 ; i < k ; i++) {

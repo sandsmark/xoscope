@@ -58,7 +58,9 @@ static void close_ESD()
 
 static int open_ESD(void)
 {
-    if (esd >= 0) return 1;
+    if (esd >= 0) {
+	return 1;
+    }
 
     esd_errormsg1 = NULL;
     esd_errormsg2 = NULL;
@@ -78,8 +80,9 @@ static int open_ESD(void)
     }
 
     /* we have esd connection! non-block it? */
-    if (!esdblock)
+    if (!esdblock) {
 	fcntl(esd, F_SETFL, O_NONBLOCK);
+    }
 
     return 1;
 }
@@ -106,7 +109,9 @@ static int esd_nchans(void)
 {
     /* ESD always has two channels, right? */
 
-    if (esd == -2) open_ESD();
+    if (esd == -2) {
+	open_ESD();
+    }
 
     return (esd >= 0) ? 2 : 0;
 }
@@ -179,7 +184,6 @@ static void reset(void)
 
 static void set_width(int width)
 {
-
     /* fprintf(stderr, "set_width(%d)\n", width); */
     left_sig.width = width;
     right_sig.width = width;
@@ -207,8 +211,11 @@ static int esd_get_data()
     static int i, j, delay;
     int fd;
 
-    if (esd >= 0) fd = esd;
-    else return (0);
+    if (esd >= 0) {
+	fd = esd;
+    } else {
+	return 0;
+    }
 
     if (!in_progress) {
 	/* Discard excess samples so we can keep our time snapshot close to real-time and minimize
@@ -241,16 +248,18 @@ static int esd_get_data()
 				      (buffer[2*(i-1) + trigch] <= triglev))) i ++;
 	}
 
-	if ((i+1)*2 > j)	/* haven't triggered within the screen */
-	    return(0);		/* give up and keep previous samples */
+	if ((i+1)*2 > j) {	/* haven't triggered within the screen */
+	    return 0;		/* give up and keep previous samples */
+	}
 
 	delay = 0;
 
 	if (trigmode) {
 	    int last = buffer[2*(i-1) + trigch] - 127;
 	    int current = buffer[2*i + trigch] - 127;
-	    if (last != current)
+	    if (last != current) {
 		delay = abs(10000 * (current - (triglev - 127)) / (current - last));
+	    }
 	}
 
 	left_sig.data[0] = buffer[2*i] - 127;
@@ -268,10 +277,13 @@ static int esd_get_data()
     }
 
     while ((i+1)*2 <= j) {
-	if (in_progress >= left_sig.width) break;
+	if (in_progress >= left_sig.width) {
+	    break;
+	}
 #if 0
-	if (*buff == 0 || *buff == 255)
+	if (*buff == 0 || *buff == 255) {
 	    clip = i % 2 + 1;
+	}
 #endif
 	left_sig.data[in_progress] = buffer[2*i] - 127;
 	right_sig.data[in_progress] = buffer[2*i + 1] - 127;
@@ -283,9 +295,11 @@ static int esd_get_data()
     left_sig.num = in_progress;
     right_sig.num = in_progress;
 
-    if (in_progress >= left_sig.width) in_progress = 0;
+    if (in_progress >= left_sig.width) {
+	in_progress = 0;
+    }
 
-    return(1);
+    return 1;
 }
 
 static const char * esd_status_str(int i)
@@ -305,10 +319,11 @@ static const char * esd_status_str(int i)
 
 static int option1_esd(void)
 {
-    if(esdrecord)
+    if (esdrecord) {
 	esdrecord = 0;
-    else
+    } else {
 	esdrecord = 1;
+    }
 
     return 1;
 }
