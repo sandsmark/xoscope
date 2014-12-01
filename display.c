@@ -1,4 +1,4 @@
-/* -*- mode: C++; fill-column: 100; c-basic-offset: 4; -*-
+/* -*- mode: C++; indent-tabs-mode: nil; fill-column: 100; c-basic-offset: 4; -*-
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -15,7 +15,7 @@
 #include <time.h>
 #include <sys/time.h>
 #include <math.h>
-#include "xoscope.h"		/* program defaults */
+#include "xoscope.h"            /* program defaults */
 #include "display.h"
 #include "func.h"
 
@@ -33,9 +33,9 @@ extern GtkWidget *databox;
 
 #define DEBUG 0
 
-int	triggered = 0;		/* whether we've triggered or not */
-void	*font;
-int	math_warning = 0;	/* TRUE if math has a problem */
+int     triggered = 0;          /* whether we've triggered or not */
+void    *font;
+int     math_warning = 0;       /* TRUE if math has a problem */
 
 struct signal_stats stats;
 
@@ -59,17 +59,17 @@ gboolean clear_message_callback(gpointer ignored)
 void message(const char *message)
 {
     if (databox_message == NULL) {
-	GdkColor gcolor;
-	gcolor.red = gcolor.green = gcolor.blue = 65535;
-	databox_message = gtk_databox_markers_new(1, &databox_message_X,
-						  &databox_message_Y, &gcolor, 0,
-						  GTK_DATABOX_MARKERS_NONE);
+        GdkColor gcolor;
+        gcolor.red = gcolor.green = gcolor.blue = 65535;
+        databox_message = gtk_databox_markers_new(1, &databox_message_X,
+                                                  &databox_message_Y, &gcolor, 0,
+                                                  GTK_DATABOX_MARKERS_NONE);
     }
 
     /* XXX gtk_databox_markers_set_label() should take a const char pointer */
 
     gtk_databox_markers_set_label(GTK_DATABOX_MARKERS(databox_message), 0,
-				  GTK_DATABOX_MARKERS_TEXT_N, (char *)message, FALSE);
+                                  GTK_DATABOX_MARKERS_TEXT_N, (char *)message, FALSE);
     gtk_databox_graph_add (GTK_DATABOX(databox), databox_message);
     gtk_widget_queue_draw (databox);
 
@@ -100,77 +100,77 @@ void SIformat(char *buf, const char *fmt, double num)
     case -13:
     case -12:
     case -11:
-	sprintf(buf, fmt, num * pow(10.0, power+12), "p");
-	break;
+        sprintf(buf, fmt, num * pow(10.0, power+12), "p");
+        break;
 
     case -10:
     case -9:
     case -8:
-	sprintf(buf, fmt, num * pow(10.0, power+9), "n");
-	break;
+        sprintf(buf, fmt, num * pow(10.0, power+9), "n");
+        break;
 
     case -7:
     case -6:
     case -5:
-	/* use UTF-8 micro sign */
-	sprintf(buf, fmt, num * pow(10.0, power+6), "\302\265");
-	break;
+        /* use UTF-8 micro sign */
+        sprintf(buf, fmt, num * pow(10.0, power+6), "\302\265");
+        break;
 
     case -4:
     case -3:
     case -2:
-	sprintf(buf, fmt, num * pow(10.0, power+3), "m");
-	break;
+        sprintf(buf, fmt, num * pow(10.0, power+3), "m");
+        break;
 
     case -1:
     case 0:
     case 1:
     default:
-	/* This is a reasonable default, since %g will use scientific
-	 * notation if the exponent is less than -4 or greater than 5.
-	 */
-	sprintf(buf, fmt, num * pow(10.0, power), "");
-	break;
+        /* This is a reasonable default, since %g will use scientific
+         * notation if the exponent is less than -4 or greater than 5.
+         */
+        sprintf(buf, fmt, num * pow(10.0, power), "");
+        break;
 
     case 2:
     case 3:
     case 4:
-	sprintf(buf, fmt, num * pow(10.0, power-3), "k");
-	break;
+        sprintf(buf, fmt, num * pow(10.0, power-3), "k");
+        break;
 
     case 5:
     case 6:
     case 7:
-	sprintf(buf, fmt, num * pow(10.0, power-6), "M");
-	break;
+        sprintf(buf, fmt, num * pow(10.0, power-6), "M");
+        break;
     }
 }
 
 void make_help_text_visible(GtkWidget *widget, gpointer ignored)
 {
     if (GTK_IS_CONTAINER(widget)) {
-	gtk_container_forall(GTK_CONTAINER(widget), make_help_text_visible, NULL);
+        gtk_container_forall(GTK_CONTAINER(widget), make_help_text_visible, NULL);
     } else {
-	const gchar * name = gtk_widget_get_name(widget);
-	if ((name != NULL) && (strlen(name) >= 11) &&
-	    (!strcmp(name + strlen(name) - 11, "_help_label")
-	     || !strcmp(name + strlen(name) - 10, "_key_label"))) {
-	    gtk_label_set_text(GTK_LABEL(widget), g_object_get_data(G_OBJECT(widget), "visible-text"));
-	}
+        const gchar * name = gtk_widget_get_name(widget);
+        if ((name != NULL) && (strlen(name) >= 11) &&
+            (!strcmp(name + strlen(name) - 11, "_help_label")
+             || !strcmp(name + strlen(name) - 10, "_key_label"))) {
+            gtk_label_set_text(GTK_LABEL(widget), g_object_get_data(G_OBJECT(widget), "visible-text"));
+        }
     }
 }
 
 void make_help_text_invisible(GtkWidget *widget, gpointer ignored)
 {
     if (GTK_IS_CONTAINER(widget)) {
-	gtk_container_forall(GTK_CONTAINER(widget), make_help_text_invisible, NULL);
+        gtk_container_forall(GTK_CONTAINER(widget), make_help_text_invisible, NULL);
     } else {
-	const gchar * name = gtk_widget_get_name(widget);
-	if ((name != NULL) && (strlen(name) >= 11) &&
-	    (!strcmp(name + strlen(name) - 11, "_help_label")
-	     || !strcmp(name + strlen(name) - 10, "_key_label"))) {
-	    gtk_label_set_markup(GTK_LABEL(widget), g_object_get_data(G_OBJECT(widget), "invisible-text"));
-	}
+        const gchar * name = gtk_widget_get_name(widget);
+        if ((name != NULL) && (strlen(name) >= 11) &&
+            (!strcmp(name + strlen(name) - 11, "_help_label")
+             || !strcmp(name + strlen(name) - 10, "_key_label"))) {
+            gtk_label_set_markup(GTK_LABEL(widget), g_object_get_data(G_OBJECT(widget), "invisible-text"));
+        }
     }
 }
 
@@ -184,23 +184,23 @@ void make_help_text_invisible(GtkWidget *widget, gpointer ignored)
 void setup_help_text(GtkWidget *widget, gpointer ignored)
 {
     if (GTK_IS_CONTAINER(widget)) {
-	gtk_container_forall(GTK_CONTAINER(widget), setup_help_text, NULL);
+        gtk_container_forall(GTK_CONTAINER(widget), setup_help_text, NULL);
     } else {
-	const gchar * name = gtk_widget_get_name(widget);
-	if ((name != NULL) && (strlen(name) >= 11) &&
-	    (!strcmp(name + strlen(name) - 11, "_help_label")
-	     || !strcmp(name + strlen(name) - 10, "_key_label"))) {
-	    const gchar * text = gtk_label_get_label(GTK_LABEL(widget));
-	    gchar * saved_text = malloc(sizeof(gchar) * 80);
-	    gchar * modified_text = malloc(sizeof(gchar) * 80);
+        const gchar * name = gtk_widget_get_name(widget);
+        if ((name != NULL) && (strlen(name) >= 11) &&
+            (!strcmp(name + strlen(name) - 11, "_help_label")
+             || !strcmp(name + strlen(name) - 10, "_key_label"))) {
+            const gchar * text = gtk_label_get_label(GTK_LABEL(widget));
+            gchar * saved_text = malloc(sizeof(gchar) * 80);
+            gchar * modified_text = malloc(sizeof(gchar) * 80);
 
-	    sprintf(modified_text, "<span foreground=\"black\">%s</span>",
-		    g_markup_escape_text(text, -1));
-	    strcpy(saved_text, text);
-	    g_object_set_data(G_OBJECT(widget), "visible-text", saved_text);
-	    g_object_set_data(G_OBJECT(widget), "invisible-text", modified_text);
+            sprintf(modified_text, "<span foreground=\"black\">%s</span>",
+                    g_markup_escape_text(text, -1));
+            strcpy(saved_text, text);
+            g_object_set_data(G_OBJECT(widget), "visible-text", saved_text);
+            g_object_set_data(G_OBJECT(widget), "invisible-text", modified_text);
 
-	}
+        }
     }
 }
 
@@ -224,33 +224,33 @@ void update_dynamic_text(void)
     /* always draw the dynamic text, if signal is analog (bits == 0) */
     if (p->signal && (p->signal->bits == 0) ) {
 
-    	sprintf(string, "  Period of %6d us = %6d Hz  ", stats.time,  stats.freq);
-    	gtk_label_set_text(GTK_LABEL(LU("period_label")), string);
+        sprintf(string, "  Period of %6d us = %6d Hz  ", stats.time,  stats.freq);
+        gtk_label_set_text(GTK_LABEL(LU("period_label")), string);
 
-    	if (p->signal->volts)
-	    sprintf(string, "   %7.5g - %7.5g = %7.5g mV   ",
-		    (float)stats.max * p->signal->volts / 320,
-		    (float)stats.min * p->signal->volts / 320,
-		    ((float)stats.max - stats.min) * p->signal->volts / 320);
-	else
-	    sprintf(string, " Max:%3d - Min:%4d = %3d Pk-Pk ",
-		    stats.max, stats.min, stats.max - stats.min);
-    	gtk_label_set_text(GTK_LABEL(LU("min_max_label")), string);
+        if (p->signal->volts)
+            sprintf(string, "   %7.5g - %7.5g = %7.5g mV   ",
+                    (float)stats.max * p->signal->volts / 320,
+                    (float)stats.min * p->signal->volts / 320,
+                    ((float)stats.max - stats.min) * p->signal->volts / 320);
+        else
+            sprintf(string, " Max:%3d - Min:%4d = %3d Pk-Pk ",
+                    stats.max, stats.min, stats.max - stats.min);
+        gtk_label_set_text(GTK_LABEL(LU("min_max_label")), string);
 
     } else {
-	gtk_label_set_text(GTK_LABEL(LU("period_label")), "");
-	gtk_label_set_text(GTK_LABEL(LU("min_max_label")), "");
+        gtk_label_set_text(GTK_LABEL(LU("period_label")), "");
+        gtk_label_set_text(GTK_LABEL(LU("min_max_label")), "");
     }
 
     if (math_warning) {
 #if 0
 #if 0
-	sprintf(string, "WARNING: math(%d,%d) is bogus!",
-		ch[0].signal->rate, ch[1].signal->rate);
-	text_write(string, 40, 4, 0, KEY_FG, TEXT_BG, ALIGN_CENTER);
+        sprintf(string, "WARNING: math(%d,%d) is bogus!",
+                ch[0].signal->rate, ch[1].signal->rate);
+        text_write(string, 40, 4, 0, KEY_FG, TEXT_BG, ALIGN_CENTER);
 #else
-	text_write("WARNING: math is bogus!", 40, 4,
-		   0, KEY_FG, TEXT_BG, ALIGN_CENTER);
+        text_write("WARNING: math is bogus!", 40, 4,
+                   0, KEY_FG, TEXT_BG, ALIGN_CENTER);
 #endif
 #endif
     }
@@ -260,33 +260,33 @@ void update_dynamic_text(void)
      */
 
     if (datasrc && (datasrc->option1str != NULL)
-	&& ((s = datasrc->option1str()) != NULL)) {
-	gtk_label_set_text(GTK_LABEL(LU("data_source_opt1_label")), s);
+        && ((s = datasrc->option1str()) != NULL)) {
+        gtk_label_set_text(GTK_LABEL(LU("data_source_opt1_label")), s);
     } else {
-	gtk_label_set_text(GTK_LABEL(LU("data_source_opt1_label")), "");
+        gtk_label_set_text(GTK_LABEL(LU("data_source_opt1_label")), "");
     }
 
     if (datasrc && (datasrc->option2str != NULL)
-	&& ((s = datasrc->option2str()) != NULL)) {
-	gtk_label_set_text(GTK_LABEL(LU("data_source_opt2_label")), s);
+        && ((s = datasrc->option2str()) != NULL)) {
+        gtk_label_set_text(GTK_LABEL(LU("data_source_opt2_label")), s);
     } else {
-	gtk_label_set_text(GTK_LABEL(LU("data_source_opt2_label")), "");
+        gtk_label_set_text(GTK_LABEL(LU("data_source_opt2_label")), "");
     }
 
     if (datasrc && datasrc->status_str != NULL) {
-	for (i=0; i<8; i++) {
-	    sprintf(widget, "status%d_label", i);
-	    if ((s = datasrc->status_str(i)) != NULL) {
-		gtk_label_set_text(GTK_LABEL(LU(widget)), s);
-	    } else {
-		gtk_label_set_text(GTK_LABEL(LU(widget)), "");
-	    }
-	}
+        for (i=0; i<8; i++) {
+            sprintf(widget, "status%d_label", i);
+            if ((s = datasrc->status_str(i)) != NULL) {
+                gtk_label_set_text(GTK_LABEL(LU(widget)), s);
+            } else {
+                gtk_label_set_text(GTK_LABEL(LU(widget)), "");
+            }
+        }
     } else {
-	for (i=0; i<8; i++) {
-	    sprintf(widget, "status%d_label", i);
-	    gtk_label_set_text(GTK_LABEL(LU(widget)), "");
-	}
+        for (i=0; i<8; i++) {
+            sprintf(widget, "status%d_label", i);
+            gtk_label_set_text(GTK_LABEL(LU(widget)), "");
+        }
     }
 
     /* Recompute frames per second once every second */
@@ -294,19 +294,19 @@ void update_dynamic_text(void)
     time(&sec);
     if (sec != prev) {
 
-	if (prev != 0) {
-	    sprintf(string, "fps:%3d", frames);
-	    gtk_label_set_text(GTK_LABEL(LU("fps_label")), string);
-	} else {
-	    gtk_label_set_text(GTK_LABEL(LU("fps_label")), "");
-	}
+        if (prev != 0) {
+            sprintf(string, "fps:%3d", frames);
+            gtk_label_set_text(GTK_LABEL(LU("fps_label")), string);
+        } else {
+            gtk_label_set_text(GTK_LABEL(LU("fps_label")), "");
+        }
 
-	frames = 0;
-	if (datasrc) {
-	    prev = sec;
-	} else {
-	    prev = 0;
-	}
+        frames = 0;
+        if (datasrc) {
+            prev = sec;
+        } else {
+            prev = 0;
+        }
     }
 
     frames++;
@@ -318,19 +318,19 @@ void update_text(void)
     int i;
     Channel *p;
     static char *plot_styles[] = {
-	"Point",
-	"Line",
-	"Step",
+        "Point",
+        "Line",
+        "Step",
     };
     static char *scroll_styles[] = {
-	"",
-	"Accum",
-	"Strip",
+        "",
+        "Accum",
+        "Strip",
     };
     static char *trigs[] = {
-	"Auto",
-	"Rising",
-	"Falling"
+        "Auto",
+        "Rising",
+        "Falling"
     };
 
     p = &ch[scope.select];
@@ -341,121 +341,121 @@ void update_text(void)
 
     /* setting help text is special */
     gtk_label_set_text(GTK_LABEL(LU("graticule_position_help_label")),
-		       scope.behind ? "Behind" : "In Front");
+                       scope.behind ? "Behind" : "In Front");
     setup_help_text(GTK_WIDGET(LU("graticule_position_help_label")), NULL);
 
 
     if (!datasrc) {
-	gtk_label_set_text(GTK_LABEL(LU("trigger_label")), "");
-	gtk_label_set_text(GTK_LABEL(LU("trigger_source_label")), "");
+        gtk_label_set_text(GTK_LABEL(LU("trigger_label")), "");
+        gtk_label_set_text(GTK_LABEL(LU("trigger_source_label")), "");
     } else if (scope.trige) {
-	Signal *trigsig = datasrc->chan(scope.trigch);
+        Signal *trigsig = datasrc->chan(scope.trigch);
 
-	if (trigsig->volts > 0) {
-	    char minibuf[256];
-	    SIformat(minibuf, "%g %sV",
-		     (scope.trig) * trigsig->volts / 320000);
-	    sprintf(string, "%s Trigger @ %s", trigs[scope.trige], minibuf);
-	} else {
-	    sprintf(string, "%s Trigger @ %d",
-		    trigs[scope.trige], scope.trig);
-	}
-	gtk_label_set_text(GTK_LABEL(LU("trigger_label")), string);
-	gtk_label_set_text(GTK_LABEL(LU("trigger_source_label")), trigsig->name);
+        if (trigsig->volts > 0) {
+            char minibuf[256];
+            SIformat(minibuf, "%g %sV",
+                     (scope.trig) * trigsig->volts / 320000);
+            sprintf(string, "%s Trigger @ %s", trigs[scope.trige], minibuf);
+        } else {
+            sprintf(string, "%s Trigger @ %d",
+                    trigs[scope.trige], scope.trig);
+        }
+        gtk_label_set_text(GTK_LABEL(LU("trigger_label")), string);
+        gtk_label_set_text(GTK_LABEL(LU("trigger_source_label")), trigsig->name);
     } else {
-	gtk_label_set_text(GTK_LABEL(LU("trigger_label")), "No Trigger");
-	gtk_label_set_text(GTK_LABEL(LU("trigger_source_label")), "");
+        gtk_label_set_text(GTK_LABEL(LU("trigger_label")), "No Trigger");
+        gtk_label_set_text(GTK_LABEL(LU("trigger_source_label")), "");
     }
 
     gtk_label_set_text(GTK_LABEL(LU("data_source_label")),
-		       datasrc ? datasrc->name : "No source");
+                       datasrc ? datasrc->name : "No source");
 
     gtk_label_set_text(GTK_LABEL(LU("line_style_label")),
-		       plot_styles[scope.plot_mode]);
+                       plot_styles[scope.plot_mode]);
     gtk_label_set_text(GTK_LABEL(LU("scroll_mode_label")),
-		       scroll_styles[scope.scroll_mode]);
+                       scroll_styles[scope.scroll_mode]);
 
     if (datasrc) {
-	strcpy(string, scope.run ? (scope.run > 1 ? "WAIT" : " RUN") : "STOP");
-	gtk_label_set_text(GTK_LABEL(LU("run_stop_label")), string);
+        strcpy(string, scope.run ? (scope.run > 1 ? "WAIT" : " RUN") : "STOP");
+        gtk_label_set_text(GTK_LABEL(LU("run_stop_label")), string);
     } else {
-	gtk_label_set_text(GTK_LABEL(LU("run_stop_label")), "");
+        gtk_label_set_text(GTK_LABEL(LU("run_stop_label")), "");
     }
 
 
     /* sides of graticule */
     for (i = 0 ; i < CHANNELS ; i++) {
 
-	if (ch[i].signal) {
-	    if (ch[i].signal->rate > 0) {
-		if (!ch[i].bits && ch[i].signal->volts)
-		    SIformat(string, "%g %sV/div", (double)ch[i].signal->volts / ch[i].scale / 10000);
-		else if (ch[i].scale > 1.0)
-		    sprintf(string, "%d:1", (int) rint(ch[i].scale));
-		else
-		    sprintf(string, "1:%d", (int) rint(1.0/ch[i].scale));
-	    }
-	    else { 
-		/* Special case for a Fourier Transform.  ch[i].signal->rate is negative.  The
-		 * x-scaling for a FFT (Hz/div) is calculated in chXFFTactive() and rounded to some
-		 * "nice" value.  This value is stored in the volts member ofthe signal structure.
-		 * Not nice, but I didn't want to add a new member.
-		 */
-		SIformat(string, "%g %sHz/div FFT", ch[i].signal->volts);
-	    }        
+        if (ch[i].signal) {
+            if (ch[i].signal->rate > 0) {
+                if (!ch[i].bits && ch[i].signal->volts)
+                    SIformat(string, "%g %sV/div", (double)ch[i].signal->volts / ch[i].scale / 10000);
+                else if (ch[i].scale > 1.0)
+                    sprintf(string, "%d:1", (int) rint(ch[i].scale));
+                else
+                    sprintf(string, "1:%d", (int) rint(1.0/ch[i].scale));
+            }
+            else { 
+                /* Special case for a Fourier Transform.  ch[i].signal->rate is negative.  The
+                 * x-scaling for a FFT (Hz/div) is calculated in chXFFTactive() and rounded to some
+                 * "nice" value.  This value is stored in the volts member ofthe signal structure.
+                 * Not nice, but I didn't want to add a new member.
+                 */
+                SIformat(string, "%g %sHz/div FFT", ch[i].signal->volts);
+            }        
             
-	    sprintf(widget, "Ch%1d_scale_label", i+1);
-	    gtk_label_set_text(GTK_LABEL(LU(widget)), string);
+            sprintf(widget, "Ch%1d_scale_label", i+1);
+            gtk_label_set_text(GTK_LABEL(LU(widget)), string);
 
-	    sprintf(string, "%d @ %.1g", ch[i].bits, ch[i].pos);
-	    sprintf(widget, "Ch%1d_position_label", i+1);
-	    gtk_label_set_text(GTK_LABEL(LU(widget)), string);
+            sprintf(string, "%d @ %.1g", ch[i].bits, ch[i].pos);
+            sprintf(widget, "Ch%1d_position_label", i+1);
+            gtk_label_set_text(GTK_LABEL(LU(widget)), string);
 
-	    sprintf(widget, "Ch%1d_source_label", i+1);
-	    gtk_label_set_text(GTK_LABEL(LU(widget)), ch[i].signal->name);
+            sprintf(widget, "Ch%1d_source_label", i+1);
+            gtk_label_set_text(GTK_LABEL(LU(widget)), ch[i].signal->name);
 
-	    // Not much point in doing this, since the rc file doesn't give us enough control over
-	    // insensitive rendering.
+            // Not much point in doing this, since the rc file doesn't give us enough control over
+            // insensitive rendering.
 
-	    // gtk_widget_set_sensitive(LU(widget), ch[i].show);
+            // gtk_widget_set_sensitive(LU(widget), ch[i].show);
 
-	} else {
+        } else {
 
-	    sprintf(widget, "Ch%1d_scale_label", i+1);
-	    gtk_label_set_text(GTK_LABEL(LU(widget)), "");
-	    sprintf(widget, "Ch%1d_position_label", i+1);
-	    gtk_label_set_text(GTK_LABEL(LU(widget)), "");
-	    sprintf(widget, "Ch%1d_source_label", i+1);
-	    gtk_label_set_text(GTK_LABEL(LU(widget)), "");
+            sprintf(widget, "Ch%1d_scale_label", i+1);
+            gtk_label_set_text(GTK_LABEL(LU(widget)), "");
+            sprintf(widget, "Ch%1d_position_label", i+1);
+            gtk_label_set_text(GTK_LABEL(LU(widget)), "");
+            sprintf(widget, "Ch%1d_source_label", i+1);
+            gtk_label_set_text(GTK_LABEL(LU(widget)), "");
 
-	}
+        }
 
-	sprintf(widget, "Ch%1d_frame", i+1);
-	if (scope.select == i) {
-	    gtk_frame_set_shadow_type(GTK_FRAME(LU(widget)), GTK_SHADOW_ETCHED_IN);
-	} else {
-	    gtk_frame_set_shadow_type(GTK_FRAME(LU(widget)), GTK_SHADOW_NONE);
-	}
+        sprintf(widget, "Ch%1d_frame", i+1);
+        if (scope.select == i) {
+            gtk_frame_set_shadow_type(GTK_FRAME(LU(widget)), GTK_SHADOW_ETCHED_IN);
+        } else {
+            gtk_frame_set_shadow_type(GTK_FRAME(LU(widget)), GTK_SHADOW_NONE);
+        }
 
     }
 
     /* below graticule */
     if (scope.verbose) {
 
-	/* setting help text is special */
-	gtk_label_set_text(GTK_LABEL(LU("tab_help_label")), p->show ? "Visible" : "HIDDEN");
-	setup_help_text(GTK_WIDGET(LU("tab_help_label")), NULL);
+        /* setting help text is special */
+        gtk_label_set_text(GTK_LABEL(LU("tab_help_label")), p->show ? "Visible" : "HIDDEN");
+        setup_help_text(GTK_WIDGET(LU("tab_help_label")), NULL);
 #if 0
-	if (scope.select > 1) {
-	    text_write("($)", 72, 25,
-		       0, KEY_FG, TEXT_BG, ALIGN_RIGHT);
-	    text_write("Extern", 78, 25,
-		       0, p->color, TEXT_BG, ALIGN_RIGHT);
-	    text_write("(:)    (;)", 79, 26,
-		       0, KEY_FG, TEXT_BG, ALIGN_RIGHT);
-	    text_write("Math", 76, 26,
-		       0, p->color, TEXT_BG, ALIGN_RIGHT);
-	}
+        if (scope.select > 1) {
+            text_write("($)", 72, 25,
+                       0, KEY_FG, TEXT_BG, ALIGN_RIGHT);
+            text_write("Extern", 78, 25,
+                       0, p->color, TEXT_BG, ALIGN_RIGHT);
+            text_write("(:)    (;)", 79, 26,
+                       0, KEY_FG, TEXT_BG, ALIGN_RIGHT);
+            text_write("Math", 76, 26,
+                       0, p->color, TEXT_BG, ALIGN_RIGHT);
+        }
 #endif
 
     }
@@ -465,87 +465,87 @@ void update_text(void)
 
     if (p->signal) {
 
-	/* XXX what do we want here - frame samples, samples per screen? */
+        /* XXX what do we want here - frame samples, samples per screen? */
 
-	/* I cut and changed this line a half dozen times trying to decide what number I wanted
-	 * displayed as the "Samples" - p->signal->num would give us the actual number of samples in
-	 * the signal, but that changes during the course of a sweep.  Now I've got the number of
-	 * samples per sweep, which isn't quite acceptable if there's no data on the screen, or if
-	 * we're displaying a memory channel with a fixed number of sample
-	 */
+        /* I cut and changed this line a half dozen times trying to decide what number I wanted
+         * displayed as the "Samples" - p->signal->num would give us the actual number of samples in
+         * the signal, but that changes during the course of a sweep.  Now I've got the number of
+         * samples per sweep, which isn't quite acceptable if there's no data on the screen, or if
+         * we're displaying a memory channel with a fixed number of sample
+         */
 
-	/* sprintf(string, "%d Samples", p->signal->num); */
-	/* sprintf(string, "%d Samples", samples(p->signal->rate)); */
-	sprintf(string, "%d Samples/frame", p->signal->width);
-	gtk_label_set_text(GTK_LABEL(LU("samples_per_frame_label")), string);
+        /* sprintf(string, "%d Samples", p->signal->num); */
+        /* sprintf(string, "%d Samples", samples(p->signal->rate)); */
+        sprintf(string, "%d Samples/frame", p->signal->width);
+        gtk_label_set_text(GTK_LABEL(LU("samples_per_frame_label")), string);
 
-	if (p->signal->rate > 0) {
+        if (p->signal->rate > 0) {
 
-	    SIformat(string, "%g %sS/s", (float)p->signal->rate);
-	    gtk_label_set_text(GTK_LABEL(LU("sample_rate_label")), string);
+            SIformat(string, "%g %sS/s", (float)p->signal->rate);
+            gtk_label_set_text(GTK_LABEL(LU("sample_rate_label")), string);
 
-	} else if (p->signal->rate < 0) {
-	    /* scaling i.e. Hz/div is now displayed at sides of the graticule.  Here we just display
-	     * the sample rate of the input to the FFT
-	     */
-	    SIformat(string, "%g %sS/s", (float)-p->signal->rate);
-	    gtk_label_set_text(GTK_LABEL(LU("sample_rate_label")), string);
+        } else if (p->signal->rate < 0) {
+            /* scaling i.e. Hz/div is now displayed at sides of the graticule.  Here we just display
+             * the sample rate of the input to the FFT
+             */
+            SIformat(string, "%g %sS/s", (float)-p->signal->rate);
+            gtk_label_set_text(GTK_LABEL(LU("sample_rate_label")), string);
 
-	} else {
+        } else {
 
-	    gtk_label_set_text(GTK_LABEL(LU("sample_rate_label")), "");
+            gtk_label_set_text(GTK_LABEL(LU("sample_rate_label")), "");
 
-	}
+        }
 
     } else {
 
-	gtk_label_set_text(GTK_LABEL(LU("samples_per_frame_label")), "");
-	gtk_label_set_text(GTK_LABEL(LU("sample_rate_label")), "");
+        gtk_label_set_text(GTK_LABEL(LU("samples_per_frame_label")), "");
+        gtk_label_set_text(GTK_LABEL(LU("sample_rate_label")), "");
 
     }
 
     /* List of available registers */
     for (i = 0 ; i < 26 ; i++) {
-	if (datasrc && i < datasrc->nchans()) {
-	    /* XXX Maybe here we should show color by channel if sig displayed */
-	    string[i] = i + 'a';
-	} else if (mem[i].num > 0) {
-	    /* XXX different color here for memory? */
-	    string[i] = i + 'a';
-	} else {
-	    string[i ] = ' ';
-	}
+        if (datasrc && i < datasrc->nchans()) {
+            /* XXX Maybe here we should show color by channel if sig displayed */
+            string[i] = i + 'a';
+        } else if (mem[i].num > 0) {
+            /* XXX different color here for memory? */
+            string[i] = i + 'a';
+        } else {
+            string[i ] = ' ';
+        }
     }
     string[i] = '\0';
     gtk_label_set_text(GTK_LABEL(LU("registers_label")), string);
 
     if ((datasrc != NULL) && (datasrc->option1str != NULL)) {
-	gtk_widget_show(LU("data_source_opt1_label"));
-	gtk_widget_show(LU("asterisk_key_label"));
+        gtk_widget_show(LU("data_source_opt1_label"));
+        gtk_widget_show(LU("asterisk_key_label"));
     } else {
-	gtk_widget_hide(LU("data_source_opt1_label"));
-	gtk_widget_hide(LU("asterisk_key_label"));
+        gtk_widget_hide(LU("data_source_opt1_label"));
+        gtk_widget_hide(LU("asterisk_key_label"));
     }
 
     if ((datasrc != NULL) && (datasrc->option2str != NULL)) {
-	gtk_widget_show(LU("data_source_opt2_label"));
-	gtk_widget_show(LU("caret_key_label"));
+        gtk_widget_show(LU("data_source_opt2_label"));
+        gtk_widget_show(LU("caret_key_label"));
     } else {
-	gtk_widget_hide(LU("data_source_opt2_label"));
-	gtk_widget_hide(LU("caret_key_label"));
+        gtk_widget_hide(LU("data_source_opt2_label"));
+        gtk_widget_hide(LU("caret_key_label"));
     }
 
     if (datasrc && datasrc->nchans() > 0) {
-	/* setting help text is special */
-	sprintf(string, "(a-%c)", 'a' + datasrc->nchans() - 1);
-	gtk_label_set_text(GTK_LABEL(LU("signal_key_label")), string);
-	setup_help_text(GTK_WIDGET(LU("signal_key_label")), NULL);
+        /* setting help text is special */
+        sprintf(string, "(a-%c)", 'a' + datasrc->nchans() - 1);
+        gtk_label_set_text(GTK_LABEL(LU("signal_key_label")), string);
+        setup_help_text(GTK_WIDGET(LU("signal_key_label")), NULL);
 
-	gtk_widget_show(GTK_WIDGET(LU("signal_key_label")));
-	gtk_widget_show(GTK_WIDGET(LU("signal_help_label")));
+        gtk_widget_show(GTK_WIDGET(LU("signal_key_label")));
+        gtk_widget_show(GTK_WIDGET(LU("signal_help_label")));
     } else {
-	gtk_widget_hide(GTK_WIDGET(LU("signal_key_label")));
-	gtk_widget_hide(GTK_WIDGET(LU("signal_help_label")));
+        gtk_widget_hide(GTK_WIDGET(LU("signal_key_label")));
+        gtk_widget_hide(GTK_WIDGET(LU("signal_help_label")));
     }
 
     /* setting help text is special */
@@ -559,9 +559,9 @@ void update_text(void)
     setup_help_text(GTK_WIDGET(LU("recall_key_label")), NULL);
 
     if (scope.verbose) {
-	make_help_text_visible(glade_window, NULL);
+        make_help_text_visible(glade_window, NULL);
     } else {
-	make_help_text_invisible(glade_window, NULL);
+        make_help_text_invisible(glade_window, NULL);
     }
 
     update_dynamic_text();
@@ -586,10 +586,10 @@ int minor_graticule_displayed = 0;
 void recompute_graticule(void)
 {
     if (graticule_major_graph != NULL) {
-	gtk_databox_grid_set_vlines(GTK_DATABOX_GRID(graticule_minor_graph),
-				    total_horizontal_divisions - 1);
-	gtk_databox_grid_set_vlines(GTK_DATABOX_GRID(graticule_major_graph),
-				    total_horizontal_divisions/5 - 1);
+        gtk_databox_grid_set_vlines(GTK_DATABOX_GRID(graticule_minor_graph),
+                                    total_horizontal_divisions - 1);
+        gtk_databox_grid_set_vlines(GTK_DATABOX_GRID(graticule_major_graph),
+                                    total_horizontal_divisions/5 - 1);
     }
 }
 
@@ -601,21 +601,21 @@ void create_graticule(void)
 #if 0
     static int i, j;
     static int tilt[] = {
-	0, -10, 10
+        0, -10, 10
     };
 
     /* a mark where the trigger level is, if the triggered channel is shown */
     if (scope.trige) {
-	i = -1;
-	for (j = 7 ; j >= 0 ; j--) {
-	    if (ch[j].show && ch[j].signal == datasrc->chan(scope.trigch))
-		i = j;
-	}
-	if (i > -1) {
-	    j = offset + ch[i].pos - scope.trig * ch[i].mult / ch[i].div;
-	    SetColor(ch[i].color);
-	    DrawLine(90, j + tilt[scope.trige], 110, j - tilt[scope.trige]);
-	}
+        i = -1;
+        for (j = 7 ; j >= 0 ; j--) {
+            if (ch[j].show && ch[j].signal == datasrc->chan(scope.trigch))
+                i = j;
+        }
+        if (i > -1) {
+            j = offset + ch[i].pos - scope.trig * ch[i].mult / ch[i].div;
+            SetColor(ch[i].color);
+            DrawLine(90, j + tilt[scope.trige], 110, j - tilt[scope.trige]);
+        }
     }
 #endif
 
@@ -634,9 +634,9 @@ void create_graticule(void)
 
 #ifdef HAVE_GRID_LINESTYLE
     gtk_databox_grid_set_line_style(GTK_DATABOX_GRID(graticule_major_graph),
-				    GTK_DATABOX_GRID_SOLID_LINES);
+                                    GTK_DATABOX_GRID_SOLID_LINES);
     gtk_databox_grid_set_line_style(GTK_DATABOX_GRID(graticule_minor_graph),
-				    GTK_DATABOX_GRID_DOTTED_LINES);
+                                    GTK_DATABOX_GRID_DOTTED_LINES);
 #endif
 
     recompute_graticule();
@@ -651,17 +651,17 @@ void create_graticule(void)
 void free_signalline(SignalLine *sl)
 {
     while (sl != NULL) {
-	SignalLine *slnext = sl->next;
+        SignalLine *slnext = sl->next;
 
-	if (sl->graph != NULL) {
-	    gtk_databox_graph_remove(GTK_DATABOX(databox), sl->graph);
-	    g_object_unref(G_OBJECT(sl->graph));
-	}
-	g_free(sl->X);
-	g_free(sl->Y);
+        if (sl->graph != NULL) {
+            gtk_databox_graph_remove(GTK_DATABOX(databox), sl->graph);
+            g_object_unref(G_OBJECT(sl->graph));
+        }
+        g_free(sl->X);
+        g_free(sl->Y);
 
-	g_free(sl);
-	sl = slnext;
+        g_free(sl);
+        sl = slnext;
     }
 }
 
@@ -670,13 +670,13 @@ void clear_databox(void)
     int j, bit;
 
     for (j = 0 ; j < CHANNELS ; j++) {
-	Channel *p = &ch[j];
-	for (bit = 0; bit < 16 ; bit++) {
-	    if (p->signalline[bit] != NULL) {
-		free_signalline(p->signalline[bit]);
-		p->signalline[bit] = NULL;
-	    }
-	}
+        Channel *p = &ch[j];
+        for (bit = 0; bit < 16 ; bit++) {
+            if (p->signalline[bit] != NULL) {
+                free_signalline(p->signalline[bit]);
+                p->signalline[bit] = NULL;
+            }
+        }
     }
 }
 
@@ -709,16 +709,16 @@ void configure_databox(void)
     /* But it might be more, if we have stuff stored... */
 
     for (j = 0 ; j < CHANNELS ; j++) {
-	Channel *p = &ch[j];
+        Channel *p = &ch[j];
 
-	/* XXX for an FFT channel, p->signal->rate will be negative */
+        /* XXX for an FFT channel, p->signal->rate will be negative */
 
-	if (p->show && p->signal) {
-	    if ((p->signal->rate > 0) &&
-		(gfloat) p->signal->num / p->signal->rate > upper_time_limit) {
-		upper_time_limit = (gfloat) p->signal->num / p->signal->rate;
-	    }
-	}
+        if (p->show && p->signal) {
+            if ((p->signal->rate > 0) &&
+                (gfloat) p->signal->num / p->signal->rate > upper_time_limit) {
+                upper_time_limit = (gfloat) p->signal->num / p->signal->rate;
+            }
+        }
     }
 
     /* Now figure how many total divisions wide we'll make the databox.  Since we sample a little
@@ -732,9 +732,9 @@ void configure_databox(void)
      */
 
     for (total_horizontal_divisions = 10; 
-	 upper_time_limit > (total_horizontal_divisions + 0.5)
-	     * 0.001 * scope.scale;
-	 total_horizontal_divisions += 5);
+         upper_time_limit > (total_horizontal_divisions + 0.5)
+             * 0.001 * scope.scale;
+         total_horizontal_divisions += 5);
 
     /* Now set the total canvas size of the databox */
 
@@ -759,9 +759,9 @@ void configure_databox(void)
     /* Decide if we need a scrollbar or not */
 
     if (total_horizontal_divisions > 10) {
-	gtk_widget_show(GTK_WIDGET(LU("databox_hscrollbar")));
+        gtk_widget_show(GTK_WIDGET(LU("databox_hscrollbar")));
     } else {
-	gtk_widget_hide(GTK_WIDGET(LU("databox_hscrollbar")));
+        gtk_widget_hide(GTK_WIDGET(LU("databox_hscrollbar")));
     }
 
     /* Figure out if we can set offsets on databox lines, or whether we'll have to add offsets to
@@ -771,15 +771,15 @@ void configure_databox(void)
      */
 
     {
-	gfloat X, Y;
-	GdkColor gcolor;
-	GtkDataboxGraph *line = gtk_databox_lines_new(1, &X, &Y, &gcolor, 1);
+        gfloat X, Y;
+        GdkColor gcolor;
+        GtkDataboxGraph *line = gtk_databox_lines_new(1, &X, &Y, &gcolor, 1);
 
-	x_offset_property_exists = (g_object_class_find_property(G_OBJECT_GET_CLASS(line), "x-offset") != NULL);
-	y_offset_property_exists = (g_object_class_find_property(G_OBJECT_GET_CLASS(line), "y-offset") != NULL);
-	y_factor_property_exists = (g_object_class_find_property(G_OBJECT_GET_CLASS(line), "y-factor") != NULL);
+        x_offset_property_exists = (g_object_class_find_property(G_OBJECT_GET_CLASS(line), "x-offset") != NULL);
+        y_offset_property_exists = (g_object_class_find_property(G_OBJECT_GET_CLASS(line), "y-offset") != NULL);
+        y_factor_property_exists = (g_object_class_find_property(G_OBJECT_GET_CLASS(line), "y-factor") != NULL);
 
-	g_object_unref(line);
+        g_object_unref(line);
     }
 
     /* And recompute the graticule grids */
@@ -796,34 +796,34 @@ void timebase_changed(void)
 
     if (datasrc && scope.run) {
 
-	clear_databox();
+        clear_databox();
 
-	/* In xoscope.h, I wrote "Only after reset() has been called are the rate and volts fields in
-	 * the Signal structures guaranteed valid".  So... we reset() once to make sure the rate and
-	 * volts fields are valid, then use the rate field in the first active channel to set the
-	 * capture width to the number of samples required to fill the screen at that rate, then
-	 * reset() again to (re)start the capture.
-	 *
-	 * XXX Probably reset() needs to be split into two functions - say reset() and
-	 * start_sweep(), so then our sequence is reset(), set_width(), start_sweep()
-	 *
-	 * XXX Also seems a little hokey the way we run through the channels.  Implicit here is the
-	 * code's current design that all the channels for a data source have the same rate and
-	 * frame width.
-	 */
+        /* In xoscope.h, I wrote "Only after reset() has been called are the rate and volts fields in
+         * the Signal structures guaranteed valid".  So... we reset() once to make sure the rate and
+         * volts fields are valid, then use the rate field in the first active channel to set the
+         * capture width to the number of samples required to fill the screen at that rate, then
+         * reset() again to (re)start the capture.
+         *
+         * XXX Probably reset() needs to be split into two functions - say reset() and
+         * start_sweep(), so then our sequence is reset(), set_width(), start_sweep()
+         *
+         * XXX Also seems a little hokey the way we run through the channels.  Implicit here is the
+         * code's current design that all the channels for a data source have the same rate and
+         * frame width.
+         */
 
-	datasrc->reset();
-	if (datasrc->set_width) {
-	    int i;
-	    for (i=0; i<datasrc->nchans(); i++) {
-		if (datasrc->chan(i)->listeners > 0) {
-		    datasrc->set_width(samples(datasrc->chan(i)->rate));
-		    break;
-		}
-	    }
-	    datasrc->reset();
-	}
-	setinputfd(datasrc->fd());
+        datasrc->reset();
+        if (datasrc->set_width) {
+            int i;
+            for (i=0; i<datasrc->nchans(); i++) {
+                if (datasrc->chan(i)->listeners > 0) {
+                    datasrc->set_width(samples(datasrc->chan(i)->rate));
+                    break;
+                }
+            }
+            datasrc->reset();
+        }
+        setinputfd(datasrc->fd());
     }
 
     configure_databox();
@@ -851,32 +851,32 @@ void clear(void)
 
     if (datasrc) {
 
-	/* In xoscope.h, I wrote "Only after reset() has been called are the rate and volts fields in
-	 * the Signal structures guaranteed valid".  So... we reset() once to make sure the rate and
-	 * volts fields are valid, then use the rate field in the first active channel to set the
-	 * capture width to the number of samples required to fill the screen at that rate, then
-	 * reset() again to (re)start the capture.
-	 *
-	 * XXX Probably reset() needs to be split into two functions - say reset() and
-	 * start_sweep(), so then our sequence is reset(), set_width(), start_sweep()
-	 *
-	 * XXX Also seems a little hokey the way we run through the channels.  Implicit here is the
-	 * code's current design that all the channels for a data source have the same rate and
-	 * frame width.
-	 */
+        /* In xoscope.h, I wrote "Only after reset() has been called are the rate and volts fields in
+         * the Signal structures guaranteed valid".  So... we reset() once to make sure the rate and
+         * volts fields are valid, then use the rate field in the first active channel to set the
+         * capture width to the number of samples required to fill the screen at that rate, then
+         * reset() again to (re)start the capture.
+         *
+         * XXX Probably reset() needs to be split into two functions - say reset() and
+         * start_sweep(), so then our sequence is reset(), set_width(), start_sweep()
+         *
+         * XXX Also seems a little hokey the way we run through the channels.  Implicit here is the
+         * code's current design that all the channels for a data source have the same rate and
+         * frame width.
+         */
 
-	datasrc->reset();
-	if (datasrc->set_width) {
-	    int i;
-	    for (i=0; i<datasrc->nchans(); i++) {
-		if (datasrc->chan(i)->listeners > 0) {
-		    datasrc->set_width(samples(datasrc->chan(i)->rate));
-		    break;
-		}
-	    }
-	    datasrc->reset();
-	}
-	setinputfd(datasrc->fd());
+        datasrc->reset();
+        if (datasrc->set_width) {
+            int i;
+            for (i=0; i<datasrc->nchans(); i++) {
+                if (datasrc->chan(i)->listeners > 0) {
+                    datasrc->set_width(samples(datasrc->chan(i)->rate));
+                    break;
+                }
+            }
+            datasrc->reset();
+        }
+        setinputfd(datasrc->fd());
     }
 
     configure_databox();
@@ -886,18 +886,18 @@ void clear(void)
     math_warning = update_math_signals();
 
     for (i = 0; i < CHANNELS; i++) {
-	ch[i].old_frame = 0;
+        ch[i].old_frame = 0;
 
-	/* XXX Might be nice to set 'default scale' to be the largest so that the signal's range
-	 * still fits within the display window.
-	 */
+        /* XXX Might be nice to set 'default scale' to be the largest so that the signal's range
+         * still fits within the display window.
+         */
 
-	if (ch[i].signal) {
-	    if (ch[i].signal->volts != 0)
-		ch[i].scale = roundoff(ch[i].scale, 1.0/ch[i].signal->volts);
-	    else
-		ch[i].scale = roundoff(ch[i].scale, 1);
-	}
+        if (ch[i].signal) {
+            if (ch[i].signal->volts != 0)
+                ch[i].scale = roundoff(ch[i].scale, 1.0/ch[i].signal->volts);
+            else
+                ch[i].scale = roundoff(ch[i].scale, 1);
+        }
     }
 
     memset((void *)&stats, 0, sizeof(stats)); 
@@ -909,27 +909,27 @@ void clear(void)
 void draw_graticule(void)
 {
     if (graticule_minor_graph == NULL) {
-	create_graticule();
+        create_graticule();
     }
 
     if (major_graticule_displayed) {
-	gtk_databox_graph_remove(GTK_DATABOX(databox), graticule_major_graph);
-	major_graticule_displayed = 0;
+        gtk_databox_graph_remove(GTK_DATABOX(databox), graticule_major_graph);
+        major_graticule_displayed = 0;
     }
 
     if (minor_graticule_displayed) {
-	gtk_databox_graph_remove(GTK_DATABOX(databox), graticule_minor_graph);
-	minor_graticule_displayed = 0;
+        gtk_databox_graph_remove(GTK_DATABOX(databox), graticule_minor_graph);
+        minor_graticule_displayed = 0;
     }
 
     if (scope.grat) {
-	gtk_databox_graph_add (GTK_DATABOX (databox), graticule_minor_graph);
-	minor_graticule_displayed = 1;
+        gtk_databox_graph_add (GTK_DATABOX (databox), graticule_minor_graph);
+        minor_graticule_displayed = 1;
     }
 
     if (scope.grat > 1) {
-	gtk_databox_graph_add (GTK_DATABOX (databox), graticule_major_graph);
-	major_graticule_displayed = 1;
+        gtk_databox_graph_add (GTK_DATABOX (databox), graticule_major_graph);
+        major_graticule_displayed = 1;
     }
 }
 
@@ -961,367 +961,367 @@ void draw_data(void)
     /* Remove the cursors.  We'll put them back in later if they're active. */
 
     if (cursora != NULL) {
-	gtk_databox_graph_remove(GTK_DATABOX(databox), cursora);
-	g_object_unref(G_OBJECT(cursora));
-	cursora = NULL;
+        gtk_databox_graph_remove(GTK_DATABOX(databox), cursora);
+        g_object_unref(G_OBJECT(cursora));
+        cursora = NULL;
     }
     if (cursorb != NULL) {
-	gtk_databox_graph_remove(GTK_DATABOX(databox), cursorb);
-	g_object_unref(G_OBJECT(cursorb));
-	cursorb = NULL;
+        gtk_databox_graph_remove(GTK_DATABOX(databox), cursorb);
+        g_object_unref(G_OBJECT(cursorb));
+        cursorb = NULL;
     }
 
     for (j = 0 ; j < CHANNELS ; j++) { /* plot each visible channel */
-	p = &ch[j];
+        p = &ch[j];
 
-	if (!p->bits)		/* analog display mode: draw one line */
-	    start = end = -1;
-	else {			/* logic analyzer mode: draw bits lines */
-	    start = 0;
-	    end = p->bits - 1;
-	}
+        if (!p->bits)           /* analog display mode: draw one line */
+            start = end = -1;
+        else {                  /* logic analyzer mode: draw bits lines */
+            start = 0;
+            end = p->bits - 1;
+        }
 
-	if (p->show && p->signal) {
+        if (p->show && p->signal) {
 
-	    /* Figure out color to use for this channel by fetching foreground color of its label */
+            /* Figure out color to use for this channel by fetching foreground color of its label */
 
-	    sprintf(widget, "Ch%d_label", j+1);
-	    style = gtk_widget_get_style(GTK_WIDGET(LU(widget)));
-	    gcolor = style->fg[GTK_STATE_NORMAL];
+            sprintf(widget, "Ch%d_label", j+1);
+            style = gtk_widget_get_style(GTK_WIDGET(LU(widget)));
+            gcolor = style->fg[GTK_STATE_NORMAL];
 
-	    samp = p->signal->data;
+            samp = p->signal->data;
 
-	    /* Compute num, the number of seconds per sample, based on the signal's rate (in
-	     * samples/sec). If the signal rate is zero (unspecified) or negative (a special case
-	     * for Fourier Transforms, meaning the x scale is in Hz), we use a base rate of one
-	     * millisecond per sample.
-	     */
+            /* Compute num, the number of seconds per sample, based on the signal's rate (in
+             * samples/sec). If the signal rate is zero (unspecified) or negative (a special case
+             * for Fourier Transforms, meaning the x scale is in Hz), we use a base rate of one
+             * millisecond per sample.
+             */
 
-	    if (p->signal->rate > 0) {
-		num = (gfloat) 1 / p->signal->rate;
-	    } 
-	    else if (p->signal->rate < 0) {
- 		num = (gfloat) -1 / p->signal->rate;
-	    } 
-	    else {
-		num = (gfloat) 1 / 1000;
-	    }
+            if (p->signal->rate > 0) {
+                num = (gfloat) 1 / p->signal->rate;
+            } 
+            else if (p->signal->rate < 0) {
+                num = (gfloat) -1 / p->signal->rate;
+            } 
+            else {
+                num = (gfloat) 1 / 1000;
+            }
 
-	    /* Compute left_offset based on delay specified by the signal (which is in
-	     * ten-thousandths of samples).
-	     */
+            /* Compute left_offset based on delay specified by the signal (which is in
+             * ten-thousandths of samples).
+             */
 
-	    left_offset = p->signal->delay * num / 10000;
+            left_offset = p->signal->delay * num / 10000;
 
-	    /* Draw the cursors, if needed.
-	     *
-	     * There's several things I don't like about the cursors.  First, the cursor positions
-	     * are stored in number of samples (1 based), which means that if we change to a
-	     * different signal with a different sampling rate, the cursors move around on the
-	     * screen!  Also, we should be able to pick whether they "snap to data points" or not.
-	     */
+            /* Draw the cursors, if needed.
+             *
+             * There's several things I don't like about the cursors.  First, the cursor positions
+             * are stored in number of samples (1 based), which means that if we change to a
+             * different signal with a different sampling rate, the cursors move around on the
+             * screen!  Also, we should be able to pick whether they "snap to data points" or not.
+             */
 
-	    if (scope.curs && j == scope.select) {
-		cursoraX[0] = cursoraX[1] = left_offset + (scope.cursa-1) * num;
-		cursorbX[0] = cursorbX[1] = left_offset + (scope.cursb-1) * num;
-		cursoraY[0] = cursorbY[0] = -1;
-		cursoraY[1] = cursorbY[1] = +1;
+            if (scope.curs && j == scope.select) {
+                cursoraX[0] = cursoraX[1] = left_offset + (scope.cursa-1) * num;
+                cursorbX[0] = cursorbX[1] = left_offset + (scope.cursb-1) * num;
+                cursoraY[0] = cursorbY[0] = -1;
+                cursoraY[1] = cursorbY[1] = +1;
 
-		cursora = gtk_databox_lines_new(2, cursoraX, cursoraY, &gcolor, 1);
-		cursorb = gtk_databox_lines_new(2, cursorbX, cursorbY, &gcolor, 1);
-		gtk_databox_graph_add(GTK_DATABOX(databox), cursora);
-		gtk_databox_graph_add(GTK_DATABOX(databox), cursorb);
-	    }
+                cursora = gtk_databox_lines_new(2, cursoraX, cursoraY, &gcolor, 1);
+                cursorb = gtk_databox_lines_new(2, cursorbX, cursorbY, &gcolor, 1);
+                gtk_databox_graph_add(GTK_DATABOX(databox), cursora);
+                gtk_databox_graph_add(GTK_DATABOX(databox), cursorb);
+            }
 
-	    /* XXX make sure that if we're displaying a digital signal, we go into digital display
-	     * mode.  Should be elsewhere.
-	     */
+            /* XXX make sure that if we're displaying a digital signal, we go into digital display
+             * mode.  Should be elsewhere.
+             */
 #if 0
-	    if (p->bits == 0 && p->signal->bits != 0) {
-		p->bits = p->signal->bits;
-	    }
+            if (p->bits == 0 && p->signal->bits != 0) {
+                p->bits = p->signal->bits;
+            }
 #endif
 
-	    for (bit = start ; bit <= end ; bit++) {
+            for (bit = start ; bit <= end ; bit++) {
 
-		/* SignalLine structures contain all the stored information about the (x,y)
-		 * coordinates we've drawn already and may need to erase
-		 */
-		sl = p->signalline[bit < 0 ? 0 : bit];
+                /* SignalLine structures contain all the stored information about the (x,y)
+                 * coordinates we've drawn already and may need to erase
+                 */
+                sl = p->signalline[bit < 0 ? 0 : bit];
 
-		if ((sl == NULL) ||
-		    (p->signal->frame != p->old_frame) || (p->old_frame == 0)) {
+                if ((sl == NULL) ||
+                    (p->signal->frame != p->old_frame) || (p->old_frame == 0)) {
 
-		    /* New signal line, so we need a new SignalLine structure */
+                    /* New signal line, so we need a new SignalLine structure */
 
-		    sl = g_new0(SignalLine, 1);
+                    sl = g_new0(SignalLine, 1);
 
-		    sl->next = p->signalline[bit < 0 ? 0 : bit];
-		    p->signalline[bit < 0 ? 0 : bit] = sl;
+                    sl->next = p->signalline[bit < 0 ? 0 : bit];
+                    p->signalline[bit < 0 ? 0 : bit] = sl;
 
-		    /* we double the size of these array in case we're in step mode, when we draw
-		     * two vertices for every data point
-		     */
+                    /* we double the size of these array in case we're in step mode, when we draw
+                     * two vertices for every data point
+                     */
 
-		    sl->X = g_new0(gfloat, 2 * p->signal->width);
-		    sl->Y = g_new0(gfloat, 2 * p->signal->width);
-		    sl->data = g_new0(short, p->signal->width);
+                    sl->X = g_new0(gfloat, 2 * p->signal->width);
+                    sl->Y = g_new0(gfloat, 2 * p->signal->width);
+                    sl->data = g_new0(short, p->signal->width);
 
-		    sl->y_scale = 1.0;
-		}
+                    sl->y_scale = 1.0;
+                }
 
 
-		/* If we're continuing a running sweep, remove the existing trace from the databox.
-	 	 * We'll put it back in later, with more data points.
-	 	 */
+                /* If we're continuing a running sweep, remove the existing trace from the databox.
+                 * We'll put it back in later, with more data points.
+                 */
 
-		if (sl->graph != NULL) {
-		    gtk_databox_graph_remove(GTK_DATABOX(databox), sl->graph);
-		    g_object_unref(G_OBJECT(sl->graph));
-		    sl->graph = NULL;
-		}
+                if (sl->graph != NULL) {
+                    gtk_databox_graph_remove(GTK_DATABOX(databox), sl->graph);
+                    g_object_unref(G_OBJECT(sl->graph));
+                    sl->graph = NULL;
+                }
 
-		/* Compute the points we want to draw on the current trace and write them into the
-	 	 * SignalLine arrays.  The only thing a little bit strange is that we might be
-	 	 * updating a trace that's already partially drawn; that's why we start at
-	 	 * sl->next_point and not 0.
-	 	 */
-		for (i = sl->next_point; i < p->signal->num; i++) {
+                /* Compute the points we want to draw on the current trace and write them into the
+                 * SignalLine arrays.  The only thing a little bit strange is that we might be
+                 * updating a trace that's already partially drawn; that's why we start at
+                 * sl->next_point and not 0.
+                 */
+                for (i = sl->next_point; i < p->signal->num; i++) {
 
-		    if (bit < 0) {
-			sl->data[sl->next_point] = samp[i];
-		    } else {
-			sl->data[sl->next_point] = (samp[i] >> bit) & 1;
-		    }
+                    if (bit < 0) {
+                        sl->data[sl->next_point] = samp[i];
+                    } else {
+                        sl->data[sl->next_point] = (samp[i] >> bit) & 1;
+                    }
 
-		    sl->X[sl->next_point] = left_offset + i * num;
-		    sl->Y[sl->next_point] = sl->data[sl->next_point];
-		    sl->next_point ++;
-		}
+                    sl->X[sl->next_point] = left_offset + i * num;
+                    sl->Y[sl->next_point] = sl->data[sl->next_point];
+                    sl->next_point ++;
+                }
 
-		/* Depending on the scroll mode, manage previous traces */
+                /* Depending on the scroll mode, manage previous traces */
 
-		switch (scope.scroll_mode) {
+                switch (scope.scroll_mode) {
 
-		case 0:
+                case 0:
 
-		    /* Sweep mode - erase anything lingering in the databox except the next to last
-		     * trace, because we want to leave the trailing part of it drawn if we're in the
-		     * middle of a sweep.  We remove it from the databox, and put it back in with
-		     * fewer data points.
-		     */
+                    /* Sweep mode - erase anything lingering in the databox except the next to last
+                     * trace, because we want to leave the trailing part of it drawn if we're in the
+                     * middle of a sweep.  We remove it from the databox, and put it back in with
+                     * fewer data points.
+                     */
 
-		    if (sl->next != NULL && sl->next->graph != NULL) {
-			gtk_databox_graph_remove(GTK_DATABOX(databox), sl->next->graph);
-			g_object_unref(G_OBJECT(sl->next->graph));
-			sl->next->graph = NULL;
-		    }
+                    if (sl->next != NULL && sl->next->graph != NULL) {
+                        gtk_databox_graph_remove(GTK_DATABOX(databox), sl->next->graph);
+                        g_object_unref(G_OBJECT(sl->next->graph));
+                        sl->next->graph = NULL;
+                    }
 
-		    if (sl->next != NULL && sl->next->next != NULL) {
-			free_signalline(sl->next->next);
-			sl->next->next = NULL;
-		    }
+                    if (sl->next != NULL && sl->next->next != NULL) {
+                        free_signalline(sl->next->next);
+                        sl->next->next = NULL;
+                    }
 
-		    /* XXX I'd like the old trace to start at the same x-coordinate that the new
-		     * trace ends at, but that creates a special case if the "new" trace is
-		     * zero-length.  Just shows how badly this code needs a cleanup.
-		     */
+                    /* XXX I'd like the old trace to start at the same x-coordinate that the new
+                     * trace ends at, but that creates a special case if the "new" trace is
+                     * zero-length.  Just shows how badly this code needs a cleanup.
+                     */
 
 #if 0
-		    if ((sl->next != NULL)
-			&& (sl->next_point < sl->next->next_point)) {
-			sl->next->graph
-			    = gtk_databox_lines_new (sl->next->next_point-sl->next_point+1,
-						     sl->next->X + sl->next_point - 1,
-						     sl->next->Y + sl->next_point - 1,
-						     &gcolor, 1);
-			gtk_databox_graph_add (GTK_DATABOX (databox), sl->next->graph);
-		    }
+                    if ((sl->next != NULL)
+                        && (sl->next_point < sl->next->next_point)) {
+                        sl->next->graph
+                            = gtk_databox_lines_new (sl->next->next_point-sl->next_point+1,
+                                                     sl->next->X + sl->next_point - 1,
+                                                     sl->next->Y + sl->next_point - 1,
+                                                     &gcolor, 1);
+                        gtk_databox_graph_add (GTK_DATABOX (databox), sl->next->graph);
+                    }
 #else
-		    if ((sl->next != NULL)
-			&& (sl->next_point < sl->next->next_point)) {
-			switch (scope.plot_mode) {
-			case 0: /* points */
-			    sl->next->graph
-				= gtk_databox_points_new (sl->next->next_point-sl->next_point,
-							  sl->next->X + sl->next_point,
-							  sl->next->Y + sl->next_point,
-							  &gcolor, 1);
-			    break;
-			case 1: /* lines */
-			    sl->next->graph
-				= gtk_databox_lines_new (sl->next->next_point-sl->next_point,
-							 sl->next->X + sl->next_point,
-							 sl->next->Y + sl->next_point,
-							 &gcolor, 1);
-			    break;
-			case 2: /* step */
-			    sl->next->graph
-				= gtk_databox_lines_new (2*(sl->next->next_point - sl->next_point) - 1,
-							 sl->next->X + 2 * sl->next_point,
-							 sl->next->Y + 2 * sl->next_point,
-							 &gcolor, 1);
-			    break;
-			}
-			gtk_databox_graph_add (GTK_DATABOX (databox), sl->next->graph);
-		    }
+                    if ((sl->next != NULL)
+                        && (sl->next_point < sl->next->next_point)) {
+                        switch (scope.plot_mode) {
+                        case 0: /* points */
+                            sl->next->graph
+                                = gtk_databox_points_new (sl->next->next_point-sl->next_point,
+                                                          sl->next->X + sl->next_point,
+                                                          sl->next->Y + sl->next_point,
+                                                          &gcolor, 1);
+                            break;
+                        case 1: /* lines */
+                            sl->next->graph
+                                = gtk_databox_lines_new (sl->next->next_point-sl->next_point,
+                                                         sl->next->X + sl->next_point,
+                                                         sl->next->Y + sl->next_point,
+                                                         &gcolor, 1);
+                            break;
+                        case 2: /* step */
+                            sl->next->graph
+                                = gtk_databox_lines_new (2*(sl->next->next_point - sl->next_point) - 1,
+                                                         sl->next->X + 2 * sl->next_point,
+                                                         sl->next->Y + 2 * sl->next_point,
+                                                         &gcolor, 1);
+                            break;
+                        }
+                        gtk_databox_graph_add (GTK_DATABOX (databox), sl->next->graph);
+                    }
 #endif
 
-		    break;
+                    break;
 
-		case 1:
+                case 1:
 
-		    /* Accumulate mode - do nothing, letting traces pile up in the databox.
-		     *
-		     * XXX this can lead to memory and CPU exhaustion with thousands of traces
-		     * piling up on a fast timebase
-		     */
+                    /* Accumulate mode - do nothing, letting traces pile up in the databox.
+                     *
+                     * XXX this can lead to memory and CPU exhaustion with thousands of traces
+                     * piling up on a fast timebase
+                     */
 
-		    break;
+                    break;
 
-		case 2:
+                case 2:
 
-		    /* Stripchart mode - position this trace at the right of the databox and line up
-		     * any previous traces to its left
-		     */
+                    /* Stripchart mode - position this trace at the right of the databox and line up
+                     * any previous traces to its left
+                     */
 
-		    x_offset = total_horizontal_divisions * 0.001 * scope.scale
-			- num * (sl->next_point - 1);
+                    x_offset = total_horizontal_divisions * 0.001 * scope.scale
+                        - num * (sl->next_point - 1);
 
-		    for (prevSL = sl; prevSL != NULL; prevSL = prevSL->next) {
+                    for (prevSL = sl; prevSL != NULL; prevSL = prevSL->next) {
 
-			/* If x_offset is negative at this point, we've just drawn a SignalLine
-			 * partially off the left-hand side of the screen, so anything older has
-			 * scrolled completely out of view.
-			 */
+                        /* If x_offset is negative at this point, we've just drawn a SignalLine
+                         * partially off the left-hand side of the screen, so anything older has
+                         * scrolled completely out of view.
+                         */
 
-			prevSL->x_offset = x_offset;
+                        prevSL->x_offset = x_offset;
 
-			if ((x_offset < 0) && prevSL->next) {
-			    free_signalline(prevSL->next);
-			    prevSL->next = NULL;
-			}
+                        if ((x_offset < 0) && prevSL->next) {
+                            free_signalline(prevSL->next);
+                            prevSL->next = NULL;
+                        }
 
-			x_offset -= num * p->signal->width;
-		    }
-		}
+                        x_offset -= num * p->signal->width;
+                    }
+                }
 
-		/* The scale is applied first, then the offset */
+                /* The scale is applied first, then the offset */
 
-		sl->y_scale = (double)p->scale / 240;
-		sl->y_offset = (double)p->pos;
+                sl->y_scale = (double)p->scale / 240;
+                sl->y_offset = (double)p->pos;
 
-		/* If we're in digital mode, increase the scale by eight and shift the offset by
-		 * sixteen for each bit.  This hardwires eight as the height of a digital line and
-		 * sixteen as the inter-line spacing.  We also shift the entire digital plot by the
-		 * number of bits times eight plus four to center it.
-		 */
+                /* If we're in digital mode, increase the scale by eight and shift the offset by
+                 * sixteen for each bit.  This hardwires eight as the height of a digital line and
+                 * sixteen as the inter-line spacing.  We also shift the entire digital plot by the
+                 * number of bits times eight plus four to center it.
+                 */
 
-		if (bit >= 0) {
-		    int bitoff = bit * 16 - end * 8 + 4;
+                if (bit >= 0) {
+                    int bitoff = bit * 16 - end * 8 + 4;
 
-		    sl->y_offset += bitoff * sl->y_scale;
-		    sl->y_scale *= 8;
-		}
-		// fprintf(stderr, "offset %f scale %f\n", sl->y_offset, sl->y_scale);
+                    sl->y_offset += bitoff * sl->y_scale;
+                    sl->y_scale *= 8;
+                }
+                // fprintf(stderr, "offset %f scale %f\n", sl->y_offset, sl->y_scale);
 
-		/* Add the current trace to the databox */
+                /* Add the current trace to the databox */
 
-		if (sl->next_point > 0) {
+                if (sl->next_point > 0) {
 
-		    switch (scope.plot_mode) {
-		    case 0: /* points */
-			sl->graph = gtk_databox_points_new (sl->next_point,
-							    sl->X, sl->Y, &gcolor, 1);
-			break;
-		    case 1: /* lines */
-			sl->graph = gtk_databox_lines_new (sl->next_point,
-							   sl->X, sl->Y, &gcolor, 1);
-			break;
-		    case 2: /* step */
-			sl->graph = gtk_databox_lines_new (2 * sl->next_point - 1,
-							   sl->X, sl->Y, &gcolor, 1);
-			break;
-		    }
+                    switch (scope.plot_mode) {
+                    case 0: /* points */
+                        sl->graph = gtk_databox_points_new (sl->next_point,
+                                                            sl->X, sl->Y, &gcolor, 1);
+                        break;
+                    case 1: /* lines */
+                        sl->graph = gtk_databox_lines_new (sl->next_point,
+                                                           sl->X, sl->Y, &gcolor, 1);
+                        break;
+                    case 2: /* step */
+                        sl->graph = gtk_databox_lines_new (2 * sl->next_point - 1,
+                                                           sl->X, sl->Y, &gcolor, 1);
+                        break;
+                    }
 
-		    gtk_databox_graph_add (GTK_DATABOX (databox), sl->graph);
+                    gtk_databox_graph_add (GTK_DATABOX (databox), sl->graph);
 
-		}
+                }
 
-		/* Run through all of the SignalLines associated with this trace and set the scaling
-		 * factors and offsets for all of them.  This ensures that if we're in accumulate
-		 * mode and change the scale or position of the channel, all of the accumulated
-		 * traces move together.  Not quite what you'd expect from a real scope, but I think
-		 * this makes the most sense.
-		 *
-		 * XXX save left_offset in the SignalLine structure rather than use the one for the
-		 * current signal
-		 */
+                /* Run through all of the SignalLines associated with this trace and set the scaling
+                 * factors and offsets for all of them.  This ensures that if we're in accumulate
+                 * mode and change the scale or position of the channel, all of the accumulated
+                 * traces move together.  Not quite what you'd expect from a real scope, but I think
+                 * this makes the most sense.
+                 *
+                 * XXX save left_offset in the SignalLine structure rather than use the one for the
+                 * current signal
+                 */
 
-		for (prevSL = sl; prevSL != NULL; prevSL = prevSL->next) {
-		    if (prevSL->graph != NULL) {
-			if (x_offset_property_exists && y_offset_property_exists && y_factor_property_exists) {
+                for (prevSL = sl; prevSL != NULL; prevSL = prevSL->next) {
+                    if (prevSL->graph != NULL) {
+                        if (x_offset_property_exists && y_offset_property_exists && y_factor_property_exists) {
 
-			    GValue gvalue;
+                            GValue gvalue;
 
-			    bzero(&gvalue, sizeof(GValue));
-			    g_value_init(&gvalue, G_TYPE_DOUBLE);
+                            bzero(&gvalue, sizeof(GValue));
+                            g_value_init(&gvalue, G_TYPE_DOUBLE);
 
-			    g_value_set_double(&gvalue, prevSL->x_offset);
-			    g_object_set_property((GObject *) prevSL->graph, "x-offset", &gvalue);
+                            g_value_set_double(&gvalue, prevSL->x_offset);
+                            g_object_set_property((GObject *) prevSL->graph, "x-offset", &gvalue);
 
-			    g_value_set_double(&gvalue, prevSL->y_scale);
-			    g_object_set_property((GObject *) prevSL->graph, "y-factor", &gvalue);
+                            g_value_set_double(&gvalue, prevSL->y_scale);
+                            g_object_set_property((GObject *) prevSL->graph, "y-factor", &gvalue);
 
-			    g_value_set_double(&gvalue, prevSL->y_offset);
-			    g_object_set_property((GObject *) prevSL->graph, "y-offset", &gvalue);
+                            g_value_set_double(&gvalue, prevSL->y_offset);
+                            g_object_set_property((GObject *) prevSL->graph, "y-offset", &gvalue);
 
-			    g_value_unset(&gvalue);
-			    //g_object_set_property((GObject *) prevSL->graph, "plot-style", &plotstyle);
-			} else {
-			    for (i = 0; i < prevSL->next_point; i++) {
-				if ((scope.plot_mode != 2) || (i == 0)) {
-				    prevSL->X[i] = prevSL->x_offset + left_offset + i * num;
-				    prevSL->Y[i] = prevSL->y_offset + prevSL->data[i] * prevSL->y_scale;
-				} else {
-				    prevSL->X[2*i] = prevSL->x_offset + left_offset + i * num;
-				    prevSL->Y[2*i] = prevSL->y_offset + prevSL->data[i] * prevSL->y_scale;
-				    prevSL->X[2*i - 1] = prevSL->X[2*i - 2];
-				    prevSL->Y[2*i - 1] = prevSL->Y[2*i];
-				}
-			    }
-			}
-		    }
-		}
+                            g_value_unset(&gvalue);
+                            //g_object_set_property((GObject *) prevSL->graph, "plot-style", &plotstyle);
+                        } else {
+                            for (i = 0; i < prevSL->next_point; i++) {
+                                if ((scope.plot_mode != 2) || (i == 0)) {
+                                    prevSL->X[i] = prevSL->x_offset + left_offset + i * num;
+                                    prevSL->Y[i] = prevSL->y_offset + prevSL->data[i] * prevSL->y_scale;
+                                } else {
+                                    prevSL->X[2*i] = prevSL->x_offset + left_offset + i * num;
+                                    prevSL->Y[2*i] = prevSL->y_offset + prevSL->data[i] * prevSL->y_scale;
+                                    prevSL->X[2*i - 1] = prevSL->X[2*i - 2];
+                                    prevSL->Y[2*i - 1] = prevSL->Y[2*i];
+                                }
+                            }
+                        }
+                    }
+                }
 
-	    }
+            }
 
-	    p->old_frame = p->signal->frame;
+            p->old_frame = p->signal->frame;
 
 #if 0
-	    /* Draw tick marks on left and right sides of display showing zero pos */
-	    SetColor(p->color);
-	    DrawLine(90, off, 100, off);
-	    DrawLine(h_points - 100, off, h_points - 90, off);
+            /* Draw tick marks on left and right sides of display showing zero pos */
+            SetColor(p->color);
+            DrawLine(90, off, 100, off);
+            DrawLine(h_points - 100, off, h_points - 90, off);
 #endif
-	}
+        }
 
-	/* If we're not showing a channel, make sure that we've removed any traces that might still
-	 * be lingering around on the screen.
-	 */
+        /* If we're not showing a channel, make sure that we've removed any traces that might still
+         * be lingering around on the screen.
+         */
 
-	if (! p->show) {
-	    for (bit = start ; bit <= end ; bit++) {
-		free_signalline(p->signalline[bit < 0 ? 0 : bit]);
-		p->signalline[bit < 0 ? 0 : bit] = NULL;
-	    }
-	}
+        if (! p->show) {
+            for (bit = start ; bit <= end ; bit++) {
+                free_signalline(p->signalline[bit < 0 ? 0 : bit]);
+                p->signalline[bit < 0 ? 0 : bit] = NULL;
+            }
+        }
 
-	if (!p->bits) end=0;
-	for (bit = end+1; bit < 16; bit++) {
-	    free_signalline(p->signalline[bit < 0 ? 0 : bit]);
-	    p->signalline[bit < 0 ? 0 : bit] = NULL;
-	}
+        if (!p->bits) end=0;
+        for (bit = end+1; bit < 16; bit++) {
+            free_signalline(p->signalline[bit < 0 ? 0 : bit]);
+            p->signalline[bit < 0 ? 0 : bit] = NULL;
+        }
     }
 
 }
@@ -1337,16 +1337,16 @@ void show_data(void)
     do_math();
 
     if ((scope.scale < 100) || !in_progress)
-	measure_data(&ch[scope.select], &stats);
+        measure_data(&ch[scope.select], &stats);
 
     update_dynamic_text();
 
     if (scope.behind) {
-	draw_graticule();		/* plot data on top of graticule */
-	draw_data();
+        draw_graticule();               /* plot data on top of graticule */
+        draw_data();
     } else {
-	draw_data();		/* plot graticule on top of data */
-	draw_graticule();
+        draw_data();            /* plot graticule on top of data */
+        draw_graticule();
     }
 
     gtk_widget_queue_draw (databox);
@@ -1367,36 +1367,36 @@ void animate(void *data)
     gettimeofday(&current_time, NULL);
 
     if ((prev_time.tv_sec <= current_time.tv_sec)
-	&& (prev_time.tv_sec + 10 > current_time.tv_sec)
-	&& (1000000 * (current_time.tv_sec - prev_time.tv_sec)
-	    + current_time.tv_usec - prev_time.tv_usec
-	    < 1000 * scope.min_interval)) {
-	settimeout(scope.min_interval);
-	setinputfd(-1);
-	return;
+        && (prev_time.tv_sec + 10 > current_time.tv_sec)
+        && (1000000 * (current_time.tv_sec - prev_time.tv_sec)
+            + current_time.tv_usec - prev_time.tv_usec
+            < 1000 * scope.min_interval)) {
+        settimeout(scope.min_interval);
+        setinputfd(-1);
+        return;
     }
-	
+        
     prev_time = current_time;
     if (datasrc) setinputfd(datasrc->fd());
     settimeout(SND_QUERY_INTERVALL);
 
     clip = 0;
     if (datasrc) {
-	if (scope.run) {
-	    triggered = datasrc->get_data();
-	    if (triggered && scope.run > 1) { /* auto-stop single-shot wait */
-		scope.run = 0;
-		update_text();
-	    }
-	} else if (in_progress && (scope.scroll_mode != 2)) {
-	    /* If we're in strip chart mode (scroll mode 2), stop immediately, otherwise wait for
-	     * the running trace to complete.
-	     */
-	    datasrc->get_data();
-	} else {
-	    //usleep(100000);		/* no need to suck all CPU cycles */
-	    setinputfd(-1);		/* scope not running, so why listen? */
-	}
+        if (scope.run) {
+            triggered = datasrc->get_data();
+            if (triggered && scope.run > 1) { /* auto-stop single-shot wait */
+                scope.run = 0;
+                update_text();
+            }
+        } else if (in_progress && (scope.scroll_mode != 2)) {
+            /* If we're in strip chart mode (scroll mode 2), stop immediately, otherwise wait for
+             * the running trace to complete.
+             */
+            datasrc->get_data();
+        } else {
+            //usleep(100000);           /* no need to suck all CPU cycles */
+            setinputfd(-1);             /* scope not running, so why listen? */
+        }
     }
     show_data();
 }

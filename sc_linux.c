@@ -1,4 +1,4 @@
-/* -*- mode: C++; fill-column: 100; c-basic-offset: 4; -*-
+/* -*- mode: C++; indent-tabs-mode: nil; fill-column: 100; c-basic-offset: 4; -*-
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  * Copyright (C) 2014 Gerhard Schiller <gerhard.schiller@gmail.com>
@@ -14,22 +14,22 @@
 #include <string.h>
 #include <fcntl.h>
 #include <errno.h>
-#include <stdlib.h>		/* for abs() */
+#include <stdlib.h>             /* for abs() */
 #include <sys/ioctl.h>
 #include <alsa/asoundlib.h>
 #include <linux/soundcard.h>
-#include "xoscope.h"		/* program defaults */
+#include "xoscope.h"            /* program defaults */
 
 #define DEFAULT_ALSADEVICE "plughw:0,0"
-char	alsaDevice[32] = "\0";
-char 	alsaDeviceName[64] = "\0";
-double	alsa_volts = 0.0;
+char    alsaDevice[32] = "\0";
+char    alsaDeviceName[64] = "\0";
+double  alsa_volts = 0.0;
 
-static snd_pcm_t *handle 	= NULL;
+static snd_pcm_t *handle        = NULL;
 snd_pcm_format_t pcm_format = 0;
 
 static int sc_chans = 0;
-static int sound_card_rate = DEF_R;	/* sampling rate of sound card */
+static int sound_card_rate = DEF_R;     /* sampling rate of sound card */
 
 /* Signal structures we're capturing into */
 static Signal left_sig = {"Left Mix", "a"};
@@ -54,11 +54,11 @@ static void close_sound_card(void)
 {
     /* fprintf(stderr,"close_sound_card\n"); */
     if (handle != NULL) {
-	snd_pcm_drop(handle);
-	snd_pcm_hw_free(handle);
-	snd_pcm_close(handle);
+        snd_pcm_drop(handle);
+        snd_pcm_hw_free(handle);
+        snd_pcm_close(handle);
 
-	handle = NULL;
+        handle = NULL;
     }
 }
 
@@ -75,8 +75,8 @@ static int open_sound_card(void)
     /*  fprintf(stderr, "open_sound_card() sound_card_rate=%d\n", sound_card_rate); */
 
     if (handle != NULL){
-	fprintf(stderr, "open_sound_card() already open\n");
-  	return 1;
+        fprintf(stderr, "open_sound_card() already open\n");
+        return 1;
     }
 
     snd_errormsg1 = NULL;
@@ -86,10 +86,10 @@ static int open_sound_card(void)
     /* Open PCM device for recording (capture). */
     rc = snd_pcm_open(&handle, alsaDevice, SND_PCM_STREAM_CAPTURE,  SND_PCM_NONBLOCK);
     if (rc < 0) {
-	snd_errormsg1 = "opening ";
-	snd_errormsg2 = snd_strerror(rc);
-	fprintf(stderr, "%s\n%s\n", snd_errormsg1, snd_errormsg2);
-	return 0;
+        snd_errormsg1 = "opening ";
+        snd_errormsg2 = snd_strerror(rc);
+        fprintf(stderr, "%s\n%s\n", snd_errormsg1, snd_errormsg2);
+        return 0;
     }
   
     /* Allocate a hardware parameters object. */
@@ -98,10 +98,10 @@ static int open_sound_card(void)
     /* Fill it in with default values. */
     rc = snd_pcm_hw_params_any(handle, params);
     if (rc < 0) {
-	snd_errormsg1 = "snd_pcm_hw_params_any() failed ";
-	snd_errormsg2 = snd_strerror(rc);
-	fprintf(stderr, "%s\n%s\n", snd_errormsg1, snd_errormsg2);
-	return 0;
+        snd_errormsg1 = "snd_pcm_hw_params_any() failed ";
+        snd_errormsg2 = snd_strerror(rc);
+        fprintf(stderr, "%s\n%s\n", snd_errormsg1, snd_errormsg2);
+        return 0;
     }
   
     /* Set the desired hardware parameters. */
@@ -109,82 +109,82 @@ static int open_sound_card(void)
     /* Interleaved mode */
     rc = snd_pcm_hw_params_set_access(handle, params, SND_PCM_ACCESS_RW_INTERLEAVED);
     if (rc < 0) {
-	snd_errormsg1 = "snd_pcm_hw_params_set_access() failed ";
-	snd_errormsg2 = snd_strerror(rc);
-	fprintf(stderr, "%s\n%s\n", snd_errormsg1, snd_errormsg2);
-	return 0;
+        snd_errormsg1 = "snd_pcm_hw_params_set_access() failed ";
+        snd_errormsg2 = snd_strerror(rc);
+        fprintf(stderr, "%s\n%s\n", snd_errormsg1, snd_errormsg2);
+        return 0;
     }
 
     /* Signed 16-bit little-endian format */
     rc = -1;
     if (bits == 8) {
-  	rc = snd_pcm_hw_params_set_format(handle, params, SND_PCM_FORMAT_U8);
-  	pcm_format = SND_PCM_FORMAT_U8;
+        rc = snd_pcm_hw_params_set_format(handle, params, SND_PCM_FORMAT_U8);
+        pcm_format = SND_PCM_FORMAT_U8;
     } else if (bits == 16) {
-   	rc = snd_pcm_hw_params_set_format(handle, params, SND_PCM_FORMAT_S16_LE);
-  	pcm_format = SND_PCM_FORMAT_S16_LE;
+        rc = snd_pcm_hw_params_set_format(handle, params, SND_PCM_FORMAT_S16_LE);
+        pcm_format = SND_PCM_FORMAT_S16_LE;
     } else {
-	snd_errormsg1 = "Wrong number of bits";
-	snd_errormsg2 = "";
-	fprintf(stderr, "%s\n%s\n", snd_errormsg1, snd_errormsg2);
-	return 0;
+        snd_errormsg1 = "Wrong number of bits";
+        snd_errormsg2 = "";
+        fprintf(stderr, "%s\n%s\n", snd_errormsg1, snd_errormsg2);
+        return 0;
     }
   
     if (rc < 0) {
-	snd_errormsg1 = "snd_pcm_hw_params_set_format() failed ";
-	snd_errormsg2 = snd_strerror(rc);
-	fprintf(stderr, "%s\n%s\n", snd_errormsg1, snd_errormsg2);
-	return 0;
+        snd_errormsg1 = "snd_pcm_hw_params_set_format() failed ";
+        snd_errormsg2 = snd_strerror(rc);
+        fprintf(stderr, "%s\n%s\n", snd_errormsg1, snd_errormsg2);
+        return 0;
     }
   
     rc = snd_pcm_hw_params_get_format(params, &pcm_format);
     if (rc < 0) {
-	snd_errormsg1 = "snd_pcm_hw_params_get_format() failed ";
-	snd_errormsg2 = snd_strerror(rc);
-	fprintf(stderr, "%s\n%s\n", snd_errormsg1, snd_errormsg2);
-	return 0;
+        snd_errormsg1 = "snd_pcm_hw_params_get_format() failed ";
+        snd_errormsg2 = snd_strerror(rc);
+        fprintf(stderr, "%s\n%s\n", snd_errormsg1, snd_errormsg2);
+        return 0;
     }
  
     if (bits == 8 && pcm_format != SND_PCM_FORMAT_U8) {
-	snd_errormsg1 = "Can't set 8-bit format (SND_PCM_FORMAT_U8)";
-	fprintf(stderr, "%s\n%s\n", snd_errormsg1, snd_errormsg2);
-	return 0;
+        snd_errormsg1 = "Can't set 8-bit format (SND_PCM_FORMAT_U8)";
+        fprintf(stderr, "%s\n%s\n", snd_errormsg1, snd_errormsg2);
+        return 0;
     }
  
     if (bits == 16 && pcm_format != SND_PCM_FORMAT_S16_LE) {
-	snd_errormsg1 = "Can't set 16-bit format (SND_PCM_FORMAT_S16_LE)";
-	fprintf(stderr, "%s\n%s\n", snd_errormsg1, snd_errormsg2);
-	return 0;
+        snd_errormsg1 = "Can't set 16-bit format (SND_PCM_FORMAT_S16_LE)";
+        fprintf(stderr, "%s\n%s\n", snd_errormsg1, snd_errormsg2);
+        return 0;
     }
   
     /* Two channels (stereo) */
     rc = snd_pcm_hw_params_set_channels(handle, params, chan);
     if (rc < 0) {
-	snd_errormsg1 = "snd_pcm_hw_params_set_channels() failed ";
-	snd_errormsg2 = snd_strerror(rc);
-	fprintf(stderr, "%s\n%s\n", snd_errormsg1, snd_errormsg2);
-	return 0;
+        snd_errormsg1 = "snd_pcm_hw_params_set_channels() failed ";
+        snd_errormsg2 = snd_strerror(rc);
+        fprintf(stderr, "%s\n%s\n", snd_errormsg1, snd_errormsg2);
+        return 0;
     }
     rc = snd_pcm_hw_params_get_channels(params, &chan);
     if (rc < 0) {
-	snd_errormsg1 = "snd_pcm_hw_params_get_channels() failed ";
-	snd_errormsg2 = snd_strerror(rc);
-	fprintf(stderr, "%s\n%s\n", snd_errormsg1, snd_errormsg2);
-	return 0;
+        snd_errormsg1 = "snd_pcm_hw_params_get_channels() failed ";
+        snd_errormsg2 = snd_strerror(rc);
+        fprintf(stderr, "%s\n%s\n", snd_errormsg1, snd_errormsg2);
+        return 0;
     }
     sc_chans = chan;
   
     rc = snd_pcm_hw_params_set_rate_near(handle, params, &rate, &dir);
     if (rc < 0) {
-	snd_errormsg1 = "snd_pcm_hw_params_set_rate_near() failed ";
-	snd_errormsg2 = snd_strerror(rc);
-	fprintf(stderr, "%s\n%s\n", snd_errormsg1, snd_errormsg2);
-	return 0;
+        snd_errormsg1 = "snd_pcm_hw_params_set_rate_near() failed ";
+        snd_errormsg2 = snd_strerror(rc);
+        fprintf(stderr, "%s\n%s\n", snd_errormsg1, snd_errormsg2);
+        return 0;
     }
     if (rate != sound_card_rate) {
-	snd_errormsg1 = "requested sample rate not available ";
-	fprintf(stderr, "%s\n%s\n", snd_errormsg1, snd_errormsg2);
- 	return 0;
+        snd_errormsg1 = "requested sample rate not available ";
+        fprintf(stderr, "%s\n%s\n", snd_errormsg1, snd_errormsg2);
+        return 0;
     }
     sound_card_rate = rate;
 
@@ -193,27 +193,27 @@ static int open_sound_card(void)
     /*  pcm_frames = 32;*/
     rc = snd_pcm_hw_params_set_period_size_near(handle, params, &pcm_frames, &dir);
     if (rc < 0) {
-	snd_errormsg1 = "snd_pcm_hw_params_set_period_size_near() failed ";
-	snd_errormsg2 = snd_strerror(rc);
-	fprintf(stderr, "%s\n%s\n", snd_errormsg1, snd_errormsg2);
-	return 0;
+        snd_errormsg1 = "snd_pcm_hw_params_set_period_size_near() failed ";
+        snd_errormsg2 = snd_strerror(rc);
+        fprintf(stderr, "%s\n%s\n", snd_errormsg1, snd_errormsg2);
+        return 0;
     }
 
     /* Write the parameters to the driver */
     rc = snd_pcm_hw_params(handle, params);
     if (rc < 0) {
-	snd_errormsg1 = "snd_pcm_hw_params() failed ";
-	snd_errormsg2 = snd_strerror(rc);
-	fprintf(stderr, "%s\n%s\n", snd_errormsg1, snd_errormsg2);
-	return 0;
+        snd_errormsg1 = "snd_pcm_hw_params() failed ";
+        snd_errormsg2 = snd_strerror(rc);
+        fprintf(stderr, "%s\n%s\n", snd_errormsg1, snd_errormsg2);
+        return 0;
     }
     /* fprintf(stderr,"open_sound_card\n"); */
 
     if ((rc = snd_pcm_prepare (handle)) < 0) {
-	snd_errormsg1 = "snd_pcm_prepare() failed ";
-	snd_errormsg2 = snd_strerror(rc);
-	fprintf(stderr, "%s\n%s\n", snd_errormsg1, snd_errormsg2);
-	return 0;
+        snd_errormsg1 = "snd_pcm_prepare() failed ";
+        snd_errormsg2 = snd_strerror(rc);
+        fprintf(stderr, "%s\n%s\n", snd_errormsg1, snd_errormsg2);
+        return 0;
     }
 
     return 1;
@@ -222,32 +222,32 @@ static int open_sound_card(void)
 static void reset_sound_card(void)
 {
     static unsigned char *junk = NULL; 
-  	
+        
     /* fprintf(stderr,"reset_sound_card()\n"); */
     if (junk == NULL) {
-	if (!(junk =  malloc((SAMPLESKIP * snd_pcm_format_width(pcm_format) / 8) * 2))) {
-	    snd_errormsg1 = "malloc() failed " ;
-	    snd_errormsg2 = strerror(errno);
-	    fprintf(stderr, "%s\n%s\n", snd_errormsg1, snd_errormsg2);
-	    return;
-	}
+        if (!(junk =  malloc((SAMPLESKIP * snd_pcm_format_width(pcm_format) / 8) * 2))) {
+            snd_errormsg1 = "malloc() failed " ;
+            snd_errormsg2 = strerror(errno);
+            fprintf(stderr, "%s\n%s\n", snd_errormsg1, snd_errormsg2);
+            return;
+        }
     }
 
     if (handle != NULL) {
-    	close_sound_card();
-	open_sound_card();
+        close_sound_card();
+        open_sound_card();
 
-	if (handle == NULL) {
-	    return;
-	}
-	snd_pcm_readi(handle, junk, SAMPLESKIP);
+        if (handle == NULL) {
+            return;
+        }
+        snd_pcm_readi(handle, junk, SAMPLESKIP);
     }
 }
 
 static int sc_nchans(void)
 {
     if (handle == NULL) {
-  	open_sound_card();
+        open_sound_card();
     }
     return (handle != NULL) ? sc_chans : 0;
 }
@@ -272,12 +272,12 @@ static int set_trigger(int chan, int *levelp, int mode)
     trigmode = mode;
     triglev = 127 + *levelp;
     if (triglev > 255) {
-	triglev = 255;
-	*levelp = 128;
+        triglev = 255;
+        *levelp = 128;
     }
     if (triglev < 0) {
-	triglev = 0;
-	*levelp = -128;
+        triglev = 0;
+        *levelp = -128;
     }
     return 1;
 }
@@ -292,24 +292,24 @@ static int change_rate(int dir)
     int newrate = sound_card_rate;
 
     if (dir > 0) {
-	if (sound_card_rate > 16500)
-	    newrate = 44100;
-	else if (sound_card_rate > 9500)
-	    newrate = 22050;
-	else
-	    newrate = 11025;
+        if (sound_card_rate > 16500)
+            newrate = 44100;
+        else if (sound_card_rate > 9500)
+            newrate = 22050;
+        else
+            newrate = 11025;
     } else {
-	if (sound_card_rate < 16500)
-	    newrate = 8000;
-	else if (sound_card_rate < 33000)
-	    newrate = 11025;
-	else
-	    newrate = 22050;
+        if (sound_card_rate < 16500)
+            newrate = 8000;
+        else if (sound_card_rate < 33000)
+            newrate = 11025;
+        else
+            newrate = 22050;
     }
 
     if (newrate != sound_card_rate) {
-	sound_card_rate = newrate;
-	return 1;
+        sound_card_rate = newrate;
+        return 1;
     }
     return 0;
 }
@@ -349,13 +349,13 @@ static void set_width(int width)
 
     left_sig.data = malloc(width * sizeof(short));
     if (left_sig.data == NULL) {
-	fprintf(stderr, "set_width(), malloc failed, %s\n", strerror(errno));
-	exit(0);
+        fprintf(stderr, "set_width(), malloc failed, %s\n", strerror(errno));
+        exit(0);
     }
     right_sig.data = malloc(width * sizeof(short));
     if (right_sig.data == NULL) {
-	fprintf(stderr, "set_width(), malloc failed, %s\n", strerror(errno));
-	exit(0);
+        fprintf(stderr, "set_width(), malloc failed, %s\n", strerror(errno));
+        exit(0);
     }
 }
 
@@ -373,119 +373,119 @@ static int sc_get_data(void)
     // fprintf(stderr, "sc_get_data(%d %d)\n", in_progress,(MAXWID * snd_pcm_format_width(pcm_format) / 8) * 2);
  
     if (handle == NULL) {
-	fprintf(stderr, "sc_get_data() handle == NULL\n");
-	return 0;
+        fprintf(stderr, "sc_get_data() handle == NULL\n");
+        return 0;
     }
-	
+        
     if (buffer == NULL) {
-	if (!(buffer =  malloc((MAXWID * snd_pcm_format_width(pcm_format) / 8) * 2))) {
-	    snd_errormsg1 = "malloc() failed ";
-	    snd_errormsg2 = strerror(errno);
-	    fprintf(stderr, "%s\n%s\n", snd_errormsg1, snd_errormsg2);
-	    return 0;
-	}
+        if (!(buffer =  malloc((MAXWID * snd_pcm_format_width(pcm_format) / 8) * 2))) {
+            snd_errormsg1 = "malloc() failed ";
+            snd_errormsg2 = strerror(errno);
+            fprintf(stderr, "%s\n%s\n", snd_errormsg1, snd_errormsg2);
+            return 0;
+        }
     }
 
     frameBufferSize = (sound_card_rate / 1000) * SND_QUERY_INTERVALL * 2;
 
     if (!in_progress) {
-	/* Discard excess samples so we can keep our time snapshot close to real-time and minimize
-	 * sound recording overruns.  For ESD we don't know how many are available (do we?) so we
-	 * discard them all to start with a fresh buffer that hopefully won't wrap around before we
-	 * get it read.
-	 */
+        /* Discard excess samples so we can keep our time snapshot close to real-time and minimize
+         * sound recording overruns.  For ESD we don't know how many are available (do we?) so we
+         * discard them all to start with a fresh buffer that hopefully won't wrap around before we
+         * get it read.
+         */
 
-	/* read until we get something smaller than a full buffer */
-    	while ((rdCnt = snd_pcm_readi(handle, buffer, MAXWID)) == frameBufferSize)
-	    /*   			fprintf(stderr, "sc_get_data(): discarding\n");*/
-	    ;
+        /* read until we get something smaller than a full buffer */
+        while ((rdCnt = snd_pcm_readi(handle, buffer, MAXWID)) == frameBufferSize)
+            /*                          fprintf(stderr, "sc_get_data(): discarding\n");*/
+            ;
 
     } else {
-	/* XXX this ends up discarding everything after a complete read */
-	rdCnt = snd_pcm_readi(handle, buffer, MAXWID);
+        /* XXX this ends up discarding everything after a complete read */
+        rdCnt = snd_pcm_readi(handle, buffer, MAXWID);
     }
 
     if (rdCnt == -EPIPE) {
-	/* EPIPE means overrun */
-	/*      fprintf(stderr, "overrun occurred\n");*/
-	snd_pcm_recover(handle, rdCnt, TRUE);
-      	return sc_get_data();
+        /* EPIPE means overrun */
+        /*      fprintf(stderr, "overrun occurred\n");*/
+        snd_pcm_recover(handle, rdCnt, TRUE);
+        return sc_get_data();
     } else if (rdCnt < 0) {
-	/*    	fprintf(stderr,*/
-	/*       		"error from snd_pcm_readi(): %d %s\n", rdCnt, snd_strerror(rdCnt));*/
-	snd_pcm_recover(handle, rdCnt, TRUE);
-	usleep(1000);
-    	return 0;
-	/*      	return(sc_get_data());*/
+        /*      fprintf(stderr,*/
+        /*                      "error from snd_pcm_readi(): %d %s\n", rdCnt, snd_strerror(rdCnt));*/
+        snd_pcm_recover(handle, rdCnt, TRUE);
+        usleep(1000);
+        return 0;
+        /*              return(sc_get_data());*/
     } 
 
     rdCnt *= 2; // 2 bytes per frame (needs change for 16-bit mode)!
 
     i = 0;
     if (!in_progress) {
-	if (trigmode == 1) {
-	    i ++;
-	    while (((i+1)*2 <= rdCnt) && 
-		   ((buffer[2*i + trigch] < triglev) || (buffer[2*(i-1) + trigch] >= triglev))) 
-		i ++;
-    	} else if (trigmode == 2) {
-	    i ++;
-	    while (((i+1)*2 <= rdCnt) && 
-		   ((buffer[2*i + trigch] > triglev) || (buffer[2*(i-1) + trigch] <= triglev))) 
-		i ++;
-    	}
+        if (trigmode == 1) {
+            i ++;
+            while (((i+1)*2 <= rdCnt) && 
+                   ((buffer[2*i + trigch] < triglev) || (buffer[2*(i-1) + trigch] >= triglev))) 
+                i ++;
+        } else if (trigmode == 2) {
+            i ++;
+            while (((i+1)*2 <= rdCnt) && 
+                   ((buffer[2*i + trigch] > triglev) || (buffer[2*(i-1) + trigch] <= triglev))) 
+                i ++;
+        }
 
-	if ((i+1)*2 > rdCnt) {	/* haven't triggered within the screen */
-	    /*  			fprintf(stderr, "sc_get_data returns at %d\n", __LINE__);*/
-	    return 0;		/* give up and keep previous samples */
-	}
-	delay = 0;
+        if ((i+1)*2 > rdCnt) {  /* haven't triggered within the screen */
+            /*                          fprintf(stderr, "sc_get_data returns at %d\n", __LINE__);*/
+            return 0;           /* give up and keep previous samples */
+        }
+        delay = 0;
 
-	if (trigmode) {
-	    int last = buffer[2*(i-1) + trigch] - 127;
-	    int current = buffer[2*i + trigch] - 127;
-	    if (last != current) {
-		delay = abs(10000 * (current - (triglev - 127)) / (current - last));
-	    }
-    	}
+        if (trigmode) {
+            int last = buffer[2*(i-1) + trigch] - 127;
+            int current = buffer[2*i + trigch] - 127;
+            if (last != current) {
+                delay = abs(10000 * (current - (triglev - 127)) / (current - last));
+            }
+        }
 
-	left_sig.data[0] = buffer[2*i] - 127;
-	left_sig.delay = delay;
-	left_sig.num = 1;
-	left_sig.frame ++;
+        left_sig.data[0] = buffer[2*i] - 127;
+        left_sig.delay = delay;
+        left_sig.num = 1;
+        left_sig.frame ++;
 
-	right_sig.data[0] = buffer[2*i + 1] - 127;
-	right_sig.delay = delay;
-	right_sig.num = 1;
-	right_sig.frame ++;
+        right_sig.data[0] = buffer[2*i + 1] - 127;
+        right_sig.delay = delay;
+        right_sig.num = 1;
+        right_sig.frame ++;
 
-	i ++;
-	in_progress = 1;
+        i ++;
+        in_progress = 1;
     }
 
     while ((i+1)*2 <= rdCnt) {
-	if (in_progress >= left_sig.width) { // enough samples for a screen
-	    break;
-	}
+        if (in_progress >= left_sig.width) { // enough samples for a screen
+            break;
+        }
 #if 0
-    	if (*buff == 0 || *buff == 255) {
-	    clip = i % 2 + 1;
-	}
+        if (*buff == 0 || *buff == 255) {
+            clip = i % 2 + 1;
+        }
 #endif
-	left_sig.data[in_progress] = buffer[2*i] - 127;
-	right_sig.data[in_progress] = buffer[2*i + 1] - 127;
+        left_sig.data[in_progress] = buffer[2*i] - 127;
+        right_sig.data[in_progress] = buffer[2*i + 1] - 127;
 
-	in_progress ++;
-	i ++;
+        in_progress ++;
+        i ++;
     }
 
     left_sig.num = in_progress;
     right_sig.num = in_progress;
 
     if (in_progress >= left_sig.width) { // enough samples for a screen
-	in_progress = 0;
+        in_progress = 0;
     }
-    /* 	fprintf(stderr, "sc_get_data returns at %d\n", __LINE__);*/
+    /*  fprintf(stderr, "sc_get_data returns at %d\n", __LINE__);*/
     return 1;
 }
 
@@ -499,20 +499,20 @@ static const char * snd_status_str(int i)
     static char msg1[64];
     switch (i) {
     case 0:
-	if (snd_errormsg1){
-	    strcpy(msg1, snd_errormsg1);
-	    strcat(msg1, alsaDevice);
-	    return (const char*)msg1;
-	} else {
-	    return "";
-	}
+        if (snd_errormsg1){
+            strcpy(msg1, snd_errormsg1);
+            strcat(msg1, alsaDevice);
+            return (const char*)msg1;
+        } else {
+            return "";
+        }
     
     case 2:
-	if (snd_errormsg2) {
-	    return snd_errormsg2;
-	} else {
-	    return "";
-	}
+        if (snd_errormsg2) {
+            return snd_errormsg2;
+        } else {
+            return "";
+        }
     }
     return NULL;
 }
@@ -538,12 +538,12 @@ static char * option2str_sc(void)
 static int sc_set_option(char *option)
 {
     if (sscanf(option, "rate=%d", &sound_card_rate) == 1) {
-	return 1;
+        return 1;
     } else if (strcmp(option, "dma=") == 0) {
-	/* a deprecated option, return 1 so we don't indicate error */
-	return 1;
+        /* a deprecated option, return 1 so we don't indicate error */
+        return 1;
     } else {
-	return 0;
+        return 0;
     }
 }
 
@@ -553,11 +553,11 @@ static char * sc_save_option(int i)
 
     switch (i) {
     case 0:
-	snprintf(buf, sizeof(buf), "rate=%d", sound_card_rate);
-	return buf;
+        snprintf(buf, sizeof(buf), "rate=%d", sound_card_rate);
+        return buf;
 
     default:
-	return NULL;
+        return NULL;
     }
 }
 
@@ -570,7 +570,7 @@ DataSrc datasrc_sc = {
     change_rate,
     set_width,
     reset,
-    fd,	//should be REALY unused....
+    fd, //should be REALY unused....
     sc_get_data,
     snd_status_str,
 #ifdef DEBUG

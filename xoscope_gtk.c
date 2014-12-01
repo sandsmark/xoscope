@@ -1,4 +1,4 @@
-/* -*- mode: C++; fill-column: 100; c-basic-offset: 4; -*-
+/* -*- mode: C++; indent-tabs-mode: nil; fill-column: 100; c-basic-offset: 4; -*-
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -20,7 +20,7 @@
 #include <math.h>
 
 #include <string.h>
-#include "xoscope.h"		/* program defaults */
+#include "xoscope.h"            /* program defaults */
 #include "display.h"
 #include "func.h"
 #include "file.h"
@@ -47,7 +47,7 @@ GtkWidget *databox;
 GtkWidget *menubar;
 
 GtkItemFactory *factory;
-extern int fixing_widgets;	/* in com_gtk.c */
+extern int fixing_widgets;      /* in com_gtk.c */
 
 /* emulate several libsx function in GTK */
 int OpenDisplay(int argc, char *argv[])
@@ -66,9 +66,9 @@ void delete_event(GtkWidget *widget, GdkEvent *event, gpointer data)
 gint key_press_event(GtkWidget *widget, GdkEventKey *event)
 {
     if (event->keyval == GDK_Tab) {
-	handle_key('\t');
+        handle_key('\t');
     } else if (event->length == 1) {
-	handle_key(event->string[0]);
+        handle_key(event->string[0]);
     }
 
     return TRUE;
@@ -85,9 +85,9 @@ int is_GtkWidget(GType Type) {
     GType GtkWidgetType = g_type_from_name("GtkWidget");
 
     while (Type) {
-	if (Type == GtkWidgetType) 
-	    return 1;
-	Type = g_type_parent(Type);
+        if (Type == GtkWidgetType) 
+            return 1;
+        Type = g_type_parent(Type);
     }
     return 0;
 }
@@ -99,7 +99,7 @@ int is_GtkWidget(GType Type) {
 
 void set_name_property(GtkWidget *widget, GtkBuilder *builder)
 {
-    GValue	g_value = G_VALUE_INIT;
+    GValue      g_value = G_VALUE_INIT;
 
     g_value_init (&g_value, G_TYPE_STRING);
     g_value_set_string (&g_value, gtk_buildable_get_name(GTK_BUILDABLE (widget)));
@@ -107,38 +107,38 @@ void set_name_property(GtkWidget *widget, GtkBuilder *builder)
     gtk_buildable_set_buildable_property(GTK_BUILDABLE (widget), builder, "name", &g_value);
 }
  
-#define GLADE_HOOKUP_OBJECT(component,widget,name)			\
-    g_object_set_data_full (						\
-			    G_OBJECT (component),			\
-			    name,					\
-			    g_object_ref ((GtkWidget*)widget),		\
-			    (GDestroyNotify) g_object_unref		\
-								)
+#define GLADE_HOOKUP_OBJECT(component,widget,name)                      \
+    g_object_set_data_full (                                            \
+                            G_OBJECT (component),                       \
+                            name,                                       \
+                            g_object_ref ((GtkWidget*)widget),          \
+                            (GDestroyNotify) g_object_unref             \
+                                                                )
 
-#define GLADE_HOOKUP_OBJECT_NO_REF(component,widget,name)	\
+#define GLADE_HOOKUP_OBJECT_NO_REF(component,widget,name)       \
     g_object_set_data (G_OBJECT (component), name, widget)
 
 void store_reference(GtkWidget* widget)
 {
     GtkWidget *parent, *child;
-	
+        
     child = widget;
     while(TRUE){
-	parent = (GtkWidget*)gtk_widget_get_parent(child);
-	if(parent == NULL){
-	    parent = child;
-	    break;
-	}
-	child = parent;
+        parent = (GtkWidget*)gtk_widget_get_parent(child);
+        if(parent == NULL){
+            parent = child;
+            break;
+        }
+        child = parent;
     }
 
     if(parent == widget){
-	/* fprintf(stderr, "TOP %s\n", gtk_widget_get_name(widget));*/
-	GLADE_HOOKUP_OBJECT_NO_REF(widget, widget, gtk_widget_get_name(widget));
+        /* fprintf(stderr, "TOP %s\n", gtk_widget_get_name(widget));*/
+        GLADE_HOOKUP_OBJECT_NO_REF(widget, widget, gtk_widget_get_name(widget));
     }
     else{
-	/* fprintf(stderr, "SUB %s %s\n", gtk_widget_get_name(parent), gtk_widget_get_name(widget));*/
-	GLADE_HOOKUP_OBJECT(parent, widget, gtk_widget_get_name(widget));
+        /* fprintf(stderr, "SUB %s %s\n", gtk_widget_get_name(parent), gtk_widget_get_name(widget));*/
+        GLADE_HOOKUP_OBJECT(parent, widget, gtk_widget_get_name(widget));
     }
 }
 
@@ -151,7 +151,7 @@ GtkWidget * lookup_widget(const gchar * widget_name)
     found_widget = (GtkWidget *) gtk_builder_get_object(builder, widget_name);
 
     if (!found_widget) {
-	g_warning ("Widget not found: %s", widget_name);
+        g_warning ("Widget not found: %s", widget_name);
     }
 
     return found_widget;
@@ -159,54 +159,54 @@ GtkWidget * lookup_widget(const gchar * widget_name)
 
 GtkWidget * create_main_window(void)
 {
-    GError 			*err = NULL;
-    GSList			*gslWidgets, *iterator = NULL;
-    char 			**xoscope_rc_ptr = xoscope_rc;
-    /* extern char		gladestring[]; */
-	
+    GError                      *err = NULL;
+    GSList                      *gslWidgets, *iterator = NULL;
+    char                        **xoscope_rc_ptr = xoscope_rc;
+    /* extern char              gladestring[]; */
+        
     for (xoscope_rc_ptr=xoscope_rc; *xoscope_rc_ptr != NULL; xoscope_rc_ptr++) {
-	gtk_rc_parse_string(*xoscope_rc_ptr);
+        gtk_rc_parse_string(*xoscope_rc_ptr);
     }
-	
+        
     builder = gtk_builder_new ();
 
-    /*	if(0 == gtk_builder_add_from_file (builder, "xoscope_new.glade", &err)){*/
-    /*		fprintf(stderr, "Error adding build from file. Error: %s\n", err->message);*/
-    /*		exit(1);*/
-    /*	}*/
+    /*  if(0 == gtk_builder_add_from_file (builder, "xoscope_new.glade", &err)){*/
+    /*          fprintf(stderr, "Error adding build from file. Error: %s\n", err->message);*/
+    /*          exit(1);*/
+    /*  }*/
     if(0 == gtk_builder_add_from_string(builder, gladestring, -1, &err)){
-	fprintf(stderr, "Error adding build from string. Error: %s\n", err->message);
-	exit(1);
+        fprintf(stderr, "Error adding build from string. Error: %s\n", err->message);
+        exit(1);
     }
 
-    glade_window 			= GTK_WIDGET (gtk_builder_get_object (builder, "main_window"));
-    comedi_options_dialog 	= GTK_WIDGET (gtk_builder_get_object (builder, "comedi_dialog"));
-    alsa_options_dialog 	= GTK_WIDGET (gtk_builder_get_object (builder, "alsa_options_dialog"));
-    databox 				= GTK_WIDGET (gtk_builder_get_object (builder, "databox"));
+    glade_window                        = GTK_WIDGET (gtk_builder_get_object (builder, "main_window"));
+    comedi_options_dialog       = GTK_WIDGET (gtk_builder_get_object (builder, "comedi_dialog"));
+    alsa_options_dialog         = GTK_WIDGET (gtk_builder_get_object (builder, "alsa_options_dialog"));
+    databox                             = GTK_WIDGET (gtk_builder_get_object (builder, "databox"));
  
     /* Run this loop TWICE to make sure all rc settings take. */
 
     gslWidgets = gtk_builder_get_objects(builder);
     for (iterator = gslWidgets; iterator; iterator = iterator->next) {
-	if(is_GtkWidget(G_TYPE_FROM_INSTANCE(iterator->data))){
-	    set_name_property((GtkWidget*)(iterator->data), builder);
-	    store_reference((GtkWidget*)(iterator->data));
-	}
-	else{
-	    continue;
-	}
+        if(is_GtkWidget(G_TYPE_FROM_INSTANCE(iterator->data))){
+            set_name_property((GtkWidget*)(iterator->data), builder);
+            store_reference((GtkWidget*)(iterator->data));
+        }
+        else{
+            continue;
+        }
     }
     g_slist_free(gslWidgets);
 
     gslWidgets = gtk_builder_get_objects(builder);
     for (iterator = gslWidgets; iterator; iterator = iterator->next) {
-	if(is_GtkWidget(G_TYPE_FROM_INSTANCE(iterator->data))){
-	    set_name_property((GtkWidget*)(iterator->data), builder);
-	    store_reference((GtkWidget*)(iterator->data));
-	}
-	else{
-	    continue;
-	}
+        if(is_GtkWidget(G_TYPE_FROM_INSTANCE(iterator->data))){
+            set_name_property((GtkWidget*)(iterator->data), builder);
+            store_reference((GtkWidget*)(iterator->data));
+        }
+        else{
+            continue;
+        }
     }
     g_slist_free(gslWidgets);
 
@@ -243,32 +243,32 @@ void savefile_ok_sel(GtkWidget *w, GtkFileSelection *fs)
     gtk_widget_destroy(GTK_WIDGET(fs));
 
     if (!stat(my_filename, &buff)) {
-	window = gtk_dialog_new();
-	yes = gtk_button_new_with_label("Yes");
-	gtk_box_pack_start(GTK_BOX(GTK_DIALOG(window)->action_area), yes,
-			   TRUE, TRUE, 0);
-	no = gtk_button_new_with_label("No");
-	gtk_box_pack_start(GTK_BOX(GTK_DIALOG(window)->action_area), no,
-			   TRUE, TRUE, 0);
-	gtk_signal_connect_object(GTK_OBJECT(window), "delete_event",
-				  GTK_SIGNAL_FUNC(gtk_widget_destroy),
-				  GTK_OBJECT(window));
-	gtk_signal_connect(GTK_OBJECT(yes), "clicked",
-			   GTK_SIGNAL_FUNC(yes_sel),
-			   GTK_OBJECT(window));
-	gtk_signal_connect_object(GTK_OBJECT(no), "clicked",
-				  GTK_SIGNAL_FUNC(gtk_widget_destroy),
-				  GTK_OBJECT(window));
-	gtk_widget_show(yes);
-	gtk_widget_show(no);
-	sprintf(error, "\n  Overwrite existing file %s?  \n", my_filename);
-	label = gtk_label_new(error);
-	gtk_box_pack_start(GTK_BOX(GTK_DIALOG(window)->vbox), label, TRUE, TRUE, 0);
-	gtk_widget_show(label);
-	gtk_widget_show(window);
-	gtk_grab_add(window);
+        window = gtk_dialog_new();
+        yes = gtk_button_new_with_label("Yes");
+        gtk_box_pack_start(GTK_BOX(GTK_DIALOG(window)->action_area), yes,
+                           TRUE, TRUE, 0);
+        no = gtk_button_new_with_label("No");
+        gtk_box_pack_start(GTK_BOX(GTK_DIALOG(window)->action_area), no,
+                           TRUE, TRUE, 0);
+        gtk_signal_connect_object(GTK_OBJECT(window), "delete_event",
+                                  GTK_SIGNAL_FUNC(gtk_widget_destroy),
+                                  GTK_OBJECT(window));
+        gtk_signal_connect(GTK_OBJECT(yes), "clicked",
+                           GTK_SIGNAL_FUNC(yes_sel),
+                           GTK_OBJECT(window));
+        gtk_signal_connect_object(GTK_OBJECT(no), "clicked",
+                                  GTK_SIGNAL_FUNC(gtk_widget_destroy),
+                                  GTK_OBJECT(window));
+        gtk_widget_show(yes);
+        gtk_widget_show(no);
+        sprintf(error, "\n  Overwrite existing file %s?  \n", my_filename);
+        label = gtk_label_new(error);
+        gtk_box_pack_start(GTK_BOX(GTK_DIALOG(window)->vbox), label, TRUE, TRUE, 0);
+        gtk_widget_show(label);
+        gtk_widget_show(window);
+        gtk_grab_add(window);
     } else
-	savefile(my_filename);
+        savefile(my_filename);
 }
 
 /* get a file name for load (0) or save (1) */
@@ -279,19 +279,19 @@ void LoadSaveFile(int save)
 
     filew = gtk_file_selection_new(save ? "Save File": "Load File");
     gtk_signal_connect_object(GTK_OBJECT(filew), "delete_event",
-			      GTK_SIGNAL_FUNC(gtk_widget_destroy),
-			      GTK_OBJECT(filew));
+                              GTK_SIGNAL_FUNC(gtk_widget_destroy),
+                              GTK_OBJECT(filew));
     gtk_signal_connect(GTK_OBJECT(GTK_FILE_SELECTION(filew)->ok_button),
-		       "clicked", save ? GTK_SIGNAL_FUNC(savefile_ok_sel)
-		       : GTK_SIGNAL_FUNC(loadfile_ok_sel),
-		       GTK_OBJECT(filew));
+                       "clicked", save ? GTK_SIGNAL_FUNC(savefile_ok_sel)
+                       : GTK_SIGNAL_FUNC(loadfile_ok_sel),
+                       GTK_OBJECT(filew));
     gtk_signal_connect_object(GTK_OBJECT(GTK_FILE_SELECTION(filew)
-					 ->cancel_button), "clicked",
-			      GTK_SIGNAL_FUNC(gtk_widget_destroy),
-			      GTK_OBJECT(filew));
+                                         ->cancel_button), "clicked",
+                              GTK_SIGNAL_FUNC(gtk_widget_destroy),
+                              GTK_OBJECT(filew));
     if (my_filename[0] != '\0')
-	gtk_file_selection_set_filename(GTK_FILE_SELECTION(filew),
-					(gchar *)my_filename);
+        gtk_file_selection_set_filename(GTK_FILE_SELECTION(filew),
+                                        (gchar *)my_filename);
     gtk_widget_show(filew);
 }
 
@@ -320,39 +320,39 @@ void ExternCommand(void)
     window = gtk_dialog_new();
     run = gtk_button_new_with_label("  Run  ");
     gtk_box_pack_start(GTK_BOX(GTK_DIALOG(window)->action_area), run,
-		       TRUE, TRUE, 0);
+                       TRUE, TRUE, 0);
     cancel = gtk_button_new_with_label("  Cancel  ");
     gtk_box_pack_start(GTK_BOX(GTK_DIALOG(window)->action_area), cancel,
-		       TRUE, TRUE, 0);
+                       TRUE, TRUE, 0);
     label = gtk_label_new("\n  External command and args:  \n");
     gtk_box_pack_start(GTK_BOX(GTK_DIALOG(window)->vbox), label,
-		       TRUE, TRUE, 0);
+                       TRUE, TRUE, 0);
     command = gtk_combo_new();
     gtk_combo_set_popdown_strings(GTK_COMBO(command), glist);
 
     /* XXX recall previous command that was set here */
 #if 0
     gtk_entry_set_text(GTK_ENTRY(GTK_COMBO(command)->entry),
-		       ch[scope.select].command);
+                       ch[scope.select].command);
 #else
     gtk_entry_set_text(GTK_ENTRY(GTK_COMBO(command)->entry),
-		       "operl '$x + $y'");
+                       "operl '$x + $y'");
 #endif
     gtk_combo_set_value_in_list(GTK_COMBO(command), FALSE, FALSE);
     gtk_box_pack_start(GTK_BOX(GTK_DIALOG(window)->vbox), command,
-		       TRUE, TRUE, 0);
+                       TRUE, TRUE, 0);
     gtk_signal_connect_object(GTK_OBJECT(window), "delete_event",
-			      GTK_SIGNAL_FUNC(gtk_widget_destroy),
-			      GTK_OBJECT(window));
+                              GTK_SIGNAL_FUNC(gtk_widget_destroy),
+                              GTK_OBJECT(window));
     gtk_signal_connect(GTK_OBJECT(run), "clicked",
-		       GTK_SIGNAL_FUNC(run_sel),
-		       GTK_ENTRY(GTK_COMBO(command)->entry));
+                       GTK_SIGNAL_FUNC(run_sel),
+                       GTK_ENTRY(GTK_COMBO(command)->entry));
     gtk_signal_connect_object_after(GTK_OBJECT(run), "clicked",
-				    GTK_SIGNAL_FUNC(gtk_widget_destroy),
-				    GTK_OBJECT(window));
+                                    GTK_SIGNAL_FUNC(gtk_widget_destroy),
+                                    GTK_OBJECT(window));
     gtk_signal_connect_object(GTK_OBJECT(cancel), "clicked",
-			      GTK_SIGNAL_FUNC(gtk_widget_destroy),
-			      GTK_OBJECT(window));
+                              GTK_SIGNAL_FUNC(gtk_widget_destroy),
+                              GTK_OBJECT(window));
     GTK_WIDGET_SET_FLAGS(run, GTK_CAN_DEFAULT);
     gtk_widget_grab_default(run);
     gtk_widget_show(run);
@@ -405,9 +405,9 @@ void graticule(GtkWidget *w, guint data)
 {
     if (fixing_widgets) return;
     if (data < 2)
-	scope.behind = data;
+        scope.behind = data;
     else
-	scope.grat = data - 2;
+        scope.grat = data - 2;
     update_text();
     show_data();
 }
@@ -419,17 +419,17 @@ void change_trigger(int trigch, int trig, int trige)
      */
 
     if (trige == 0) {
-	if (datasrc && datasrc->clear_trigger) datasrc->clear_trigger();
-	scope.trige = 0;
+        if (datasrc && datasrc->clear_trigger) datasrc->clear_trigger();
+        scope.trige = 0;
     } else if (datasrc && datasrc->set_trigger
-	       && datasrc->set_trigger(trigch, &trig, trige)) {
-	scope.trigch = trigch;
-	scope.trig = trig;
-	scope.trige = trige;
+               && datasrc->set_trigger(trigch, &trig, trige)) {
+        scope.trigch = trigch;
+        scope.trig = trig;
+        scope.trige = trige;
     } else if (datasrc && datasrc->set_trigger && datasrc->clear_trigger
-	       && !datasrc->set_trigger(scope.trigch, &scope.trig, scope.trige)){
-	datasrc->clear_trigger();
-	scope.trige = 0;
+               && !datasrc->set_trigger(scope.trigch, &scope.trig, scope.trige)){
+        datasrc->clear_trigger();
+        scope.trige = 0;
     }
 }
 
@@ -438,11 +438,11 @@ void trigger(GtkWidget *w, guint data)
     if (fixing_widgets) return;
 
     if (data >= 'a' && data <= 'c') {
-	change_trigger(scope.trigch, scope.trig, data - 'a');
+        change_trigger(scope.trigch, scope.trig, data - 'a');
     }
 
     if (data >= '1' && data <= '8') {
-	change_trigger(data - '1', scope.trig, scope.trige);
+        change_trigger(data - '1', scope.trig, scope.trige);
     }
 
     clear();
@@ -456,16 +456,16 @@ void mathselect(GtkWidget *w, guint data)
 {
     if (fixing_widgets) return;
     if (scope.select > 1) {
-	if (data == '$') {
-	    /*        if (GTK_CHECK_MENU_ITEM */
-	    /*  	 (gtk_item_factory_get_item */
-	    /*  	  (factory, "/Channel/Math/External Command..."))->active) */
-	    handle_key('$');
-	} else {
-	    function_bynum_on_channel(data - '0', &ch[scope.select]);
-	    ch[scope.select].show = 1;
-	}
-	clear();
+        if (data == '$') {
+            /*        if (GTK_CHECK_MENU_ITEM */
+            /*           (gtk_item_factory_get_item */
+            /*            (factory, "/Channel/Math/External Command..."))->active) */
+            handle_key('$');
+        } else {
+            function_bynum_on_channel(data - '0', &ch[scope.select]);
+            ch[scope.select].show = 1;
+        }
+        clear();
     }
 }
 
@@ -495,7 +495,7 @@ void set_trigger_level(GtkWidget *w, guint data)
 void setposition(GtkWidget *w, guint data)
 {
     ch[scope.select].pos = data;
-	
+        
     clear();
 }
 
@@ -524,8 +524,8 @@ void help(GtkWidget *w, void *data)
     gtk_widget_set_usize (window, 640, 480);
     gtk_window_set_policy (GTK_WINDOW(window), TRUE, TRUE, FALSE);
     gtk_signal_connect_object(GTK_OBJECT (window), "destroy",
-			      GTK_SIGNAL_FUNC(gtk_widget_destroy),
-			      GTK_OBJECT(window));
+                              GTK_SIGNAL_FUNC(gtk_widget_destroy),
+                              GTK_OBJECT(window));
     gtk_window_set_title (GTK_WINDOW (window), "xoscope(1) man page");
     gtk_container_border_width (GTK_CONTAINER (window), 0);
 
@@ -552,7 +552,7 @@ void help(GtkWidget *w, void *data)
     /* Add scrollbars (if needed) to the GtkTextView widget */
     scrolled_window = gtk_scrolled_window_new(NULL, NULL);
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled_window),
-				   GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
+                                   GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
     gtk_container_add(GTK_CONTAINER(scrolled_window), text);
     gtk_box_pack_start (GTK_BOX (box2), scrolled_window, TRUE, TRUE, 0);
     gtk_widget_show(scrolled_window);
@@ -565,9 +565,9 @@ void help(GtkWidget *w, void *data)
     textbuffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(text));
 
     bold_tag = gtk_text_buffer_create_tag (textbuffer, NULL,
-					   "weight", PANGO_WEIGHT_BOLD, NULL);  
+                                           "weight", PANGO_WEIGHT_BOLD, NULL);  
     underline_tag = gtk_text_buffer_create_tag (textbuffer, NULL,
-						"underline", PANGO_UNDERLINE_SINGLE, NULL);  
+                                                "underline", PANGO_UNDERLINE_SINGLE, NULL);  
 
     /* Now run 'man' and copy its output into the text buffer.  We use an intermediate 'charbuffer'
      * for two reasons: to handle backspaces (for overstrikes or underlines) which get converted
@@ -587,37 +587,37 @@ void help(GtkWidget *w, void *data)
 
     if ((p = popen(HELPCOMMAND, "r")) != NULL) {
 
-	while ((c = fgetc(p)) != EOF) {
-	    if (c == '\b') {
-		if (charbuffer[0] == '_') running_tag = 1;
-		else running_tag = 2;
-		charbuffer_len = 0;
-		continue;
-	    }
-	    if (c < 0) {
-		charbuffer[charbuffer_len ++] = c;
-	    } else {
-		if (charbuffer_len > 0) {
-		    gtk_text_buffer_insert(textbuffer, &iter,
-					   charbuffer, charbuffer_len);
-		    if (running_tag) {
-			start = iter;
-			gtk_text_iter_backward_char(&start);
-			if (running_tag == 1) {
-			    gtk_text_buffer_apply_tag (textbuffer, underline_tag,
-						       &start, &iter);
-			} else if (running_tag == 2) {
-			    gtk_text_buffer_apply_tag (textbuffer, bold_tag,
-						       &start, &iter);
-			}
-			running_tag = 0;
-		    }
-		}
-		charbuffer[0] = c;
-		charbuffer_len = 1;
-	    }
-	}
-	pclose(p);
+        while ((c = fgetc(p)) != EOF) {
+            if (c == '\b') {
+                if (charbuffer[0] == '_') running_tag = 1;
+                else running_tag = 2;
+                charbuffer_len = 0;
+                continue;
+            }
+            if (c < 0) {
+                charbuffer[charbuffer_len ++] = c;
+            } else {
+                if (charbuffer_len > 0) {
+                    gtk_text_buffer_insert(textbuffer, &iter,
+                                           charbuffer, charbuffer_len);
+                    if (running_tag) {
+                        start = iter;
+                        gtk_text_iter_backward_char(&start);
+                        if (running_tag == 1) {
+                            gtk_text_buffer_apply_tag (textbuffer, underline_tag,
+                                                       &start, &iter);
+                        } else if (running_tag == 2) {
+                            gtk_text_buffer_apply_tag (textbuffer, bold_tag,
+                                                       &start, &iter);
+                        }
+                        running_tag = 0;
+                    }
+                }
+                charbuffer[0] = c;
+                charbuffer_len = 1;
+            }
+        }
+        pclose(p);
     }
 
     box2 = gtk_vbox_new (FALSE, 10);
@@ -627,8 +627,8 @@ void help(GtkWidget *w, void *data)
 
     button = gtk_button_new_with_label ("close");
     gtk_signal_connect_object(GTK_OBJECT (button), "clicked",
-			      GTK_SIGNAL_FUNC(gtk_widget_destroy),
-			      GTK_OBJECT(window));
+                              GTK_SIGNAL_FUNC(gtk_widget_destroy),
+                              GTK_OBJECT(window));
     gtk_box_pack_start (GTK_BOX (box2), button, TRUE, TRUE, 0);
     GTK_WIDGET_SET_FLAGS (button, GTK_CAN_DEFAULT);
     gtk_widget_grab_default (button);
@@ -895,8 +895,8 @@ GtkItemFactoryEntry * finditem(char *str)
     int i;
 
     for (i = 0; i < nmenu_items; i++) {
-	if (strstr(menu_items[i].path, str))
-	    return &menu_items[i];
+        if (strstr(menu_items[i].path, str))
+            return &menu_items[i];
     }
     return NULL;
 }
@@ -909,34 +909,34 @@ void fix_widgets(void)
 
     fixing_widgets = 1;
     if ((p = finditem("/Channel/Channel 1"))) {
-	p += scope.select;
-	gtk_check_menu_item_set_active
-	    (GTK_CHECK_MENU_ITEM
-	     (gtk_item_factory_get_item(factory, p->path)), TRUE);
+        p += scope.select;
+        gtk_check_menu_item_set_active
+            (GTK_CHECK_MENU_ITEM
+             (gtk_item_factory_get_item(factory, p->path)), TRUE);
     }
     if ((p = finditem("/Channel/Bits/Analog"))) {
-	p += ch[scope.select].bits / 2;
-	gtk_check_menu_item_set_active
-	    (GTK_CHECK_MENU_ITEM
-	     (gtk_item_factory_get_item(factory, p->path)), TRUE);
+        p += ch[scope.select].bits / 2;
+        gtk_check_menu_item_set_active
+            (GTK_CHECK_MENU_ITEM
+             (gtk_item_factory_get_item(factory, p->path)), TRUE);
     }
     gtk_check_menu_item_set_active
-	(GTK_CHECK_MENU_ITEM
-	 (gtk_item_factory_get_item(factory, "/Channel/Show")),
-	 ch[scope.select].show);
+        (GTK_CHECK_MENU_ITEM
+         (gtk_item_factory_get_item(factory, "/Channel/Show")),
+         ch[scope.select].show);
 
     if ((p = finditem("/File/Device Options..."))) {
-	gtk_widget_set_sensitive
-	    (GTK_WIDGET
-	     (gtk_item_factory_get_item(factory, p->path)),
-	     datasrc && datasrc->gtk_options != NULL);
+        gtk_widget_set_sensitive
+            (GTK_WIDGET
+             (gtk_item_factory_get_item(factory, p->path)),
+             datasrc && datasrc->gtk_options != NULL);
     }
 
     if ((p = finditem("/Trigger/Off"))) {
-	q = p + scope.trige;
-	gtk_check_menu_item_set_active
-	    (GTK_CHECK_MENU_ITEM
-	     (gtk_item_factory_get_item(factory, q->path)), TRUE);
+        q = p + scope.trige;
+        gtk_check_menu_item_set_active
+            (GTK_CHECK_MENU_ITEM
+             (gtk_item_factory_get_item(factory, q->path)), TRUE);
     }
 
     /* The trigger channels.  There are eight of them defined, but we only show as many as
@@ -946,26 +946,26 @@ void fix_widgets(void)
      */
 
     if ((p = finditem("/Trigger/Channel 1"))) {
-	for (i=0; i<8; i++) {
-	    GtkWidget *widget;
-	    GtkLabel *label;
+        for (i=0; i<8; i++) {
+            GtkWidget *widget;
+            GtkLabel *label;
 
-	    q = p + i;
-	    widget = GTK_WIDGET(gtk_item_factory_get_item(factory, q->path));
+            q = p + i;
+            widget = GTK_WIDGET(gtk_item_factory_get_item(factory, q->path));
 
-	    if (!datasrc || i >= datasrc->nchans()) {
-		gtk_widget_hide(widget);
-	    } else {
-		gtk_widget_show(widget);
-		label = GTK_LABEL (GTK_BIN (widget)->child);
-		gtk_label_set_text(label, datasrc->chan(i)->name);
-		gtk_widget_set_sensitive(widget, scope.trige != 0);
-	    }
-	}
-	q = p + scope.trigch;
-	gtk_check_menu_item_set_active
-	    (GTK_CHECK_MENU_ITEM
-	     (gtk_item_factory_get_item(factory, q->path)), TRUE);
+            if (!datasrc || i >= datasrc->nchans()) {
+                gtk_widget_hide(widget);
+            } else {
+                gtk_widget_show(widget);
+                label = GTK_LABEL (GTK_BIN (widget)->child);
+                gtk_label_set_text(label, datasrc->chan(i)->name);
+                gtk_widget_set_sensitive(widget, scope.trige != 0);
+            }
+        }
+        q = p + scope.trigch;
+        gtk_check_menu_item_set_active
+            (GTK_CHECK_MENU_ITEM
+             (gtk_item_factory_get_item(factory, q->path)), TRUE);
     }
 
     /* The triggering options should only be sensitive if we have a data source and it defines a
@@ -973,96 +973,96 @@ void fix_widgets(void)
      */
 
     if ((p = finditem("/Trigger/Rising"))) {
-	gtk_widget_set_sensitive
-	    (GTK_WIDGET(gtk_item_factory_get_item(factory, p->path)),
-	     datasrc && datasrc->set_trigger != NULL);
+        gtk_widget_set_sensitive
+            (GTK_WIDGET(gtk_item_factory_get_item(factory, p->path)),
+             datasrc && datasrc->set_trigger != NULL);
     }
     if ((p = finditem("/Trigger/Falling"))) {
-	gtk_widget_set_sensitive
-	    (GTK_WIDGET(gtk_item_factory_get_item(factory, p->path)),
-	     datasrc && datasrc->set_trigger != NULL);
+        gtk_widget_set_sensitive
+            (GTK_WIDGET(gtk_item_factory_get_item(factory, p->path)),
+             datasrc && datasrc->set_trigger != NULL);
     }
 
     /* The remaining items on the trigger menu should only be sensitive if triggering is turned on */
 
     if ((p = finditem("/Trigger/Position up"))) {
-	gtk_widget_set_sensitive
-	    (GTK_WIDGET(gtk_item_factory_get_item(factory, p->path)),
-	     scope.trige != 0);
+        gtk_widget_set_sensitive
+            (GTK_WIDGET(gtk_item_factory_get_item(factory, p->path)),
+             scope.trige != 0);
     }
     if ((p = finditem("/Trigger/Position down"))) {
-	gtk_widget_set_sensitive
-	    (GTK_WIDGET(gtk_item_factory_get_item(factory, p->path)),
-	     scope.trige != 0);
+        gtk_widget_set_sensitive
+            (GTK_WIDGET(gtk_item_factory_get_item(factory, p->path)),
+             scope.trige != 0);
     }
     if ((p = finditem("/Trigger/Position Positive"))) {
-	gtk_widget_set_sensitive
-	    (GTK_WIDGET(gtk_item_factory_get_item(factory, p->path)),
-	     scope.trige != 0);
+        gtk_widget_set_sensitive
+            (GTK_WIDGET(gtk_item_factory_get_item(factory, p->path)),
+             scope.trige != 0);
     }
     if ((p = finditem("/Trigger/Position Negative"))) {
-	gtk_widget_set_sensitive
-	    (GTK_WIDGET(gtk_item_factory_get_item(factory, p->path)),
-	     scope.trige != 0);
+        gtk_widget_set_sensitive
+            (GTK_WIDGET(gtk_item_factory_get_item(factory, p->path)),
+             scope.trige != 0);
     }
 
     if ((p = finditem("/Scope/Stop")) && scope.run == 0) {
-	gtk_check_menu_item_set_active
-	    (GTK_CHECK_MENU_ITEM
-	     (gtk_item_factory_get_item(factory, p->path)), TRUE);
+        gtk_check_menu_item_set_active
+            (GTK_CHECK_MENU_ITEM
+             (gtk_item_factory_get_item(factory, p->path)), TRUE);
     }
 
     if ((p = finditem("/Scope/Run")) && scope.run == 1) {
-	gtk_check_menu_item_set_active
-	    (GTK_CHECK_MENU_ITEM
-	     (gtk_item_factory_get_item(factory, p->path)), TRUE);
+        gtk_check_menu_item_set_active
+            (GTK_CHECK_MENU_ITEM
+             (gtk_item_factory_get_item(factory, p->path)), TRUE);
     }
 
     if ((p = finditem("/Scope/Wait")) && scope.run == 2) {
-	gtk_check_menu_item_set_active
-	    (GTK_CHECK_MENU_ITEM
-	     (gtk_item_factory_get_item(factory, p->path)), TRUE);
+        gtk_check_menu_item_set_active
+            (GTK_CHECK_MENU_ITEM
+             (gtk_item_factory_get_item(factory, p->path)), TRUE);
     }
 
     if ((p = finditem("/Scope/Plot Mode/Point"))) {
-	p += scope.plot_mode;
-	gtk_check_menu_item_set_active
-	    (GTK_CHECK_MENU_ITEM
-	     (gtk_item_factory_get_item(factory, p->path)), TRUE);
+        p += scope.plot_mode;
+        gtk_check_menu_item_set_active
+            (GTK_CHECK_MENU_ITEM
+             (gtk_item_factory_get_item(factory, p->path)), TRUE);
     }
     if ((p = finditem("/Scope/Plot Mode/Sweep"))) {
-	p += scope.scroll_mode;
-	gtk_check_menu_item_set_active
-	    (GTK_CHECK_MENU_ITEM
-	     (gtk_item_factory_get_item(factory, p->path)), TRUE);
+        p += scope.scroll_mode;
+        gtk_check_menu_item_set_active
+            (GTK_CHECK_MENU_ITEM
+             (gtk_item_factory_get_item(factory, p->path)), TRUE);
     }
     if ((p = finditem("/Scope/Graticule/In Front"))) {
-	q = p + scope.behind;
-	gtk_check_menu_item_set_active
-	    (GTK_CHECK_MENU_ITEM
-	     (gtk_item_factory_get_item(factory, q->path)), TRUE);
-	q = p + scope.grat + 3;
-	gtk_check_menu_item_set_active
-	    (GTK_CHECK_MENU_ITEM
-	     (gtk_item_factory_get_item(factory, q->path)), TRUE);
+        q = p + scope.behind;
+        gtk_check_menu_item_set_active
+            (GTK_CHECK_MENU_ITEM
+             (gtk_item_factory_get_item(factory, q->path)), TRUE);
+        q = p + scope.grat + 3;
+        gtk_check_menu_item_set_active
+            (GTK_CHECK_MENU_ITEM
+             (gtk_item_factory_get_item(factory, q->path)), TRUE);
     }
     gtk_check_menu_item_set_active
-	(GTK_CHECK_MENU_ITEM
-	 (gtk_item_factory_get_item(factory, "/Scope/Cursors")), scope.curs);
+        (GTK_CHECK_MENU_ITEM
+         (gtk_item_factory_get_item(factory, "/Scope/Cursors")), scope.curs);
 
     gtk_check_menu_item_set_active
-	(GTK_CHECK_MENU_ITEM
-	 (gtk_item_factory_get_item(factory, "/Help/Keys&Info")), scope.verbose);
+        (GTK_CHECK_MENU_ITEM
+         (gtk_item_factory_get_item(factory, "/Help/Keys&Info")), scope.verbose);
 
     if ((p = finditem("/Channel/Math")) &&
-	(q = finditem("/Channel/Math/Avg. 1,2"))) {
-	for (r = p; r <= q; r++) {
-	    /* XXX add a check to the function's isvalid() test */
-	    gtk_widget_set_sensitive
-		(GTK_WIDGET(gtk_item_factory_get_item(factory, r->path)),
-		 scope.select > 1);
+        (q = finditem("/Channel/Math/Avg. 1,2"))) {
+        for (r = p; r <= q; r++) {
+            /* XXX add a check to the function's isvalid() test */
+            gtk_widget_set_sensitive
+                (GTK_WIDGET(gtk_item_factory_get_item(factory, r->path)),
+                 scope.select > 1);
 
-	}
+        }
     }
 
     /* Now the store and recall channels - set the names for memory or data source, and mark the
@@ -1071,66 +1071,66 @@ void fix_widgets(void)
      */
 
     if ((p = finditem("/Channel/Store/Mem A")) &&
-	(q = finditem("/Channel/Recall/Mem A")))
-	for (i = 0; i < 26; i++) {
-	    GtkWidget *widget;
-	    GtkLabel *label;
-	    char buf[32];
+        (q = finditem("/Channel/Recall/Mem A")))
+        for (i = 0; i < 26; i++) {
+            GtkWidget *widget;
+            GtkLabel *label;
+            char buf[32];
 
-	    r = p + i;
-	    if (datasrc && i < datasrc->nchans()) {
-		gtk_widget_hide(GTK_WIDGET(gtk_item_factory_get_item(factory,
-								     r->path)));
-	    } else {
-		gtk_widget_show(GTK_WIDGET(gtk_item_factory_get_item(factory,
-								     r->path)));
-		gtk_check_menu_item_set_active
-		    (GTK_CHECK_MENU_ITEM
-		     (gtk_item_factory_get_item(factory, r->path)),
-		     mem[i].num > 0);
-	    }
-	    r += (q - p);
+            r = p + i;
+            if (datasrc && i < datasrc->nchans()) {
+                gtk_widget_hide(GTK_WIDGET(gtk_item_factory_get_item(factory,
+                                                                     r->path)));
+            } else {
+                gtk_widget_show(GTK_WIDGET(gtk_item_factory_get_item(factory,
+                                                                     r->path)));
+                gtk_check_menu_item_set_active
+                    (GTK_CHECK_MENU_ITEM
+                     (gtk_item_factory_get_item(factory, r->path)),
+                     mem[i].num > 0);
+            }
+            r += (q - p);
 
-	    widget = GTK_WIDGET(gtk_item_factory_get_item(factory, r->path));
-	    label = GTK_LABEL (GTK_BIN (widget)->child);
-	    if (datasrc && i < datasrc->nchans()) {
-		gtk_label_set_text(label, datasrc->chan(i)->name);
-		gtk_widget_set_sensitive(widget, TRUE);
-	    } else {
-		sprintf(buf, "Mem %c", 'A' + i);
-		gtk_label_set_text(label, buf);
-		gtk_widget_set_sensitive(widget, mem[i].num > 0);
-	    }
-	}
+            widget = GTK_WIDGET(gtk_item_factory_get_item(factory, r->path));
+            label = GTK_LABEL (GTK_BIN (widget)->child);
+            if (datasrc && i < datasrc->nchans()) {
+                gtk_label_set_text(label, datasrc->chan(i)->name);
+                gtk_widget_set_sensitive(widget, TRUE);
+            } else {
+                sprintf(buf, "Mem %c", 'A' + i);
+                gtk_label_set_text(label, buf);
+                gtk_widget_set_sensitive(widget, mem[i].num > 0);
+            }
+        }
 
 #if 0
     if ((p = finditem("/Channel/Recall")) &&
-	(q = finditem("/Channel/Recall/sep"))) {
-	GtkWidget *widget;
-	widget = gtk_hseparator_new();
-	gtk_menu_append(GTK_MENU(gtk_item_factory_get_widget(factory,
-							     p->path)),
-			widget);
-	gtk_widget_show(widget);
+        (q = finditem("/Channel/Recall/sep"))) {
+        GtkWidget *widget;
+        widget = gtk_hseparator_new();
+        gtk_menu_append(GTK_MENU(gtk_item_factory_get_widget(factory,
+                                                             p->path)),
+                        widget);
+        gtk_widget_show(widget);
 
     }
 #endif
 
 #if 0
     {
-	GtkWidget *widget;
-	GtkWidget *radioitem;
-	GSList *group;
+        GtkWidget *widget;
+        GtkWidget *radioitem;
+        GSList *group;
 
-	radioitem = GTK_WIDGET(gtk_item_factory_get_item(factory, "/Trigger/Channel 1"));
-	group = gtk_radio_menu_item_group(GTK_RADIO_MENU_ITEM(radioitem));
+        radioitem = GTK_WIDGET(gtk_item_factory_get_item(factory, "/Trigger/Channel 1"));
+        group = gtk_radio_menu_item_group(GTK_RADIO_MENU_ITEM(radioitem));
 
-	widget = gtk_radio_menu_item_new_with_label(group, "Hi!");
-	gtk_menu_insert(GTK_MENU(gtk_item_factory_get_widget(factory,
-							     "/Trigger")),
-			widget, 3);
-	gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(widget), FALSE);
-	gtk_widget_show(widget);
+        widget = gtk_radio_menu_item_new_with_label(group, "Hi!");
+        gtk_menu_insert(GTK_MENU(gtk_item_factory_get_widget(factory,
+                                                             "/Trigger")),
+                        widget, 3);
+        gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(widget), FALSE);
+        gtk_widget_show(widget);
     }
 #endif
 
@@ -1156,32 +1156,32 @@ get_main_menu(GtkWidget *window, GtkWidget ** menubar)
 
     menu = gtk_item_factory_get_widget(factory, "/File/Device");
     if (menu) {
-	GtkWidget *p;
-	int i;
+        GtkWidget *p;
+        int i;
 
-	for (i = 0; i < ndatasrcs; i++) {
-	    p = gtk_menu_item_new_with_label (datasrcs[i]->name);
-	    gtk_menu_append (GTK_MENU (menu), p);
-	    gtk_signal_connect (GTK_OBJECT (p), "activate",
-				GTK_SIGNAL_FUNC (datasource),
-				(gpointer) (datasrcs[i]));
-	    gtk_widget_show (p);
-	}
+        for (i = 0; i < ndatasrcs; i++) {
+            p = gtk_menu_item_new_with_label (datasrcs[i]->name);
+            gtk_menu_append (GTK_MENU (menu), p);
+            gtk_signal_connect (GTK_OBJECT (p), "activate",
+                                GTK_SIGNAL_FUNC (datasource),
+                                (gpointer) (datasrcs[i]));
+            gtk_widget_show (p);
+        }
     }
 
 #if 0
     menu = gtk_item_factory_get_widget(factory, "/Trigger");
     if (menu) {
-	GtkWidget *p;
+        GtkWidget *p;
 
-	p = gtk_menu_item_new_with_label("Mem Brent");
-	gtk_menu_append (GTK_MENU (menu), p);
-	gtk_widget_show(p);
+        p = gtk_menu_item_new_with_label("Mem Brent");
+        gtk_menu_append (GTK_MENU (menu), p);
+        gtk_widget_show(p);
     }
 #endif
 
     if (menubar)
-	*menubar = gtk_item_factory_get_widget(factory, "<main>");
+        *menubar = gtk_item_factory_get_widget(factory, "<main>");
 }
 
 gboolean on_databox_button_press_event (GtkWidget       *widget,
@@ -1194,39 +1194,39 @@ gboolean on_databox_button_press_event (GtkWidget       *widget,
 
     /* XXX duplicates code in draw_data() */
     if (p->signal->rate > 0) {
-	num = (gfloat) 1 / p->signal->rate;
+        num = (gfloat) 1 / p->signal->rate;
     } else {
-	num = (gfloat) 1 / 1000;
+        num = (gfloat) 1 / 1000;
     }
     l = p->signal->delay * num / 10000;
 
     if (scope.curs) {
-	// XXX what's all this?
+        // XXX what's all this?
 #if 0
-	GtkDataboxCoord coord;
-	GtkDataboxValue value;
-	coord.x = event->x;
-	coord.y = event->y;
-	value = gtk_databox_value_from_coord (GTK_DATABOX(databox), coord);
-	x = value.x;
+        GtkDataboxCoord coord;
+        GtkDataboxValue value;
+        coord.x = event->x;
+        coord.y = event->y;
+        value = gtk_databox_value_from_coord (GTK_DATABOX(databox), coord);
+        x = value.x;
 #else
-	x = gtk_databox_pixel_to_value_x (GTK_DATABOX(databox), event->x);
+        x = gtk_databox_pixel_to_value_x (GTK_DATABOX(databox), event->x);
 #endif
-	cursor = rintf((x - l) / num) + 1;
+        cursor = rintf((x - l) / num) + 1;
 #if 0
-	if (event->state & GDK_BUTTON1_MASK) {
-	    scope.cursa = cursor;
-	} else if (event->state & GDK_BUTTON2_MASK) {
-	    scope.cursb = cursor;
-	}
+        if (event->state & GDK_BUTTON1_MASK) {
+            scope.cursa = cursor;
+        } else if (event->state & GDK_BUTTON2_MASK) {
+            scope.cursb = cursor;
+        }
 #else
-	if (event->button == 1) {
-	    scope.cursa = cursor;
-	} else if (event->button == 3) {
-	    scope.cursb = cursor;
-	}
+        if (event->button == 1) {
+            scope.cursa = cursor;
+        } else if (event->button == 3) {
+            scope.cursb = cursor;
+        }
 #endif
-	show_data();
+        show_data();
     }
 
     return FALSE;
@@ -1241,16 +1241,16 @@ gint motion_event (GtkWidget *widget, GdkEventMotion *event)
     GdkModifierType state;
 
     if (event->is_hint)
-	gdk_window_get_pointer (event->window, &x, &y, &state);
+        gdk_window_get_pointer (event->window, &x, &y, &state);
     else {
-	x = event->x;
-	y = event->y;
-	state = event->state;
+        x = event->x;
+        y = event->y;
+        state = event->state;
     }
     if (state & GDK_BUTTON1_MASK)
-	return positioncursor(x, y, 1);
+        return positioncursor(x, y, 1);
     if (state & GDK_BUTTON2_MASK)
-	return positioncursor(x, y, 2);
+        return positioncursor(x, y, 2);
     return TRUE;
 }
 
@@ -1264,61 +1264,61 @@ gint button_event(GtkWidget *widget, GdkEventButton *event, gpointer data)
     y = event->y;
     b = event->button;
     if (positioncursor(x, y, b))
-	return TRUE;
+        return TRUE;
 
-    x = buttoncol(event->x);	/* convert graphic to text position */
+    x = buttoncol(event->x);    /* convert graphic to text position */
     y = buttonrow(event->y);
     /*    printf("button: %d @ %f,%f -> %d,%d\n", b, event->x, event->y, x, y); */
     if (!y && x > 70)
-	handle_key('?');
+        handle_key('?');
     else if (y == 28 && x >= 27 && x <= 53) {
-	if (b > 1)
-	    gtk_menu_popup(GTK_MENU(gtk_item_factory_get_widget
-				    (factory, "/Channel/Store")),
-			   NULL, NULL, NULL, NULL, event->button, event->time);
-	else
-	    handle_key((x - 27) + 'a');
+        if (b > 1)
+            gtk_menu_popup(GTK_MENU(gtk_item_factory_get_widget
+                                    (factory, "/Channel/Store")),
+                           NULL, NULL, NULL, NULL, event->button, event->time);
+        else
+            handle_key((x - 27) + 'a');
     } else if (y < 4) {
-	if (b == 1) handle_key('-');
-	else if (b == 2) handle_key('=');
-	else gtk_menu_popup(GTK_MENU(gtk_item_factory_get_widget
-				     (factory, "/Trigger")),
-			    NULL, NULL, NULL, NULL, event->button, event->time);
+        if (b == 1) handle_key('-');
+        else if (b == 2) handle_key('=');
+        else gtk_menu_popup(GTK_MENU(gtk_item_factory_get_widget
+                                     (factory, "/Trigger")),
+                            NULL, NULL, NULL, NULL, event->button, event->time);
     } else if (y == 4) {
-	if (b < 3) handle_key('!');
-	else gtk_menu_popup(GTK_MENU(gtk_item_factory_get_widget
-				     (factory, "/Scope/Plot Mode")),
-			    NULL, NULL, NULL, NULL, event->button, event->time);
+        if (b < 3) handle_key('!');
+        else gtk_menu_popup(GTK_MENU(gtk_item_factory_get_widget
+                                     (factory, "/Scope/Plot Mode")),
+                            NULL, NULL, NULL, NULL, event->button, event->time);
     }  else if (y < 25 && (x < 11 || x > 69)) {
-	handle_key((y - 5) / 5 + '1' + (x > 69 ? 4 : 0));
-	if (!((y - 1) % 5)) {
-	    if (b == 1) handle_key('{');
-	    else if (b == 2) handle_key('}');
-	    else gtk_menu_popup(GTK_MENU(gtk_item_factory_get_widget
-					 (factory, "/Channel/Scale")),
-				NULL, NULL, NULL, NULL, event->button, event->time);
-	} else if (!((y - 2) % 5)) {
-	    if (x < 4 || (x > 69 && x < 74)) {
-		if (b == 1) handle_key('`');
-		else if (b == 2) handle_key('~');
-		else gtk_menu_popup(GTK_MENU(gtk_item_factory_get_widget
-					     (factory, "/Channel/Bits")),
-				    NULL, NULL, NULL, NULL, event->button, event->time);
-	    } else {
-		if (b == 1) handle_key('[');
-		else if (b == 2) handle_key(']');
-		else gtk_menu_popup(GTK_MENU(gtk_item_factory_get_widget
-					     (factory, "/Channel/Position")),
-				    NULL, NULL, NULL, NULL, event->button, event->time);
-	    }
-	} else if (b > 1)
-	    gtk_menu_popup(GTK_MENU(gtk_item_factory_get_widget
-				    (factory, "/Channel")),
-			   NULL, NULL, NULL, NULL, event->button, event->time);
+        handle_key((y - 5) / 5 + '1' + (x > 69 ? 4 : 0));
+        if (!((y - 1) % 5)) {
+            if (b == 1) handle_key('{');
+            else if (b == 2) handle_key('}');
+            else gtk_menu_popup(GTK_MENU(gtk_item_factory_get_widget
+                                         (factory, "/Channel/Scale")),
+                                NULL, NULL, NULL, NULL, event->button, event->time);
+        } else if (!((y - 2) % 5)) {
+            if (x < 4 || (x > 69 && x < 74)) {
+                if (b == 1) handle_key('`');
+                else if (b == 2) handle_key('~');
+                else gtk_menu_popup(GTK_MENU(gtk_item_factory_get_widget
+                                             (factory, "/Channel/Bits")),
+                                    NULL, NULL, NULL, NULL, event->button, event->time);
+            } else {
+                if (b == 1) handle_key('[');
+                else if (b == 2) handle_key(']');
+                else gtk_menu_popup(GTK_MENU(gtk_item_factory_get_widget
+                                             (factory, "/Channel/Position")),
+                                    NULL, NULL, NULL, NULL, event->button, event->time);
+            }
+        } else if (b > 1)
+            gtk_menu_popup(GTK_MENU(gtk_item_factory_get_widget
+                                    (factory, "/Channel")),
+                           NULL, NULL, NULL, NULL, event->button, event->time);
     } else if (b > 1)
-	gtk_menu_popup(GTK_MENU(gtk_item_factory_get_widget
-				(factory, "/Scope")),
-		       NULL, NULL, NULL, NULL, event->button, event->time);
+        gtk_menu_popup(GTK_MENU(gtk_item_factory_get_widget
+                                (factory, "/Scope")),
+                       NULL, NULL, NULL, NULL, event->button, event->time);
     return TRUE;
 }
 
@@ -1357,17 +1357,17 @@ void init_widgets(void)
     gtk_rc_parse("xoscope.rc");
 #else
     for (xoscope_rc_ptr=xoscope_rc; *xoscope_rc_ptr != NULL; xoscope_rc_ptr++) {
-	gtk_rc_parse_string(*xoscope_rc_ptr);
+        gtk_rc_parse_string(*xoscope_rc_ptr);
     }
 #endif
 
     glade_window = create_main_window();
-	
+        
     setup_help_text(glade_window, NULL);
 
 #if 0
     gtk_signal_connect(GTK_OBJECT(window), "delete_event",
-		       GTK_SIGNAL_FUNC(delete_event), NULL);
+                       GTK_SIGNAL_FUNC(delete_event), NULL);
 #endif
 
     get_main_menu(glade_window, &menubar);
@@ -1376,20 +1376,20 @@ void init_widgets(void)
     gtk_widget_show(menubar);
 
     gtk_databox_set_adjustment_x (GTK_DATABOX (databox),
-				  gtk_range_get_adjustment (GTK_RANGE (LU("databox_hscrollbar"))));
+                                  gtk_range_get_adjustment (GTK_RANGE (LU("databox_hscrollbar"))));
 
     gtk_widget_show(glade_window);
 
 #if 0
     gtk_signal_connect(GTK_OBJECT(drawing_area), "motion_notify_event",
-		       GTK_SIGNAL_FUNC(motion_event), NULL);
+                       GTK_SIGNAL_FUNC(motion_event), NULL);
     gtk_signal_connect(GTK_OBJECT(drawing_area), "button_press_event",
-		       GTK_SIGNAL_FUNC(button_event), NULL);
+                       GTK_SIGNAL_FUNC(button_event), NULL);
     gtk_widget_set_events (drawing_area, GDK_EXPOSURE_MASK
-			   | GDK_LEAVE_NOTIFY_MASK
-			   | GDK_BUTTON_PRESS_MASK
-			   | GDK_POINTER_MOTION_MASK
-			   | GDK_POINTER_MOTION_HINT_MASK);
+                           | GDK_LEAVE_NOTIFY_MASK
+                           | GDK_BUTTON_PRESS_MASK
+                           | GDK_POINTER_MOTION_MASK
+                           | GDK_POINTER_MOTION_HINT_MASK);
 #endif
 
 }
@@ -1423,8 +1423,8 @@ gint timeout_callback(gpointer data)
 void settimeout(int ms)
 {
     if (timeout_tag_valid) {
-	gtk_timeout_remove(timeout_tag);
-	timeout_tag_valid = 0;
+        gtk_timeout_remove(timeout_tag);
+        timeout_tag_valid = 0;
     }
 
     if (ms == 0) return;
@@ -1437,16 +1437,16 @@ void setinputfd(int fd)
 {
     if (input_fd != fd) {
 
-	if (input_tag_valid) {
-	    gdk_input_remove(input_tag);
-	    input_tag_valid = 0;
-	}
+        if (input_tag_valid) {
+            gdk_input_remove(input_tag);
+            input_tag_valid = 0;
+        }
 
-	if (fd != -1) {
-	    input_tag = gdk_input_add(fd, GDK_INPUT_READ, inputCallback, NULL);
-	    input_tag_valid = 1;
-	}
+        if (fd != -1) {
+            input_tag = gdk_input_add(fd, GDK_INPUT_READ, inputCallback, NULL);
+            input_tag_valid = 1;
+        }
 
-	input_fd = fd;
+        input_fd = fd;
     }
 }

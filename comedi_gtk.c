@@ -1,4 +1,4 @@
-/* -*- mode: C++; fill-column: 100; c-basic-offset: 4; -*-
+/* -*- mode: C++; indent-tabs-mode: nil; fill-column: 100; c-basic-offset: 4; -*-
  *
  * Author: Brent Baccala <baccala@freesoft.org>
  *
@@ -72,8 +72,8 @@ void subdevice_on_activate(GtkWidget *widget, gpointer data)
      */
 
     if (GTK_TOGGLE_BUTTON(LU("bufsize_default"))->active) {
-	sprintf(buf, "%d", comedi_get_buffer_size(comedi_dev, comedi_subdevice));
-	gtk_entry_set_text(GTK_ENTRY(LU("bufsize_entry")), buf);
+        sprintf(buf, "%d", comedi_get_buffer_size(comedi_dev, comedi_subdevice));
+        gtk_entry_set_text(GTK_ENTRY(LU("bufsize_entry")), buf);
     }
 }
 
@@ -96,17 +96,17 @@ void device_changed(void)
      */
 
     if (comedi_dev == NULL) {
-	gtk_container_foreach(GTK_CONTAINER(LU("option_table")),
-			      (GtkCallback) gtk_widget_set_sensitive,
-			      (gpointer) FALSE);
-	gtk_widget_set_sensitive(LU("device_label"), TRUE);
-	gtk_widget_set_sensitive(LU("comedi_device_entry"), TRUE);
-	/* XXX maybe put something here - add "none" to subdevice list */
-	return;
+        gtk_container_foreach(GTK_CONTAINER(LU("option_table")),
+                              (GtkCallback) gtk_widget_set_sensitive,
+                              (gpointer) FALSE);
+        gtk_widget_set_sensitive(LU("device_label"), TRUE);
+        gtk_widget_set_sensitive(LU("comedi_device_entry"), TRUE);
+        /* XXX maybe put something here - add "none" to subdevice list */
+        return;
     } else {
-	gtk_container_foreach(GTK_CONTAINER(LU("option_table")),
-			      (GtkCallback) gtk_widget_set_sensitive,
-			      (gpointer) TRUE);
+        gtk_container_foreach(GTK_CONTAINER(LU("option_table")),
+                              (GtkCallback) gtk_widget_set_sensitive,
+                              (gpointer) TRUE);
     }
 
     snprintf(buf, sizeof(buf), "%d", comedi_rate);
@@ -119,15 +119,15 @@ void device_changed(void)
      */
 
     if (comedi_bufsize > 0) {
-	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(LU("bufsize_custom")), TRUE);
-	sprintf(buf, "%d", comedi_bufsize);
-	gtk_entry_set_text(GTK_ENTRY(LU("bufsize_entry")), buf);
-	gtk_widget_set_sensitive(GTK_WIDGET(LU("bufsize_entry")), TRUE);
+        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(LU("bufsize_custom")), TRUE);
+        sprintf(buf, "%d", comedi_bufsize);
+        gtk_entry_set_text(GTK_ENTRY(LU("bufsize_entry")), buf);
+        gtk_widget_set_sensitive(GTK_WIDGET(LU("bufsize_entry")), TRUE);
     } else {
-	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(LU("bufsize_default")), TRUE);
-	sprintf(buf, "%d", comedi_get_buffer_size(comedi_dev, comedi_subdevice));
-	gtk_entry_set_text(GTK_ENTRY(LU("bufsize_entry")), buf);
-	gtk_widget_set_sensitive(GTK_WIDGET(LU("bufsize_entry")), FALSE);
+        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(LU("bufsize_default")), TRUE);
+        sprintf(buf, "%d", comedi_get_buffer_size(comedi_dev, comedi_subdevice));
+        gtk_entry_set_text(GTK_ENTRY(LU("bufsize_entry")), buf);
+        gtk_widget_set_sensitive(GTK_WIDGET(LU("bufsize_entry")), FALSE);
     }
 
     /* Build the subdevice option menu by running through COMEDI's list of subdevices.  Grey out any
@@ -138,21 +138,21 @@ void device_changed(void)
     if (menu) gtk_widget_destroy(menu);
     menu = gtk_menu_new();
     for (i=0; i<comedi_get_n_subdevices(comedi_dev); i++) {
-	GtkWidget *p;
-	int subdev_type = comedi_get_subdevice_type(comedi_dev, i);
-	int nchans = comedi_get_n_channels(comedi_dev, i);
+        GtkWidget *p;
+        int subdev_type = comedi_get_subdevice_type(comedi_dev, i);
+        int nchans = comedi_get_n_channels(comedi_dev, i);
 
-	snprintf(buf, sizeof(buf), "%d (%s; %d chan%s)",
-		 i, subdevice_types[subdev_type], nchans, nchans > 1 ? "s" : "");
-	p = gtk_menu_item_new_with_label (buf);
-	gtk_signal_connect (GTK_OBJECT(p), "activate",
-			    GTK_SIGNAL_FUNC(subdevice_on_activate),
-			    (gpointer) i);
-	gtk_menu_append (GTK_MENU(menu), p);
+        snprintf(buf, sizeof(buf), "%d (%s; %d chan%s)",
+                 i, subdevice_types[subdev_type], nchans, nchans > 1 ? "s" : "");
+        p = gtk_menu_item_new_with_label (buf);
+        gtk_signal_connect (GTK_OBJECT(p), "activate",
+                            GTK_SIGNAL_FUNC(subdevice_on_activate),
+                            (gpointer) i);
+        gtk_menu_append (GTK_MENU(menu), p);
 
-	/* If subdevice doesn't support input, gray it out */
-	gtk_widget_set_sensitive(p, (subdev_type==1) || (subdev_type==3) || (subdev_type==5));
-	gtk_widget_show (p);
+        /* If subdevice doesn't support input, gray it out */
+        gtk_widget_set_sensitive(p, (subdev_type==1) || (subdev_type==3) || (subdev_type==5));
+        gtk_widget_show (p);
     }
     gtk_option_menu_set_menu(GTK_OPTION_MENU(LU("subdevice_optionmenu")), menu);
     gtk_option_menu_set_history(GTK_OPTION_MENU(LU("subdevice_optionmenu")), comedi_subdevice);
@@ -162,14 +162,14 @@ void device_changed(void)
 
     switch (comedi_aref) {
     case AREF_GROUND:
-	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(LU("aref_ground")), TRUE);
-	break;
+        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(LU("aref_ground")), TRUE);
+        break;
     case AREF_DIFF:
-	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(LU("aref_diff")), TRUE);
-	break;
+        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(LU("aref_diff")), TRUE);
+        break;
     case AREF_COMMON:
-	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(LU("aref_common")), TRUE);
-	break;
+        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(LU("aref_common")), TRUE);
+        break;
     }
 
 }
@@ -191,30 +191,30 @@ void comedi_save_options(void)
     char buf[64];
 
     snprintf(buf, sizeof(buf), "device=%s",
-	     gtk_entry_get_text(GTK_ENTRY(LU("comedi_device_entry"))));
+             gtk_entry_get_text(GTK_ENTRY(LU("comedi_device_entry"))));
     datasrc->set_option(buf);
 
     snprintf(buf, sizeof(buf), "rate=%s",
-	     gtk_entry_get_text(GTK_ENTRY(LU("rate_entry"))));
+             gtk_entry_get_text(GTK_ENTRY(LU("rate_entry"))));
     datasrc->set_option(buf);
 
     snprintf(buf, sizeof(buf), "subdevice=%d", gui_subdevice);
     datasrc->set_option(buf);
 
     if (GTK_TOGGLE_BUTTON(LU("bufsize_default"))->active) {
-	datasrc->set_option("bufsize=default");
+        datasrc->set_option("bufsize=default");
     } else {
-	snprintf(buf, sizeof(buf), "bufsize=%s",
-		 gtk_entry_get_text(GTK_ENTRY(LU("bufsize_entry"))));
-	datasrc->set_option(buf);
+        snprintf(buf, sizeof(buf), "bufsize=%s",
+                 gtk_entry_get_text(GTK_ENTRY(LU("bufsize_entry"))));
+        datasrc->set_option(buf);
     }
 
     if (GTK_TOGGLE_BUTTON(LU("aref_ground"))->active) {
-	datasrc->set_option("aref=ground");
+        datasrc->set_option("aref=ground");
     } else if (GTK_TOGGLE_BUTTON(LU("aref_diff"))->active) {
-	datasrc->set_option("aref=diff");
+        datasrc->set_option("aref=diff");
     } else if (GTK_TOGGLE_BUTTON(LU("aref_common"))->active) {
-	datasrc->set_option("aref=common");
+        datasrc->set_option("aref=common");
     }
 
     /* Datasrc API insists we have to do datasrc->reset() now, we also may need to update various
@@ -230,16 +230,16 @@ void
 on_device_entry_changed (GtkEditable *editable, gpointer user_data)
 {
     if (strcmp(gtk_entry_get_text(GTK_ENTRY(LU("comedi_device_entry"))),
-	       comedi_devname) == 0) {
-	gtk_container_foreach(GTK_CONTAINER(LU("option_table")),
-			      (GtkCallback) gtk_widget_set_sensitive,
-			      (gpointer) TRUE);
+               comedi_devname) == 0) {
+        gtk_container_foreach(GTK_CONTAINER(LU("option_table")),
+                              (GtkCallback) gtk_widget_set_sensitive,
+                              (gpointer) TRUE);
     } else {
-	gtk_container_foreach(GTK_CONTAINER(LU("option_table")),
-			      (GtkCallback) gtk_widget_set_sensitive,
-			      (gpointer) FALSE);
-	gtk_widget_set_sensitive(LU("device_label"), TRUE);
-	gtk_widget_set_sensitive(LU("comedi_device_entry"), TRUE);
+        gtk_container_foreach(GTK_CONTAINER(LU("option_table")),
+                              (GtkCallback) gtk_widget_set_sensitive,
+                              (gpointer) FALSE);
+        gtk_widget_set_sensitive(LU("device_label"), TRUE);
+        gtk_widget_set_sensitive(LU("comedi_device_entry"), TRUE);
     }
 }
 

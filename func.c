@@ -1,4 +1,4 @@
-/* -*- mode: C++; fill-column: 100; c-basic-offset: 4; -*-
+/* -*- mode: C++; indent-tabs-mode: nil; fill-column: 100; c-basic-offset: 4; -*-
  *
  * Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
  *
@@ -23,7 +23,7 @@
 #include "func.h"
 #include "xoscope_gtk.h"
 
-Signal mem[26];		/* 26 memories, corresponding to 26 letters */
+Signal mem[26];         /* 26 memories, corresponding to 26 letters */
 
 /* recall given memory register to the currently selected signal */
 void recall_on_channel(Signal *signal, Channel *ch)
@@ -31,10 +31,10 @@ void recall_on_channel(Signal *signal, Channel *ch)
     if (ch->signal) ch->signal->listeners --;
     ch->signal = signal;
     if (signal) {
-	signal->listeners ++;
+        signal->listeners ++;
 
-	/* no guarantee that signal->bits will be correct yet */
-	ch->bits = signal->bits;
+        /* no guarantee that signal->bits will be correct yet */
+        ch->bits = signal->bits;
     }
 }
 
@@ -60,12 +60,12 @@ void save(char c)
      * same as mem's old frame number!
      */
     if (mem[i].data != NULL) {
-	free(mem[i].data);
+        free(mem[i].data);
     }
     mem[i].data = malloc(ch[scope.select].signal->width * sizeof(short));
     if(mem[i].data == NULL){
-  	fprintf(stderr, "malloc failed in save()\n");
-  	exit(0);
+        fprintf(stderr, "malloc failed in save()\n");
+        exit(0);
     } 
     memcpy(mem[i].data, ch[scope.select].signal->data, ch[scope.select].signal->width * sizeof(short));
   
@@ -88,8 +88,8 @@ void save(char c)
 struct external {
     struct external *next;
     Signal signal;
-    int pid;			/* Zero if we already closed it down */
-    int to, from;			/* Pipes */
+    int pid;                    /* Zero if we already closed it down */
+    int to, from;                       /* Pipes */
     int last_frame_ch0, last_frame_ch1;
     int last_num_ch0, last_num_ch1;
 };
@@ -111,60 +111,60 @@ void start_command_on_channel(const char *command, Channel *ch_select)
     static char *path, *oscopepath;
 
     if (pipe(to) || pipe(from)) { /* get a set of pipes */
-	sprintf(error, "%s: can't create pipes", progname);
-	perror(error);
-	return;
+        sprintf(error, "%s: can't create pipes", progname);
+        perror(error);
+        return;
     }
 
     signal(SIGPIPE, SIG_IGN);
 
-    if ((pid = fork()) > 0) {		/* parent */
-	close(to[0]);
-	close(from[1]);
-    } else if (pid == 0) {		/* child */
-	close(to[1]);
-	close(from[0]);
-	close(0);
-	close(1);				/* redirect stdin/out through pipes */
-	dup2(to[0], 0);
-	dup2(from[1], 1);
-	close(to[0]);
-	close(from[1]);
+    if ((pid = fork()) > 0) {           /* parent */
+        close(to[0]);
+        close(from[1]);
+    } else if (pid == 0) {              /* child */
+        close(to[1]);
+        close(from[0]);
+        close(0);
+        close(1);                               /* redirect stdin/out through pipes */
+        dup2(to[0], 0);
+        dup2(from[1], 1);
+        close(to[0]);
+        close(from[1]);
 
-	/* XXX add additional environment vars here for sampling rate and number of samples per
-	 * frame
-	 */
+        /* XXX add additional environment vars here for sampling rate and number of samples per
+         * frame
+         */
 
-	if ((oscopepath = getenv("OSCOPEPATH")) == NULL)
-	    oscopepath = PACKAGE_LIBEXEC_DIR;
-	if ((path = malloc(strlen(oscopepath) + 6)) != NULL) {
-	    if(path == NULL){
-	  	fprintf(stderr, "malloc failed in start_command_on_channel() for path\n");
-	  	exit(0);
-	    } 
+        if ((oscopepath = getenv("OSCOPEPATH")) == NULL)
+            oscopepath = PACKAGE_LIBEXEC_DIR;
+        if ((path = malloc(strlen(oscopepath) + 6)) != NULL) {
+            if(path == NULL){
+                fprintf(stderr, "malloc failed in start_command_on_channel() for path\n");
+                exit(0);
+            } 
     
-	    sprintf(path,"PATH=%s", oscopepath);
-	    putenv(path);
-	    /* putenv() requires buffer to stick around, so no free(), but we're in the child, and
-	     * about to exec, so no big deal
-	     */
-	}
+            sprintf(path,"PATH=%s", oscopepath);
+            putenv(path);
+            /* putenv() requires buffer to stick around, so no free(), but we're in the child, and
+             * about to exec, so no big deal
+             */
+        }
 
-	execlp("/bin/sh", "sh", "-c", command, NULL);
-	sprintf(error, "%s: child can't exec /bin/sh -c \"%s\"",
-		progname, command);
-	perror(error);
-	exit(1);
-    } else {			/* fork error */
-	sprintf(error, "%s: can't fork", progname);
-	perror(error);
-	return;
+        execlp("/bin/sh", "sh", "-c", command, NULL);
+        sprintf(error, "%s: child can't exec /bin/sh -c \"%s\"",
+                progname, command);
+        perror(error);
+        exit(1);
+    } else {                    /* fork error */
+        sprintf(error, "%s: can't fork", progname);
+        perror(error);
+        return;
     }
 
     ext = malloc(sizeof(struct external));
     if (ext == NULL) {
-	fprintf(stderr, "malloc() struct external failed\n");
-	return;
+        fprintf(stderr, "malloc() struct external failed\n");
+        return;
     }
     bzero(ext, sizeof(struct external));
 
@@ -175,15 +175,15 @@ void start_command_on_channel(const char *command, Channel *ch_select)
 
     ext->signal.data = malloc(ch[0].signal->width * sizeof(short));
     if(ext->signal.data == NULL){
-	fprintf(stderr, "malloc failed in start_command_on_channel() for signal.data\n");
-	exit(0);
+        fprintf(stderr, "malloc failed in start_command_on_channel() for signal.data\n");
+        exit(0);
     } 
     ext->signal.width = ch[0].signal->width;
     ext->signal.num = ch[0].signal->num;
     ext->signal.rate = ch[0].signal->rate;
     ext->signal.delay = ch[0].signal->delay;
     ext->signal.bits = ch[0].signal->bits;
-    /*	fprintf(stderr, "start_command_on_channel: width = %d\n", ext->signal.width);*/
+    /*  fprintf(stderr, "start_command_on_channel: width = %d\n", ext->signal.width);*/
 
     ext->next = externals;
     externals = ext;
@@ -197,8 +197,8 @@ void start_command_on_channel(const char *command, Channel *ch_select)
 void startcommand(const char *command)
 {
     if (scope.select > 1) {
-	start_command_on_channel(command, &ch[scope.select]);
-	clear();
+        start_command_on_channel(command, &ch[scope.select]);
+        clear();
     }
 }
 
@@ -208,17 +208,17 @@ void restart_command_on_channel(void)
 
 
     for (ext = externals; ext != NULL; ext = ext->next) {
-	/*		fprintf(stderr, "1. restart_command_on_channel: width = %d\n", ext->signal.width);*/
-	if(ext->signal.data != NULL)
-	    free(ext->signal.data);
-	ext->signal.data = malloc(ch[0].signal->width * sizeof(short));	
-	if(ext->signal.data == NULL){
-	    fprintf(stderr, "malloc failed in restart_command_on_channel() for signal.data\n");
-	    exit(0);
-	} 
-	ext->signal.width = ch[0].signal->width;
-	ext->signal.num = ch[0].signal->num;
-	/*		fprintf(stderr, "2. restart_command_on_channel: width = %d\n", ext->signal.width);*/
+        /*              fprintf(stderr, "1. restart_command_on_channel: width = %d\n", ext->signal.width);*/
+        if(ext->signal.data != NULL)
+            free(ext->signal.data);
+        ext->signal.data = malloc(ch[0].signal->width * sizeof(short)); 
+        if(ext->signal.data == NULL){
+            fprintf(stderr, "malloc failed in restart_command_on_channel() for signal.data\n");
+            exit(0);
+        } 
+        ext->signal.width = ch[0].signal->width;
+        ext->signal.num = ch[0].signal->num;
+        /*              fprintf(stderr, "2. restart_command_on_channel: width = %d\n", ext->signal.width);*/
     }
 }
 
@@ -236,80 +236,80 @@ static void run_externals(void)
 
     for (ext = externals; ext != NULL; ext = ext->next) {
 
-	if (ext->signal.listeners > 0) {
+        if (ext->signal.listeners > 0) {
 
-	    if ((ext->pid > 0) && (ch[0].signal != NULL) && (ch[1].signal != NULL)) {
+            if ((ext->pid > 0) && (ch[0].signal != NULL) && (ch[1].signal != NULL)) {
 
-		/* There's a slight chance that if we change one of the channels, the new channel
-		 * may have a frame number identical to the last one, but that shouldn't hurt us too
-		 * bad.
-		 */
+                /* There's a slight chance that if we change one of the channels, the new channel
+                 * may have a frame number identical to the last one, but that shouldn't hurt us too
+                 * bad.
+                 */
 
-		if ((ch[0].signal->frame != ext->last_frame_ch0) ||
-		    (ch[1].signal->frame != ext->last_frame_ch1)) {
+                if ((ch[0].signal->frame != ext->last_frame_ch0) ||
+                    (ch[1].signal->frame != ext->last_frame_ch1)) {
 
-		    ext->last_frame_ch0 = ch[0].signal->frame;
-		    ext->last_frame_ch1 = ch[1].signal->frame;
-		    ext->signal.frame ++;
-		    ext->signal.num = 0;
-		}
+                    ext->last_frame_ch0 = ch[0].signal->frame;
+                    ext->last_frame_ch1 = ch[1].signal->frame;
+                    ext->signal.frame ++;
+                    ext->signal.num = 0;
+                }
 
-		/* We may already have sent and received part of a frame, so start our pointers at
-		 * whatever our last offset was, and keep going until we hit the limit of either
-		 * channel 0 or channel 1.
-		 *
-		 * XXX explain this better
-		 * XXX make sure this can't slow the program down!
-		 */
+                /* We may already have sent and received part of a frame, so start our pointers at
+                 * whatever our last offset was, and keep going until we hit the limit of either
+                 * channel 0 or channel 1.
+                 *
+                 * XXX explain this better
+                 * XXX make sure this can't slow the program down!
+                 */
 
-		a = ch[0].signal->data + ext->signal.num;
-		b = ch[1].signal->data + ext->signal.num;
-		c = ext->signal.data + ext->signal.num;
-		errors = 0;
-		for (i = ext->signal.num;
-		     (i < ch[0].signal->num) && (i < ch[1].signal->num); i++) {
-		    if (write(ext->to, a++, sizeof(short)) != sizeof(short))
-			errors ++;
-		    if (write(ext->to, b++, sizeof(short)) != sizeof(short))
-			errors ++;
-		    if (read(ext->from, c++, sizeof(short)) != sizeof(short))
-			errors ++;
-		
-		    if(errors){
-			fprintf(stderr, "run_externals() r/w-error. ch[0].signal->num=%d, ext->signal.num=%d i=%d\n", ch[0].signal->num, ext->signal.num, i);
-			return;
-		    }
-		}
-		ext->signal.num = i;
+                a = ch[0].signal->data + ext->signal.num;
+                b = ch[1].signal->data + ext->signal.num;
+                c = ext->signal.data + ext->signal.num;
+                errors = 0;
+                for (i = ext->signal.num;
+                     (i < ch[0].signal->num) && (i < ch[1].signal->num); i++) {
+                    if (write(ext->to, a++, sizeof(short)) != sizeof(short))
+                        errors ++;
+                    if (write(ext->to, b++, sizeof(short)) != sizeof(short))
+                        errors ++;
+                    if (read(ext->from, c++, sizeof(short)) != sizeof(short))
+                        errors ++;
+                
+                    if(errors){
+                        fprintf(stderr, "run_externals() r/w-error. ch[0].signal->num=%d, ext->signal.num=%d i=%d\n", ch[0].signal->num, ext->signal.num, i);
+                        return;
+                    }
+                }
+                ext->signal.num = i;
 
-		if (errors) {
-		    sprintf(error, "%s: %d pipe r/w errors from \"%s\"",
-			    progname, errors, ext->signal.savestr);
-		    perror(error);
-		    /* XXX do something here other than perror to notify user */
+                if (errors) {
+                    sprintf(error, "%s: %d pipe r/w errors from \"%s\"",
+                            progname, errors, ext->signal.savestr);
+                    perror(error);
+                    /* XXX do something here other than perror to notify user */
 
-		    close(ext->from);
-		    close(ext->to);
-		    waitpid(ext->pid, NULL, 0);
-		    ext->pid = 0;
-		}
-	    }
+                    close(ext->from);
+                    close(ext->to);
+                    waitpid(ext->pid, NULL, 0);
+                    ext->pid = 0;
+                }
+            }
 
-	} else {
+        } else {
 
-	    /* Nobody listening anymore; close down the pipes and wait for process to exit.  Maybe
-	     * we should timeout in case of a hang?
-	     */
+            /* Nobody listening anymore; close down the pipes and wait for process to exit.  Maybe
+             * we should timeout in case of a hang?
+             */
 
-	    if (ext->pid) {
-		close(ext->from);
-		close(ext->to);
-		waitpid(ext->pid, NULL, 0);
-	    }
+            if (ext->pid) {
+                close(ext->from);
+                close(ext->to);
+                waitpid(ext->pid, NULL, 0);
+            }
 
-	    /* Delete ext from list and free() it */
+            /* Delete ext from list and free() it */
 
-	}
+        }
     }
 }
 
@@ -331,7 +331,7 @@ void inv(Signal *dest, Signal *src)
     a = src->data;
     b = dest->data;
     for (i = 0 ; i < src->num; i++) {
-	*b++ = -1 * *a++;
+        *b++ = -1 * *a++;
     }
 }
 
@@ -363,7 +363,7 @@ void sum(Signal *dest)
     if (dest->num > ch[1].signal->num) dest->num = ch[1].signal->num;
 
     for (i = 0 ; i < dest->num ; i++) {
-	*c++ = *a++ + *b++;
+        *c++ = *a++ + *b++;
     }
 }
 
@@ -385,7 +385,7 @@ void diff(Signal *dest)
     if (dest->num > ch[1].signal->num) dest->num = ch[1].signal->num;
 
     for (i = 0 ; i < dest->num ; i++) {
-	*c++ = *a++ - *b++;
+        *c++ = *a++ - *b++;
     }
 }
 
@@ -408,7 +408,7 @@ void avg(Signal *dest)
     if (dest->num > ch[1].signal->num) dest->num = ch[1].signal->num;
 
     for (i = 0 ; i < dest->num ; i++) {
-	*c++ = (*a++ + *b++) / 2;
+        *c++ = (*a++ + *b++) / 2;
     }
 }
 
@@ -425,9 +425,9 @@ void fft1(Signal *dest)
         return;
     if(ch[0].signal->width < FFTLEN){
         bzero(dest->data, sizeof(short) * FFTLEN);
-	return;
+        return;
     }
-	
+        
     fftW(ch[0].signal->data, dest->data, ch[0].signal->width);
 }
 
@@ -439,9 +439,9 @@ void fft2(Signal *dest)
         return;
     if(ch[1].signal->width < FFTLEN){
         bzero(dest->data, sizeof(short) * FFTLEN);
-	return;
+        return;
     }
-	
+        
     fftW(ch[1].signal->data, dest->data, ch[1].signal->width);
 }
 
@@ -450,7 +450,7 @@ void make_sin(short * data, double freq, int rate)
 {
     int i;
     for(i = 0; i < FFTLEN; i++){
-	data[i] = sin( 360.0 * ((1.0/((double)rate/freq)) * i) * M_PI / 180.0) * 100;
+        data[i] = sin( 360.0 * ((1.0/((double)rate/freq)) * i) * M_PI / 180.0) * 100;
     }
 } 
 
@@ -463,7 +463,7 @@ void fft2(Signal *dest)
     fftW(testdata, dest->data, FFTLEN);
 
     for(i = 0; i<FFTLEN; i+=51)
-        dest->data[i] = -80;	
+        dest->data[i] = -80;    
 }
 #endif
 
@@ -483,23 +483,23 @@ int ch1active(Signal *dest)
     dest->num = 0;
 
     if (ch[0].signal == NULL) {
-	dest->rate = 0;
-	dest->volts = 0;
-	return 0;
+        dest->rate = 0;
+        dest->volts = 0;
+        return 0;
     }
 
     dest->rate = ch[0].signal->rate;
     dest->volts = ch[0].signal->volts;
 
     if (dest->width != ch[0].signal->width) {
-	dest->width = ch[0].signal->width;
-	if (dest->data != NULL) 
-	    free(dest->data);
-	dest->data = malloc(ch[0].signal->width * sizeof(short));
-	if(dest->data == NULL){
-	    fprintf(stderr, "malloc failed in ch1active()\n");
-	    exit(0);
-	} 
+        dest->width = ch[0].signal->width;
+        if (dest->data != NULL) 
+            free(dest->data);
+        dest->data = malloc(ch[0].signal->width * sizeof(short));
+        if(dest->data == NULL){
+            fprintf(stderr, "malloc failed in ch1active()\n");
+            exit(0);
+        } 
     }
 
     return 1;
@@ -511,23 +511,23 @@ int ch2active(Signal *dest)
     dest->num = 0;
 
     if (ch[1].signal == NULL) {
-	dest->rate = 0;
-	dest->volts = 0;
-	return 0;
+        dest->rate = 0;
+        dest->volts = 0;
+        return 0;
     }
 
     dest->rate = ch[1].signal->rate;
     dest->volts = ch[1].signal->volts;
 
     if (dest->width != ch[1].signal->width) {
-	dest->width = ch[1].signal->width;
-	if (dest->data != NULL) 
-	    free(dest->data);
-	dest->data = malloc(ch[1].signal->width * sizeof(short));
-	if(dest->data == NULL){
-	    fprintf(stderr, "malloc failed in ch2active()\n");
-	    exit(0);
-	} 
+        dest->width = ch[1].signal->width;
+        if (dest->data != NULL) 
+            free(dest->data);
+        dest->data = malloc(ch[1].signal->width * sizeof(short));
+        if(dest->data == NULL){
+            fprintf(stderr, "malloc failed in ch2active()\n");
+            exit(0);
+        } 
     }
 
     return 1;
@@ -539,11 +539,11 @@ int chs12active(Signal *dest)
     dest->num = 0;
 
     if ((ch[0].signal == NULL) || (ch[1].signal == NULL)
-	|| (ch[0].signal->rate != ch[1].signal->rate)
-	|| (ch[0].signal->volts != ch[1].signal->volts)) {
-	dest->rate = 0;
-	dest->volts = 0;
-	return 0;
+        || (ch[0].signal->rate != ch[1].signal->rate)
+        || (ch[0].signal->volts != ch[1].signal->volts)) {
+        dest->rate = 0;
+        dest->volts = 0;
+        return 0;
     }
 
     dest->rate = ch[0].signal->rate;
@@ -555,13 +555,13 @@ int chs12active(Signal *dest)
      */
 
     if (dest->width != ch[0].signal->width) {
-	dest->width = ch[0].signal->width;
-	if (dest->data != NULL) free(dest->data);
-	dest->data = malloc(ch[0].signal->width * sizeof(short));
-	if(dest->data == NULL){
-	    fprintf(stderr, "malloc failed in ch12active()\n");
-	    exit(0);
-	} 
+        dest->width = ch[0].signal->width;
+        if (dest->data != NULL) free(dest->data);
+        dest->data = malloc(ch[0].signal->width * sizeof(short));
+        if(dest->data == NULL){
+            fprintf(stderr, "malloc failed in ch12active()\n");
+            exit(0);
+        } 
     }
 
     return 1;
@@ -580,116 +580,116 @@ int chs12active(Signal *dest)
 
 int ch1FFTactive(Signal *dest)
 {
-    gfloat	left, right;
-    int		HzDiv, HzDivAdj;
+    gfloat      left, right;
+    int         HzDiv, HzDivAdj;
 
     if (ch[0].signal == NULL) {
-    	dest->rate = 0;
-    	return 0;
+        dest->rate = 0;
+        return 0;
     } 
 
     if(ch[0].signal->width < FFTLEN){
-	message("Too few samples to run FFT");
-	/*		fprintf(stderr,"ch1FFTactive(): Too few samples to run FFT\n");*/
-    	return 0;
+        message("Too few samples to run FFT");
+        /*              fprintf(stderr,"ch1FFTactive(): Too few samples to run FFT\n");*/
+        return 0;
     } 
 
-    dest->width = 	FFTLEN / 2;
-    dest->num = 	FFTLEN / 2;
-    dest->frame = 	0;
-    dest->bits = 	0;
-    dest->delay = 	0;
+    dest->width =       FFTLEN / 2;
+    dest->num =         FFTLEN / 2;
+    dest->frame =       0;
+    dest->bits =        0;
+    dest->delay =       0;
 
     if(dest->data == NULL)
-	dest->data = malloc(FFTLEN * sizeof(short));
+        dest->data = malloc(FFTLEN * sizeof(short));
     if(dest->data == NULL){
-	fprintf(stderr, "malloc failed in ch1FFTactive()\n");
-	exit(0);
+        fprintf(stderr, "malloc failed in ch1FFTactive()\n");
+        exit(0);
     } 
     bzero(dest->data, FFTLEN * sizeof(short));
 
     // (signal->rate / 2) = max FFT-freq
     HzDiv = ch[0].signal->rate / 2 / total_horizontal_divisions; 
     if(HzDiv > 1000)
-	HzDivAdj = HzDiv - (HzDiv % 500) + 500;
+        HzDivAdj = HzDiv - (HzDiv % 500) + 500;
     else
-	HzDivAdj = HzDiv - (HzDiv % 100) + 100;
+        HzDivAdj = HzDiv - (HzDiv % 100) + 100;
 
     dest->volts = HzDivAdj;
 
     gtk_databox_get_visible_limits(GTK_DATABOX(databox), &left, &right, NULL, NULL);
     dest->rate = -FFTLEN/(right - left)/2; 
-    /* 	fprintf(stderr,"ch1FFTactive(): dest->rate=%d -> ", dest->rate);*/
+    /*  fprintf(stderr,"ch1FFTactive(): dest->rate=%d -> ", dest->rate);*/
 
     dest->rate *= (gfloat)HzDivAdj / (gfloat)HzDiv;
-    /*	fprintf(stderr,"%d\n", dest->rate);*/
+    /*  fprintf(stderr,"%d\n", dest->rate);*/
 
-    /*	fprintf(stderr,"ch1FFTactive(): ch[0].signal->rate=%d\n", ch[0].signal->rate);*/
-    /*	fprintf(stderr,"ch1FFTactive(): left=%f, right=%f, total_horizontal_divisions=%d\n", 
-	left, right, total_horizontal_divisions);*/
-    /*	fprintf(stderr,"ch1FFTactive(): Hz/div=%d -> %d\n", HzDiv, HzDivAdj);*/
-    /*	fprintf(stderr,"ch1FFTactive(): ch[1].signal->rate=%d, dest->rate=%d\n", 
-	ch[1].signal->rate, dest->rate);*/
+    /*  fprintf(stderr,"ch1FFTactive(): ch[0].signal->rate=%d\n", ch[0].signal->rate);*/
+    /*  fprintf(stderr,"ch1FFTactive(): left=%f, right=%f, total_horizontal_divisions=%d\n", 
+        left, right, total_horizontal_divisions);*/
+    /*  fprintf(stderr,"ch1FFTactive(): Hz/div=%d -> %d\n", HzDiv, HzDivAdj);*/
+    /*  fprintf(stderr,"ch1FFTactive(): ch[1].signal->rate=%d, dest->rate=%d\n", 
+        ch[1].signal->rate, dest->rate);*/
     return 1;
 }
 
 int ch2FFTactive(Signal *dest)
 {
-    gfloat	left, right;
-    int		HzDiv, HzDivAdj;
+    gfloat      left, right;
+    int         HzDiv, HzDivAdj;
 
     if (ch[1].signal == NULL) {
-    	dest->rate = 0;
-    	return 0;
+        dest->rate = 0;
+        return 0;
     } 
 
     if(ch[1].signal->width < FFTLEN){
-	message("Too few samples to run FFT");
-    	return 0;
+        message("Too few samples to run FFT");
+        return 0;
     } 
 
-    dest->width = 	FFTLEN / 2;
-    dest->num = 	FFTLEN / 2;
-    dest->frame = 	0;
-    dest->bits = 	0;
-    dest->delay = 	0;
+    dest->width =       FFTLEN / 2;
+    dest->num =         FFTLEN / 2;
+    dest->frame =       0;
+    dest->bits =        0;
+    dest->delay =       0;
 
     if(dest->data == NULL)
-	dest->data = malloc(FFTLEN * sizeof(short));
+        dest->data = malloc(FFTLEN * sizeof(short));
     if(dest->data == NULL){
         fprintf(stderr, "malloc failed in ch2FFTactive()\n");
-	exit(0);
+        exit(0);
     } 
     bzero(dest->data, FFTLEN * sizeof(short));
 
     // (signal->rate / 2) = max FFT-freq
     HzDiv = ch[1].signal->rate / 2 / total_horizontal_divisions; 
     if(HzDiv > 1000)
-	HzDivAdj = HzDiv - (HzDiv % 500) + 500;
+        HzDivAdj = HzDiv - (HzDiv % 500) + 500;
     else
-	HzDivAdj = HzDiv - (HzDiv % 100) + 100;
+        HzDivAdj = HzDiv - (HzDiv % 100) + 100;
     dest->volts = HzDivAdj;
 
     gtk_databox_get_visible_limits(GTK_DATABOX(databox), &left, &right, NULL, NULL);
     dest->rate = -FFTLEN/(right - left)/2; 
-    /* 	fprintf(stderr,"ch2FFTactive(): dest->rate=%d -> ", dest->rate);*/
+    /*  fprintf(stderr,"ch2FFTactive(): dest->rate=%d -> ", dest->rate);*/
 
     dest->rate *= (gfloat)HzDivAdj / (gfloat)HzDiv;
-    /*	fprintf(stderr,"%d\n", dest->rate);*/
+    /*  fprintf(stderr,"%d\n", dest->rate);*/
 
-    /*	fprintf(stderr,"ch2FFTactive(): ch[1].signal->rate=%d\n", ch[1].signal->rate);*/
-    /*	fprintf(stderr,"ch2FFTactive(): left=%f, right=%f, total_horizontal_divisions=%d\n", 
-	left, right, total_horizontal_divisions);*/
-    /*	fprintf(stderr,"ch2FFTactive(): Hz/div=%d -> %d\n", HzDiv, HzDivAdj);*/
-    /*	fprintf(stderr,"ch2FFTactive(): ch[1].signal->rate=%d, dest->rate=%d\n", 
-	ch[1].signal->rate, dest->rate);*/
+    /*  fprintf(stderr,"ch2FFTactive(): ch[1].signal->rate=%d\n", ch[1].signal->rate);*/
+    /*  fprintf(stderr,"ch2FFTactive(): left=%f, right=%f, total_horizontal_divisions=%d\n", 
+        left, right, total_horizontal_divisions);*/
+    /*  fprintf(stderr,"ch2FFTactive(): Hz/div=%d -> %d\n", HzDiv, HzDivAdj);*/
+    /*  fprintf(stderr,"ch2FFTactive(): ch[1].signal->rate=%d, dest->rate=%d\n", 
+        ch[1].signal->rate, dest->rate);*/
     return 1;
 }
 
 struct func {
     void (*func)(Signal *);
     char *name;
-    int (*isvalid)(Signal *);	/* returns TRUE if this function is valid */
+    int (*isvalid)(Signal *);   /* returns TRUE if this function is valid */
     Signal signal;
 };
 
@@ -720,7 +720,7 @@ void next_func(void)
     Channel *chan = &ch[scope.select];
 
     for (func = &funcarray[0]; func < &funcarray[funccount]; func++) {
-	if (chan->signal == &func->signal) break;
+        if (chan->signal == &func->signal) break;
     }
 
     if (func == &funcarray[funccount]) func = &funcarray[0];
@@ -733,12 +733,12 @@ void next_func(void)
 
     func2 = func;
     do {
-	if (func->isvalid(&func->signal)) {
-	    recall(&func->signal);
-	    return;
-	}
-	func ++;
-	if (func == &funcarray[funccount]) func = &funcarray[0];
+        if (func->isvalid(&func->signal)) {
+            recall(&func->signal);
+            return;
+        }
+        func ++;
+        if (func == &funcarray[funccount]) func = &funcarray[0];
     } while (func != func2);
 
     /* If we're here, it's because we went through all the functions without finding one that
@@ -756,7 +756,7 @@ void prev_func(void)
     Channel *chan = &ch[scope.select];
 
     for (func = &funcarray[0]; func < &funcarray[funccount]; func++) {
-	if (chan->signal == &func->signal) break;
+        if (chan->signal == &func->signal) break;
     }
 
     if (func == &funcarray[funccount]) func = &funcarray[funccount-1];
@@ -769,12 +769,12 @@ void prev_func(void)
 
     func2 = func;
     do {
-	if (func->isvalid(&func->signal)) {
-	    recall(&func->signal);
-	    return;
-	}
-	func --;
-	if (func < &funcarray[0]) func = &funcarray[funccount-1];
+        if (func->isvalid(&func->signal)) {
+            recall(&func->signal);
+            return;
+        }
+        func --;
+        if (func < &funcarray[0]) func = &funcarray[funccount-1];
     } while (func != func2);
 
     /* If we're here, it's because we went through all the functions without finding one that
@@ -787,9 +787,9 @@ void prev_func(void)
 int function_bynum_on_channel(int fnum, Channel *ch)
 {
     if ((fnum >= 0) && (fnum < funccount)
-	&& funcarray[fnum].isvalid(&funcarray[fnum].signal)) {
-	recall_on_channel(&funcarray[fnum].signal, ch);
-	return TRUE;
+        && funcarray[fnum].isvalid(&funcarray[fnum].signal)) {
+        recall_on_channel(&funcarray[fnum].signal, ch);
+        return TRUE;
     }
     return FALSE;
 }
@@ -802,20 +802,20 @@ void init_math(void)
     static int once = 0;
 
     for (i = 0 ; i < 26 ; i++) {
-	if (once==1 && mem[i].data != NULL) {
-	    free(mem[i].data);
-	}
-	mem[i].data = NULL;
-	mem[i].num = mem[i].frame = mem[i].volts = 0;
-	mem[i].listeners = 0;
-	sprintf(mem[i].name, "Memory %c", 'a' + i);
-	mem[i].savestr[0] = 'a' + i;
-	mem[i].savestr[1] = '\0';
+        if (once==1 && mem[i].data != NULL) {
+            free(mem[i].data);
+        }
+        mem[i].data = NULL;
+        mem[i].num = mem[i].frame = mem[i].volts = 0;
+        mem[i].listeners = 0;
+        sprintf(mem[i].name, "Memory %c", 'a' + i);
+        mem[i].savestr[0] = 'a' + i;
+        mem[i].savestr[1] = '\0';
     }
     for (i = 0; i < funccount; i++) {
-	strcpy(funcarray[i].signal.name, funcarray[i].name);
-	funcarray[i].signal.savestr[0] = '0' + i;
-	funcarray[i].signal.savestr[1] = '\0';
+        strcpy(funcarray[i].signal.name, funcarray[i].name);
+        funcarray[i].signal.savestr[0] = '0' + i;
+        funcarray[i].signal.savestr[1] = '\0';
     }
     InitializeFFTW(FFTLEN);
     once=1;
@@ -837,9 +837,9 @@ int update_math_signals(void)
     int retval = 0;
 
     for (i = 0; i < funccount; i++) {
-	if (funcarray[i].signal.listeners > 0) {
-	    if (! funcarray[i].isvalid(&funcarray[i].signal)) retval = -1;
-	}
+        if (funcarray[i].signal.listeners > 0) {
+            if (! funcarray[i].isvalid(&funcarray[i].signal)) retval = -1;
+        }
     }
 
     return retval;
@@ -852,9 +852,9 @@ void do_math(void)
     static int i;
 
     for (i = 0; i < funccount; i++) {
-	if (funcarray[i].signal.listeners > 0) {
-	    funcarray[i].func(&funcarray[i].signal);
-	}
+        if (funcarray[i].signal.listeners > 0) {
+            funcarray[i].func(&funcarray[i].signal);
+        }
     }
 
     run_externals();
@@ -883,71 +883,71 @@ void measure_data(Channel *sig, struct signal_stats *stats)
     if ((sig->signal == NULL) || (sig->signal->num == 0)) return;
 
     prev = 1;
-    if (scope.curs) {		/* manual cursor measurements */
-	if (scope.cursa < scope.cursb) {
-	    first = scope.cursa;
-	    last = scope.cursb;
-	} else {
-	    first = scope.cursb;
-	    last = scope.cursa;
-	}
-	stats->min = stats->max = sig->signal->data[(int)first];
-	if ((j = sig->signal->data[(int)last]) < stats->min)
-	    stats->min = j;
-	else if (j > stats->max)
-	    stats->max = j;
-	count = 2;
-    } else {			/* automatic period measurements */
-	min = max = sig->signal->data[0];
-	for (i = 0 ; i < sig->signal->num ; i++) {
-	    j = sig->signal->data[i];
-	    if (j < min)
-		min = j;
-	    if (j > max) {
-		max = j;
-		imax = i;
-	    }
-	}
+    if (scope.curs) {           /* manual cursor measurements */
+        if (scope.cursa < scope.cursb) {
+            first = scope.cursa;
+            last = scope.cursb;
+        } else {
+            first = scope.cursb;
+            last = scope.cursa;
+        }
+        stats->min = stats->max = sig->signal->data[(int)first];
+        if ((j = sig->signal->data[(int)last]) < stats->min)
+            stats->min = j;
+        else if (j > stats->max)
+            stats->max = j;
+        count = 2;
+    } else {                    /* automatic period measurements */
+        min = max = sig->signal->data[0];
+        for (i = 0 ; i < sig->signal->num ; i++) {
+            j = sig->signal->data[i];
+            if (j < min)
+                min = j;
+            if (j > max) {
+                max = j;
+                imax = i;
+            }
+        }
 
-	/* locate and count rising edges
-	 * doesn't handle noise very well (noisy edges can get double counted)
-	 */
+        /* locate and count rising edges
+         * doesn't handle noise very well (noisy edges can get double counted)
+         */
 
-	midpoint = (min + max)/2;
-	for (i = 0 ; i < sig->signal->num ; i++) {
-	    j = sig->signal->data[i];
-	    if (j > midpoint && prev <= midpoint) {
-		if (!first)
-		    first = i;
-		last = i;
-		count++;
-	    }
-	    prev = j;
-	}
-	stats->min = min;
-	stats->max = max;
+        midpoint = (min + max)/2;
+        for (i = 0 ; i < sig->signal->num ; i++) {
+            j = sig->signal->data[i];
+            if (j > midpoint && prev <= midpoint) {
+                if (!first)
+                    first = i;
+                last = i;
+                count++;
+            }
+            prev = j;
+        }
+        stats->min = min;
+        stats->max = max;
     }
 
     if (sig->signal->rate < 0) {
 
-	/* Special case for FFT - signal rate will be < 0, the negative of the frequency step for
-	 * each point in the transform, times 10.  So multiply by the index of the maximum value to
-	 * get frequency peak.
-	 */
+        /* Special case for FFT - signal rate will be < 0, the negative of the frequency step for
+         * each point in the transform, times 10.  So multiply by the index of the maximum value to
+         * get frequency peak.
+         */
 
-	stats->freq = (- sig->signal->rate) * imax / 10;
-	if (stats->freq > 0)
-	    stats->time = 1000000 / stats->freq;
+        stats->freq = (- sig->signal->rate) * imax / 10;
+        if (stats->freq > 0)
+            stats->time = 1000000 / stats->freq;
   
     } else if ((sig->signal->rate > 0) && (count > 1)) {
 
-	/* estimate frequency from rising edge count
-	 * assume a wave: period = length / # periods
-	 */
+        /* estimate frequency from rising edge count
+         * assume a wave: period = length / # periods
+         */
 
-	stats->time = 1000000 * (last - first) / (count - 1) / sig->signal->rate;
-	if (stats->time > 0)
-	    stats->freq = 1000000 / stats->time;
+        stats->time = 1000000 * (last - first) / (count - 1) / sig->signal->rate;
+        if (stats->time > 0)
+            stats->freq = 1000000 / stats->time;
 
     }
 }
