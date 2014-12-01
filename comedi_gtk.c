@@ -11,8 +11,6 @@
 #include "display.h"
 #include "com_gtk.h"
 
-#include "callbacks.h"
-
 GtkWidget *window;
 
 #ifdef HAVE_LIBCOMEDI

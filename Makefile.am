@@ -11,7 +11,7 @@
 man_MANS = xoscope.1
 
 noinst_HEADERS = com_gtk.h display.h file.h oscope.h \
-config.h func.h xoscope.rc.h callbacks.h fft.h
+config.h func.h xoscope.rc.h fft.h
 
 bin_PROGRAMS = xoscope
 
@@ -33,10 +33,10 @@ hardware/xoscope-components.png hardware/xoscope-copper.png
 
 src = oscope.c file.c func.c display.c sc_linux.c sc_linux_gtk.c
 fftsrc = fft.c realfft.c
-guisrc = callbacks.c com_gtk.c gr_gtk.c
+guisrc = com_gtk.c gr_gtk.c
 
 if COMEDI
-comedisrc = comedi.c
+comedisrc = comedi.c comedi_gtk.c
 else
 comedisrc =
 endif
