@@ -1,4 +1,5 @@
-/*
+/* -*- mode: C++; fill-column: 100; c-basic-offset: 4; -*-
+ *
  * @(#)$Id: fft.c,v 2.0 2008/12/17 17:35:46 baccala Exp $
  *
  * Copyright (C) 1996 Tim Witham <twitham@pcocd2.intel.com>
@@ -17,11 +18,11 @@
 #include "fft.h"
 
 /* these are all constants in oscope's context */
-#define WINDOW_RIGHT		FFTLEN
+#define WINDOW_RIGHT			FFTLEN
 #define WINDOW_LEFT			0
 
 #define fftlen				FFTLEN
-#define freq_scalefactor	1
+#define freq_scalefactor		1
 #define freq_base			0
 #define SampleRate			44100
 #define shift				0

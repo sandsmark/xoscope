@@ -1,9 +1,11 @@
+/* -*- mode: C++; fill-column: 100; c-basic-offset: 4; -*-
+ */
+
 #include <gtk/gtk.h>
 
 
-GtkWidget*
-create_databox (gchar *widget_name, gchar *string1, gchar *string2,
-                gint int1, gint int2);
+GtkWidget* create_databox (gchar *widget_name, gchar *string1, gchar *string2,
+			   gint int1, gint int2);
 
 
 gint key_press_event(GtkWidget *widget, GdkEventKey *event);
@@ -12,25 +14,15 @@ void delete_event(GtkWidget *widget, GdkEvent *event, gpointer data);
 
 /* COMEDI */
 
-void
-comedi_on_ok                           (GtkButton       *button,
-                                        gpointer         user_data);
+void comedi_on_ok (GtkButton *button, gpointer user_data);
 
-void
-comedi_on_apply                        (GtkButton       *button,
-                                        gpointer         user_data);
+void comedi_on_apply (GtkButton *button, gpointer user_data);
 
-void
-on_bufsize_custom_clicked              (GtkButton       *button,
-                                        gpointer         user_data);
+void on_bufsize_custom_clicked (GtkButton *button, gpointer user_data);
 
-void
-on_bufsize_default_clicked             (GtkButton       *button,
-                                        gpointer         user_data);
+void on_bufsize_default_clicked (GtkButton *button, gpointer user_data);
 
-void
-on_device_entry_changed                (GtkEditable     *editable,
-                                        gpointer         user_data);
+void on_device_entry_changed (GtkEditable *editable, gpointer user_data);
 
 /* Bitscope */
 

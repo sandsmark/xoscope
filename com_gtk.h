@@ -1,4 +1,5 @@
-/*
+/* -*- mode: C++; fill-column: 100; c-basic-offset: 4; -*-
+ *
  * @(#)$Id: com_gtk.h,v 2.3 2009/01/17 06:44:55 baccala Exp $
  *
  * Copyright (C) 1996 - 2000 Tim Witham <twitham@quiknet.com>
