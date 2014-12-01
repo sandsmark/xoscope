@@ -109,14 +109,13 @@ void parse_args(int argc, char **argv)
 }
 
 /* cleanup before exiting due to error or program end */
-void cleanup()
+void cleanup(void)
 {
     cleanup_math();
-    cleanup_display();
 }
 
 /* initialize the scope */
-void init_scope()
+void init_scope(void)
 {
     /* XXX fix me - get better plot/scroll mode defaults here */
     scope.plot_mode = DEF_P / 2;
@@ -134,7 +133,7 @@ void init_scope()
 }
 
 /* initialize the signals */
-void init_channels()
+void init_channels(void)
 {
     int i;
     static int first = 1;

@@ -38,13 +38,13 @@ void start_command_on_channel(const char *, Channel *);
 void startcommand(const char *);
 void restart_command_on_channel(void);
 
-void init_math();
+void init_math(void);
 
-int update_math_signals();
+int update_math_signals(void);
 
-void do_math();
+void do_math(void);
 
-void cleanup_math();
+void cleanup_math(void);
 
 void measure_data(Channel *, struct signal_stats *);
 

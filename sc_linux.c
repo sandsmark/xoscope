@@ -50,7 +50,7 @@ static const char * snd_errormsg2 = NULL;
 void alsa_gtk_option_dialog() __attribute__ ((weak));
 
 /* close the sound device */
-static void close_sound_card()
+static void close_sound_card(void)
 {
     /* fprintf(stderr,"close_sound_card\n"); */
     if (handle != NULL) {
@@ -364,7 +364,7 @@ static void set_width(int width)
 /* return value is 0 when we wait for a trigger event or on error, otherwise 1 */
 /* in_progress: 0 when we start a new plot, when a plot is in progress, number of samples read. */
 
-static int sc_get_data()
+static int sc_get_data(void)
 {
     static unsigned char *buffer = NULL;
     static int frameBufferSize;

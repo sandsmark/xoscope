@@ -18,29 +18,25 @@
 #define FALSE	0
 #endif
 
+/* XXX fontname seems to be unused */
 extern char fontname[];
 extern char fonts[];
 extern int total_horizontal_divisions;
 
-void	init_widgets()		/* exported from display.c */;
-void	mainloop();
-void	setup_help_text();
-void	update_text();
-void	show_data();
+void	init_widgets(void);
+void	fix_widgets(void);
+
+void	setup_help_text(GtkWidget *widget, gpointer ignored);
+void	update_text(void);
+void	show_data(void);
 void	roundoff_multipliers(Channel *);
 void	timebase_changed(void);
-void	clear();
+void	clear(void);
 void	message(const char *);
-void	cleanup_display();
 void	animate(void *);
-int	col();
 
-void	AddTimeOut();
 void	LoadSaveFile(int);
-void	ExternCommand();
-char *	GetFile();
-char *	GetString();
-int	GetYesNo();
+void	ExternCommand(void);
 int	OpenDisplay(int, char **);
 
 void	setup_help_text(GtkWidget *, gpointer);

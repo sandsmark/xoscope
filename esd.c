@@ -48,7 +48,7 @@ static char * esd_errormsg2 = NULL;
 void esd_gtk_option_dialog() __attribute__ ((weak));
 /*void esdsc_gtk_option_dialog() {}*/
 
-static void close_ESD()
+static void close_ESD(void)
 {
     if (esd >= 0) {
 	close(esd);
@@ -205,7 +205,7 @@ static void set_width(int width)
 }
 
 /* get data from sound card, return value is whether we triggered or not */
-static int esd_get_data()
+static int esd_get_data(void)
 {
     static unsigned char buffer[MAXWID * 2];
     static int i, j, delay;

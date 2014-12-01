@@ -796,7 +796,7 @@ int function_bynum_on_channel(int fnum, Channel *ch)
 
 /* Initialize math, called once by main at startup, and again whenever we read a file. */
 
-void init_math()
+void init_math(void)
 {
     static int i;
     static int once = 0;
@@ -847,7 +847,7 @@ int update_math_signals(void)
 
 /* Perform any math on the software channels, called many times by main loop */
 
-void do_math()
+void do_math(void)
 {
     static int i;
 
@@ -863,7 +863,7 @@ void do_math()
 
 /* Perform any math cleanup, called once by cleanup at program exit */
 
-void cleanup_math()
+void cleanup_math(void)
 {
     EndFFT();
 }

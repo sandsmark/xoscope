@@ -29,7 +29,7 @@
 
 extern double alsa_volts;
 
-void alsa_gtk_option_dialog()
+void alsa_gtk_option_dialog(void)
 {
     GtkEntry *val;
     GtkEntry *peak;
@@ -50,7 +50,7 @@ void alsa_gtk_option_dialog()
     gtk_widget_show (alsa_options_dialog);
 }
 
-void on_alsa_buttonOk_clicked()
+void on_alsa_buttonOk_clicked(void)
 {
     GtkEntry *val;
     GtkEntry *peak;
@@ -77,7 +77,7 @@ void on_alsa_buttonOk_clicked()
     }
 }
 
-void on_alsa_buttonCancel_clicked()
+void on_alsa_buttonCancel_clicked(void)
 {
     gtk_widget_hide (alsa_options_dialog);
 }

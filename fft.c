@@ -83,7 +83,7 @@ void fft(short *in, short *out, int inLen)
 
 /* initialize global buffers for FFT */
 
-void init_fft()
+void init_fft(void)
 {
     InitializeFFT(fftlen);
 }

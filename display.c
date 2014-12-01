@@ -33,10 +33,6 @@ extern GtkWidget *databox;
 
 #define DEBUG 0
 
-void	show_data();
-void	init_widgets();
-void	fix_widgets();
-
 int	triggered = 0;		/* whether we've triggered or not */
 void	*font;
 int	math_warning = 0;	/* TRUE if math has a problem */
@@ -597,7 +593,7 @@ void recompute_graticule(void)
     }
 }
 
-void create_graticule()
+void create_graticule(void)
 {
     GtkStyle *style;
     GdkColor gcolor;
@@ -847,7 +843,7 @@ void timebase_changed(void)
  * screen.
  */
 
-void clear()
+void clear(void)
 {
     int i;
 
@@ -910,7 +906,7 @@ void clear()
     update_text();
 }
 
-void draw_graticule()
+void draw_graticule(void)
 {
     if (graticule_minor_graph == NULL) {
 	create_graticule();
@@ -948,7 +944,7 @@ gfloat cursoraX[2], cursoraY[2], cursorbX[2], cursorbY[2];
 GtkDataboxGraph *cursora = NULL;
 GtkDataboxGraph *cursorb = NULL;
 
-void draw_data()
+void draw_data(void)
 {
     static int i, j, bit, start, end;
     gfloat y;

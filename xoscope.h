@@ -206,9 +206,9 @@ extern Channel ch[CHANNELS];
 /* functions that are called by files other than oscope.c */
 void	usage(int);
 void	handle_key(unsigned char);
-void	cleanup();
-void	init_scope();
-void	init_channels();
+void	cleanup(void);
+void	init_scope(void);
+void	init_channels(void);
 int	samples(int);
 void	loadfile(char *);
 void	savefile(char *);

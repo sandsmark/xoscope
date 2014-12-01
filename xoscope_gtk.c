@@ -165,7 +165,7 @@ GtkWidget * lookup_widget(GtkWidget *widget, const gchar  *widget_name)
     return found_widget;
 }
 
-GtkWidget * create_main_window()
+GtkWidget * create_main_window(void)
 {
     GtkBuilder			*builder; 
     GError 			*err = NULL;
@@ -225,12 +225,7 @@ GtkWidget * create_main_window()
     return(glade_window);
 }
 
-void on_main_window_check_resize()
-{
-    fprintf(stderr, "on_main_window_frame_event()\n");
-}
-
-GtkWidget * create_comedi_dialog ()
+GtkWidget * create_comedi_dialog (void)
 {
     return(comedi_options_dialog);
 }
@@ -315,7 +310,7 @@ void run_sel(GtkWidget *w, GtkEntry *command)
     startcommand(gtk_entry_get_text(GTK_ENTRY(command)));
 }
 
-void ExternCommand()
+void ExternCommand(void)
 {
     GtkWidget *window, *label, *command, *run, *cancel;
     GList *glist = NULL;
@@ -652,10 +647,6 @@ void help(GtkWidget *w, void *data)
     gtk_widget_show (window);
 }
 
-void cleanup_display()
-{
-}
-
 /* WARNING: if the menu system is rearranged, the finditem-based logic in fix_widgets may need
  * updated as well.
  */
@@ -921,7 +912,7 @@ GtkItemFactoryEntry * finditem(char *str)
 }
 
 /* set current state colors, labels, and check marks on widgets */
-void fix_widgets()
+void fix_widgets(void)
 {
     GtkItemFactoryEntry *p, *q, *r;
     int i;
@@ -1359,10 +1350,10 @@ GtkWidget * create_databox (void)
     return databox;
 }
 
-GtkWidget * create_main_window();
+GtkWidget * create_main_window(void);
 
 /* initialize all the widgets, called by init_screen in display.c */
-void init_widgets()
+void init_widgets(void)
 {
     /*  char ** xoscope_rc_ptr = xoscope_rc;*/
 

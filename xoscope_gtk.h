@@ -17,14 +17,9 @@ extern GtkWidget *comedi_options_dialog;
 extern GtkWidget *alsa_options_dialog;
 extern GtkWidget *databox;
 
-gint expose_event();
-gint key_press_event();
-void delete_event();
-void hit_key();
-
 GtkWidget* lookup_widget(GtkWidget *widget, const gchar *widget_name);
 #define LU(label)       lookup_widget(glade_window, label)
 
-GtkWidget *create_comedi_dialog ();
+GtkWidget *create_comedi_dialog (void);
 
 void on_main_window_destroy (GtkObject *object, gpointer user_data);
