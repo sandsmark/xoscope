@@ -394,16 +394,15 @@ void update_text(void)
                     sprintf(string, "%d:1", (int) rint(ch[i].scale));
                 else
                     sprintf(string, "1:%d", (int) rint(1.0/ch[i].scale));
-            }
-            else { 
+            } else {
                 /* Special case for a Fourier Transform.  ch[i].signal->rate is negative.  The
                  * x-scaling for a FFT (Hz/div) is calculated in chXFFTactive() and rounded to some
                  * "nice" value.  This value is stored in the volts member ofthe signal structure.
                  * Not nice, but I didn't want to add a new member.
                  */
                 SIformat(string, "%g %sHz/div FFT", ch[i].signal->volts);
-            }        
-            
+            }
+
             sprintf(widget, "Ch%1d_scale_label", i+1);
             gtk_label_set_text(GTK_LABEL(LU(widget)), string);
 
@@ -731,7 +730,7 @@ void configure_databox(void)
      * int total_horizontal_divisions.
      */
 
-    for (total_horizontal_divisions = 10; 
+    for (total_horizontal_divisions = 10;
          upper_time_limit > (total_horizontal_divisions + 0.5)
              * 0.001 * scope.scale;
          total_horizontal_divisions += 5);
@@ -900,7 +899,7 @@ void clear(void)
         }
     }
 
-    memset((void *)&stats, 0, sizeof(stats)); 
+    memset((void *)&stats, 0, sizeof(stats));
 
     show_data();
     update_text();
@@ -999,11 +998,9 @@ void draw_data(void)
 
             if (p->signal->rate > 0) {
                 num = (gfloat) 1 / p->signal->rate;
-            } 
-            else if (p->signal->rate < 0) {
+            } else if (p->signal->rate < 0) {
                 num = (gfloat) -1 / p->signal->rate;
-            } 
-            else {
+            } else {
                 num = (gfloat) 1 / 1000;
             }
 
@@ -1375,7 +1372,7 @@ void animate(void *data)
         setinputfd(-1);
         return;
     }
-        
+
     prev_time = current_time;
     if (datasrc) setinputfd(datasrc->fd());
     settimeout(SND_QUERY_INTERVALL);

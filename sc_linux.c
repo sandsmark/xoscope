@@ -71,7 +71,7 @@ static int open_sound_card(void)
     snd_pcm_hw_params_t *params;
     int dir = 0;
     snd_pcm_uframes_t pcm_frames;
- 
+
     /*  fprintf(stderr, "open_sound_card() sound_card_rate=%d\n", sound_card_rate); */
 
     if (handle != NULL){
@@ -82,7 +82,6 @@ static int open_sound_card(void)
     snd_errormsg1 = NULL;
     snd_errormsg2 = NULL;
 
-  
     /* Open PCM device for recording (capture). */
     rc = snd_pcm_open(&handle, alsaDevice, SND_PCM_STREAM_CAPTURE,  SND_PCM_NONBLOCK);
     if (rc < 0) {
@@ -91,7 +90,7 @@ static int open_sound_card(void)
         fprintf(stderr, "%s\n%s\n", snd_errormsg1, snd_errormsg2);
         return 0;
     }
-  
+
     /* Allocate a hardware parameters object. */
     snd_pcm_hw_params_alloca(&params);
 
@@ -103,7 +102,7 @@ static int open_sound_card(void)
         fprintf(stderr, "%s\n%s\n", snd_errormsg1, snd_errormsg2);
         return 0;
     }
-  
+
     /* Set the desired hardware parameters. */
 
     /* Interleaved mode */
@@ -129,14 +128,14 @@ static int open_sound_card(void)
         fprintf(stderr, "%s\n%s\n", snd_errormsg1, snd_errormsg2);
         return 0;
     }
-  
+
     if (rc < 0) {
         snd_errormsg1 = "snd_pcm_hw_params_set_format() failed ";
         snd_errormsg2 = snd_strerror(rc);
         fprintf(stderr, "%s\n%s\n", snd_errormsg1, snd_errormsg2);
         return 0;
     }
-  
+
     rc = snd_pcm_hw_params_get_format(params, &pcm_format);
     if (rc < 0) {
         snd_errormsg1 = "snd_pcm_hw_params_get_format() failed ";
@@ -144,19 +143,19 @@ static int open_sound_card(void)
         fprintf(stderr, "%s\n%s\n", snd_errormsg1, snd_errormsg2);
         return 0;
     }
- 
+
     if (bits == 8 && pcm_format != SND_PCM_FORMAT_U8) {
         snd_errormsg1 = "Can't set 8-bit format (SND_PCM_FORMAT_U8)";
         fprintf(stderr, "%s\n%s\n", snd_errormsg1, snd_errormsg2);
         return 0;
     }
- 
+
     if (bits == 16 && pcm_format != SND_PCM_FORMAT_S16_LE) {
         snd_errormsg1 = "Can't set 16-bit format (SND_PCM_FORMAT_S16_LE)";
         fprintf(stderr, "%s\n%s\n", snd_errormsg1, snd_errormsg2);
         return 0;
     }
-  
+
     /* Two channels (stereo) */
     rc = snd_pcm_hw_params_set_channels(handle, params, chan);
     if (rc < 0) {
@@ -173,7 +172,7 @@ static int open_sound_card(void)
         return 0;
     }
     sc_chans = chan;
-  
+
     rc = snd_pcm_hw_params_set_rate_near(handle, params, &rate, &dir);
     if (rc < 0) {
         snd_errormsg1 = "snd_pcm_hw_params_set_rate_near() failed ";
@@ -221,8 +220,8 @@ static int open_sound_card(void)
 
 static void reset_sound_card(void)
 {
-    static unsigned char *junk = NULL; 
-        
+    static unsigned char *junk = NULL;
+
     /* fprintf(stderr,"reset_sound_card()\n"); */
     if (junk == NULL) {
         if (!(junk =  malloc((SAMPLESKIP * snd_pcm_format_width(pcm_format) / 8) * 2))) {
@@ -371,12 +370,12 @@ static int sc_get_data(void)
     static int i, rdCnt, delay;
 
     // fprintf(stderr, "sc_get_data(%d %d)\n", in_progress,(MAXWID * snd_pcm_format_width(pcm_format) / 8) * 2);
- 
+
     if (handle == NULL) {
         fprintf(stderr, "sc_get_data() handle == NULL\n");
         return 0;
     }
-        
+
     if (buffer == NULL) {
         if (!(buffer =  malloc((MAXWID * snd_pcm_format_width(pcm_format) / 8) * 2))) {
             snd_errormsg1 = "malloc() failed ";
@@ -417,7 +416,7 @@ static int sc_get_data(void)
         usleep(1000);
         return 0;
         /*              return(sc_get_data());*/
-    } 
+    }
 
     rdCnt *= 2; // 2 bytes per frame (needs change for 16-bit mode)!
 
@@ -425,14 +424,16 @@ static int sc_get_data(void)
     if (!in_progress) {
         if (trigmode == 1) {
             i ++;
-            while (((i+1)*2 <= rdCnt) && 
-                   ((buffer[2*i + trigch] < triglev) || (buffer[2*(i-1) + trigch] >= triglev))) 
+            while (((i+1)*2 <= rdCnt) &&
+                   ((buffer[2*i + trigch] < triglev) || (buffer[2*(i-1) + trigch] >= triglev))) {
                 i ++;
+            }
         } else if (trigmode == 2) {
             i ++;
-            while (((i+1)*2 <= rdCnt) && 
-                   ((buffer[2*i + trigch] > triglev) || (buffer[2*(i-1) + trigch] <= triglev))) 
+            while (((i+1)*2 <= rdCnt) &&
+                   ((buffer[2*i + trigch] > triglev) || (buffer[2*(i-1) + trigch] <= triglev))) {
                 i ++;
+            }
         }
 
         if ((i+1)*2 > rdCnt) {  /* haven't triggered within the screen */
@@ -506,7 +507,7 @@ static const char * snd_status_str(int i)
         } else {
             return "";
         }
-    
+
     case 2:
         if (snd_errormsg2) {
             return snd_errormsg2;

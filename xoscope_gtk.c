@@ -85,8 +85,9 @@ int is_GtkWidget(GType Type) {
     GType GtkWidgetType = g_type_from_name("GtkWidget");
 
     while (Type) {
-        if (Type == GtkWidgetType) 
+        if (Type == GtkWidgetType) {
             return 1;
+        }
         Type = g_type_parent(Type);
     }
     return 0;
@@ -106,7 +107,7 @@ void set_name_property(GtkWidget *widget, GtkBuilder *builder)
     /* fprintf(stderr, "%s\n", gtk_buildable_get_name(GTK_BUILDABLE (widget))); */
     gtk_buildable_set_buildable_property(GTK_BUILDABLE (widget), builder, "name", &g_value);
 }
- 
+
 #define GLADE_HOOKUP_OBJECT(component,widget,name)                      \
     g_object_set_data_full (                                            \
                             G_OBJECT (component),                       \
@@ -121,7 +122,7 @@ void set_name_property(GtkWidget *widget, GtkBuilder *builder)
 void store_reference(GtkWidget* widget)
 {
     GtkWidget *parent, *child;
-        
+
     child = widget;
     while(TRUE){
         parent = (GtkWidget*)gtk_widget_get_parent(child);
@@ -142,7 +143,7 @@ void store_reference(GtkWidget* widget)
     }
 }
 
-GtkBuilder * builder; 
+GtkBuilder * builder;
 
 GtkWidget * lookup_widget(const gchar * widget_name)
 {
@@ -163,11 +164,11 @@ GtkWidget * create_main_window(void)
     GSList                      *gslWidgets, *iterator = NULL;
     char                        **xoscope_rc_ptr = xoscope_rc;
     /* extern char              gladestring[]; */
-        
+
     for (xoscope_rc_ptr=xoscope_rc; *xoscope_rc_ptr != NULL; xoscope_rc_ptr++) {
         gtk_rc_parse_string(*xoscope_rc_ptr);
     }
-        
+
     builder = gtk_builder_new ();
 
     /*  if(0 == gtk_builder_add_from_file (builder, "xoscope_new.glade", &err)){*/
@@ -183,7 +184,7 @@ GtkWidget * create_main_window(void)
     comedi_options_dialog       = GTK_WIDGET (gtk_builder_get_object (builder, "comedi_dialog"));
     alsa_options_dialog         = GTK_WIDGET (gtk_builder_get_object (builder, "alsa_options_dialog"));
     databox                             = GTK_WIDGET (gtk_builder_get_object (builder, "databox"));
- 
+
     /* Run this loop TWICE to make sure all rc settings take. */
 
     gslWidgets = gtk_builder_get_objects(builder);
@@ -495,7 +496,7 @@ void set_trigger_level(GtkWidget *w, guint data)
 void setposition(GtkWidget *w, guint data)
 {
     ch[scope.select].pos = data;
-        
+
     clear();
 }
 
@@ -565,9 +566,9 @@ void help(GtkWidget *w, void *data)
     textbuffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(text));
 
     bold_tag = gtk_text_buffer_create_tag (textbuffer, NULL,
-                                           "weight", PANGO_WEIGHT_BOLD, NULL);  
+                                           "weight", PANGO_WEIGHT_BOLD, NULL);
     underline_tag = gtk_text_buffer_create_tag (textbuffer, NULL,
-                                                "underline", PANGO_UNDERLINE_SINGLE, NULL);  
+                                                "underline", PANGO_UNDERLINE_SINGLE, NULL);
 
     /* Now run 'man' and copy its output into the text buffer.  We use an intermediate 'charbuffer'
      * for two reasons: to handle backspaces (for overstrikes or underlines) which get converted
@@ -1332,7 +1333,7 @@ GtkWidget * create_databox (void)
 #if 0
     /* This is a global var - our one, unique, databox */
     databox = gtk_databox_new();
-                                      
+
     gtk_databox_set_enable_zoom(GTK_DATABOX(databox), FALSE);
     gtk_databox_set_enable_selection(GTK_DATABOX(databox), FALSE);
 #endif
@@ -1362,7 +1363,7 @@ void init_widgets(void)
 #endif
 
     glade_window = create_main_window();
-        
+
     setup_help_text(glade_window, NULL);
 
 #if 0

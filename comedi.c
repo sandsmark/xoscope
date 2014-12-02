@@ -104,7 +104,7 @@ static int trig_chan = 0;
 static int trig_level = 0;
 static int trig_mode = 0;
 static int trig_index = -1;
- 
+
 /* This function is defined as do-nothing and weak, meaning it can be overridden by the linker
  * without error.  It's used to start the X Windows GTK options dialog for COMEDI, and is defined in
  * this way so that this object file can be used either with or without GTK.  If this causes

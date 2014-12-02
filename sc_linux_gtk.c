@@ -19,7 +19,7 @@
 
 /* dialog to set the mV / steps for ALSA-Input */
 
-/* from xoscope.h 
+/* from xoscope.h
    typedef struct Signal {
    ...
    int volts; * millivolts per 320 sample values *
@@ -38,7 +38,7 @@ void alsa_gtk_option_dialog(void)
 
     val  = (GtkEntry *) LU("alsa_entry_mv");
     peak = (GtkEntry *) LU("alsa_radiobutton_peak");
-        
+
     if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON(peak))==TRUE) {
         snprintf(valStr, 8, "%7.2lf", alsa_volts / 3.2);
     } else {
@@ -46,7 +46,7 @@ void alsa_gtk_option_dialog(void)
     }
 
     gtk_entry_set_text(val, valStr);
-        
+
     gtk_widget_show (alsa_options_dialog);
 }
 
@@ -60,7 +60,7 @@ void on_alsa_buttonOk_clicked(void)
 
     val  = (GtkEntry *) LU("alsa_entry_mv");
     peak = (GtkEntry *) LU("alsa_radiobutton_peak");
-        
+
     valStr = gtk_entry_get_text(val);
     if (sscanf(valStr, "%lf", &valNew) == 1) {
         if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON(peak))==TRUE) {

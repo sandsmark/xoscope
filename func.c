@@ -18,7 +18,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include "xoscope.h"
-#include "fft.h" 
+#include "fft.h"
 #include "display.h"
 #include "func.h"
 #include "xoscope_gtk.h"
@@ -66,9 +66,9 @@ void save(char c)
     if(mem[i].data == NULL){
         fprintf(stderr, "malloc failed in save()\n");
         exit(0);
-    } 
+    }
     memcpy(mem[i].data, ch[scope.select].signal->data, ch[scope.select].signal->width * sizeof(short));
-  
+
     mem[i].rate = ch[scope.select].signal->rate;
     mem[i].num = ch[scope.select].signal->num;
     mem[i].width = ch[scope.select].signal->width;
@@ -141,8 +141,8 @@ void start_command_on_channel(const char *command, Channel *ch_select)
             if(path == NULL){
                 fprintf(stderr, "malloc failed in start_command_on_channel() for path\n");
                 exit(0);
-            } 
-    
+            }
+
             sprintf(path,"PATH=%s", oscopepath);
             putenv(path);
             /* putenv() requires buffer to stick around, so no free(), but we're in the child, and
@@ -177,7 +177,7 @@ void start_command_on_channel(const char *command, Channel *ch_select)
     if(ext->signal.data == NULL){
         fprintf(stderr, "malloc failed in start_command_on_channel() for signal.data\n");
         exit(0);
-    } 
+    }
     ext->signal.width = ch[0].signal->width;
     ext->signal.num = ch[0].signal->num;
     ext->signal.rate = ch[0].signal->rate;
@@ -211,11 +211,11 @@ void restart_command_on_channel(void)
         /*              fprintf(stderr, "1. restart_command_on_channel: width = %d\n", ext->signal.width);*/
         if(ext->signal.data != NULL)
             free(ext->signal.data);
-        ext->signal.data = malloc(ch[0].signal->width * sizeof(short)); 
+        ext->signal.data = malloc(ch[0].signal->width * sizeof(short));
         if(ext->signal.data == NULL){
             fprintf(stderr, "malloc failed in restart_command_on_channel() for signal.data\n");
             exit(0);
-        } 
+        }
         ext->signal.width = ch[0].signal->width;
         ext->signal.num = ch[0].signal->num;
         /*              fprintf(stderr, "2. restart_command_on_channel: width = %d\n", ext->signal.width);*/
@@ -274,7 +274,7 @@ static void run_externals(void)
                         errors ++;
                     if (read(ext->from, c++, sizeof(short)) != sizeof(short))
                         errors ++;
-                
+
                     if(errors){
                         fprintf(stderr, "run_externals() r/w-error. ch[0].signal->num=%d, ext->signal.num=%d i=%d\n", ch[0].signal->num, ext->signal.num, i);
                         return;
@@ -421,13 +421,13 @@ void avg(Signal *dest)
 
 void fft1(Signal *dest)
 {
-    if (ch[0].signal == NULL) 
+    if (ch[0].signal == NULL)
         return;
     if(ch[0].signal->width < FFTLEN){
         bzero(dest->data, sizeof(short) * FFTLEN);
         return;
     }
-        
+
     fftW(ch[0].signal->data, dest->data, ch[0].signal->width);
 }
 
@@ -435,13 +435,13 @@ void fft1(Signal *dest)
 #ifndef FFT_TEST
 void fft2(Signal *dest)
 {
-    if (ch[1].signal == NULL) 
+    if (ch[1].signal == NULL)
         return;
     if(ch[1].signal->width < FFTLEN){
         bzero(dest->data, sizeof(short) * FFTLEN);
         return;
     }
-        
+
     fftW(ch[1].signal->data, dest->data, ch[1].signal->width);
 }
 
@@ -452,7 +452,7 @@ void make_sin(short * data, double freq, int rate)
     for(i = 0; i < FFTLEN; i++){
         data[i] = sin( 360.0 * ((1.0/((double)rate/freq)) * i) * M_PI / 180.0) * 100;
     }
-} 
+}
 
 void fft2(Signal *dest)
 {
@@ -463,7 +463,7 @@ void fft2(Signal *dest)
     fftW(testdata, dest->data, FFTLEN);
 
     for(i = 0; i<FFTLEN; i+=51)
-        dest->data[i] = -80;    
+        dest->data[i] = -80;
 }
 #endif
 
@@ -493,13 +493,13 @@ int ch1active(Signal *dest)
 
     if (dest->width != ch[0].signal->width) {
         dest->width = ch[0].signal->width;
-        if (dest->data != NULL) 
+        if (dest->data != NULL)
             free(dest->data);
         dest->data = malloc(ch[0].signal->width * sizeof(short));
         if(dest->data == NULL){
             fprintf(stderr, "malloc failed in ch1active()\n");
             exit(0);
-        } 
+        }
     }
 
     return 1;
@@ -521,13 +521,13 @@ int ch2active(Signal *dest)
 
     if (dest->width != ch[1].signal->width) {
         dest->width = ch[1].signal->width;
-        if (dest->data != NULL) 
+        if (dest->data != NULL)
             free(dest->data);
         dest->data = malloc(ch[1].signal->width * sizeof(short));
         if(dest->data == NULL){
             fprintf(stderr, "malloc failed in ch2active()\n");
             exit(0);
-        } 
+        }
     }
 
     return 1;
@@ -561,7 +561,7 @@ int chs12active(Signal *dest)
         if(dest->data == NULL){
             fprintf(stderr, "malloc failed in ch12active()\n");
             exit(0);
-        } 
+        }
     }
 
     return 1;
@@ -573,7 +573,7 @@ int chs12active(Signal *dest)
  *
  * Second, it sets the "rate", so that the increment from grid line to grid line is some "nice"
  * value.  (a muliple of 500 Hz if increment is > 1kHz, otherwise a multiple of 100 hZ.
- * 
+ *
  * Third: this value is stored in the "volts" member of the dest signal structure. It is only
  * displayed in the label.
  */
@@ -586,13 +586,13 @@ int ch1FFTactive(Signal *dest)
     if (ch[0].signal == NULL) {
         dest->rate = 0;
         return 0;
-    } 
+    }
 
     if(ch[0].signal->width < FFTLEN){
         message("Too few samples to run FFT");
         /*              fprintf(stderr,"ch1FFTactive(): Too few samples to run FFT\n");*/
         return 0;
-    } 
+    }
 
     dest->width =       FFTLEN / 2;
     dest->num =         FFTLEN / 2;
@@ -605,11 +605,11 @@ int ch1FFTactive(Signal *dest)
     if(dest->data == NULL){
         fprintf(stderr, "malloc failed in ch1FFTactive()\n");
         exit(0);
-    } 
+    }
     bzero(dest->data, FFTLEN * sizeof(short));
 
     // (signal->rate / 2) = max FFT-freq
-    HzDiv = ch[0].signal->rate / 2 / total_horizontal_divisions; 
+    HzDiv = ch[0].signal->rate / 2 / total_horizontal_divisions;
     if(HzDiv > 1000)
         HzDivAdj = HzDiv - (HzDiv % 500) + 500;
     else
@@ -618,17 +618,17 @@ int ch1FFTactive(Signal *dest)
     dest->volts = HzDivAdj;
 
     gtk_databox_get_visible_limits(GTK_DATABOX(databox), &left, &right, NULL, NULL);
-    dest->rate = -FFTLEN/(right - left)/2; 
+    dest->rate = -FFTLEN/(right - left)/2;
     /*  fprintf(stderr,"ch1FFTactive(): dest->rate=%d -> ", dest->rate);*/
 
     dest->rate *= (gfloat)HzDivAdj / (gfloat)HzDiv;
     /*  fprintf(stderr,"%d\n", dest->rate);*/
 
     /*  fprintf(stderr,"ch1FFTactive(): ch[0].signal->rate=%d\n", ch[0].signal->rate);*/
-    /*  fprintf(stderr,"ch1FFTactive(): left=%f, right=%f, total_horizontal_divisions=%d\n", 
+    /*  fprintf(stderr,"ch1FFTactive(): left=%f, right=%f, total_horizontal_divisions=%d\n",
         left, right, total_horizontal_divisions);*/
     /*  fprintf(stderr,"ch1FFTactive(): Hz/div=%d -> %d\n", HzDiv, HzDivAdj);*/
-    /*  fprintf(stderr,"ch1FFTactive(): ch[1].signal->rate=%d, dest->rate=%d\n", 
+    /*  fprintf(stderr,"ch1FFTactive(): ch[1].signal->rate=%d, dest->rate=%d\n",
         ch[1].signal->rate, dest->rate);*/
     return 1;
 }
@@ -641,12 +641,12 @@ int ch2FFTactive(Signal *dest)
     if (ch[1].signal == NULL) {
         dest->rate = 0;
         return 0;
-    } 
+    }
 
     if(ch[1].signal->width < FFTLEN){
         message("Too few samples to run FFT");
         return 0;
-    } 
+    }
 
     dest->width =       FFTLEN / 2;
     dest->num =         FFTLEN / 2;
@@ -659,11 +659,11 @@ int ch2FFTactive(Signal *dest)
     if(dest->data == NULL){
         fprintf(stderr, "malloc failed in ch2FFTactive()\n");
         exit(0);
-    } 
+    }
     bzero(dest->data, FFTLEN * sizeof(short));
 
     // (signal->rate / 2) = max FFT-freq
-    HzDiv = ch[1].signal->rate / 2 / total_horizontal_divisions; 
+    HzDiv = ch[1].signal->rate / 2 / total_horizontal_divisions;
     if(HzDiv > 1000)
         HzDivAdj = HzDiv - (HzDiv % 500) + 500;
     else
@@ -671,17 +671,17 @@ int ch2FFTactive(Signal *dest)
     dest->volts = HzDivAdj;
 
     gtk_databox_get_visible_limits(GTK_DATABOX(databox), &left, &right, NULL, NULL);
-    dest->rate = -FFTLEN/(right - left)/2; 
+    dest->rate = -FFTLEN/(right - left)/2;
     /*  fprintf(stderr,"ch2FFTactive(): dest->rate=%d -> ", dest->rate);*/
 
     dest->rate *= (gfloat)HzDivAdj / (gfloat)HzDiv;
     /*  fprintf(stderr,"%d\n", dest->rate);*/
 
     /*  fprintf(stderr,"ch2FFTactive(): ch[1].signal->rate=%d\n", ch[1].signal->rate);*/
-    /*  fprintf(stderr,"ch2FFTactive(): left=%f, right=%f, total_horizontal_divisions=%d\n", 
+    /*  fprintf(stderr,"ch2FFTactive(): left=%f, right=%f, total_horizontal_divisions=%d\n",
         left, right, total_horizontal_divisions);*/
     /*  fprintf(stderr,"ch2FFTactive(): Hz/div=%d -> %d\n", HzDiv, HzDivAdj);*/
-    /*  fprintf(stderr,"ch2FFTactive(): ch[1].signal->rate=%d, dest->rate=%d\n", 
+    /*  fprintf(stderr,"ch2FFTactive(): ch[1].signal->rate=%d, dest->rate=%d\n",
         ch[1].signal->rate, dest->rate);*/
     return 1;
 }
@@ -699,8 +699,8 @@ struct func funcarray[] = {
     {sum,  "Sum  1+2", chs12active},
     {diff, "Diff 1-2", chs12active},
     {avg,  "Avg. 1,2", chs12active},
-    {fft1, "FFT. 1  ", ch1FFTactive}, 
-    {fft2, "FFT. 2  ", ch2FFTactive}, 
+    {fft1, "FFT. 1  ", ch1FFTactive},
+    {fft2, "FFT. 2  ", ch2FFTactive},
 };
 
 /* the total number of "functions" */
@@ -938,7 +938,7 @@ void measure_data(Channel *sig, struct signal_stats *stats)
         stats->freq = (- sig->signal->rate) * imax / 10;
         if (stats->freq > 0)
             stats->time = 1000000 / stats->freq;
-  
+
     } else if ((sig->signal->rate > 0) && (count > 1)) {
 
         /* estimate frequency from rising edge count
