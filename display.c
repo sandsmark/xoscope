@@ -87,8 +87,10 @@ void SIformat(char *buf, const char *fmt, double num)
 
     /* Round off num to nearest .1% */
 
-    while (num > 1000) num /= 10, power ++;
-    while (num < 100) num *= 10, power --;
+    if (num > 0) {
+        while (num > 1000) num /= 10, power ++;
+        while (num < 100) num *= 10, power --;
+    }
     num = rint(num);
 
     /* Special case to make sure we get "1 ms/div" and not "1000 us/div" */
