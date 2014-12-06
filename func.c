@@ -262,6 +262,15 @@ static void run_externals(void)
                  * XXX make sure this can't slow the program down!
                  */
 
+                if ((ext->signal.width < ch[0].signal->width) && (ext->signal.width < ch[1].signal->width)) {
+                    ext->signal.data = realloc(ext->signal.data, ch[0].signal->width * sizeof(short));
+                    if(ext->signal.data == NULL){
+                        fprintf(stderr, "realloc failed in run_externals()\n");
+                        exit(0);
+                    }
+                    ext->signal.width = ch[0].signal->width;
+                }
+
                 a = ch[0].signal->data + ext->signal.num;
                 b = ch[1].signal->data + ext->signal.num;
                 c = ext->signal.data + ext->signal.num;
