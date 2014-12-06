@@ -396,13 +396,15 @@ void update_text(void)
                     sprintf(string, "%d:1", (int) rint(ch[i].scale));
                 else
                     sprintf(string, "1:%d", (int) rint(1.0/ch[i].scale));
-            } else {
+            } else if (ch[i].signal->rate < 0) {
                 /* Special case for a Fourier Transform.  ch[i].signal->rate is negative.  The
                  * x-scaling for a FFT (Hz/div) is calculated in chXFFTactive() and rounded to some
                  * "nice" value.  This value is stored in the volts member ofthe signal structure.
                  * Not nice, but I didn't want to add a new member.
                  */
                 SIformat(string, "%g %sHz/div FFT", ch[i].signal->volts);
+            } else {
+                strcpy(string, "");
             }
 
             sprintf(widget, "Ch%1d_scale_label", i+1);
