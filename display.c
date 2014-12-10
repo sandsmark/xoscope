@@ -400,6 +400,7 @@ void update_text(void)
                  * "nice" value.  This value is stored in the volts member ofthe signal structure.
                  * Not nice, but I didn't want to add a new member.
                  */
+if(ch[i].signal->volts)                 
                 SIformat(string, "%g %sHz/div FFT", ch[i].signal->volts);
             }
 
@@ -704,6 +705,7 @@ void configure_databox(void)
      */
 
     upper_time_limit = 10 * 0.001 * scope.scale;
+fprintf(stderr, "configure_databox()\n");
 
     /* But it might be more, if we have stuff stored... */
 
@@ -717,6 +719,8 @@ void configure_databox(void)
                 (gfloat) p->signal->num / p->signal->rate > upper_time_limit) {
                 upper_time_limit = (gfloat) p->signal->num / p->signal->rate;
             }
+fprintf(stderr, "\tchannel:%d, p->signal->num:%d, p->signal->rate:%d, upper_time_limit%.4f ms\n",
+               j, p->signal->num, p->signal->rate, upper_time_limit * 1000.0);
         }
     }
 
@@ -735,6 +739,9 @@ void configure_databox(void)
              * 0.001 * scope.scale;
          total_horizontal_divisions += 5);
 
+fprintf(stderr, "\tupper_time_limit:%.4f ms, total_horizontal_divisions:%d, scope.scale:%.4f ms/div\n",
+                upper_time_limit * 1000.0, total_horizontal_divisions, scope.scale);
+
     /* Now set the total canvas size of the databox */
 
     rect.x1 = 0;
@@ -744,13 +751,16 @@ void configure_databox(void)
     rect.y2 = -1;
 
     gtk_databox_set_total_limits(GTK_DATABOX(databox), rect.x1, rect.x2, rect.y1, rect.y2);
-
+fprintf(stderr, "\tgtk_databox_set_total_limits(x1:%.4f x2:%.4f (%.2f ms), y1:%.4f, y2:%.4f)\n",
+                rect.x1, rect.x2, rect.x2 * 1000, rect.y1, rect.y2);
     /* A slight adjustment gets us our visible area.  Note that this call also resets the databox
      * viewport to its left most position.
      */
 
     rect.x2 = 10 * 0.001 * scope.scale;
     gtk_databox_set_visible_limits(GTK_DATABOX(databox), rect.x1, rect.x2, rect.y1, rect.y2);
+fprintf(stderr, "\tgtk_databox_visible_total_limits(x1:%.4f x2:%.4f (%.2f ms), y1:%.4f, y2:%.4f)\n",
+                rect.x1, rect.x2, rect.x2 * 1000, rect.y1, rect.y2);
 
     /* Temporary message is always centered on screen */
     databox_message_X = rect.x2 / 2;
@@ -892,7 +902,7 @@ void clear(void)
          */
 
         if (ch[i].signal) {
-            if (ch[i].signal->volts != 0)
+            if (ch[i].signal->volts != 0 && ch[i].signal->rate > 0)
                 ch[i].scale = roundoff(ch[i].scale, 1.0/ch[i].signal->volts);
             else
                 ch[i].scale = roundoff(ch[i].scale, 1);
@@ -972,6 +982,10 @@ void draw_data(void)
 
     for (j = 0 ; j < CHANNELS ; j++) { /* plot each visible channel */
         p = &ch[j];
+if(p->signal && p->signal->rate < 0 && in_progress != 0){
+/*fprintf(stderr, "draw_data() skipp unfinished fft\n");*/
+    continue;
+}
 
         if (!p->bits)           /* analog display mode: draw one line */
             start = end = -1;
@@ -998,9 +1012,11 @@ void draw_data(void)
 
             if (p->signal->rate > 0) {
                 num = (gfloat) 1 / p->signal->rate;
-            } else if (p->signal->rate < 0) {
+            } 
+            else if (p->signal->rate < 0) {
                 num = (gfloat) -1 / p->signal->rate;
-            } else {
+            } 
+            else {
                 num = (gfloat) 1 / 1000;
             }
 
@@ -1095,7 +1111,9 @@ void draw_data(void)
                     sl->Y[sl->next_point] = sl->data[sl->next_point];
                     sl->next_point ++;
                 }
-
+/*if (p->signal->rate < 0) {*/
+/*    fprintf(stderr, "p->signal->num: %d, num:%.6f\n", p->signal->num, num);*/
+/*}*/
                 /* Depending on the scroll mode, manage previous traces */
 
                 switch (scope.scroll_mode) {
