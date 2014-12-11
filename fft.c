@@ -33,7 +33,7 @@ fftw_plan       plan = NULL;
  * or else rounded down to a power of 2.
  */
 int             fftLenIn = -1;
-int             xLayOut[DISPLAY_LEN + 1];     /* Array of bin #'s displayed */
+int             xLayOut[FFT_DSP_LEN + 1];     /* Array of bin #'s displayed */
 
 static int once = 1;
 
@@ -132,7 +132,7 @@ fprintf(stderr, "FFTactive() starts.\n");
 fprintf(stderr,"FFTactive(): Too few samples to run FFT\n");
         EndFFTW();
         if(dest->data != NULL){
-            bzero(dest->data, (DISPLAY_LEN) * sizeof(short));
+            bzero(dest->data, (FFT_DSP_LEN) * sizeof(short));
         }
         return 0;
     }
@@ -140,14 +140,14 @@ fprintf(stderr,"FFTactive(): Too few samples to run FFT\n");
  
     if(dest->data == NULL){
         fprintf(stderr, "allocating memory for dest->data\n");
-        if((dest->data = malloc((DISPLAY_LEN) * sizeof(short))) == NULL){
+        if((dest->data = malloc((FFT_DSP_LEN) * sizeof(short))) == NULL){
             fprintf(stderr, "malloc failed in FFTactive()\n");
             exit(0);
         }
-        bzero(dest->data, (DISPLAY_LEN) * sizeof(short));
-        dest->width = DISPLAY_LEN;
+        bzero(dest->data, (FFT_DSP_LEN) * sizeof(short));
+        dest->width = FFT_DSP_LEN;
         dest->frame = 0;
-        dest->num = DISPLAY_LEN;
+        dest->num = FFT_DSP_LEN;
 
         // (signal->rate / 2) = max FFT-freq
         HzDiv = source->rate / 2 / total_horizontal_divisions;
@@ -158,7 +158,7 @@ fprintf(stderr,"FFTactive(): Too few samples to run FFT\n");
 
         dest->volts = HzDivAdj;
 
-        dest->rate  = (((double)source->rate / (double)source->width) * (double)DISPLAY_LEN)+0.5; 
+        dest->rate  = (((double)source->rate / (double)source->width) * (double)FFT_DSP_LEN)+0.5; 
         dest->rate *= (gfloat)HzDivAdj / (gfloat)HzDiv;
         dest->rate *= -1;
 fprintf(stderr,"**FFTactive(): HzDiv=%d, HzDivAdj=%d\n", HzDiv, HzDivAdj);
@@ -191,9 +191,9 @@ fprintf(stderr, "FFTactive() first run or change of time base.\n");
         fftLenIn = lenIn;
         initGraphX();
      
-        dest->width = DISPLAY_LEN;
+        dest->width = FFT_DSP_LEN;
         dest->frame = 0;
-        dest->num = DISPLAY_LEN;
+        dest->num = FFT_DSP_LEN;
 
         // (signal->rate / 2) = max FFT-freq
         HzDiv = source->rate / 2 / total_horizontal_divisions;
@@ -204,7 +204,7 @@ fprintf(stderr, "FFTactive() first run or change of time base.\n");
 
         dest->volts = HzDivAdj;
 
-        dest->rate  = (((double)source->rate / (double)source->width) * (double)DISPLAY_LEN)+0.5; 
+        dest->rate  = (((double)source->rate / (double)source->width) * (double)FFT_DSP_LEN)+0.5; 
         dest->rate *= (gfloat)HzDivAdj / (gfloat)HzDiv;
         dest->rate *= -1;
 fprintf(stderr,"**FFTactive(): HzDiv=%d, HzDivAdj=%d\n", HzDiv, HzDivAdj);
@@ -280,7 +280,7 @@ once = 0;
 if(once)
 fprintf(stderr, "OUT:\n"); 	        
     for(DSPindex = 0, FFTindex = xLayOut[0]; 
-                        DSPindex < DISPLAY_LEN && FFTindex < (fftLenIn / 2); DSPindex++){
+                        DSPindex < FFT_DSP_LEN && FFTindex < (fftLenIn / 2); DSPindex++){
     	FFTindex = xLayOut[DSPindex];
 if(once)
 fprintf(stderr, "FFTindex: %3d,", FFTindex); 	        
@@ -318,11 +318,11 @@ void initGraphX()
     /*
      * xLayOut: an array that hold indicies to indacte which resutlts of the fft 
      * to to combine into one point of the graph.
-     * In case we have fewer results from the fft than DISPLAY_LEN, we repeat
+     * In case we have fewer results from the fft than FFT_DSP_LEN, we repeat
      * point. This is indicated by a "-1".
      */ 
-    for(DSPindex = 0; DSPindex < (DISPLAY_LEN + 1); DSPindex++){
-        val = floor(((DSPindex * (double)fftLenIn / 2.0) / (double)DISPLAY_LEN ) + 0.5);
+    for(DSPindex = 0; DSPindex < (FFT_DSP_LEN + 1); DSPindex++){
+        val = floor(((DSPindex * (double)fftLenIn / 2.0) / (double)FFT_DSP_LEN ) + 0.5);
 /*        fprintf(stderr, "%.2f/%d ", DSPindex-0.45, val);*/
 
         if(val < 0) 
@@ -331,7 +331,7 @@ void initGraphX()
         if(val >= fftLenIn / 2) 
             val = fftLenIn / 2 - 1;
 	 
-        if(DSPindex <= DISPLAY_LEN)
+        if(DSPindex <= FFT_DSP_LEN)
 	        xLayOut[DSPindex] = val + 1;   /* the +1 takes care of the DC-Value in the fft result */
     }
     fprintf(stderr, "\n");
@@ -339,14 +339,14 @@ void initGraphX()
      *  If lines are repeated on the screen, flag this so that we don't
      *  have to recompute the y values.
      */
-    for(DSPindex = DISPLAY_LEN - 1; DSPindex > 0; DSPindex--){
+    for(DSPindex = FFT_DSP_LEN - 1; DSPindex > 0; DSPindex--){
         if(xLayOut[DSPindex] == xLayOut[DSPindex-1]){
 	        xLayOut[DSPindex] = -1;
 	    }
     }
 
-/*fprintf(stderr, "DISPLAY_LEN:%d, fftLenIn/2:%d\nLayOut: ", DISPLAY_LEN, fftLenIn / 2); 	        */
-/*for(DSPindex = 0; DSPindex < DISPLAY_LEN + 1; DSPindex++){*/
+/*fprintf(stderr, "FFT_DSP_LEN:%d, fftLenIn/2:%d\nLayOut: ", FFT_DSP_LEN, fftLenIn / 2); 	        */
+/*for(DSPindex = 0; DSPindex < FFT_DSP_LEN + 1; DSPindex++){*/
 /*   fprintf(stderr, "%4.4d ", xLayOut[DSPindex]);*/
 /*}*/
 /*fprintf(stderr, "\n");*/

@@ -262,6 +262,15 @@ static void run_externals(void)
                  * XXX make sure this can't slow the program down!
                  */
 
+                if ((ext->signal.width < ch[0].signal->width) && (ext->signal.width < ch[1].signal->width)) {
+                    ext->signal.data = realloc(ext->signal.data, ch[0].signal->width * sizeof(short));
+                    if(ext->signal.data == NULL){
+                        fprintf(stderr, "realloc failed in run_externals()\n");
+                        exit(0);
+                    }
+                    ext->signal.width = ch[0].signal->width;
+                }
+
                 a = ch[0].signal->data + ext->signal.num;
                 b = ch[1].signal->data + ext->signal.num;
                 c = ext->signal.data + ext->signal.num;
@@ -421,35 +430,25 @@ void avg(Signal *dest)
 
 void fft1(Signal *dest)
 {
-    if (ch[0].signal == NULL){
-fprintf(stderr, "fft1() ch[0].signal == NULL\n");
+    if (ch[0].signal == NULL)
         return;
-    }
-    if (in_progress != 0 || !scope.run){
-fprintf(stderr, "*fft1* %d\n", in_progress); 
+    if (in_progress != 0 || !scope.run)
         return;
-    }
 
-fprintf(stderr, "fft1() channel:0, ch[0].signal->num:%d, ch[0].signal->rate:%d, in_progress:%d\n",
-               ch[0].signal->num, ch[0].signal->rate, in_progress);
     fftW(ch[0].signal->data, dest->data, ch[0].signal->width);
 }
-#define FFT_TEST
+
+/*#define FFT_TEST*/
 #ifndef FFT_TEST
 void fft2(Signal *dest)
 {
-    if (ch[1].signal == NULL){
-fprintf(stderr, "fft2() ch[1].signal == NULL\n");
+    if (ch[1].signal == NULL)
         return;
     }
        
-    if (in_progress != 0 || !scope.run){
-fprintf(stderr, "*fft2* %d\n", in_progress); 
+    if (in_progress != 0 || !scope.run)
         return;
-    }
 
-fprintf(stderr, "fft2() channel:1, ch[1].signal->num:%d, ch[1.signal->rate:%d, in_progress:%d\n",
-               ch[1].signal->num, ch[1].signal->rate, in_progress);
     fftW(ch[1].signal->data, dest->data, ch[1].signal->width);
 }
 
@@ -467,17 +466,17 @@ void fft2(Signal *dest)
     int i;
 
     if (ch[1].signal == NULL){
-fprintf(stderr, "fft2() ch[1].signal == NULL\n");
+        fprintf(stderr, "fft2() ch[1].signal == NULL\n");
         return;
     }
-       
+
     if (in_progress != 0 || !scope.run){
-fprintf(stderr, "*fft2* %d\n", in_progress); 
+        fprintf(stderr, "*fft2* %d\n", in_progress); 
         return;
     }
 
     make_sin(ch[1].signal->data, 2500.0, ch[1].signal->rate);
-fprintf(stderr, "fft2() channel:1, ch[1].signal->num:%d, ch[1.signal->rate:%d, in_progress:%d\n",
+    fprintf(stderr, "fft2() channel:1, ch[1].signal->num:%d, ch[1.signal->rate:%d, in_progress:%d\n",
                ch[1].signal->num, ch[1].signal->rate, in_progress);
     fftW(ch[1].signal->data, dest->data, ch[1].signal->width);
 
@@ -487,7 +486,6 @@ fprintf(stderr, "fft2() channel:1, ch[1].signal->num:%d, ch[1.signal->rate:%d, i
             dest->data[i] = 80;
     }
 }
-
 #endif
 
 /* isvalid() functions for the various math functions.
@@ -605,16 +603,14 @@ int chs12active(Signal *dest)
 
 int ch1FFTactive(Signal *dest)
 {
-    fprintf(stderr, "ch1FFTactive()\n");
     return(FFTactive(ch[0].signal, dest));
-} 
+}
 
 int ch2FFTactive(Signal *dest)
 {
-    fprintf(stderr, "ch2FFTactive()\n");
     return(FFTactive(ch[1].signal, dest));
-} 
-   
+}
+
 struct func {
     void (*func)(Signal *);
     char *name;
@@ -663,12 +659,9 @@ void next_func(void)
     func2 = func;
     do {
         if (func->isvalid(&func->signal)) {
-/*fprintf(stderr, "next_func(),  isvalid() returns TRUE\n");       */
             recall(&func->signal);
             return;
         }
-/*else*/
-/*fprintf(stderr, "next_func(),  isvalid() returns FALSE\n");       */
         func ++;
         if (func == &funcarray[funccount]) func = &funcarray[0];
     } while (func != func2);
@@ -702,12 +695,9 @@ void prev_func(void)
     func2 = func;
     do {
         if (func->isvalid(&func->signal)) {
-/*fprintf(stderr, "prev_func(),  isvalid() returns TRUE\n");       */
             recall(&func->signal);
             return;
         }
-/*else*/
-/*fprintf(stderr, "prev_func(),  isvalid() returns FALSE\n");       */
         func --;
         if (func < &funcarray[0]) func = &funcarray[funccount-1];
     } while (func != func2);
@@ -723,11 +713,9 @@ int function_bynum_on_channel(int fnum, Channel *ch)
 {
     if ((fnum >= 0) && (fnum < funccount)
         && funcarray[fnum].isvalid(&funcarray[fnum].signal)) {
-/*fprintf(stderr, "function_bynum_on_channel(%d),  isvalid() returns TRUE\n", fnum);       */
         recall_on_channel(&funcarray[fnum].signal, ch);
         return TRUE;
     }
-/*fprintf(stderr, "function_bynum_on_channel(%d),  isvalid() returns FALSE\n", fnum);       */
     return FALSE;
 }
 
@@ -754,7 +742,6 @@ void init_math(void)
         funcarray[i].signal.savestr[0] = '0' + i;
         funcarray[i].signal.savestr[1] = '\0';
     }
-/*    InitializeFFTW(FFTLEN);*/
     once=1;
 }
 
@@ -772,17 +759,11 @@ int update_math_signals(void)
 {
     int i;
     int retval = 0;
-/*fprintf(stderr, "update_math_signals()\n");*/
 
     for (i = 0; i < funccount; i++) {
         if (funcarray[i].signal.listeners > 0) {
-/*fprintf(stderr, "update_math_signals(%d),  funcarray[%d].signal.listeners > 0\n", i, i);       */
             if (! funcarray[i].isvalid(&funcarray[i].signal)) retval = -1;
-/*else*/
-/*fprintf(stderr, "update_math_signals(%d),  funcarray[%d].isvalid() returns TRUE\n", i, i);       */
         }
-/*else*/
-/*fprintf(stderr, "update_math_signals(%d),  funcarray[%d].signal.listeners <= 0\n", i, i);       */
     }
 
     return retval;
@@ -795,10 +776,7 @@ void do_math(void)
     static int i;
 
     for (i = 0; i < funccount; i++) {
-/*fprintf(stderr, "do_math(%d),  funcarray[%d].signal.listeners\n", i, i);       */
         if (funcarray[i].signal.listeners > 0 && funcarray[i].isvalid(&funcarray[i].signal)) {
-/*if(in_progress == 0)*/
-/*fprintf(stderr, "do_math() funcarray[%d]\n", i);*/
             funcarray[i].func(&funcarray[i].signal);
         }
     }

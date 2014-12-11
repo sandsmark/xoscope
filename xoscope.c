@@ -138,6 +138,7 @@ void init_channels(void)
     int i;
     static int first = 1;
 
+fprintf(stderr, "init_channels()\n");
     if (!first) {
         do_math();                      /* XXX halt currently running commands */
     }
