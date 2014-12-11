@@ -438,13 +438,11 @@ void fft1(Signal *dest)
     fftW(ch[0].signal->data, dest->data, ch[0].signal->width);
 }
 
-/*#define FFT_TEST*/
 #ifndef FFT_TEST
 void fft2(Signal *dest)
 {
     if (ch[1].signal == NULL)
         return;
-    }
        
     if (in_progress != 0 || !scope.run)
         return;
@@ -453,10 +451,10 @@ void fft2(Signal *dest)
 }
 
 #else
-void make_sin(short * data, double freq, int rate)
+void make_sin(short *data, int size, double freq, int rate)
 {
     int i;
-    for(i = 0; i < ch[1].signal->width; i++){
+    for(i = 0; i < size; i++){
         data[i] = sin( 360.0 * ((1.0/((double)rate/freq)) * i) * M_PI / 180.0) * 100;
     }
 }
@@ -464,23 +462,29 @@ void make_sin(short * data, double freq, int rate)
 void fft2(Signal *dest)
 {
     int i;
-
+    static short    *testdata = NULL;
+    static int      testdataWidth = -1;
+    
     if (ch[1].signal == NULL){
         fprintf(stderr, "fft2() ch[1].signal == NULL\n");
         return;
     }
 
     if (in_progress != 0 || !scope.run){
-        fprintf(stderr, "*fft2* %d\n", in_progress); 
         return;
     }
 
-    make_sin(ch[1].signal->data, 2500.0, ch[1].signal->rate);
-    fprintf(stderr, "fft2() channel:1, ch[1].signal->num:%d, ch[1.signal->rate:%d, in_progress:%d\n",
-               ch[1].signal->num, ch[1].signal->rate, in_progress);
-    fftW(ch[1].signal->data, dest->data, ch[1].signal->width);
+    if(testdataWidth != ch[1].signal->width){
+        if(testdata != NULL)
+            free(testdata);
+        testdataWidth = ch[1].signal->width;    
+        testdata = malloc(testdataWidth * sizeof(short));
+        make_sin(testdata, testdataWidth, 2500.0, ch[1].signal->rate);
+    }
 
-    for(i = 0; i< DISPLAY_LEN - 20; i+=20){
+    fftW(testdata, dest->data, testdataWidth);
+
+    for(i = 0; i< FFT_DSP_LEN - 20; i+=20){
         dest->data[i] = -80;
         if(i == 400)
             dest->data[i] = 80;
@@ -598,17 +602,26 @@ int chs12active(Signal *dest)
  * Third: this value is stored in the "volts" member of the dest signal structure. It is only
  * displayed in the label.
  */
-
-
-
 int ch1FFTactive(Signal *dest)
 {
-    return(FFTactive(ch[0].signal, dest));
+    static int prevScale = -1;
+
+    if(scope.scale != prevScale){ /* Rate changed or first call */
+        prevScale = scope.scale;
+        return(FFTactive(ch[0].signal, dest, TRUE));
+    }
+    return(FFTactive(ch[1].signal, dest, FALSE));
 }
 
 int ch2FFTactive(Signal *dest)
 {
-    return(FFTactive(ch[1].signal, dest));
+    static int prevScale = -1;
+/*fprintf(stderr, "%d %d\n", ch[1].signal->rate, prevRate);   */
+    if(scope.scale != prevScale){ /* Rate changed or first call */
+        prevScale = scope.scale;
+        return(FFTactive(ch[1].signal, dest, TRUE));
+    }
+    return(FFTactive(ch[1].signal, dest, FALSE));
 }
 
 struct func {

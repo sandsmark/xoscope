@@ -19,7 +19,6 @@
 #include "func.h"
 #include "xoscope_gtk.h"
 
-/*#define TIME_FFT*/
 #ifdef TIME_FFT
 #include <time.h>
 #endif
@@ -35,8 +34,6 @@ fftw_plan       plan = NULL;
 int             fftLenIn = -1;
 int             xLayOut[FFT_DSP_LEN + 1];     /* Array of bin #'s displayed */
 
-static int once = 1;
-
 /* Fast Fourier Transform of in to out */
 void fftW(short *in, short *out, int inLen)
 {
@@ -45,8 +42,6 @@ void fftW(short *in, short *out, int inLen)
     clock_t begin, end;
     double time_spent;
 #endif
-
-/*fprintf(stderr, "fftW(): inLen:%d\n", inLen);*/
 
     for (k = 0; k < inLen && k < fftLenIn; k++) {
         dp[k] = (double)in[k];
@@ -76,14 +71,12 @@ void InitializeFFTW(int inLen)
         exit(0);
     }
     memset(dp, 0, sizeof (double) * inLen);
-fprintf(stderr, "InitializeFFTW() allocated memory for dp. Samples:%d\n", inLen);
 
     if ((cp = (fftw_complex *)fftw_malloc(sizeof (fftw_complex) * ((inLen / 2) +1 ))) == NULL) {
         fprintf(stderr, "fftw_malloc failed in InitializeFFTW()\n");
         exit(0);
     }
     memset(cp, 0, sizeof (fftw_complex) * ((inLen / 2) +1 ));
-fprintf(stderr, "InitializeFFTW() allocated memory for cp. Samples:%d\n", (inLen / 2) +1 );
 
     /* FFTW_MEASURE with huge (some 100.000) samples takes several seconds even for 
      * sizes that are a power of 2.
@@ -107,7 +100,7 @@ fprintf(stderr, "InitializeFFTW() allocated memory for cp. Samples:%d\n", (inLen
 
 /* special isvalid() functions for FFT
  *
- * First, it allocates memory for the generated fft.
+ * First, it allocates memory for the generated fft and initializes the fftw library.
  *
  * Second, it sets the "rate", so that the increment from grid line to grid line is some "nice"
  * value.  (a muliple of 500 Hz if increment is > 1kHz, otherwise a multiple of 100 hZ.
@@ -116,11 +109,9 @@ fprintf(stderr, "InitializeFFTW() allocated memory for cp. Samples:%d\n", (inLen
  * displayed in the label.
  */
 
-int FFTactive(Signal *source, Signal *dest)
+int FFTactive(Signal *source, Signal *dest, int rateChange)
 {
     int         lenIn, HzDiv, HzDivAdj;
-
-fprintf(stderr, "FFTactive() starts.\n");
 
     if (source == NULL) {
         dest->rate = 0;
@@ -129,17 +120,14 @@ fprintf(stderr, "FFTactive() starts.\n");
 
     if(source->width < 128){
         message("Too few samples to run FFT");
-fprintf(stderr,"FFTactive(): Too few samples to run FFT\n");
         EndFFTW();
         if(dest->data != NULL){
             bzero(dest->data, (FFT_DSP_LEN) * sizeof(short));
         }
         return 0;
     }
-    
  
     if(dest->data == NULL){
-        fprintf(stderr, "allocating memory for dest->data\n");
         if((dest->data = malloc((FFT_DSP_LEN) * sizeof(short))) == NULL){
             fprintf(stderr, "malloc failed in FFTactive()\n");
             exit(0);
@@ -148,23 +136,16 @@ fprintf(stderr,"FFTactive(): Too few samples to run FFT\n");
         dest->width = FFT_DSP_LEN;
         dest->frame = 0;
         dest->num = FFT_DSP_LEN;
-
-        // (signal->rate / 2) = max FFT-freq
-        HzDiv = source->rate / 2 / total_horizontal_divisions;
-        if(HzDiv > 1000)
-            HzDivAdj = HzDiv - (HzDiv % 500) + 500;
-        else
-            HzDivAdj = HzDiv - (HzDiv % 100) + 100;
-
-        dest->volts = HzDivAdj;
-
-        dest->rate  = (((double)source->rate / (double)source->width) * (double)FFT_DSP_LEN)+0.5; 
-        dest->rate *= (gfloat)HzDivAdj / (gfloat)HzDiv;
-        dest->rate *= -1;
-fprintf(stderr,"**FFTactive(): HzDiv=%d, HzDivAdj=%d\n", HzDiv, HzDivAdj);
-fprintf(stderr,"**FFTactive(): source->rate=%d source->width=%d (source->rate / source->width)=%d\n", source->rate, source->width, source->rate / source->width);
-fprintf(stderr,"**FFTactive(): dest->rate=%d, source->rate=%d\n", dest->rate, source->rate);
     }
+
+    if(rateChange){
+        /* Either first call or time base changed, 
+         * so the number of samples changed too and
+         * we must reinitialize fftw
+        */
+        if (fftLenIn != -1) {
+            EndFFTW();
+        }
 
     /* if we have more than 16 384 samples, we round them down to a power of 2 */
     if(source->width < (2 << 14)){ 
@@ -177,24 +158,11 @@ fprintf(stderr,"**FFTactive(): dest->rate=%d, source->rate=%d\n", dest->rate, so
         lenIn = 2 << 16;
     }
  
-fprintf(stderr, "FFTactive(): source->width:%d, lenIn:%d,  fftLenIn:%d\n", source->width, lenIn, fftLenIn);
-    if(lenIn != fftLenIn){
-        /* Either first call  fftLenIn == -1
-         * or time base changed, so the number of samples changed too 
-        */
-fprintf(stderr, "FFTactive() first run or change of time base.\n");
-        if (fftLenIn != -1) {
-            EndFFTW();
-        }
-        
         InitializeFFTW(lenIn);
+
         fftLenIn = lenIn;
         initGraphX();
      
-        dest->width = FFT_DSP_LEN;
-        dest->frame = 0;
-        dest->num = FFT_DSP_LEN;
-
         // (signal->rate / 2) = max FFT-freq
         HzDiv = source->rate / 2 / total_horizontal_divisions;
         if(HzDiv > 1000)
@@ -207,18 +175,12 @@ fprintf(stderr, "FFTactive() first run or change of time base.\n");
         dest->rate  = (((double)source->rate / (double)source->width) * (double)FFT_DSP_LEN)+0.5; 
         dest->rate *= (gfloat)HzDivAdj / (gfloat)HzDiv;
         dest->rate *= -1;
-fprintf(stderr,"**FFTactive(): HzDiv=%d, HzDivAdj=%d\n", HzDiv, HzDivAdj);
-fprintf(stderr,"**FFTactive(): source->rate=%d source->width=%d (source->rate / source->width)=%d\n", source->rate, source->width, source->rate / source->width);
-fprintf(stderr,"**FFTactive(): dest->rate=%d, source->rate=%d\n", dest->rate, source->rate);
-once = 1;
     }
     return 1;
 }
 
 void EndFFTW(void)
 {
-fprintf(stderr, "EndFFTW()\n");
-
     if (plan != NULL) {
         fftw_destroy_plan(plan);
         plan = NULL;
@@ -261,9 +223,6 @@ short calcDv(int FFTindex)
         mag = (1<<(sizeof(short) * 8 - 1)) - 1;     /* max short = 2^15 */
     }
         
-    /* TODO -255 puts the FFT at the botom of the screen.
-     * But only, if the scaling ist set to "1".
-     */
     dv = (short)(mag + 0.5);
     
     return(dv);
@@ -276,14 +235,9 @@ void displayFFT(fftw_complex *cp, short *out)
     int     DSPindex, FFTindex;
     short   *pOut = out;
     
-once = 0;       
-if(once)
-fprintf(stderr, "OUT:\n"); 	        
     for(DSPindex = 0, FFTindex = xLayOut[0]; 
                         DSPindex < FFT_DSP_LEN && FFTindex < (fftLenIn / 2); DSPindex++){
     	FFTindex = xLayOut[DSPindex];
-if(once)
-fprintf(stderr, "FFTindex: %3d,", FFTindex); 	        
         /*
     	 *  If this line is the same as the previous one,
     	 *  (FFTindex == -1) just use the previous y value.
@@ -292,8 +246,6 @@ fprintf(stderr, "FFTindex: %3d,", FFTindex);
         if(FFTindex != -1){
             y = calcDv(FFTindex);
             for(; FFTindex < xLayOut[DSPindex+1]; FFTindex++){
-if(once)
-fprintf(stderr, "FFTindex %3d,", FFTindex); 	        
                 y2 = calcDv(FFTindex);
                 if(y2 > y){
                     y = y2;
@@ -301,13 +253,7 @@ fprintf(stderr, "FFTindex %3d,", FFTindex);
         	 }
         }
         *pOut++ = y;
-if(once)
-/*fprintf(stderr, "%.2f;%.2f=%d:%d ", cp[FFTindex][0], cp[FFTindex][1], DSPindex, y); 	        */
-fprintf(stderr, "DSPindex=%3d y=%3ld\n", DSPindex, y); 	        
     }
-if(once)
-fprintf(stderr, "\n"); 	        
-once = 0;        
 }
 
 void initGraphX()
@@ -323,7 +269,6 @@ void initGraphX()
      */ 
     for(DSPindex = 0; DSPindex < (FFT_DSP_LEN + 1); DSPindex++){
         val = floor(((DSPindex * (double)fftLenIn / 2.0) / (double)FFT_DSP_LEN ) + 0.5);
-/*        fprintf(stderr, "%.2f/%d ", DSPindex-0.45, val);*/
 
         if(val < 0) 
             val=0;
@@ -334,7 +279,6 @@ void initGraphX()
         if(DSPindex <= FFT_DSP_LEN)
 	        xLayOut[DSPindex] = val + 1;   /* the +1 takes care of the DC-Value in the fft result */
     }
-    fprintf(stderr, "\n");
     /*
      *  If lines are repeated on the screen, flag this so that we don't
      *  have to recompute the y values.
@@ -344,15 +288,5 @@ void initGraphX()
 	        xLayOut[DSPindex] = -1;
 	    }
     }
-
-/*fprintf(stderr, "FFT_DSP_LEN:%d, fftLenIn/2:%d\nLayOut: ", FFT_DSP_LEN, fftLenIn / 2); 	        */
-/*for(DSPindex = 0; DSPindex < FFT_DSP_LEN + 1; DSPindex++){*/
-/*   fprintf(stderr, "%4.4d ", xLayOut[DSPindex]);*/
-/*}*/
-/*fprintf(stderr, "\n");*/
 }
-
-
-
-
 

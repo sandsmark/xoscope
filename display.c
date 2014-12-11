@@ -224,7 +224,7 @@ void update_dynamic_text(void)
     p = &ch[scope.select];
 
     /* always draw the dynamic text, if signal is analog (bits == 0) */
-    if (p->signal && (p->signal->bits == 0) ) {
+    if (p->signal && (p->signal->bits == 0) && (p->signal->rate > 0)) {
 
         sprintf(string, "  Period of %6d us = %6d Hz  ", stats.time,  stats.freq);
         gtk_label_set_text(GTK_LABEL(LU("period_label")), string);
@@ -238,8 +238,24 @@ void update_dynamic_text(void)
             sprintf(string, " Max:%3d - Min:%4d = %3d Pk-Pk ",
                     stats.max, stats.min, stats.max - stats.min);
         gtk_label_set_text(GTK_LABEL(LU("min_max_label")), string);
+    }
+    else if (p->signal && (p->signal->bits == 0) && (p->signal->rate < 0)) {
+         /* Special case for a Fourier Transform.  ch[i].signal->rate is negative.  The
+          * x-scaling for a FFT (Hz/div) is calculated in chXFFTactive() and rounded to some
+          * "nice" value.  This value is stored in the volts member ofthe signal structure.
+          * Not nice, but I didn't want to add a new member.
+          */
+        sprintf(string, "FFT");
+        gtk_label_set_text(GTK_LABEL(LU("period_label")), string);
 
-    } else {
+        if (p->signal->volts)
+            SIformat(string, "%g %sHz/div", p->signal->volts);
+        else
+            string[0] = '\0';
+        gtk_label_set_text(GTK_LABEL(LU("min_max_label")), string);
+
+    } 
+    else {
         gtk_label_set_text(GTK_LABEL(LU("period_label")), "");
         gtk_label_set_text(GTK_LABEL(LU("min_max_label")), "");
     }
@@ -397,12 +413,14 @@ void update_text(void)
                 else
                     sprintf(string, "1:%d", (int) rint(1.0/ch[i].scale));
             } else if(ch[i].signal->volts){
-                /* Special case for a Fourier Transform.  ch[i].signal->rate is negative.  The
-                 * x-scaling for a FFT (Hz/div) is calculated in chXFFTactive() and rounded to some
-                 * "nice" value.  This value is stored in the volts member ofthe signal structure.
-                 * Not nice, but I didn't want to add a new member.
+                /* Special case for a Fourier Transform.  The scaling (Hz/div)
+                 * is stored in the volts member of the signal structure.
+                 * It is displayed in the "min_max_label" widget.
                  */
-                SIformat(string, "%g %sHz/div FFT", ch[i].signal->volts);
+                if (ch[i].scale > 1.0)
+                    sprintf(string, "%d:1", (int) rint(ch[i].scale));
+                else
+                    sprintf(string, "1:%d", (int) rint(1.0/ch[i].scale));
             }
 
             sprintf(widget, "Ch%1d_scale_label", i+1);
@@ -947,7 +965,6 @@ GtkDataboxGraph *cursorb = NULL;
 void draw_data(void)
 {
     static int i, j, bit, start, end;
-    gfloat y;
     gfloat num, left_offset;
     Channel *p;
     SignalLine *sl;

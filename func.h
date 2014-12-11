@@ -19,6 +19,10 @@
 #define EXTSTART 1
 #define EXTRUN   2
 
+#if 1
+#define FFT_TEST
+#endif
+
 struct signal_stats {
     short min;			/* Minimum signal value */
     short max;			/* Maximum signal value */
