@@ -142,21 +142,21 @@ int FFTactive(Signal *source, Signal *dest, int rateChange)
         /* Either first call or time base changed, 
          * so the number of samples changed too and
          * we must reinitialize fftw
-        */
+         */
         if (fftLenIn != -1) {
             EndFFTW();
         }
 
-    /* if we have more than 16 384 samples, we round them down to a power of 2 */
-    if(source->width < (2 << 14)){ 
-        lenIn = source->width;
-    }
-    else if(source->width < (2 << 16)){
-        lenIn = floor2(source->width);
-    }
-    else {
-        lenIn = 2 << 16;
-    }
+        /* if we have more than 16 384 samples, we round them down to a power of 2 */
+        if(source->width < (2 << 14)){ 
+            lenIn = source->width;
+        }
+        else if(source->width < (2 << 16)){
+            lenIn = floor2(source->width);
+        }
+        else {
+            lenIn = 2 << 16;
+        }
  
         InitializeFFTW(lenIn);
 
@@ -236,7 +236,7 @@ void displayFFT(fftw_complex *cp, short *out)
     short   *pOut = out;
     
     for(DSPindex = 0, FFTindex = xLayOut[0]; 
-                        DSPindex < FFT_DSP_LEN && FFTindex < (fftLenIn / 2); DSPindex++){
+        DSPindex < FFT_DSP_LEN && FFTindex < (fftLenIn / 2); DSPindex++){
     	FFTindex = xLayOut[DSPindex];
         /*
     	 *  If this line is the same as the previous one,
@@ -250,7 +250,7 @@ void displayFFT(fftw_complex *cp, short *out)
                 if(y2 > y){
                     y = y2;
                 }
-        	 }
+            }
         }
         *pOut++ = y;
     }
@@ -277,7 +277,7 @@ void initGraphX()
             val = fftLenIn / 2 - 1;
 	 
         if(DSPindex <= FFT_DSP_LEN)
-	        xLayOut[DSPindex] = val + 1;   /* the +1 takes care of the DC-Value in the fft result */
+            xLayOut[DSPindex] = val + 1;   /* the +1 takes care of the DC-Value in the fft result */
     }
     /*
      *  If lines are repeated on the screen, flag this so that we don't
@@ -285,8 +285,8 @@ void initGraphX()
      */
     for(DSPindex = FFT_DSP_LEN - 1; DSPindex > 0; DSPindex--){
         if(xLayOut[DSPindex] == xLayOut[DSPindex-1]){
-	        xLayOut[DSPindex] = -1;
-	    }
+            xLayOut[DSPindex] = -1;
+        }
     }
 }
 
