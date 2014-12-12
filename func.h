@@ -19,6 +19,10 @@
 #define EXTSTART 1
 #define EXTRUN   2
 
+#if 1
+#define FFT_TEST
+#endif
+
 struct signal_stats {
     short min;			/* Minimum signal value */
     short max;			/* Maximum signal value */
@@ -48,6 +52,4 @@ void cleanup_math(void);
 
 void measure_data(Channel *, struct signal_stats *);
 
-void init_fft(void);			    /* in fft.c */
 
-void fft(short *, short *, int);	/* in fft.c */
