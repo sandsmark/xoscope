@@ -1,4 +1,4 @@
-/* -*- mode: C++; fill-column: 100; c-basic-offset: 4; -*-
+/* -*- mode: C++; indent-tabs-mode: nil; fill-column: 100; c-basic-offset: 4; -*-
  *
  * Copyright (C) 1996 - 1997 Tim Witham <twitham@pcocd2.intel.com>
  *
@@ -10,10 +10,10 @@
 
 #define FUNCLEFT  0
 #define FUNCRIGHT 1
-#define FUNCPS	  2
-#define FUNCMEM	  3
-#define FUNCEXT	  4
-#define FUNC0	  5
+#define FUNCPS    2
+#define FUNCMEM   3
+#define FUNCEXT   4
+#define FUNC0     5
 
 #define EXTSTOP  0
 #define EXTSTART 1
@@ -24,8 +24,8 @@
 #endif
 
 struct signal_stats {
-    short min;			/* Minimum signal value */
-    short max;			/* Maximum signal value */
+    short min;                  /* Minimum signal value */
+    short max;                  /* Maximum signal value */
     int time;
     int freq;
 };

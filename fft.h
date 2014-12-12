@@ -1,6 +1,6 @@
-/* -*- mode: C++; fill-column: 100; c-basic-offset: 4; -*-
+/* -*- mode: C++; indent-tabs-mode: nil; fill-column: 100; c-basic-offset: 4; -*-
  *
- *  Prototypes for the routines in fft.c
+ * Prototypes for the routines in fft.c
  *
  */
  

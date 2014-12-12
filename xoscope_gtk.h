@@ -1,4 +1,4 @@
-/* -*- mode: C++; fill-column: 100; c-basic-offset: 4; -*-
+/* -*- mode: C++; indent-tabs-mode: nil; fill-column: 100; c-basic-offset: 4; -*-
  *
  * @(#)$Id: com_gtk.h,v 2.3 2009/01/17 06:44:55 baccala Exp $
  *
