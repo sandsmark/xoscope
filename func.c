@@ -436,6 +436,9 @@ void fft1(Signal *dest)
         return;
 
     fftW(ch[0].signal->data, dest->data, ch[0].signal->width);
+
+fprintf(stderr, "%s: scope.scale:%g, ch[0].signal->rate:%d, ch[0].signal->width:%d, dest->rate:%d\n", 
+dest->name, scope.scale, ch[0].signal->rate, ch[0].signal->width, dest->rate);   
 }
 
 #ifndef FFT_TEST
@@ -448,6 +451,8 @@ void fft2(Signal *dest)
         return;
 
     fftW(ch[1].signal->data, dest->data, ch[1].signal->width);
+fprintf(stderr, "%s: scope.scale:%g, ch[1].signal->rate:%d, ch[1].signal->width:%d, dest->rate:%d\n", 
+dest->name, scope.scale, ch[1].signal->rate, ch[1].signal->width, dest->rate);   
 }
 
 #else
@@ -616,7 +621,6 @@ int ch1FFTactive(Signal *dest)
 int ch2FFTactive(Signal *dest)
 {
     static int prevScale = -1;
-/*fprintf(stderr, "%d %d\n", ch[1].signal->rate, prevRate);   */
     if(scope.scale != prevScale){ /* Rate changed or first call */
         prevScale = scope.scale;
         return(FFTactive(ch[1].signal, dest, TRUE));

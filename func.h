@@ -19,7 +19,7 @@
 #define EXTSTART 1
 #define EXTRUN   2
 
-#if 1
+#if 0
 #define FFT_TEST
 #endif
 
