@@ -604,10 +604,10 @@ int chs12active(Signal *dest)
  */
 int ch1FFTactive(Signal *dest)
 {
-    static int prevScale = -1;
+    static int prevWidth = -1;
 
-    if(scope.scale != prevScale){ /* Rate changed or first call */
-        prevScale = scope.scale;
+    if(ch[0].signal->width != prevWidth){ /* Width changed or first call */
+        prevWidth = ch[0].signal->width;
         return(FFTactive(ch[0].signal, dest, TRUE));
     }
     return(FFTactive(ch[1].signal, dest, FALSE));
@@ -615,10 +615,10 @@ int ch1FFTactive(Signal *dest)
 
 int ch2FFTactive(Signal *dest)
 {
-    static int prevScale = -1;
-/*fprintf(stderr, "%d %d\n", ch[1].signal->rate, prevRate);   */
-    if(scope.scale != prevScale){ /* Rate changed or first call */
-        prevScale = scope.scale;
+    static int prevWidth = -1;
+    
+    if(ch[1].signal->width != prevWidth){ /* Width changed or first call */
+        prevWidth = ch[1].signal->width;
         return(FFTactive(ch[1].signal, dest, TRUE));
     }
     return(FFTactive(ch[1].signal, dest, FALSE));

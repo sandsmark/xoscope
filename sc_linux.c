@@ -343,19 +343,24 @@ static void set_width(int width)
     left_sig.width = width;
     right_sig.width = width;
 
-    if (left_sig.data != NULL) free(left_sig.data);
-    if (right_sig.data != NULL) free(right_sig.data);
+    if (left_sig.data != NULL) 
+        free(left_sig.data);
+    if (right_sig.data != NULL) 
+        free(right_sig.data);
 
     left_sig.data = malloc(width * sizeof(short));
     if (left_sig.data == NULL) {
         fprintf(stderr, "set_width(), malloc failed, %s\n", strerror(errno));
         exit(0);
     }
+    bzero(left_sig.data, width * sizeof(short));
+    
     right_sig.data = malloc(width * sizeof(short));
     if (right_sig.data == NULL) {
         fprintf(stderr, "set_width(), malloc failed, %s\n", strerror(errno));
         exit(0);
     }
+    bzero(right_sig.data, width * sizeof(short));
 }
 
 
