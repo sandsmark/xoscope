@@ -169,6 +169,7 @@ void start_command_on_channel(const char *command, Channel *ch_select)
     bzero(ext, sizeof(struct external));
 
     strncpy(ext->signal.savestr, command, sizeof(ext->signal.savestr));
+    strncpy(ext->signal.name, command, sizeof(ext->signal.name));
     ext->pid = pid;
     ext->from = from[0];
     ext->to = to[1];
