@@ -147,16 +147,16 @@ int FFTactive(Signal *source, Signal *dest, int rateChange)
             EndFFTW();
         }
 
-    /* if we have more than 16 384 samples, we round them down to a power of 2 */
-    if(source->width < (2 << 14)){ 
-        lenIn = source->width;
-    }
-    else if(source->width < (2 << 16)){
-        lenIn = floor2(source->width);
-    }
-    else {
-        lenIn = 2 << 16;
-    }
+        /* if we have more than 16 384 samples, we round them down to a power of 2 */
+        if(source->width < (2 << 14)){ 
+            lenIn = source->width;
+        }
+        else if(source->width < (2 << 16)){
+            lenIn = floor2(source->width);
+        }
+        else {
+            lenIn = 2 << 16;
+        }
  
         InitializeFFTW(lenIn);
 
@@ -175,6 +175,7 @@ int FFTactive(Signal *source, Signal *dest, int rateChange)
         dest->rate  = (((double)source->rate / (double)source->width) * (double)FFT_DSP_LEN)+0.5; 
         dest->rate *= (gfloat)HzDivAdj / (gfloat)HzDiv;
         dest->rate *= -1;
+        bzero(dest->data, FFT_DSP_LEN * sizeof(short));
     }
     return 1;
 }
