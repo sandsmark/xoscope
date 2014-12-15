@@ -73,13 +73,19 @@ void handle_opt(int opt, char *optarg)
         break;
     case 's':                   /* scale (zoom) */
     case 'S':
-#if 0
-        /* XXX FIX ME */
-        scope.scale = limit(strtol(p = optarg, NULL, 0), 1, 1000);
-        if ((q = strchr(p, '/')) != NULL) {
-            scope.div = limit(strtol(++q, NULL, 0), 1, 2000);
+        {
+            int num = 1, den = 1;
+            if(sscanf(optarg, "%d/%d", &num, &den) > 0){
+                num = limit(num, 1, 2000);
+                den = limit(den, 1, 500000);
+                scope.scale = (double)num / (double)den;
+            }
+            else{
+                fprintf(stderr, "Couldn't set scale to %s\n\n", optarg);
+                usage(1);
+            }
         }
-#endif
+
         break;
     case 't':                   /* trigger */
     case 'T':

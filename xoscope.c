@@ -73,7 +73,7 @@ Startup Options  Description (defaults)               version %s\n\
 -o <option>      specify data source specific options\n\
 -# <code>        #=1-%d, code=pos[.bits][:scale[:func#, mem a-z or cmd]] (0:1/1)\n\
 -a <channel>     set the Active channel: 1-%d                  (%d)\n\
--s <scale>       time Scale: 1/2000-1000/1 where 1=1ms/div    (%d/1)\n\
+-s <scale>       time Scale: 1/500000-2000/1 where 1=1ms/div  (1/%d)\n\
 -t <trigger>     Trigger level[:type[:channel]]               (%s)\n\
 -l <cursors>     cursor Line positions: first[:second[:on?]]  (%s)\n\
 -f <font name>   the Font name as-in %s\n\
