@@ -207,19 +207,17 @@ void restart_command_on_channel(void)
 {
     struct external *ext;
 
-
     for (ext = externals; ext != NULL; ext = ext->next) {
-        /*              fprintf(stderr, "1. restart_command_on_channel: width = %d\n", ext->signal.width);*/
-        if(ext->signal.data != NULL)
+        if (ext->signal.data != NULL) {
             free(ext->signal.data);
+        }
         ext->signal.data = malloc(ch[0].signal->width * sizeof(short));
-        if(ext->signal.data == NULL){
+        if (ext->signal.data == NULL) {
             fprintf(stderr, "malloc failed in restart_command_on_channel() for signal.data\n");
             exit(0);
         }
         ext->signal.width = ch[0].signal->width;
-        ext->signal.num = ch[0].signal->num;
-        /*              fprintf(stderr, "2. restart_command_on_channel: width = %d\n", ext->signal.width);*/
+        ext->signal.num = 0;
     }
 }
 
