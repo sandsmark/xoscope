@@ -1451,3 +1451,23 @@ void setinputfd(int fd)
         input_fd = fd;
     }
 }
+
+#ifndef HAVE_LIBCOMEDI
+/* 
+ * The sole purpose of this 2 functions is
+ * to avoid the "Could not find signal handler" warnings
+ * from gtk when compiled without comedi support.
+ */
+void
+comedi_on_ok(GtkButton *button, gpointer user_data)
+{
+    ;
+}
+
+void
+comedi_on_apply(GtkButton *button, gpointer user_data)
+{
+    ;
+}
+#endif
+
