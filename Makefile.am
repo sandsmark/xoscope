@@ -31,7 +31,7 @@ hardware/HARDWARE hardware/buff.fig hardware/buff.ps \
 hardware/buff2.fig hardware/buff2.ps hardware/pcb.fig hardware/pcb.ps \
 hardware/xoscope-components.png hardware/xoscope-copper.png
 
-src = xoscope.c file.c func.c display.c sc_linux.c sc_linux_gtk.c
+src = xoscope.c file.c func.c display.c sc_linux.c
 fftsrc = fft.c 
 guisrc = xoscope_gtk.c
 
