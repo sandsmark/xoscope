@@ -180,7 +180,7 @@ void start_command_on_channel(const char *command, Channel *ch_select)
         exit(0);
     }
     ext->signal.width = ch[0].signal->width;
-    ext->signal.num = ch[0].signal->num;
+    ext->signal.num = 0;
     ext->signal.rate = ch[0].signal->rate;
     ext->signal.delay = ch[0].signal->delay;
     ext->signal.bits = ch[0].signal->bits;
