@@ -260,6 +260,26 @@ void handle_opt(int opt, char *optarg)
     }
 }
 
+char *
+formatScale(double fScale)
+{
+    int         num = 1, den = 1;
+    static char buf[32];
+    
+    if(fScale >= 1.0){
+        num = (int)fScale;
+    }
+    else{
+        den = (int)(1.0 / fScale);
+    }
+     
+    sprintf(buf, "%d/%d", num, den);   
+    return(buf);
+}
+
+   
+
+
 /* write scope settings and memory buffers to given filename */
 void writefile(char *filename)
 {
@@ -286,18 +306,19 @@ void writefile(char *filename)
     }
 
     fprintf(file, "# -a %d\n\
-# -s %f\n\
+# -s %s\n\
 # -t %d:%d:%d\n\
 # -l %d:%d:%d\n\
 # -p %d\n\
 # -g %d\n\
 %s%s",
             scope.select + 1,
-            scope.scale,
+            formatScale(scope.scale),
             scope.trig - 128, scope.trige, scope.trigch,
             scope.cursa, scope.cursb, scope.curs,
             /* XXX fix this - plot_mode not backwards compatable anymore */
-            scope.plot_mode,
+            /* XXX fix this - plot_mode now OK, but scope.scroll_mode = 2 not stored in file*/
+            (scope.plot_mode * 2) +(scope.scroll_mode == 1 ? 1 : 0),
             scope.grat,
             scope.behind ? "# -b\n" : "",
             scope.verbose ? "# -v\n" : "");
