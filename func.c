@@ -285,7 +285,7 @@ static void run_externals(void)
 
                     if(errors){
                         fprintf(stderr, "run_externals() r/w-error. ch[0].signal->num=%d, ext->signal.num=%d i=%d\n", ch[0].signal->num, ext->signal.num, i);
-                        return;
+                        break;
                     }
                 }
                 ext->signal.num = i;
@@ -298,7 +298,7 @@ static void run_externals(void)
 
                     close(ext->from);
                     close(ext->to);
-                    waitpid(ext->pid, NULL, 0);
+                    waitpid(ext->pid, NULL, WNOHANG);
                     ext->pid = 0;
                 }
             }
