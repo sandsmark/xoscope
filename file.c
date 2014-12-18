@@ -224,7 +224,7 @@ void handle_opt(int opt, char *optarg)
 
             if ((q = strchr(p, ':')) != NULL) {
                 if (*++q >= '0' && *q <= '9') {
-                    if (*q > '0') {
+                    if (*q >= '0') {
                         function_bynum_on_channel(strtol(q, NULL, 0), s);
                     }
                 } else if (*q >= 'a' && *q <= 'z'

@@ -24,6 +24,7 @@
 #include "xoscope_gtk.h"
 
 Signal mem[26];         /* 26 memories, corresponding to 26 letters */
+char   mem_pending[26]; /* Flags to indicate we wont to store a channel when a sweep is complete */
 
 /* recall given memory register to the currently selected signal */
 void recall_on_channel(Signal *signal, Channel *ch)
@@ -47,33 +48,57 @@ extern int in_progress;
 
 /* store the currently selected signal to the given memory register */
 
-void save(char c)
+
+void set_save_pending(char c)
+{
+    mem_pending[c - 'A'] = scope.select;
+}
+
+void do_save_pending(void)
 {
     int i;
 
-    i = c - 'A';
+    if(in_progress)
+        return;
+        
+    for(i = 0; i < 26; i++){
+        if(mem_pending[i] >= 0){
+            save(i, mem_pending[i]);
+            mem_pending[i] = -1;
+            /* This is from the original code.
+             * I'm not sure ist really needed.
+             * Original comment follows: 
+             */           
+             /* need this in case other chan displays mem */
+             clear(); 
+        }
+    }
+}
 
-    if (ch[scope.select].signal == NULL) return;
+void save(int dest, int src)
+{
+    if (ch[src].signal == NULL) 
+        return;
 
     /* Don't want the name - leave that at 'Memory x'
      * Also, increment frame instead of setting it to signal->frame in case signal->frame is the
      * same as mem's old frame number!
      */
-    if (mem[i].data != NULL) {
-        free(mem[i].data);
+    if (mem[dest].data != NULL) {
+        free(mem[dest].data);
     }
-    mem[i].data = malloc(ch[scope.select].signal->width * sizeof(short));
-    if(mem[i].data == NULL){
+    mem[dest].data = malloc(ch[src].signal->width * sizeof(short));
+    if(mem[dest].data == NULL){
         fprintf(stderr, "malloc failed in save()\n");
         exit(0);
     }
-    memcpy(mem[i].data, ch[scope.select].signal->data, ch[scope.select].signal->width * sizeof(short));
+    memcpy(mem[dest].data, ch[src].signal->data, ch[src].signal->width * sizeof(short));
 
-    mem[i].rate = ch[scope.select].signal->rate;
-    mem[i].num = ch[scope.select].signal->num;
-    mem[i].width = ch[scope.select].signal->width;
-    mem[i].frame ++;
-    mem[i].volts = ch[scope.select].signal->volts;
+    mem[dest].rate = ch[src].signal->rate;
+    mem[dest].num = ch[src].signal->width;
+    mem[dest].width = ch[src].signal->width;
+    mem[dest].frame ++;
+    mem[dest].volts = ch[src].signal->volts;
 }
 
 /* !!! External process handling
@@ -723,8 +748,7 @@ void prev_func(void)
 
 int function_bynum_on_channel(int fnum, Channel *ch)
 {
-    if ((fnum >= 0) && (fnum < funccount)
-        && funcarray[fnum].isvalid(&funcarray[fnum].signal)) {
+    if ((fnum >= 0) && (fnum < funccount)) {
         recall_on_channel(&funcarray[fnum].signal, ch);
         return TRUE;
     }
@@ -748,6 +772,8 @@ void init_math(void)
         sprintf(mem[i].name, "Memory %c", 'a' + i);
         mem[i].savestr[0] = 'a' + i;
         mem[i].savestr[1] = '\0';
+
+        mem_pending[i] = -1;
     }
     for (i = 0; i < funccount; i++) {
         strcpy(funcarray[i].signal.name, funcarray[i].name);

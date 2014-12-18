@@ -1397,6 +1397,7 @@ void init_widgets(void)
 
 void inputCallback(gpointer data, gint source, GdkInputCondition condition)
 {
+    do_save_pending();
     animate(NULL);
 }
 
@@ -1417,6 +1418,7 @@ static gint timeout_tag;
 
 gint timeout_callback(gpointer data)
 {
+    do_save_pending();
     animate(NULL);
     return 0;
 }

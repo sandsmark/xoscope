@@ -30,7 +30,9 @@ struct signal_stats {
     int freq;
 };
 
-void save(char);
+void set_save_pending(char c);
+void do_save_pending(void);
+void save(int i, int src);
 void recall_on_channel(Signal *, Channel *);
 void recall(Signal *);
 
