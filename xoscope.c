@@ -466,8 +466,7 @@ void handle_key(unsigned char c)
 
     if (c >= 'A' && c <= 'Z') {
         if (p->signal) {
-            save(c);                    /* store channel */
-            clear();                    /* need this in case other chan displays mem */
+            set_save_pending(c);        /* remember to store channel as soon as a sweep is complete*/
         }
         return;
     } else if (c >= 'a' && c <= 'z') {
