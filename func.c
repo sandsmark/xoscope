@@ -723,8 +723,7 @@ void prev_func(void)
 
 int function_bynum_on_channel(int fnum, Channel *ch)
 {
-    if ((fnum >= 0) && (fnum < funccount)
-        && funcarray[fnum].isvalid(&funcarray[fnum].signal)) {
+    if ((fnum >= 0) && (fnum < funccount)) {
         recall_on_channel(&funcarray[fnum].signal, ch);
         return TRUE;
     }
