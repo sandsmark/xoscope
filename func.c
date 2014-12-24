@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <string.h>
 #include <math.h>
 #include <signal.h>
@@ -114,7 +115,7 @@ struct external {
     struct external *next;
     Signal signal;
     int pid;                    /* Zero if we already closed it down */
-    int to, from;                       /* Pipes */
+    int to, from, errors;                       /* Pipes */
     int last_frame_ch0, last_frame_ch1;
     int last_num_ch0, last_num_ch1;
 };
@@ -132,10 +133,10 @@ void start_command_on_channel(const char *command, Channel *ch_select)
 {
     struct external *ext;
     int pid;
-    int from[2], to[2];
+    int from[2], to[2], errors[2];
     static char *path, *oscopepath;
 
-    if (pipe(to) || pipe(from)) { /* get a set of pipes */
+    if (pipe(to) || pipe(from) || pipe(errors)) { /* get a set of pipes */
         sprintf(error, "%s: can't create pipes", progname);
         perror(error);
         return;
@@ -146,15 +147,20 @@ void start_command_on_channel(const char *command, Channel *ch_select)
     if ((pid = fork()) > 0) {           /* parent */
         close(to[0]);
         close(from[1]);
+        close(errors[1]);
     } else if (pid == 0) {              /* child */
         close(to[1]);
         close(from[0]);
+        close(errors[0]);
         close(0);
         close(1);                               /* redirect stdin/out through pipes */
+        close(2);
         dup2(to[0], 0);
         dup2(from[1], 1);
+        dup2(errors[1], 2);
         close(to[0]);
         close(from[1]);
+        close(errors[1]);
 
         /* XXX add additional environment vars here for sampling rate and number of samples per
          * frame
@@ -198,6 +204,8 @@ void start_command_on_channel(const char *command, Channel *ch_select)
     ext->pid = pid;
     ext->from = from[0];
     ext->to = to[1];
+    ext->errors = errors[0];
+    fcntl(ext->errors, F_SETFL, O_NONBLOCK);
 
     ext->signal.data = malloc(ch[0].signal->width * sizeof(short));
     if(ext->signal.data == NULL){
@@ -213,8 +221,6 @@ void start_command_on_channel(const char *command, Channel *ch_select)
 
     ext->next = externals;
     externals = ext;
-
-    message(command);
 
     recall_on_channel(&ext->signal, ch_select);
     ch[scope.select].show = 1;
@@ -249,6 +255,8 @@ void restart_command_on_channel(void)
 
 /* Check everything on the externals list; run what needs to be run, and clean up anything left
  * linguring behind.
+ *
+ * XXX externals shouldn't depend on having signals on both channels 1 and 2
  */
 
 static void run_externals(void)
@@ -256,7 +264,8 @@ static void run_externals(void)
     struct external *ext;
 
     short *a, *b, *c;
-    int i, errors;
+    int i;
+    char error_message[256];
 
     for (ext = externals; ext != NULL; ext = ext->next) {
 
@@ -276,6 +285,22 @@ static void run_externals(void)
                     ext->last_frame_ch1 = ch[1].signal->frame;
                     ext->signal.frame ++;
                     ext->signal.num = 0;
+                }
+
+                /* To avoid a race condition that might drop data or error messages, we check first
+                 * to see if the process has exited, then read from the pipes.
+                 */
+
+                if (waitpid(ext->pid, NULL, WNOHANG) == ext->pid) {
+                    ext->pid = 0;
+                }
+
+                /* Check for error messages on stderr, and display them to the user */
+
+                i = read(ext->errors, error_message, sizeof(error_message)-1);
+                if (i > 0) {
+                    error_message[i] = '\0';
+                    message(error_message);
                 }
 
                 /* We may already have sent and received part of a frame, so start our pointers at
@@ -298,33 +323,25 @@ static void run_externals(void)
                 a = ch[0].signal->data + ext->signal.num;
                 b = ch[1].signal->data + ext->signal.num;
                 c = ext->signal.data + ext->signal.num;
-                errors = 0;
-                for (i = ext->signal.num;
-                     (i < ch[0].signal->num) && (i < ch[1].signal->num); i++) {
-                    if (write(ext->to, a++, sizeof(short)) != sizeof(short))
-                        errors ++;
-                    if (write(ext->to, b++, sizeof(short)) != sizeof(short))
-                        errors ++;
-                    if (read(ext->from, c++, sizeof(short)) != sizeof(short))
-                        errors ++;
 
-                    if(errors){
-                        fprintf(stderr, "run_externals() r/w-error. ch[0].signal->num=%d, ext->signal.num=%d i=%d\n", ch[0].signal->num, ext->signal.num, i);
+                for (i = ext->signal.num; (i < ch[0].signal->num) && (i < ch[1].signal->num); i++) {
+                    if (write(ext->to, a++, sizeof(short)) != sizeof(short))
                         break;
-                    }
+                    if (write(ext->to, b++, sizeof(short)) != sizeof(short))
+                        break;
+                    if (read(ext->from, c++, sizeof(short)) != sizeof(short))
+                        break;
                 }
                 ext->signal.num = i;
 
-                if (errors) {
-                    sprintf(error, "%s: %d pipe r/w errors from \"%s\"",
-                            progname, errors, ext->signal.savestr);
-                    perror(error);
-                    /* XXX do something here other than perror to notify user */
+                /* If we earlier determined that the process had exited, close the pipes down now
+                 * that we've read everything.
+                 */
 
+                if (ext->pid == 0) {
                     close(ext->from);
                     close(ext->to);
-                    waitpid(ext->pid, NULL, WNOHANG);
-                    ext->pid = 0;
+                    close(ext->errors);
                 }
             }
 
@@ -337,10 +354,11 @@ static void run_externals(void)
             if (ext->pid) {
                 close(ext->from);
                 close(ext->to);
-                waitpid(ext->pid, NULL, 0);
+                close(ext->errors);
+                waitpid(ext->pid, NULL, WNOHANG);
             }
 
-            /* Delete ext from list and free() it */
+            /* XXX Delete ext from list and free() it */
 
         }
     }
