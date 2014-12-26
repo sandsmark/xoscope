@@ -82,7 +82,9 @@ void message(const char *message)
         databox_message_text = realloc(databox_message_text, databox_message_text_alloced_size);
     }
 
-    databox_message_text[databox_message_text_used ++] = '\n';
+    if (databox_message_text_used > 0) {
+        databox_message_text[databox_message_text_used ++] = '\n';
+    }
     strcpy(databox_message_text + databox_message_text_used, message);
     databox_message_text_used += strlen(message);
 
