@@ -1248,7 +1248,7 @@ void draw_data(void)
 
                 /* The scale is applied first, then the offset */
 
-                sl->y_scale = (double)p->scale / 240;
+                sl->y_scale = (double)p->scale / 160;
                 sl->y_offset = (double)p->pos;
 
                 /* If we're in digital mode, increase the scale by eight and shift the offset by
