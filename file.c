@@ -225,30 +225,37 @@ void handle_opt(int opt, char *optarg)
             if ((q = strchr(p, ':')) != NULL) {
                 if (*++q >= '0' && *q <= '9') {
                     if (*q >= '0') {
-                        function_bynum_on_channel(strtol(q, NULL, 0), s);
+                        /* Older versions used '0' for an empty channel and offset function numbers by 1 */
+                        int function_number = strtol(q, NULL, 0);
+                        if (! backwards_compat_1_10) {
+                            function_bynum_on_channel(function_number, s);
+                        } else if (function_number > 0) {
+                            function_bynum_on_channel(function_number-1, s);
+                        }
                     }
                 } else if (*q >= 'a' && *q <= 'z'
                            && (*(q + 1) == '\0' || *(q + 1) == '\n')) {
 
-                    /* Older versions used x, y, z for data channels, now we use a, b, c, etc.
-                     * Probescope used z exclusively
+                    /* Older versions used x, y, z for data channels, now we use a, b, c, etc,
+                     * a change required by COMEDI which can have more than three channels.
+                     *
+                     * Probescope used z exclusively, but we no longer support this device.
                      */
 
-                    if (datasrc && !backwards_compat_1_10
-                        && ((*q - 'a') <= datasrc->nchans())) {
-                        recall_on_channel(datasrc->chan(*q - 'a'), s);
-                    } else if (datasrc && backwards_compat_1_10 && (*q == 'z')
-                               && !strcasecmp(datasrc->name, "ProbeScope")) {
-                        recall_on_channel(datasrc->chan(0), s);
-                    } else if (datasrc && backwards_compat_1_10 && (*q >= 'x')) {
-                        recall_on_channel(datasrc->chan(*q - 'x'), s);
+                    if (backwards_compat_1_10) {
+                        if (*q >= 'x') {
+                            if (datasrc && (*q != 'z')) {
+                                recall_on_channel(datasrc->chan(*q - 'x'), s);
+                            }
+                        } else {
+                            recall_on_channel(&mem[*q - 'a'], s);
+                        }
                     } else {
-                        /* Might have a (slight) problem here if we're reading an older format file
-                         * that has a data source and memory saved on 'a', for example.  Then we'll
-                         * end up recalling mem 'a' here, even though 'a' is now used as a data
-                         * channel.
-                         */
-                        recall_on_channel(&mem[*q - 'a'], s);
+                        if (datasrc && ((*q - 'a') <= datasrc->nchans())) {
+                            recall_on_channel(datasrc->chan(*q - 'a'), s);
+                        } else {
+                            recall_on_channel(&mem[*q - 'a'], s);
+                        }
                     }
 
                 } else {
