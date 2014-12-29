@@ -1431,6 +1431,7 @@ static gint timeout_tag;
 
 gint timeout_callback(gpointer data)
 {
+    timeout_tag_valid = 0;
     do_save_pending();
     animate(NULL);
     return 0;
