@@ -83,7 +83,7 @@ void message(const char *message)
     }
 
     if (databox_message_text_used > 0) {
-        databox_message_text[databox_message_text_used ++] = '\n';
+    databox_message_text[databox_message_text_used ++] = '\n';
     }
     strcpy(databox_message_text + databox_message_text_used, message);
     databox_message_text_used += strlen(message);
@@ -251,14 +251,14 @@ void update_dynamic_text(void)
         sprintf(string, "  Period of %6d us = %6d Hz  ", stats.time,  stats.freq);
         gtk_label_set_text(GTK_LABEL(LU("period_label")), string);
 
-        if (p->signal->volts)
-            sprintf(string, "   %7.5g - %7.5g = %7.5g mV   ",
-                    (float)stats.max * p->signal->volts / 320,
-                    (float)stats.min * p->signal->volts / 320,
-                    ((float)stats.max - stats.min) * p->signal->volts / 320);
-        else
-            sprintf(string, " Max:%3d - Min:%4d = %3d Pk-Pk ",
-                    stats.max, stats.min, stats.max - stats.min);
+		if (p->signal->volts)
+			sprintf(string, "   %7.5g - %7.5g = %7.5g mV ",
+					(float)stats.max * p->signal->volts / 320,
+					(float)stats.min * p->signal->volts / 320,
+					((float)stats.max - stats.min) * p->signal->volts / 320);
+		else
+			sprintf(string, " Max:%3d - Min:%4d = %3d Pk-Pk ",
+					stats.max, stats.min, stats.max - stats.min);
         gtk_label_set_text(GTK_LABEL(LU("min_max_label")), string);
     }
     else if (p->signal && (p->signal->bits == 0) && (p->signal->rate < 0)) {
@@ -1251,7 +1251,7 @@ void draw_data(void)
                 /* The scale is applied first, then the offset */
 
                 sl->y_scale = (double)p->scale / 160;
-                sl->y_offset = (double)p->pos;
+				sl->y_offset = (double)p->pos;
 
                 /* If we're in digital mode, increase the scale by eight and shift the offset by
                  * sixteen for each bit.  This hardwires eight as the height of a digital line and
@@ -1378,7 +1378,7 @@ void show_data(void)
 
     do_math();
 
-    if ((scope.scale < 100) || !in_progress)
+    if ((scope.scale >= 100) || !in_progress)
         measure_data(&ch[scope.select], &stats);
 
     update_dynamic_text();

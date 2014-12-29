@@ -852,9 +852,10 @@ void cleanup_math(void)
 
 void measure_data(Channel *sig, struct signal_stats *stats)
 {
-    static long int i, j, prev;
-    int min=0, max=0, midpoint=0;
-    float first = 0, last = 0, count = 0, imax = 0;
+    int     i, k;
+    short   val, prev;
+    int     min=0, max=0, midpoint=0;
+	int     first = 0, last = 0, count = 0, imax = 0;
 
     stats->min = 0;
     stats->max = 0;
@@ -872,39 +873,48 @@ void measure_data(Channel *sig, struct signal_stats *stats)
             last = scope.cursa;
         }
         stats->min = stats->max = sig->signal->data[(int)first];
-        if ((j = sig->signal->data[(int)last]) < stats->min)
-            stats->min = j;
-        else if (j > stats->max)
-            stats->max = j;
+        if ((val = sig->signal->data[(int)last]) < stats->min)
+            stats->min = val;
+        else if (val > stats->max)
+            stats->max = val;
         count = 2;
     } else {                    /* automatic period measurements */
         min = max = sig->signal->data[0];
         for (i = 0 ; i < sig->signal->num ; i++) {
-            j = sig->signal->data[i];
-            if (j < min)
-                min = j;
-            if (j > max) {
-                max = j;
+            val = sig->signal->data[i];
+            if (val < min)
+                min = val;
+            if (val > max) {
+                max = val;
                 imax = i;
             }
         }
 
         /* locate and count rising edges
-         * doesn't handle noise very well (noisy edges can get double counted)
+         * tries to handle handle noise by looking at the next 10 values.
          */
-
-        midpoint = (min + max)/2;
-        for (i = 0 ; i < sig->signal->num ; i++) {
-            j = sig->signal->data[i];
-            if (j > midpoint && prev <= midpoint) {
-                if (!first)
-                    first = i;
-                last = i;
-                count++;
+		midpoint = (min + max)/2;
+		prev = max;
+        for (i = 0; i < sig->signal->num; i++) {
+            val = sig->signal->data[i];
+            if (val > midpoint && prev <= midpoint){
+                int rising = 0;
+                for(k = i + 1; k < i + 11 && k < sig->signal->num; k++) {
+                    if(sig->signal->data[k] > val){
+                        rising++;
+                     }
+                 }   
+                if(rising > 5){
+                    if (!first)
+                        first = i;
+    				last = i;
+    				i = k;
+                    count++;
+                }
             }
-            prev = j;
+            prev = val;
         }
-        stats->min = min;
+		stats->min = min;
         stats->max = max;
     }
 
@@ -924,10 +934,14 @@ void measure_data(Channel *sig, struct signal_stats *stats)
         /* estimate frequency from rising edge count
          * assume a wave: period = length / # periods
          */
-
-        stats->time = 1000000 * (last - first) / (count - 1) / sig->signal->rate;
-        if (stats->time > 0)
-            stats->freq = 1000000 / stats->time;
+         
+        stats->time = (int)(1000000.0 * (last - first) / (count - 1) / sig->signal->rate);
+        if (stats->time > 0){
+            stats->freq = (int)((1000000.0 / stats->time) +0.5);
+            if( stats->freq > 50)   
+                exit(0);
+        }
 
     }
 }
+
