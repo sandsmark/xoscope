@@ -192,6 +192,19 @@ GtkWidget * create_main_window(void)
         if(is_GtkWidget(G_TYPE_FROM_INSTANCE(iterator->data))){
             set_name_property((GtkWidget*)(iterator->data), builder);
             store_reference((GtkWidget*)(iterator->data));
+
+            /* XXX There's a bug in glib that can deadlock a program during class initialization:
+             *
+             *    https://bugs.launchpad.net/ubuntu/+source/glib2.0/+bug/1179554
+             *
+             * In xoscope, it manifests itself when the IBus input method initializes for entry
+             * boxes.  Getting the entry's PangoLayout here, before calling gtk_main(), seems to
+             * force everything to initialize while we're still single threaded.
+             */
+
+            if (GTK_IS_ENTRY((GtkWidget*)(iterator->data))) {
+                gtk_entry_get_layout((GtkEntry*)(iterator->data));
+            }
         }
         else{
             continue;
