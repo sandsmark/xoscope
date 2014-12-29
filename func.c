@@ -938,8 +938,6 @@ void measure_data(Channel *sig, struct signal_stats *stats)
         stats->time = (int)(1000000.0 * (last - first) / (count - 1) / sig->signal->rate);
         if (stats->time > 0){
             stats->freq = (int)((1000000.0 / stats->time) +0.5);
-            if( stats->freq > 50)   
-                exit(0);
         }
 
     }
