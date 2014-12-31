@@ -47,12 +47,12 @@ else
 esdsrc =
 endif
 
-AM_CPPFLAGS = @GTK_CFLAGS@ -export-dynamic -DPACKAGE_LIBEXEC_DIR='"$(bindir)"'
+AM_CPPFLAGS = @GTK_CFLAGS@ @GTKDATABOX_CFLAGS@ -export-dynamic -DPACKAGE_LIBEXEC_DIR='"$(bindir)"'
 
 .PRECIOUS: xoscope.glade xoscope.rc
 
 xoscope_SOURCES = $(src) $(comedisrc) $(esdsrc) $(fftsrc) $(guisrc)
-xoscope_LDADD = @GTK_LIBS@ 
+xoscope_LDADD = @GTK_LIBS@ @GTKDATABOX_LIBS@
 xoscope_DEPENDENCIES = xoscope.rc
 xoscope_LDFLAGS = -Wl,--export-dynamic
 

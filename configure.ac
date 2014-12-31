@@ -58,7 +58,6 @@ AC_PATH_PROG(RANLIB, ranlib)
 dnl Checks for libraries.
 AC_CHECK_LIB(esd, esd_monitor_stream)
 AC_CHECK_LIB(m, sin)
-AC_CHECK_LIB(gtkdatabox, gtk_databox_graph_add)
 AC_CHECK_LIB(fftw3, fftw_execute)
 
 AC_ARG_WITH([comedi],
