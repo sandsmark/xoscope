@@ -166,10 +166,12 @@ void handle_opt(int opt, char *optarg)
     case 'a':                   /* Active (selected) channel */
         scope.select = limit(strtol(optarg, NULL, 0) - 1, 0, CHANNELS - 1);
         break;
+#ifdef HAVE_LIBASOUND
     case 'A':
         sprintf(alsaDevice, "%s", optarg);
         sprintf(alsaDeviceName, "Alsa: %s", optarg);
         break;
+#endif
     case 'h':                   /* help */
     case 'H':
         usage(0);

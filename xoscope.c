@@ -21,7 +21,9 @@
 /* global program structures */
 Scope scope;
 
+#ifdef HAVE_LIBASOUND
 extern DataSrc datasrc_sc;
+#endif
 #ifdef HAVE_LIBESD
 extern DataSrc datasrc_esd;
 #endif
@@ -36,7 +38,9 @@ DataSrc *datasrcs[] = {
 #ifdef HAVE_LIBESD
     &datasrc_esd,
 #endif
+#ifdef HAVE_LIBASOUND
     &datasrc_sc
+#endif
 };
 
 int ndatasrcs = sizeof(datasrcs)/sizeof(DataSrc *);

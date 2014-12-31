@@ -100,6 +100,7 @@ dnl "Defining C Preprocessor Symbols" in the autoconf info docs.
 
 AM_CONDITIONAL(COMEDI, test "$ac_cv_lib_comedi_comedi_open" = "yes")
 AM_CONDITIONAL(ESD, test "$ac_cv_lib_esd_esd_monitor_stream" = "yes")
+AM_CONDITIONAL(ASOUND, test "$ac_cv_lib_asound_snd_pcm_hw_params" = "yes")
 
 AC_SUBST(XOSCOPE)
 

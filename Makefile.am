@@ -31,7 +31,7 @@ hardware/HARDWARE hardware/buff.fig hardware/buff.ps \
 hardware/buff2.fig hardware/buff2.ps hardware/pcb.fig hardware/pcb.ps \
 hardware/xoscope-components.png hardware/xoscope-copper.png
 
-src = xoscope.c file.c func.c display.c sc_linux.c
+src = xoscope.c file.c func.c display.c
 fftsrc = fft.c 
 guisrc = xoscope_gtk.c
 
@@ -47,11 +47,15 @@ else
 esdsrc =
 endif
 
+if ASOUND
+asoundsrc = sc_linux.c
+endif
+
 AM_CPPFLAGS = @GTK_CFLAGS@ @GTKDATABOX_CFLAGS@ -export-dynamic -DPACKAGE_LIBEXEC_DIR='"$(bindir)"'
 
 .PRECIOUS: xoscope.glade xoscope.rc
 
-xoscope_SOURCES = $(src) $(comedisrc) $(esdsrc) $(fftsrc) $(guisrc)
+xoscope_SOURCES = $(src) $(comedisrc) $(esdsrc) $(asoundsrc) $(fftsrc) $(guisrc)
 xoscope_LDADD = @GTK_LIBS@ @GTKDATABOX_LIBS@
 xoscope_DEPENDENCIES = xoscope.rc
 xoscope_LDFLAGS = -Wl,--export-dynamic
