@@ -159,3 +159,9 @@ AC_OUTPUT([
 operl
 Makefile
 ])
+
+AC_MSG_RESULT([
+        ALSA module:                    ${ac_cv_lib_asound_snd_pcm_hw_params}
+        ESD module:                     ${ac_cv_lib_esd_esd_monitor_stream}
+        COMEDI module:                  ${ac_cv_lib_comedi_comedi_open}
+])
