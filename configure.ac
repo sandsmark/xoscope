@@ -58,7 +58,6 @@ AC_PATH_PROG(RANLIB, ranlib)
 dnl Checks for libraries.
 AC_CHECK_LIB(esd, esd_monitor_stream)
 AC_CHECK_LIB(m, sin)
-AC_CHECK_LIB(fftw3, fftw_execute)
 
 AC_ARG_WITH([comedi],
 	[AS_HELP_STRING([--with-comedi],
@@ -87,6 +86,7 @@ main() {
 	fi
 ])
 
+AC_CHECK_LIB(fftw3, fftw_execute)
 AC_CHECK_LIB(asound, snd_pcm_hw_params)
 
 dnl Check for optional features in gtkdatabox library
