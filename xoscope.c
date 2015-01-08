@@ -470,7 +470,13 @@ void handle_key(unsigned char c)
 
     if (c >= 'A' && c <= 'Z') {
         if (p->signal) {
-            set_save_pending(c);        /* remember to store channel as soon as a sweep is complete*/
+            if(!scope.run){
+                save(c - 'A', scope.select);/* store channel */
+                clear();                    /* need this in case other chan displays mem */
+            }
+            else {
+                set_save_pending(c);        /* remember to store channel as soon as a sweep is complete*/
+            }
         }
         return;
     } else if (c >= 'a' && c <= 'z') {
