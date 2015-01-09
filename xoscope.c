@@ -265,6 +265,24 @@ double scaleup(double num, double maximum, double multiplier)
     return (num < maximum) ? num : maximum;
 }
 
+/* Sometimes we want to pass an int to a callback function that expects pointers */
+
+const gpointer int_to_int_pointer(int i)
+{
+    static int max_int = 0;
+    static int * array = NULL;
+
+    if ((array == NULL) || (i < max_int)) {
+        array = g_renew(int, array, i+1);
+        while (max_int < i) {
+            array[max_int] = max_int;
+            max_int ++;
+        }
+    }
+
+    return (array + i);
+}
+
 /* Close the current data source */
 
 void datasrc_close(void)

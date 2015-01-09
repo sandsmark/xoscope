@@ -203,7 +203,7 @@ typedef struct Channel {        /* The display channels */
 } Channel;
 extern Channel ch[CHANNELS];
 
-/* functions that are called by files other than oscope.c */
+/* functions that are called by files other than xoscope.c */
 void    usage(int);
 void    handle_key(unsigned char);
 void    cleanup(void);
@@ -221,6 +221,8 @@ double  roundoff(double, double);
 
 int     max(int, int);
 int     min(int, int);
+
+const gpointer int_to_int_pointer(int);
 
 extern char serial_error[];
 

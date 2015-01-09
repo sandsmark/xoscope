@@ -55,7 +55,7 @@ char *subdevice_types[]={
 
 void subdevice_on_activate(GtkWidget *widget, gpointer data)
 {
-    int subdevice = (int) data;
+    int subdevice = * (int *) data;
     int subdev_flags = comedi_get_subdevice_flags(comedi_dev, subdevice);
     char buf[64];
 
@@ -147,7 +147,7 @@ void device_changed(void)
         p = gtk_menu_item_new_with_label (buf);
         gtk_signal_connect (GTK_OBJECT(p), "activate",
                             GTK_SIGNAL_FUNC(subdevice_on_activate),
-                            (gpointer) i);
+                            int_to_int_pointer(i));
         gtk_menu_append (GTK_MENU(menu), p);
 
         /* If subdevice doesn't support input, gray it out */
@@ -156,7 +156,7 @@ void device_changed(void)
     }
     gtk_option_menu_set_menu(GTK_OPTION_MENU(LU("subdevice_optionmenu")), menu);
     gtk_option_menu_set_history(GTK_OPTION_MENU(LU("subdevice_optionmenu")), comedi_subdevice);
-    subdevice_on_activate(menu, (gpointer) comedi_subdevice);
+    subdevice_on_activate(menu, int_to_int_pointer(comedi_subdevice));
 
     /* Set the aref radio buttons based on current aref setting. */
 

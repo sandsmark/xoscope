@@ -30,7 +30,7 @@ static void esd_save_values(GtkWidget *w, gpointer data)
 
 static void esdrecord(GtkWidget *w, gpointer data)
 {
-    temp_rec = (int) data;
+    temp_rec = * (int *) data;
 }
 
 void esd_gtk_option_dialog()
@@ -68,9 +68,9 @@ void esd_gtk_option_dialog()
         (GTK_TOGGLE_BUTTON(off), temp_rec == 0);
 
     gtk_signal_connect(GTK_OBJECT(on), "clicked",
-                       GTK_SIGNAL_FUNC(esdrecord), (gpointer) 1);
+                       GTK_SIGNAL_FUNC(esdrecord), int_to_int_pointer(1));
     gtk_signal_connect(GTK_OBJECT(off), "clicked",
-                       GTK_SIGNAL_FUNC(esdrecord), (gpointer) 0);
+                       GTK_SIGNAL_FUNC(esdrecord), int_to_int_pointer(0));
 
     gtk_signal_connect_object(GTK_OBJECT(window), "delete_event",
                               GTK_SIGNAL_FUNC(gtk_widget_destroy),
