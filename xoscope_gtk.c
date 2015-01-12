@@ -321,8 +321,6 @@ void ExternCommand(void)
 
     if (fixing_widgets) return;
 
-    glist = g_list_append(glist, "xy");
-    glist = g_list_append(glist, "ofreq");
     glist = g_list_append(glist, "operl 'abs($x)'");
     glist = g_list_append(glist, "operl '$x - $x[0]'");
     glist = g_list_append(glist, "operl '$x / ($y || 1)'");
