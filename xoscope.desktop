@@ -3,5 +3,6 @@ Version=1.0
 Type=Application
 Name=xoscope
 GenericName=Oscilloscope
+Categories=Science;Electronics;Network;HamRadio
 Exec=xoscope
 Icon=xoscope

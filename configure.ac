@@ -158,6 +158,7 @@ AC_DEFINE(DEFAULT_ALSADEVICE, ["plughw:0,0"], [default ALSA soundcard device])
 AC_OUTPUT([
 operl
 Makefile
+xoscope.spec
 ])
 
 AC_MSG_RESULT([

@@ -1,14 +1,14 @@
 Name:		xoscope
-Version:	2.0
-Release:	0.2%{?dist}
+Version:	@VERSION@
+Release:	1%{?dist}
 License:	GPL-2.0
 Group:		X11/Applications
 URL:		http://xoscope.sourceforge.net/
 Vendor:		Brent Baccala & others
 Packager:	Franta Hanzlik
-Summary:	xoscope - digital oscilloscope on PC
-Summary(pl.UTF-8):	xoscope - cyfrowy oscyloskop na PC
-Source0:	http://dl.sourceforge.net/xoscope/%{name}-%{version}.tgz
+Summary:	Digital oscilloscope on PC
+Summary(pl.UTF-8):	Cyfrowy oscyloskop na PC
+Source0:	http://dl.sourceforge.net/xoscope/%{name}-%{version}.tar.gz
 BuildRequires:	autoconf
 BuildRequires:	automake
 BuildRequires:  alsa-devel
@@ -40,7 +40,7 @@ variable time scale, math, memory, measurements, and file save/load.
 %install
 %make_install
 
-%suse_update_desktop_file -c xoscope Xoscope "Digital Oscilloscope" xoscope xoscope "Network;HamRadio"
+%suse_update_desktop_file -i xoscope
  
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -49,13 +49,14 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(644,root,root,755)
 %doc AUTHORS ChangeLog hardware NEWS README TODO
 %attr(755,root,root) %{_bindir}/%{name}
+%attr(755,root,root) %{_bindir}/operl
 %{_datadir}/pixmaps/%{name}.png
 %{_datadir}/applications/%{name}.desktop
 %{_mandir}/man1/%{name}.1.gz
  
 %changelog
 * Mon Jan 12 2015 Brent Baccala <cosine@freesoft.org>
-- up to 2.1
+- 2.1-1
 - remove pl, cz translations that I don't understand
 
 * Sun Jul 22 2012 Franta Hanzlik <franra@hanzlici.cz>
