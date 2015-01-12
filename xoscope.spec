@@ -1,9 +1,7 @@
-# TODO: broken on archs with sizeof(int)!=sizeof(void*) (i.e. all 64-bit)
-#       (it abuses guint field to place strings - see gr_gtk.c:670 and below)
 Name:		xoscope
 Version:	2.0
 Release:	0.2%{?dist}
-License:	GPL
+License:	GPL-2.0
 Group:		X11/Applications
 URL:		http://xoscope.sourceforge.net/
 Vendor:		Brent Baccala & others
@@ -13,35 +11,26 @@ Summary(pl.UTF-8):	xoscope - cyfrowy oscyloskop na PC
 Source0:	http://dl.sourceforge.net/xoscope/%{name}-%{version}.tgz
 BuildRequires:	autoconf
 BuildRequires:	automake
+BuildRequires:  alsa-devel
+BuildRequires:  fftw3-devel
+BuildRequires:  libesd-devel
+BuildRequires:  libgtkdatabox-devel
+BuildRequires:  update-desktop-files
 BuildRequires:	esound-devel
 BuildRequires:	gtk2-devel >= 2.18
-BuildRequires:	libtool
 BuildRequires:	comedilib-devel
-BuildRequires:  gtkdatabox-devel
-BuildRequires:	desktop-file-utils
 BuildRoot:	%{tmpdir}/%{name}-%{version}
  
 %description
-x*oscope is a digital oscilloscope that uses a sound card (via
-/dev/dsp or EsounD) and/or Radio Shack ProbeScope a.k.a osziFOX as the
-signal input.
- 
-%description -l pl.UTF-8
-x*oscope jest to cyfrowy oscyloskop, który używa jako sygnału
-wejściowego karty dźwiękowej (/dev/dsp albo EsounD) i/lub Radio Shack
-ProbeScope znanego także jako osziFOX.
- 
-%description -l cz.UTF-8
-xoscope je digitální osciloskop, který užívá pro vstup signálu zvukovou kartu
-(přes /dev/dsp nebo EsounD) a/nebo Radio Shack ProbeScope (známého též jako
-osziFOX).
+xoscope is a digital oscilloscope that uses a sound card, COMEDI,
+and/or EsounD as the signal input.  Includes 8 signal displays,
+variable time scale, math, memory, measurements, and file save/load.
  
 %prep
 %setup -q
  
 %build
 %{__aclocal}
-%{__libtoolize}
 %{__autoheader}
 %{__automake}
 %{__autoconf}
@@ -49,15 +38,9 @@ osziFOX).
 %{__make}
  
 %install
-rm -rf $RPM_BUILD_ROOT
- 
-%{__make} install DESTDIR=$RPM_BUILD_ROOT
+%make_install
 
-desktop-file-install --vendor=fedora --dir=${RPM_BUILD_ROOT}%{_datadir}/applications xoscope.desktop
-
-mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/pixmaps
-install -p -m 0644 xoscope.png ${RPM_BUILD_ROOT}%{_datadir}/pixmaps
-install -d -p -m 0755 ${RPM_BUILD_ROOT}%{_docdir}/%{name}-%{version}/contrib
+%suse_update_desktop_file -c xoscope Xoscope "Digital Oscilloscope" xoscope xoscope "Network;HamRadio"
  
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -65,14 +48,16 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %defattr(644,root,root,755)
 %doc AUTHORS ChangeLog hardware NEWS README TODO
-%attr(755,root,root) %{_bindir}/*
-%{_mandir}/*/*
-%{_datadir}/pixmaps/*
-%{_datadir}/applications/*
+%attr(755,root,root) %{_bindir}/%{name}
+%{_datadir}/pixmaps/%{name}.png
+%{_datadir}/applications/%{name}.desktop
+%{_mandir}/man1/%{name}.1.gz
  
-%define date	%(echo `LC_ALL="C" date +"%a %b %d %Y"`)
-
 %changelog
+* Mon Jan 12 2015 Brent Baccala <cosine@freesoft.org>
+- up to 2.1
+- remove pl, cz translations that I don't understand
+
 * Sun Jul 22 2012 Franta Hanzlik <franra@hanzlici.cz>
 - build for Fedora distros
 - patch for nonexistent asm/page.h and no. of comedi_get_cmd_generic_timed params in comedi.c
