@@ -42,7 +42,6 @@ AC_SUBST(x_libraries)
 
 dnl Checks for programs.
 AC_PATH_PROG(PERL, perl, /usr/bin/perl)
-AC_PATH_PROG(RANLIB, ranlib)
 AC_DEFINE_UNQUOTED(PERL, "$ac_cv_path_PERL", [Path to Perl executable])
 
 dnl Checks for libraries.
