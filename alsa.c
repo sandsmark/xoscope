@@ -87,7 +87,6 @@ static int open_sound_card(void)
     if (rc < 0) {
         snd_errormsg1 = "opening ";
         snd_errormsg2 = snd_strerror(rc);
-        fprintf(stderr, "%s\n%s\n", snd_errormsg1, snd_errormsg2);
         return 0;
     }
 
@@ -99,7 +98,6 @@ static int open_sound_card(void)
     if (rc < 0) {
         snd_errormsg1 = "snd_pcm_hw_params_any() failed ";
         snd_errormsg2 = snd_strerror(rc);
-        fprintf(stderr, "%s\n%s\n", snd_errormsg1, snd_errormsg2);
         return 0;
     }
 
@@ -110,7 +108,6 @@ static int open_sound_card(void)
     if (rc < 0) {
         snd_errormsg1 = "snd_pcm_hw_params_set_access() failed ";
         snd_errormsg2 = snd_strerror(rc);
-        fprintf(stderr, "%s\n%s\n", snd_errormsg1, snd_errormsg2);
         return 0;
     }
 
@@ -125,14 +122,12 @@ static int open_sound_card(void)
     } else {
         snd_errormsg1 = "Wrong number of bits";
         snd_errormsg2 = "";
-        fprintf(stderr, "%s\n%s\n", snd_errormsg1, snd_errormsg2);
         return 0;
     }
 
     if (rc < 0) {
         snd_errormsg1 = "snd_pcm_hw_params_set_format() failed ";
         snd_errormsg2 = snd_strerror(rc);
-        fprintf(stderr, "%s\n%s\n", snd_errormsg1, snd_errormsg2);
         return 0;
     }
 
@@ -140,19 +135,16 @@ static int open_sound_card(void)
     if (rc < 0) {
         snd_errormsg1 = "snd_pcm_hw_params_get_format() failed ";
         snd_errormsg2 = snd_strerror(rc);
-        fprintf(stderr, "%s\n%s\n", snd_errormsg1, snd_errormsg2);
         return 0;
     }
 
     if (bits == 8 && pcm_format != SND_PCM_FORMAT_U8) {
         snd_errormsg1 = "Can't set 8-bit format (SND_PCM_FORMAT_U8)";
-        fprintf(stderr, "%s\n%s\n", snd_errormsg1, snd_errormsg2);
         return 0;
     }
 
     if (bits == 16 && pcm_format != SND_PCM_FORMAT_S16_LE) {
         snd_errormsg1 = "Can't set 16-bit format (SND_PCM_FORMAT_S16_LE)";
-        fprintf(stderr, "%s\n%s\n", snd_errormsg1, snd_errormsg2);
         return 0;
     }
 
@@ -161,14 +153,12 @@ static int open_sound_card(void)
     if (rc < 0) {
         snd_errormsg1 = "snd_pcm_hw_params_set_channels() failed ";
         snd_errormsg2 = snd_strerror(rc);
-        fprintf(stderr, "%s\n%s\n", snd_errormsg1, snd_errormsg2);
         return 0;
     }
     rc = snd_pcm_hw_params_get_channels(params, &chan);
     if (rc < 0) {
         snd_errormsg1 = "snd_pcm_hw_params_get_channels() failed ";
         snd_errormsg2 = snd_strerror(rc);
-        fprintf(stderr, "%s\n%s\n", snd_errormsg1, snd_errormsg2);
         return 0;
     }
     sc_chans = chan;
@@ -177,12 +167,10 @@ static int open_sound_card(void)
     if (rc < 0) {
         snd_errormsg1 = "snd_pcm_hw_params_set_rate_near() failed ";
         snd_errormsg2 = snd_strerror(rc);
-        fprintf(stderr, "%s\n%s\n", snd_errormsg1, snd_errormsg2);
         return 0;
     }
     if (rate != sound_card_rate) {
         snd_errormsg1 = "requested sample rate not available ";
-        fprintf(stderr, "%s\n%s\n", snd_errormsg1, snd_errormsg2);
         return 0;
     }
     sound_card_rate = rate;
@@ -194,7 +182,6 @@ static int open_sound_card(void)
     if (rc < 0) {
         snd_errormsg1 = "snd_pcm_hw_params_set_period_size_near() failed ";
         snd_errormsg2 = snd_strerror(rc);
-        fprintf(stderr, "%s\n%s\n", snd_errormsg1, snd_errormsg2);
         return 0;
     }
 
@@ -203,7 +190,6 @@ static int open_sound_card(void)
     if (rc < 0) {
         snd_errormsg1 = "snd_pcm_hw_params() failed ";
         snd_errormsg2 = snd_strerror(rc);
-        fprintf(stderr, "%s\n%s\n", snd_errormsg1, snd_errormsg2);
         return 0;
     }
     /* fprintf(stderr,"open_sound_card\n"); */
@@ -211,7 +197,6 @@ static int open_sound_card(void)
     if ((rc = snd_pcm_prepare (handle)) < 0) {
         snd_errormsg1 = "snd_pcm_prepare() failed ";
         snd_errormsg2 = snd_strerror(rc);
-        fprintf(stderr, "%s\n%s\n", snd_errormsg1, snd_errormsg2);
         return 0;
     }
 
@@ -227,7 +212,6 @@ static void reset_sound_card(void)
         if (!(junk =  malloc((SAMPLESKIP * snd_pcm_format_width(pcm_format) / 8) * 2))) {
             snd_errormsg1 = "malloc() failed " ;
             snd_errormsg2 = strerror(errno);
-            fprintf(stderr, "%s\n%s\n", snd_errormsg1, snd_errormsg2);
             return;
         }
     }
@@ -344,23 +328,12 @@ static void set_width(int width)
     right_sig.width = width;
 
     if (left_sig.data != NULL) 
-        free(left_sig.data);
+        g_free(left_sig.data);
     if (right_sig.data != NULL) 
-        free(right_sig.data);
+        g_free(right_sig.data);
 
-    left_sig.data = malloc(width * sizeof(short));
-    if (left_sig.data == NULL) {
-        fprintf(stderr, "set_width(), malloc failed, %s\n", strerror(errno));
-        exit(0);
-    }
-    bzero(left_sig.data, width * sizeof(short));
-    
-    right_sig.data = malloc(width * sizeof(short));
-    if (right_sig.data == NULL) {
-        fprintf(stderr, "set_width(), malloc failed, %s\n", strerror(errno));
-        exit(0);
-    }
-    bzero(right_sig.data, width * sizeof(short));
+    left_sig.data = g_new0(short, width);
+    right_sig.data = g_new0(short, width);
 }
 
 
@@ -385,7 +358,6 @@ static int sc_get_data(void)
         if (!(buffer =  malloc((MAXWID * snd_pcm_format_width(pcm_format) / 8) * 2))) {
             snd_errormsg1 = "malloc() failed ";
             snd_errormsg2 = strerror(errno);
-            fprintf(stderr, "%s\n%s\n", snd_errormsg1, snd_errormsg2);
             return 0;
         }
     }
