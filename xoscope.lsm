@@ -1,16 +1,16 @@
-Begin3
-Title: oscope - Digital Oscilloscope via Sound Card and/or ProbeScope/osziFOX
+Begin4
+Title: xoscope
 Version: 2.1
-Entered-date: 10MAY01
+Entered-date: 2015-01-13
 Description: xoscope is a digital oscilloscope that uses a sound card, COMEDI,
 	and/or EsounD as the signal input.  Includes 8 signal displays,
 	variable time scale, math, memory, measurements, and file save/load.
-Keywords: sound, graphics, oscilloscope, circuits, ProbeScope, osziFOX, Bitscope
+Keywords: sound, graphics, oscilloscope, electronics, circuits
 Author: cosine@freesoft.org (Brent Baccala)
 Maintained-by: cosine@freesoft.org (Brent Baccala)
 Primary-site: http://xoscope.sourceforge.net/
-	166kB oscope-1.8.tar.gz
+	293kB oscope-2.1.tar.gz
 	1180 oscope.lsm
-Platforms: ALSA supported sound card and/or COMEDI supported DAQ card.
+Platforms: ALSA supported sound card and/or COMEDI supported DAQ card
 Copying-policy: GPL
 End
