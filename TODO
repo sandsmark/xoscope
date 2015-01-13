@@ -200,3 +200,6 @@ v1.8: The display now works with rates up to at least 25,000,000 S/s.
 	import/export signals in standard formats
 	better job of handling slow timebases
 	improve FFT code
+	fix value-to-pixel roundoff problems in gtkdatabox
+	COMEDI range control
+	ALSA number of channels; rate logic

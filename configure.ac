@@ -1,12 +1,10 @@
 dnl Process this file with autoconf to produce a configure script.
 
-dnl @(#)$Id: configure.in,v 2.15 2014/10/05 15:43:54 baccala Exp $
-
 dnl Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
 
 dnl (see the files README and COPYING for more details)
 
-AC_INIT([xoscope], [2.0])
+AC_INIT([xoscope], [2.1])
 AM_INIT_AUTOMAKE
 AC_CONFIG_HEADERS(config.h)
 

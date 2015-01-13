@@ -21,10 +21,11 @@ input devices currently include:
 
 .TP 0.5i
 .B Soundcard
-Audio sound recording via /dev/dsp.  Two 8-bit analog channels at 8000
-S/s to 44100 S/s.  Left and right audio is connected to A and B inputs
-respectively.  Use an external mixer program to select which sound
-inputs to record.  AC coupled, voltages unknown, 256K sample memory.
+Audio sound recording via Advanced Linux Sound Architecture (ALSA).
+Two 8-bit analog channels at 8000 S/s to 44100 S/s.  Left and right
+audio is connected to A and B inputs respectively.  Use an external
+mixer program to select which sound inputs to record.  AC coupled,
+voltages unknown, 256K sample memory.
 
 .TP 0.5i
 .B EsounD
@@ -428,6 +429,7 @@ The keyboard interface may be confusing.
 was written by Tim Witham (twitham@quiknet.com), originally based
 on "scope" by Jeff Tranter (Jeff_Tranter@Mitel.COM).
 Most recent work is by Brent Baccala (cosine@freesoft.org).
+ALSA support by Gerhard Schiller (gerhard.schiller@gmail.com).
 .B Xoscope
 is released under the conditions of the GNU General Public License.
 See the files README and COPYING in the distribution for details.
