@@ -49,6 +49,9 @@ struct signal_stats stats;
  * XXX multiple messages should timeout independently
  *
  * XXX allow user configuration of timeout period (current 2 sec)
+ *
+ * XXX possible threading race condition if we're in clear_message_callback() and message()
+ * simultaneously
  */
 
 GtkDataboxGraph *databox_message = NULL;
@@ -77,13 +80,13 @@ void message(const char *message)
                                                   GTK_DATABOX_MARKERS_NONE);
     }
 
-    if (databox_message_text_alloced_size < databox_message_text_used + strlen(message) + 1) {
-        databox_message_text_alloced_size = databox_message_text_used + strlen(message) + 1;
+    if (databox_message_text_alloced_size < databox_message_text_used + strlen(message) + 2) {
+        databox_message_text_alloced_size = databox_message_text_used + strlen(message) + 2;
         databox_message_text = realloc(databox_message_text, databox_message_text_alloced_size);
     }
 
     if (databox_message_text_used > 0) {
-    databox_message_text[databox_message_text_used ++] = '\n';
+        databox_message_text[databox_message_text_used ++] = '\n';
     }
     strcpy(databox_message_text + databox_message_text_used, message);
     databox_message_text_used += strlen(message);
@@ -92,10 +95,13 @@ void message(const char *message)
 
     gtk_databox_markers_set_label(GTK_DATABOX_MARKERS(databox_message), 0,
                                   GTK_DATABOX_MARKERS_TEXT_CENTER, (char *)databox_message_text, FALSE);
-    gtk_databox_graph_add (GTK_DATABOX(databox), databox_message);
-    gtk_widget_queue_draw (databox);
 
-    g_timeout_add (databox_message_timeout_ms, clear_message_callback, NULL);
+    if (databox_message_text_used == strlen(message)) {
+        gtk_databox_graph_add (GTK_DATABOX(databox), databox_message);
+        g_timeout_add (databox_message_timeout_ms, clear_message_callback, NULL);
+    }
+
+    gtk_widget_queue_draw (databox);
 }
 
 /* Format a number into a string using SI prefixes.  "fmt" should contain a "%g" for the number and
