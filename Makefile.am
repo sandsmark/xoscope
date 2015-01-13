@@ -15,7 +15,7 @@ config.h func.h fft.h
 bin_PROGRAMS = xoscope
 
 EXTRA_DIST = $(man_MANS) $(noinst_HEADERS) \
-TODO TODO.old xoscope.lsm xoscope.rc \
+TODO TODO.old xoscope.lsm xoscope.rc operl.in \
 count.dat oscope.dat audio.dat bitscope.dat proscope.dat \
 xoscope.glade xoscope.png xoscope.desktop xoscope.spec \
 hardware/HARDWARE hardware/buff.fig hardware/buff.ps \
