@@ -166,20 +166,13 @@ void start_command_on_channel(const char *command, Channel *ch_select)
          * frame
          */
 
-        if ((oscopepath = getenv("OSCOPEPATH")) == NULL)
+        if ((oscopepath = getenv("OSCOPEPATH")) == NULL) {
             oscopepath = PACKAGE_LIBEXEC_DIR;
-        if ((path = malloc(strlen(oscopepath) + 6)) != NULL) {
-            if(path == NULL){
-                fprintf(stderr, "malloc failed in start_command_on_channel() for path\n");
-                exit(0);
-            }
-
-            sprintf(path,"PATH=%s", oscopepath);
-            putenv(path);
-            /* putenv() requires buffer to stick around, so no free(), but we're in the child, and
-             * about to exec, so no big deal
-             */
         }
+
+        path = g_malloc(strlen(oscopepath) + 6);
+        sprintf(path,"PATH=%s", oscopepath);
+        putenv(path);
 
         execlp("/bin/sh", "sh", "-c", command, NULL);
         sprintf(error, "%s: child can't exec /bin/sh -c \"%s\"",
@@ -192,12 +185,7 @@ void start_command_on_channel(const char *command, Channel *ch_select)
         return;
     }
 
-    ext = malloc(sizeof(struct external));
-    if (ext == NULL) {
-        fprintf(stderr, "malloc() struct external failed\n");
-        return;
-    }
-    bzero(ext, sizeof(struct external));
+    ext = g_new0(struct external, 1);
 
     strncpy(ext->signal.savestr, command, sizeof(ext->signal.savestr));
     strncpy(ext->signal.name, command, sizeof(ext->signal.name));
@@ -207,11 +195,8 @@ void start_command_on_channel(const char *command, Channel *ch_select)
     ext->errors = errors[0];
     fcntl(ext->errors, F_SETFL, O_NONBLOCK);
 
-    ext->signal.data = malloc(ch[0].signal->width * sizeof(short));
-    if(ext->signal.data == NULL){
-        fprintf(stderr, "malloc failed in start_command_on_channel() for signal.data\n");
-        exit(0);
-    }
+    ext->signal.data = g_new(short, ch[0].signal->width);
+
     ext->signal.width = ch[0].signal->width;
     ext->signal.num = 0;
     ext->signal.rate = ch[0].signal->rate;
@@ -239,14 +224,7 @@ void restart_command_on_channel(void)
     struct external *ext;
 
     for (ext = externals; ext != NULL; ext = ext->next) {
-        if (ext->signal.data != NULL) {
-            free(ext->signal.data);
-        }
-        ext->signal.data = malloc(ch[0].signal->width * sizeof(short));
-        if (ext->signal.data == NULL) {
-            fprintf(stderr, "malloc failed in restart_command_on_channel() for signal.data\n");
-            exit(0);
-        }
+        ext->signal.data = g_renew(short, ext->signal.data, ch[0].signal->width);
         ext->signal.width = ch[0].signal->width;
         ext->signal.num = 0;
     }
@@ -312,11 +290,7 @@ static void run_externals(void)
                  */
 
                 if ((ext->signal.width < ch[0].signal->width) && (ext->signal.width < ch[1].signal->width)) {
-                    ext->signal.data = realloc(ext->signal.data, ch[0].signal->width * sizeof(short));
-                    if(ext->signal.data == NULL){
-                        fprintf(stderr, "realloc failed in run_externals()\n");
-                        exit(0);
-                    }
+                    ext->signal.data = g_renew(short, ext->signal.data, ch[0].signal->width);
                     ext->signal.width = ch[0].signal->width;
                 }
 
