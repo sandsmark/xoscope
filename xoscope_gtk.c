@@ -1067,7 +1067,7 @@ void fix_widgets(void)
          (gtk_item_factory_get_item(factory, "/Help/Keys&Info")), scope.verbose);
 
     if ((p = finditem("/Channel/Math")) &&
-        (q = finditem("/Channel/Math/Avg. 1,2"))) {
+        (q = finditem("/Channel/Math/FFT. 2"))) {
         for (r = p; r <= q; r++) {
             /* XXX add a check to the function's isvalid() test */
             gtk_widget_set_sensitive
