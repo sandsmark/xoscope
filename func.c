@@ -193,8 +193,9 @@ void start_program_on_channel(const char *command, Channel *ch_select)
 
     ext = g_new0(struct external, 1);
 
-    strncpy(ext->signal.savestr, command, sizeof(ext->signal.savestr));
-    strncpy(ext->signal.name, command, sizeof(ext->signal.name));
+    snprintf(ext->signal.savestr, sizeof(ext->signal.savestr), "%s", command);
+    snprintf(ext->signal.name, sizeof(ext->signal.name), "%s", command);
+
     ext->pid = pid;
     ext->from = from[0];
     ext->to = to[1];
@@ -281,8 +282,9 @@ void start_perl_function_on_channel(const char *command, Channel *ch_select)
 
     ext = g_new0(struct external, 1);
 
-    strncpy(ext->signal.savestr, command, sizeof(ext->signal.savestr));
-    strncpy(ext->signal.name, command, sizeof(ext->signal.name));
+    snprintf(ext->signal.savestr, sizeof(ext->signal.savestr), "operl '%s'", command);
+    snprintf(ext->signal.name, sizeof(ext->signal.name), "%s", command);
+
     ext->pid = pid;
     ext->from = from[0];
     ext->to = to[1];
