@@ -48,7 +48,7 @@ esdsrc =
 endif
 
 if ASOUND
-asoundsrc = sc_linux.c
+asoundsrc = alsa.c
 endif
 
 AM_CPPFLAGS = @GTK_CFLAGS@ @GTKDATABOX_CFLAGS@ -export-dynamic -DPACKAGE_LIBEXEC_DIR='"$(bindir)"'
