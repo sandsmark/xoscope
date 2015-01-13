@@ -302,14 +302,16 @@ void writefile(char *filename)
         message(error);
         return;
     }
-    fprintf(file, "# %s, version %s\n\
-#\n\
-# -D %s\n", progname, version, datasrc->name);
+    fprintf(file, "# %s, version %s\n#\n", progname, version);
 
-    if (datasrc->save_option != NULL) {
-        for (i=0; (s = datasrc->save_option(i)) != NULL; i++) {
-            if (s[0] != '\0') {
-                fprintf(file, "# -o %s\n", s);
+    if (datasrc) {
+        fprintf(file, "# -D %s\n", datasrc->name);
+
+        if (datasrc->save_option != NULL) {
+            for (i=0; (s = datasrc->save_option(i)) != NULL; i++) {
+                if (s[0] != '\0') {
+                    fprintf(file, "# -o %s\n", s);
+                }
             }
         }
     }
