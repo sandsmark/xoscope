@@ -263,8 +263,8 @@ void start_perl_function_on_channel(const char *command, Channel *ch_select)
         sprintf(envvar,"FUNC=%s", command);
         putenv(envvar);
 
-        execlp("/usr/bin/perl", "perl", NULL);
-        perror("can't exec /usr/bin/perl");
+        execlp(PERL, PERL, NULL);
+        perror("can't exec " PERL);
         exit(1);
     } else {                    /* fork error */
         sprintf(error, "%s: can't fork", progname);
