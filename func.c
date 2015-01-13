@@ -15,6 +15,7 @@
 #include <fcntl.h>
 #include <string.h>
 #include <math.h>
+#include <ctype.h>
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -306,14 +307,23 @@ void start_perl_function_on_channel(const char *command, Channel *ch_select)
 
 void start_command_on_channel(const char *command, Channel *ch_select)
 {
-    /* Check if command string starts with "operl ".  If so, discard any quotes and handle the
-     * remainder of the string as a Perl function.
+    /* Check if command string starts with "operl ".  If so, discard any quotes and leading/trailing
+     * whitespace and handle the remainder of the string as a Perl function.
      */
 
     if (strncmp(command, "operl ", 6) == 0) {
-        char * function = g_strdup(command+6);
-        if ((function[0] == '\'') || (function[0] == '\"')) {
-            function[strlen(function)-2] = '\0';
+        char * function;
+        int i;
+
+        for (i=6; isspace(command[i]); i++);
+        function = g_strdup(command+i);
+
+        while ((strlen(function) > 0) && isspace(function[strlen(function)-1])) {
+            function[strlen(function)-1] = '\0';
+        }
+        if (((function[0] == '\'') || (function[0] == '\"'))
+            && (function[0] == function[strlen(function)-1])) {
+            function[strlen(function)-1] = '\0';
             start_perl_function_on_channel(function+1, ch_select);
         } else {
             start_perl_function_on_channel(function, ch_select);
