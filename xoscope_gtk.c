@@ -26,7 +26,7 @@
 #include "file.h"
 #include "xoscope_gtk.h"
 
-#include "xoscope.rc.h"
+#include "builtins.h"
 
 GtkWidget *menubar = NULL;
 GtkWidget *glade_window = NULL;
