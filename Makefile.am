@@ -1,8 +1,7 @@
 ## Process this file with automake to produce Makefile.in
 
-# @(#)$Id: Makefile.am,v 2.19 2012/10/24 22:14:33 baccala Exp $
-
 # Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
+# Copyright (C) 2015 Brent Baccala <cosine@freesoft.org>
 
 # (see the files README and COPYING for more details)
 
@@ -15,36 +14,23 @@ config.h func.h xoscope.rc.h fft.h
 
 bin_PROGRAMS = xoscope
 
-# Used to install these auxiliary programs, but I want to depreciate
-# them.  Figure how to wrap their functionality into main program
-# instead.
-
-# pkglibexecdir = $(libexecdir)/@PACKAGE@
-# pkglibexec_PROGRAMS = offt
-# pkglibexec_SCRIPTS = operl ofreq.ini
-
 EXTRA_DIST = $(man_MANS) $(noinst_HEADERS) \
-README.f51 TODO TODO.old audio.dat bitscope.dat 	\
-count.dat ofreq.ini oscope.dat xoscope.lsm xoscope.rc	\
-patch.f51 proscope.dat xoscope.glade xoscope.png xoscope.desktop xoscope.spec \
+TODO TODO.old xoscope.lsm xoscope.rc \
+count.dat oscope.dat audio.dat bitscope.dat proscope.dat \
+xoscope.glade xoscope.png xoscope.desktop xoscope.spec \
 hardware/HARDWARE hardware/buff.fig hardware/buff.ps \
 hardware/buff2.fig hardware/buff2.ps hardware/pcb.fig hardware/pcb.ps \
 hardware/xoscope-components.png hardware/xoscope-copper.png
 
-src = xoscope.c file.c func.c display.c
+src = xoscope.c xoscope_gtk.c file.c func.c display.c
 fftsrc = fft.c 
-guisrc = xoscope_gtk.c
 
 if COMEDI
 comedisrc = comedi.c comedi_gtk.c
-else
-comedisrc =
 endif
 
 if ESD
 esdsrc = esd.c esd_gtk.c
-else
-esdsrc =
 endif
 
 if ASOUND
@@ -55,15 +41,10 @@ AM_CPPFLAGS = @GTK_CFLAGS@ @GTKDATABOX_CFLAGS@ -export-dynamic -DPACKAGE_LIBEXEC
 
 .PRECIOUS: xoscope.glade xoscope.rc
 
-xoscope_SOURCES = $(src) $(comedisrc) $(esdsrc) $(asoundsrc) $(fftsrc) $(guisrc)
+xoscope_SOURCES = $(src) $(comedisrc) $(esdsrc) $(asoundsrc) $(fftsrc)
 xoscope_LDADD = @GTK_LIBS@ @GTKDATABOX_LIBS@
 xoscope_DEPENDENCIES = xoscope.rc
 xoscope_LDFLAGS = -Wl,--export-dynamic
-
-# offt_SOURCES = offt.c fft.c realfft.c
-
-# xy_SOURCES = com_gtk.c xy_gtk.c xy.c
-# xy_LDADD = @GTK_LIBS@
 
 # I compile in the rc file so I don't have to worry about what happens
 # if it can't be found at runtime.
