@@ -19,17 +19,6 @@ PKG_CHECK_MODULES(GTK, gtk+-2.0 >= 2.2)
 PKG_CHECK_MODULES(GTKDATABOX, gtkdatabox)
 PKG_CHECK_MODULES(FFTW3, fftw3)
 
-dnl Set PACKAGE_LIBEXEC_DIR in config.h.
-dnl if test "x${libexecdir}" = 'x${exec_prefix}/libexec'; then
-dnl   if test "x${prefix}" = "xNONE"; then
-dnl     AC_DEFINE_UNQUOTED(PACKAGE_LIBEXEC_DIR, "${ac_default_prefix}/libexec/${PACKAGE}", [External programs directory (where to find operl)])
-dnl   else
-dnl     AC_DEFINE_UNQUOTED(PACKAGE_LIBEXEC_DIR, "${exec_prefix}/libexec/${PACKAGE}", [External programs directory (where to find operl)])
-dnl   fi
-dnl else
-dnl   AC_DEFINE_UNQUOTED(PACKAGE_LIBEXEC_DIR, "${libexecdir}/${PACKAGE}", [External programs directory (where to find operl)])
-dnl fi
-
 dnl Use -Wall if we have gcc.
 changequote(,)dnl
 if test "x$GCC" = "xyes"; then
@@ -156,7 +145,6 @@ AC_DEFINE(FFT_DSP_LEN, 440, [output from fft is compressed (or streched) to that
 AC_DEFINE(DEFAULT_ALSADEVICE, ["plughw:0,0"], [default ALSA soundcard device])
 
 AC_OUTPUT([
-operl
 Makefile
 xoscope.spec
 ])

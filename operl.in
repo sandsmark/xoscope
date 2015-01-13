@@ -1,18 +1,15 @@
-#!@PERL@
-
-# @(#)$Id: operl.in,v 2.0 2008/12/17 17:35:46 baccala Exp $
 
 # Copyright (C) 1996 - 2001 Tim Witham <twitham@pcocd2.intel.com>
 
 # (see the files README and COPYING for more details)
 
-# x*oscope external math filter command example in perl
+# xoscope external math filter command example in perl
 
 # !!! Please see bottom of this file for instructions and examples !!!
 
 $| = 1;				# unbuffer stdout
 $0 =~ s!.*/!!;			# reduce to program basename
-$func = $ARGV[0];		# get function to run from command line
+$func = $ENV{FUNC};		# get function to run from environment
 $samples = $ARGV[1] || 640;	# assume 640 total samples per screen
 $func =~ s/\#.*$//;		# toss comments
 $func =~ s/^\s*(\$z\s*=)?\s*//;	# and assumed leading/trailing stuff, if any
@@ -21,8 +18,8 @@ die "usage: $0 'perl math function of \$t, \$x and \$y' [sample length]\n"
     unless $func;		# oops
 $func = "\$z = $func;";		# '$z=' and ';' are implied around function
 
-open(IN, '-')			# open stdin for reading
-    || die "$0: Can't read stdin: $!\n";
+open(IN, '<&3')			# open non-standard input for reading
+    || die "$0: Can't read input: $!\n";
 open(OUT, '>-')			# and stdout for writing
     || die "$0: Can't write stdout: $!\n";
 

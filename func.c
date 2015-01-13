@@ -126,10 +126,15 @@ static struct external *externals = NULL;
  *
  * Start an external command running on the current display channel.
  *
+ * xoscope version 1.x included an auxilary program (operl) that could be invoked to display the
+ * result of a Perl function.  We now call perl directly, to avoid dependence on an external program
+ * being installed.  For backwards compatibility, external commands that begin with the string
+ * "operl" as interpreted as perl functions.
+ *
  * gr_* UIs call this after prompting for command to run
  */
 
-void start_command_on_channel(const char *command, Channel *ch_select)
+void start_program_on_channel(const char *command, Channel *ch_select)
 {
     struct external *ext;
     int pid;
@@ -211,6 +216,114 @@ void start_command_on_channel(const char *command, Channel *ch_select)
     ch[scope.select].show = 1;
 }
 
+void start_perl_function_on_channel(const char *command, Channel *ch_select)
+{
+    struct external *ext;
+    int pid;
+    int program[2], from[2], to[2], errors[2];
+    FILE *program_FILE;
+    static char *envvar;
+    extern char * operl_program;
+
+    if (pipe(program) || pipe(to) || pipe(from) || pipe(errors)) { /* get a set of pipes */
+        sprintf(error, "%s: can't create pipes", progname);
+        perror(error);
+        return;
+    }
+
+    signal(SIGPIPE, SIG_IGN);
+
+    if ((pid = fork()) > 0) {           /* parent */
+        close(program[0]);
+        close(to[0]);
+        close(from[1]);
+        close(errors[1]);
+    } else if (pid == 0) {              /* child */
+        close(program[1]);
+        close(to[1]);
+        close(from[0]);
+        close(errors[0]);
+        close(0);
+        close(1);                               /* redirect stdin/out through pipes */
+        close(2);
+        dup2(program[0], 0);
+        dup2(to[0], 3);
+        dup2(from[1], 1);
+        dup2(errors[1], 2);
+        close(program[0]);
+        close(to[0]);
+        close(from[1]);
+        close(errors[1]);
+
+        /* XXX add additional environment vars here for sampling rate and number of samples per
+         * frame
+         */
+
+        envvar = g_malloc(strlen(command) + 6);
+        sprintf(envvar,"FUNC=%s", command);
+        putenv(envvar);
+
+        execlp("/usr/bin/perl", "perl", NULL);
+        perror("can't exec /usr/bin/perl");
+        exit(1);
+    } else {                    /* fork error */
+        sprintf(error, "%s: can't fork", progname);
+        perror(error);
+        return;
+    }
+
+    /* Send the embedded Perl script to the child on its stdin. */
+
+    program_FILE = fdopen(program[1], "w");
+    fputs(operl_program, program_FILE);
+    fclose(program_FILE);
+
+    ext = g_new0(struct external, 1);
+
+    strncpy(ext->signal.savestr, command, sizeof(ext->signal.savestr));
+    strncpy(ext->signal.name, command, sizeof(ext->signal.name));
+    ext->pid = pid;
+    ext->from = from[0];
+    ext->to = to[1];
+    ext->errors = errors[0];
+    fcntl(ext->errors, F_SETFL, O_NONBLOCK);
+
+    ext->signal.data = g_new(short, ch[0].signal->width);
+
+    ext->signal.width = ch[0].signal->width;
+    ext->signal.num = 0;
+    ext->signal.rate = ch[0].signal->rate;
+    ext->signal.delay = ch[0].signal->delay;
+    ext->signal.bits = ch[0].signal->bits;
+    /*  fprintf(stderr, "start_command_on_channel: width = %d\n", ext->signal.width);*/
+
+    ext->next = externals;
+    externals = ext;
+
+    recall_on_channel(&ext->signal, ch_select);
+    ch[scope.select].show = 1;
+}
+
+void start_command_on_channel(const char *command, Channel *ch_select)
+{
+    /* Check if command string starts with "operl ".  If so, discard any quotes and handle the
+     * remainder of the string as a Perl function.
+     */
+
+    if (strncmp(command, "operl ", 6) == 0) {
+        char * function = g_strdup(command+6);
+        if ((function[0] == '\'') || (function[0] == '\"')) {
+            function[strlen(function)-2] = '\0';
+            start_perl_function_on_channel(function+1, ch_select);
+        } else {
+            start_perl_function_on_channel(function, ch_select);
+        }
+        g_free(function);
+    } else {
+        start_program_on_channel(command, ch_select);
+    }
+}
+
 void startcommand(const char *command)
 {
     if (scope.select > 1) {
@@ -279,6 +392,8 @@ static void run_externals(void)
                 if (i > 0) {
                     error_message[i] = '\0';
                     message(error_message);
+                    // XXX any perl errors realistically need this uncommented to debug them
+                    // fprintf(stderr, "%s", error_message);
                 }
 
                 /* We may already have sent and received part of a frame, so start our pointers at
