@@ -203,3 +203,6 @@ v1.8: The display now works with rates up to at least 25,000,000 S/s.
 	fix value-to-pixel roundoff problems in gtkdatabox
 	COMEDI range control
 	ALSA number of channels; rate logic
+	handle wide text boxes on long external commands
+	better handle external commands with variable time bases
+	don't open/close soundcard so much
