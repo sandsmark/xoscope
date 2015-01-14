@@ -358,14 +358,94 @@ void ExternCommand(void)
     /*    gtk_grab_add(window); */
 }
 
+/* XXX move this to xoscope.glade */
+
+void perl_function_help(GtkWidget *w, GtkEntry *command)
+{
+    GtkWidget *window;
+    GtkWidget *box1;
+    GtkWidget *box2;
+    GtkWidget *button;
+    GtkWidget *text;
+    GtkWidget *scrolled_window;
+    GtkTextBuffer *textbuffer;
+    PangoFontDescription *font_desc;
+    GtkTextIter iter;
+
+    window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
+    gtk_widget_set_usize (window, 800, 480);
+    gtk_window_set_policy (GTK_WINDOW(window), TRUE, TRUE, FALSE);
+    gtk_signal_connect_object(GTK_OBJECT (window), "destroy",
+                              GTK_SIGNAL_FUNC(gtk_widget_destroy),
+                              GTK_OBJECT(window));
+    gtk_window_set_title (GTK_WINDOW (window), "Perl function help");
+    gtk_container_border_width (GTK_CONTAINER (window), 0);
+
+    box1 = gtk_vbox_new (FALSE, 0);
+    gtk_container_add (GTK_CONTAINER (window), box1);
+    gtk_widget_show (box1);
+
+    box2 = gtk_vbox_new (FALSE, 10);
+    gtk_container_border_width (GTK_CONTAINER (box2), 10);
+    gtk_box_pack_start (GTK_BOX (box1), box2, TRUE, TRUE, 0);
+    gtk_widget_show (box2);
+
+    /* Create the GtkTextView widget */
+    text = gtk_text_view_new();
+    gtk_text_view_set_editable(GTK_TEXT_VIEW(text), FALSE);
+    gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(text), GTK_WRAP_NONE);
+    gtk_text_view_set_cursor_visible(GTK_TEXT_VIEW(text), FALSE);
+
+    /* Use a fixed width font throughout the widget */
+    font_desc = pango_font_description_from_string ("Courier 10");
+    gtk_widget_modify_font (text, font_desc);
+    pango_font_description_free (font_desc);
+
+    /* Add scrollbars (if needed) to the GtkTextView widget */
+    scrolled_window = gtk_scrolled_window_new(NULL, NULL);
+    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled_window),
+                                   GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
+    gtk_container_add(GTK_CONTAINER(scrolled_window), text);
+    gtk_box_pack_start (GTK_BOX (box2), scrolled_window, TRUE, TRUE, 0);
+    gtk_widget_show(scrolled_window);
+    gtk_widget_show(text);
+
+
+    /* Realizing a widget creates a window for it, ready to insert some text */
+    gtk_widget_realize (text);
+
+    textbuffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(text));
+
+    gtk_text_buffer_get_end_iter(textbuffer, &iter);
+    gtk_text_buffer_insert(textbuffer, &iter, operl_help_text, strlen(operl_help_text));
+
+    box2 = gtk_vbox_new (FALSE, 10);
+    gtk_container_border_width (GTK_CONTAINER (box2), 10);
+    gtk_box_pack_start (GTK_BOX (box1), box2, FALSE, TRUE, 0);
+    gtk_widget_show (box2);
+
+    button = gtk_button_new_with_label ("close");
+    gtk_signal_connect_object(GTK_OBJECT (button), "clicked",
+                              GTK_SIGNAL_FUNC(gtk_widget_destroy),
+                              GTK_OBJECT(window));
+    gtk_box_pack_start (GTK_BOX (box2), button, TRUE, TRUE, 0);
+    GTK_WIDGET_SET_FLAGS (button, GTK_CAN_DEFAULT);
+    gtk_widget_grab_default (button);
+    gtk_widget_show (button);
+
+    gtk_widget_show (window);
+}
+
 void run_perl_function(GtkWidget *w, GtkEntry *command)
 {
     start_perl_function(gtk_entry_get_text(GTK_ENTRY(command)));
 }
 
+/* XXX move to xoscope.glade */
+
 void PerlFunction(void)
 {
-    GtkWidget *window, *label, *command, *run, *cancel;
+    GtkWidget *window, *label, *command, *run, *help, *cancel;
     GList *glist = NULL;
 
     if (fixing_widgets) return;
@@ -381,6 +461,9 @@ void PerlFunction(void)
     window = gtk_dialog_new();
     run = gtk_button_new_with_label("  Run  ");
     gtk_box_pack_start(GTK_BOX(GTK_DIALOG(window)->action_area), run,
+                       TRUE, TRUE, 0);
+    help = gtk_button_new_with_label("  Help  ");
+    gtk_box_pack_start(GTK_BOX(GTK_DIALOG(window)->action_area), help,
                        TRUE, TRUE, 0);
     cancel = gtk_button_new_with_label("  Cancel  ");
     gtk_box_pack_start(GTK_BOX(GTK_DIALOG(window)->action_area), cancel,
@@ -408,6 +491,9 @@ void PerlFunction(void)
     gtk_signal_connect(GTK_OBJECT(run), "clicked",
                        GTK_SIGNAL_FUNC(run_perl_function),
                        GTK_ENTRY(GTK_COMBO(command)->entry));
+    gtk_signal_connect(GTK_OBJECT(help), "clicked",
+                       GTK_SIGNAL_FUNC(perl_function_help),
+                       NULL);
     gtk_signal_connect_object_after(GTK_OBJECT(run), "clicked",
                                     GTK_SIGNAL_FUNC(gtk_widget_destroy),
                                     GTK_OBJECT(window));
@@ -417,6 +503,7 @@ void PerlFunction(void)
     GTK_WIDGET_SET_FLAGS(run, GTK_CAN_DEFAULT);
     gtk_widget_grab_default(run);
     gtk_widget_show(run);
+    gtk_widget_show(help);
     gtk_widget_show(cancel);
     gtk_widget_show(label);
     gtk_widget_show(command);
@@ -563,6 +650,7 @@ void setposition(GtkWidget *w, guint data)
 }
 
 /* slurp the manual page into a window */
+/* XXX move this to xoscope.glade */
 
 void help(GtkWidget *w, void *data)
 {
