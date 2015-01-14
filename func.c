@@ -155,18 +155,21 @@ void start_program_on_channel(const char *command, Channel *ch_select)
         close(from[1]);
         close(errors[1]);
     } else if (pid == 0) {              /* child */
-        close(to[1]);
-        close(from[0]);
-        close(errors[0]);
-        close(0);
-        close(1);                               /* redirect stdin/out through pipes */
-        close(2);
+        int fd;
+
         dup2(to[0], 0);
         dup2(from[1], 1);
         dup2(errors[1], 2);
-        close(to[0]);
-        close(from[1]);
-        close(errors[1]);
+
+        /* We now want to close everything except the first three file descriptors (there can be a
+         * lot of descriptors open in the parent, to other external programs, to the windowing
+         * system, possibly to a file being loaded).  We tacitly assume that pipe() assigned the
+         * lowest available descriptors, so errors[1] should be our largest descriptor.
+         */
+
+        for (fd=3; fd <= errors[1]; fd ++) {
+            close(fd);
+        }
 
         /* XXX add additional environment vars here for sampling rate and number of samples per
          * frame
@@ -241,21 +244,22 @@ void start_perl_function_on_channel(const char *command, Channel *ch_select)
         close(from[1]);
         close(errors[1]);
     } else if (pid == 0) {              /* child */
-        close(program[1]);
-        close(to[1]);
-        close(from[0]);
-        close(errors[0]);
-        close(0);
-        close(1);                               /* redirect stdin/out through pipes */
-        close(2);
+        int fd;
+
         dup2(program[0], 0);
         dup2(to[0], 3);
         dup2(from[1], 1);
         dup2(errors[1], 2);
-        close(program[0]);
-        close(to[0]);
-        close(from[1]);
-        close(errors[1]);
+
+        /* We now want to close everything except the first four file descriptors (there can be a
+         * lot of descriptors open in the parent, to other external programs, to the windowing
+         * system, possibly to a file being loaded).  We tacitly assume that pipe() assigned the
+         * lowest available descriptors, so errors[1] should be our largest descriptor.
+         */
+
+        for (fd=4; fd <= errors[1]; fd ++) {
+            close(fd);
+        }
 
         /* XXX add additional environment vars here for sampling rate and number of samples per
          * frame
@@ -311,6 +315,8 @@ void start_command_on_channel(const char *command, Channel *ch_select)
 {
     /* Check if command string starts with "operl ".  If so, discard any quotes and leading/trailing
      * whitespace and handle the remainder of the string as a Perl function.
+     *
+     * This is done both for backwards compatibility and to retreive Perl functions from a save file.
      */
 
     if (strncmp(command, "operl ", 6) == 0) {
@@ -443,24 +449,31 @@ static void run_externals(void)
                     close(ext->from);
                     close(ext->to);
                     close(ext->errors);
+                    ext->from = -1;
+                    ext->to = -1;
+                    ext->errors = -1;
                 }
             }
 
         } else {
 
-            /* Nobody listening anymore; close down the pipes and wait for process to exit.  Maybe
-             * we should timeout in case of a hang?
-             */
+            /* Nobody listening anymore; close down the pipes and wait for process to exit. */
 
-            if (ext->pid) {
+            if (ext->from != -1) {
                 close(ext->from);
                 close(ext->to);
                 close(ext->errors);
-                waitpid(ext->pid, NULL, WNOHANG);
+                ext->from = -1;
+                ext->to = -1;
+                ext->errors = -1;
             }
 
-            /* XXX Delete ext from list and free() it */
-
+            if (ext->pid) {
+                if (waitpid(ext->pid, NULL, WNOHANG) == ext->pid) {
+                    ext->pid = 0;
+                    /* XXX Delete ext from list and free() it */
+                }
+            }
         }
     }
 }
