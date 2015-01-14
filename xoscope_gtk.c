@@ -370,10 +370,10 @@ void PerlFunction(void)
 
     if (fixing_widgets) return;
 
-    glist = g_list_append(glist, "abs($x)");
-    glist = g_list_append(glist, "$x - $x[0]");
-    glist = g_list_append(glist, "$x / ($y || 1)");
-    glist = g_list_append(glist, "$x > $y ? $x : $y");
+    glist = g_list_append(glist, "abs($1)");
+    glist = g_list_append(glist, "$1 - $1[0]");
+    glist = g_list_append(glist, "$1 / ($2 || 1)");
+    glist = g_list_append(glist, "$1 > $2 ? $1 : $2");
     glist = g_list_append(glist, "$t / (44100/2/250) % 2 ? 64 : -64");
     glist = g_list_append(glist, "sin($t * $pi / (44100/2/250)) * 64");
     glist = g_list_append(glist, "cos($t * $pi / (44100/2/250)) * 64");
@@ -397,7 +397,7 @@ void PerlFunction(void)
                        ch[scope.select].command);
 #else
     gtk_entry_set_text(GTK_ENTRY(GTK_COMBO(command)->entry),
-                       "$x + $y");
+                       "$1 + $2");
 #endif
     gtk_combo_set_value_in_list(GTK_COMBO(command), FALSE, FALSE);
     gtk_box_pack_start(GTK_BOX(GTK_DIALOG(window)->vbox), command,

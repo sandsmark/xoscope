@@ -1,5 +1,6 @@
 
 # Copyright (C) 1996 - 2001 Tim Witham <twitham@pcocd2.intel.com>
+# Copyright (C) 2015 Brent Baccala <cosine@freesoft.org>
 
 # (see the files README and COPYING for more details)
 
@@ -12,11 +13,12 @@ $0 =~ s!.*/!!;			# reduce to program basename
 $func = $ENV{FUNC};		# get function to run from environment
 $samples = $ARGV[1] || 640;	# assume 640 total samples per screen
 $func =~ s/\#.*$//;		# toss comments
-$func =~ s/^\s*(\$z\s*=)?\s*//;	# and assumed leading/trailing stuff, if any
+$func =~ s/^\s*(\$0\s*=)?\s*//;	# and assumed leading/trailing stuff, if any
 $func =~ s/\s*;*\s*$//;
-die "usage: $0 'perl math function of \$t, \$x and \$y' [sample length]\n"
+$func =~ s/([\$@])([0-9])/\1d\2/g; # convert $1/$2 to $d1/$d2
+die "usage: $0 'perl math function of \$t, \$1 and \$2' [sample length]\n"
     unless $func;		# oops
-$func = "\$z = $func;";		# '$z=' and ';' are implied around function
+$func = "\$d0 = $func;";	# '$d0=' and ';' are implied around function
 
 open(IN, '<&3')			# open non-standard input for reading
     || die "$0: Can't read input: $!\n";
@@ -26,9 +28,9 @@ open(OUT, '>-')			# and stdout for writing
 $pi = 3.14159265359;		# define pi for user's convenience
 $t = 0;				# sample position number (time)
 for (1..$samples) {		# initialize sample memory "shift registers"
-    push(@x, 0);		# channel 1 (left)
-    push(@y, 0);		# channel 2 (right)
-    push(@z, 0);		# output back to software channel
+    push(@d1, 0);		# channel 1 (left)
+    push(@d2, 0);		# channel 2 (right)
+    push(@d0, 0);		# output back to software channel
 }
 
 # For efficiency, we now dynamically build a while loop around the
@@ -38,9 +40,9 @@ for (1..$samples) {		# initialize sample memory "shift registers"
 $begin = '
 while(1) {
     sysread(IN, $buff, 2) || exit;
-    $x = unpack(\'s\', $buff);
+    $d1 = unpack(\'s\', $buff);
     sysread(IN, $buff, 2) || exit;
-    $y = unpack(\'s\', $buff);
+    $d2 = unpack(\'s\', $buff);
 
 ';
 
@@ -51,14 +53,14 @@ $end = '
 
 # sample history is expensive, so we only remember those the function needs:
 $end .= '
-    pop(@x); unshift(@x, $x);' if $func =~ /\$x\[/;
+    pop(@d1); unshift(@d1, $d1);' if $func =~ /\$d1\[/;
 $end .= '
-    pop(@y); unshift(@y, $y);' if $func =~ /\$y\[/;
+    pop(@d2); unshift(@d2, $d2);' if $func =~ /\$d2\[/;
 $end .= '
-    pop(@z); unshift(@z, $z);' if $func =~ /\$z\[/;
+    pop(@d0); unshift(@d0, $d0);' if $func =~ /\$d0\[/;
 
 $end .= '
-    syswrite(OUT, pack(\'s\', $z), 2) || exit;
+    syswrite(OUT, pack(\'s\', $d0), 2) || exit;
 }
 ';
 
@@ -78,12 +80,12 @@ __END__
 # math function from the shell, single-quotes are best.  Variables
 # available for your function:
 
-# $x	channel 1 (left)  input
-# $y	channel 2 (right) input
-# $z	output: '$z = ' is assumed before your function; don't use $z
-# @x	channel 1 "memory", $x[0] = previous sample, $x[1] = one before that...
-# @y	channel 2 "memory",         ... all the way to sample length or $x[639]
-# @z	output "memory", $z[0] = previous function output calculation, ...
+# $1	channel 1 input
+# $2	channel 2 input
+# $0	output: '$0 = ' is assumed before your function; don't use $0
+# @1	channel 1 "memory", $1[0] = previous sample, $1[1] = one before that...
+# @2	channel 2 "memory",         ... all the way to sample length or $1[639]
+# @0	output "memory", $0[0] = previous function output calculation, ...
 # $t	sample number, or "time", 0=left edge or trigger point
 # $pi	a constant: 3.14159265359, for your trigonometric convenience
 
@@ -92,30 +94,30 @@ __END__
 
 # example command-line argument functions, the ';' is optional:
 
-# functions of one of the input channels (would also work for $y):
-abs($x);			# rectify (absolute value)
-~$x;				# negate (invert)
-$x - $x[0];			# integral or rate of change since last sample
-$x - $x[2];			# same but over more time (3 sample periods)
-$x + 32;			# add a "DC offset" of 32 sample units
-$t > 43 ? $x[43] : 0;		# delay by 1 msec @ 44000 S/s = 44th sample
+# functions of one of the input channels (would also work for $2):
+abs($1);			# rectify (absolute value)
+~$1;				# negate (invert)
+$1 - $1[0];			# integral or rate of change since last sample
+$1 - $1[2];			# same but over more time (3 sample periods)
+$1 + 32;			# add a "DC offset" of 32 sample units
+$t > 43 ? $1[43] : 0;		# delay by 1 msec @ 44000 S/s = 44th sample
 
 # functions of both channel 1 and channel 2:
-$x * $y;			# multiply 1 * 2
-$x / ($y || 1);			# divide 1 / 2, avoiding divide by 0 error
-$y / ($x || 1);			# divide 2 / 1
-$x > $y ? $x : $y;		# max(1, 2)
-$x < $y ? $x : $y;		# min(1, 2)
-$x + $y;			# sum, like the oscope builtin
-$x - $y;			# diff, like the oscope builtin
-($x + $y) / 2;			# average, like the oscope builtin
+$1 * $2;			# multiply 1 * 2
+$1 / ($2 || 1);			# divide 1 / 2, avoiding divide by 0 error
+$2 / ($1 || 1);			# divide 2 / 1
+$1 > $2 ? $1 : $2;		# max(1, 2)
+$1 < $2 ? $1 : $2;		# min(1, 2)
+$1 + $2;			# sum, like the oscope builtin
+$1 - $2;			# diff, like the oscope builtin
+($1 + $2) / 2;			# average, like the oscope builtin
 
-# time position ($t) functions, independent of $x and $y inputs:
+# time position ($t) functions, independent of $1 and $2 inputs:
 $t / 88 % 2 ? 64 : -64;		#  250 Hz square wave (88 = 44000 / 2 /  250)
 sin($t * $pi / 44) * 64;	#  500 Hz    sin wave (44 = 44000 / 2 /  500)
 cos($t * $pi / 22) * 64;	# 1000 Hz cosine wave (22 = 44000 / 2 / 1000)
 
 # low-pass filter: a difference equation of previous input and output:
-1.899105 * $z[0] - .901531 * $z[1] + .001213 * ($x + $x[1] + 2 * $x[0]);
+1.899105 * $0[0] - .901531 * $0[1] + .001213 * ($1 + $1[1] + 2 * $1[0]);
 
 # operl ends here.
