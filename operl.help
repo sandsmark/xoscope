@@ -6,8 +6,8 @@ Variables available for your function ($0, $1 and $2 are not standard Perl):
 $1      channel 1 input
 $2      channel 2 input
 $0      output: '$0 = ' is assumed before your function; don't use $0
-@1      channel 1 "memory", $1[0] = previous sample, $1[1] = one before that...
-@2      channel 2 "memory",         ... all the way to sample length or $1[639]
+@1      channel 1 "memory", $1[0] = previous sample, $1[1] = one before that
+@2      channel 2 "memory",         ... all the way to sample length
 @0      output "memory", $0[0] = previous function output calculation, ...
 $t      sample number, or "time", 0=left edge or trigger point
 $pi     a constant: 3.14159265359, for your trigonometric convenience

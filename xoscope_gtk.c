@@ -373,7 +373,7 @@ void perl_function_help(GtkWidget *w, GtkEntry *command)
     GtkTextIter iter;
 
     window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
-    gtk_widget_set_usize (window, 800, 480);
+    gtk_widget_set_usize (window, 650, 480);
     gtk_window_set_policy (GTK_WINDOW(window), TRUE, TRUE, FALSE);
     gtk_signal_connect_object(GTK_OBJECT (window), "destroy",
                               GTK_SIGNAL_FUNC(gtk_widget_destroy),
@@ -672,7 +672,7 @@ void help(GtkWidget *w, void *data)
     GtkTextTag *underline_tag, *bold_tag;
 
     window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
-    gtk_widget_set_usize (window, 640, 480);
+    gtk_widget_set_usize (window, 650, 480);
     gtk_window_set_policy (GTK_WINDOW(window), TRUE, TRUE, FALSE);
     gtk_signal_connect_object(GTK_OBJECT (window), "destroy",
                               GTK_SIGNAL_FUNC(gtk_widget_destroy),
