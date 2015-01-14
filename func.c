@@ -350,6 +350,14 @@ void startcommand(const char *command)
     }
 }
 
+void start_perl_function(const char *command)
+{
+    if (scope.select > 1) {
+        start_perl_function_on_channel(command, &ch[scope.select]);
+        clear();
+    }
+}
+
 void restart_command_on_channel(void)
 {
     struct external *ext;

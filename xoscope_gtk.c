@@ -317,17 +317,8 @@ void run_sel(GtkWidget *w, GtkEntry *command)
 void ExternCommand(void)
 {
     GtkWidget *window, *label, *command, *run, *cancel;
-    GList *glist = NULL;
 
     if (fixing_widgets) return;
-
-    glist = g_list_append(glist, "operl 'abs($x)'");
-    glist = g_list_append(glist, "operl '$x - $x[0]'");
-    glist = g_list_append(glist, "operl '$x / ($y || 1)'");
-    glist = g_list_append(glist, "operl '$x > $y ? $x : $y'");
-    glist = g_list_append(glist, "operl '$t / (44100/2/250) % 2 ? 64 : -64'");
-    glist = g_list_append(glist, "operl 'sin($t * $pi / (44100/2/250)) * 64'");
-    glist = g_list_append(glist, "operl 'cos($t * $pi / (44100/2/250)) * 64'");
 
     window = gtk_dialog_new();
     run = gtk_button_new_with_label("  Run  ");
@@ -339,6 +330,64 @@ void ExternCommand(void)
     label = gtk_label_new("\n  External command and args:  \n");
     gtk_box_pack_start(GTK_BOX(GTK_DIALOG(window)->vbox), label,
                        TRUE, TRUE, 0);
+    command = gtk_entry_new();
+
+    /* XXX recall previous command that was set here */
+
+    gtk_box_pack_start(GTK_BOX(GTK_DIALOG(window)->vbox), command,
+                       TRUE, TRUE, 0);
+    gtk_signal_connect_object(GTK_OBJECT(window), "delete_event",
+                              GTK_SIGNAL_FUNC(gtk_widget_destroy),
+                              GTK_OBJECT(window));
+    gtk_signal_connect(GTK_OBJECT(run), "clicked",
+                       GTK_SIGNAL_FUNC(run_sel),
+                       GTK_ENTRY(command));
+    gtk_signal_connect_object_after(GTK_OBJECT(run), "clicked",
+                                    GTK_SIGNAL_FUNC(gtk_widget_destroy),
+                                    GTK_OBJECT(window));
+    gtk_signal_connect_object(GTK_OBJECT(cancel), "clicked",
+                              GTK_SIGNAL_FUNC(gtk_widget_destroy),
+                              GTK_OBJECT(window));
+    GTK_WIDGET_SET_FLAGS(run, GTK_CAN_DEFAULT);
+    gtk_widget_grab_default(run);
+    gtk_widget_show(run);
+    gtk_widget_show(cancel);
+    gtk_widget_show(label);
+    gtk_widget_show(command);
+    gtk_widget_show(window);
+    /*    gtk_grab_add(window); */
+}
+
+void run_perl_function(GtkWidget *w, GtkEntry *command)
+{
+    start_perl_function(gtk_entry_get_text(GTK_ENTRY(command)));
+}
+
+void PerlFunction(void)
+{
+    GtkWidget *window, *label, *command, *run, *cancel;
+    GList *glist = NULL;
+
+    if (fixing_widgets) return;
+
+    glist = g_list_append(glist, "abs($x)");
+    glist = g_list_append(glist, "$x - $x[0]");
+    glist = g_list_append(glist, "$x / ($y || 1)");
+    glist = g_list_append(glist, "$x > $y ? $x : $y");
+    glist = g_list_append(glist, "$t / (44100/2/250) % 2 ? 64 : -64");
+    glist = g_list_append(glist, "sin($t * $pi / (44100/2/250)) * 64");
+    glist = g_list_append(glist, "cos($t * $pi / (44100/2/250)) * 64");
+
+    window = gtk_dialog_new();
+    run = gtk_button_new_with_label("  Run  ");
+    gtk_box_pack_start(GTK_BOX(GTK_DIALOG(window)->action_area), run,
+                       TRUE, TRUE, 0);
+    cancel = gtk_button_new_with_label("  Cancel  ");
+    gtk_box_pack_start(GTK_BOX(GTK_DIALOG(window)->action_area), cancel,
+                       TRUE, TRUE, 0);
+    label = gtk_label_new("\n  Perl function:  \n");
+    gtk_box_pack_start(GTK_BOX(GTK_DIALOG(window)->vbox), label,
+                       TRUE, TRUE, 0);
     command = gtk_combo_new();
     gtk_combo_set_popdown_strings(GTK_COMBO(command), glist);
 
@@ -348,7 +397,7 @@ void ExternCommand(void)
                        ch[scope.select].command);
 #else
     gtk_entry_set_text(GTK_ENTRY(GTK_COMBO(command)->entry),
-                       "operl '$x + $y'");
+                       "$x + $y");
 #endif
     gtk_combo_set_value_in_list(GTK_COMBO(command), FALSE, FALSE);
     gtk_box_pack_start(GTK_BOX(GTK_DIALOG(window)->vbox), command,
@@ -357,7 +406,7 @@ void ExternCommand(void)
                               GTK_SIGNAL_FUNC(gtk_widget_destroy),
                               GTK_OBJECT(window));
     gtk_signal_connect(GTK_OBJECT(run), "clicked",
-                       GTK_SIGNAL_FUNC(run_sel),
+                       GTK_SIGNAL_FUNC(run_perl_function),
                        GTK_ENTRY(GTK_COMBO(command)->entry));
     gtk_signal_connect_object_after(GTK_OBJECT(run), "clicked",
                                     GTK_SIGNAL_FUNC(gtk_widget_destroy),
@@ -469,10 +518,12 @@ void mathselect(GtkWidget *w, guint data)
     if (fixing_widgets) return;
     if (scope.select > 1) {
         if (data == '$') {
+            PerlFunction();
+        } else if (data == '!') {
             /*        if (GTK_CHECK_MENU_ITEM */
             /*           (gtk_item_factory_get_item */
             /*            (factory, "/Channel/Math/External Command..."))->active) */
-            handle_key('$');
+            ExternCommand();
         } else {
             function_bynum_on_channel(data - '0', &ch[scope.select]);
             ch[scope.select].show = 1;
@@ -744,7 +795,6 @@ static GtkItemFactoryEntry menu_items[] = {
     {"/Channel/Math/sep", NULL, NULL, 0, "<Separator>"},
 
     /* this will need hacked if functions are added / changed in func.c */
-    {"/Channel/Math/External Command...", "$", mathselect, '$', NULL},
     {"/Channel/Math/Inv. 1", NULL, mathselect, '0', NULL},
     {"/Channel/Math/Inv. 2", NULL, mathselect, '1', NULL},
     {"/Channel/Math/Sum  1+2", NULL, mathselect, '2', NULL},
@@ -752,6 +802,8 @@ static GtkItemFactoryEntry menu_items[] = {
     {"/Channel/Math/Avg. 1,2", NULL, mathselect, '4', NULL},
     {"/Channel/Math/FFT. 1", NULL, mathselect, '5', NULL},
     {"/Channel/Math/FFT. 2", NULL, mathselect, '6', NULL},
+    {"/Channel/Math/Perl Function...", "$", mathselect, '$', NULL},
+    {"/Channel/Math/External Command...", NULL, mathselect, '!', NULL},
 
     {"/Channel/Store", NULL, NULL, 0, "<Branch>"},
     {"/Channel/Store/tear", NULL, NULL, 0, "<Tearoff>"},
@@ -1067,7 +1119,7 @@ void fix_widgets(void)
          (gtk_item_factory_get_item(factory, "/Help/Keys&Info")), scope.verbose);
 
     if ((p = finditem("/Channel/Math")) &&
-        (q = finditem("/Channel/Math/FFT. 2"))) {
+        (q = finditem("/Channel/Math/External Command..."))) {
         for (r = p; r <= q; r++) {
             /* XXX add a check to the function's isvalid() test */
             gtk_widget_set_sensitive

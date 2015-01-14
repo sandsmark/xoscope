@@ -729,7 +729,7 @@ void handle_key(unsigned char c)
         break;
     case '$':                   /* run external math */
         if (scope.select > 1) {
-            ExternCommand();
+            PerlFunction();
         } else {
             message("Pipes can not run on Channel 1 or 2");
         }
