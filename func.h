@@ -43,7 +43,7 @@ int function_bynum_on_channel(int, Channel *);
 void start_command_on_channel(const char *, Channel *);
 void startcommand(const char *);
 void start_perl_function(const char *);
-void restart_command_on_channel(void);
+void restart_external_commands(void);
 
 void init_math(void);
 

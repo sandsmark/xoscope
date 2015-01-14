@@ -37,6 +37,7 @@ void    animate(void *);
 
 void    LoadSaveFile(int);
 void    ExternCommand(void);
+void    PerlFunction(void);
 int     OpenDisplay(int, char **);
 
 void    setup_help_text(GtkWidget *, gpointer);

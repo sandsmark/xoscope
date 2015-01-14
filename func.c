@@ -358,7 +358,7 @@ void start_perl_function(const char *command)
     }
 }
 
-void restart_command_on_channel(void)
+void restart_external_commands(void)
 {
     struct external *ext;
 

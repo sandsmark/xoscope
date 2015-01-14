@@ -872,8 +872,8 @@ void timebase_changed(void)
         setinputfd(datasrc->fd());
     }
 
+    restart_external_commands();
     configure_databox();
-    restart_command_on_channel();
     update_math_signals();
     update_text();
 }
