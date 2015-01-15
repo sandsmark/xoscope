@@ -142,6 +142,10 @@ AC_DEFINE(FFT_DSP_LEN, 440, [output from fft is compressed (or streched) to that
 
 AC_DEFINE(DEFAULT_ALSADEVICE, ["plughw:0,0"], [default ALSA soundcard device])
 
+AC_DEFINE(CALC_RMS, 1, [calculate RMS])
+
+AC_DEFINE(SC_16BIT, 1, [use 16 bit format for sound card])
+
 AC_OUTPUT([
 Makefile
 xoscope.spec

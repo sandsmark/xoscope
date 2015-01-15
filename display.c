@@ -86,7 +86,7 @@ void message(const char *message)
     }
 
     if (databox_message_text_used > 0) {
-        databox_message_text[databox_message_text_used ++] = '\n';
+    databox_message_text[databox_message_text_used ++] = '\n';
     }
     strcpy(databox_message_text + databox_message_text_used, message);
     databox_message_text_used += strlen(message);
@@ -98,8 +98,8 @@ void message(const char *message)
 
     if (databox_message_text_used == strlen(message)) {
         gtk_databox_graph_add (GTK_DATABOX(databox), databox_message);
-        g_timeout_add (databox_message_timeout_ms, clear_message_callback, NULL);
-    }
+    g_timeout_add (databox_message_timeout_ms, clear_message_callback, NULL);
+}
 
     gtk_widget_queue_draw (databox);
 }
@@ -257,6 +257,7 @@ void update_dynamic_text(void)
         sprintf(string, "  Period of %6d us = %6d Hz  ", stats.time,  stats.freq);
         gtk_label_set_text(GTK_LABEL(LU("period_label")), string);
 
+#ifndef CALC_RMS
 		if (p->signal->volts)
 			sprintf(string, "   %7.5g - %7.5g = %7.5g mV ",
 					(float)stats.max * p->signal->volts / 320,
@@ -265,6 +266,29 @@ void update_dynamic_text(void)
 		else
 			sprintf(string, " Max:%3d - Min:%4d = %3d Pk-Pk ",
 					stats.max, stats.min, stats.max - stats.min);
+#else			
+		if (p->signal->volts){
+			if(stats.rms >= 0)
+				sprintf(string, "   %7.5g - %7.5g = %7.5g mV   %7.5g mV RMS",
+						(float)stats.max * p->signal->volts / 320,
+						(float)stats.min * p->signal->volts / 320,
+						((float)stats.max - stats.min) * p->signal->volts / 320,
+						stats.rms * p->signal->volts / 320);
+			else
+				sprintf(string, "   %7.5g - %7.5g = %7.5g mV ",
+						(float)stats.max * p->signal->volts / 320,
+						(float)stats.min * p->signal->volts / 320,
+						((float)stats.max - stats.min) * p->signal->volts / 320);
+		}
+		else{
+			if(stats.rms >= 0)
+				sprintf(string, " Max:%3d - Min:%4d = %3d Pk-Pk  %7.5g RMS",
+						stats.max, stats.min, stats.max - stats.min, stats.rms);
+			else
+				sprintf(string, " Max:%3d - Min:%4d = %3d Pk-Pk ",
+						stats.max, stats.min, stats.max - stats.min);
+		}	
+#endif		
         gtk_label_set_text(GTK_LABEL(LU("min_max_label")), string);
     }
     else if (p->signal && (p->signal->bits == 0) && (p->signal->rate < 0)) {
@@ -1099,7 +1123,6 @@ void draw_data(void)
 
                 if ((sl == NULL) ||
                     (p->signal->frame != p->old_frame) || (p->old_frame == 0)) {
-
                     /* New signal line, so we need a new SignalLine structure */
 
                     sl = g_new0(SignalLine, 1);
@@ -1235,7 +1258,7 @@ void draw_data(void)
 
                     x_offset = total_horizontal_divisions * 0.001 * scope.scale
                         - num * (sl->next_point - 1);
-
+fprintf(stderr, "x_offset: %.8g\n", x_offset);
                     for (prevSL = sl; prevSL != NULL; prevSL = prevSL->next) {
 
                         /* If x_offset is negative at this point, we've just drawn a SignalLine
@@ -1244,7 +1267,7 @@ void draw_data(void)
                          */
 
                         prevSL->x_offset = x_offset;
-
+ prevSL->y_offset = 0.25;
                         if ((x_offset < 0) && prevSL->next) {
                             free_signalline(prevSL->next);
                             prevSL->next = NULL;
@@ -1255,9 +1278,15 @@ void draw_data(void)
                 }
 
                 /* The scale is applied first, then the offset */
-
+#ifdef SC_16BIT
+                sl->y_scale = (double)p->scale / 41000;
+				sl->y_offset = (double)p->pos;
+#else
                 sl->y_scale = (double)p->scale / 160;
 				sl->y_offset = (double)p->pos;
+#endif
+/*fprintf(stderr, "sl->y_scale: %.6f, p->scale:%.4f\n", sl->y_scale, p->scale);                */
+/*fprintf(stderr, "sl->y_offset:%.6f, p->pos:  %.4f\n", sl->y_offset, p->pos);                */
 
                 /* If we're in digital mode, increase the scale by eight and shift the offset by
                  * sixteen for each bit.  This hardwires eight as the height of a digital line and
@@ -1268,8 +1297,13 @@ void draw_data(void)
                 if (bit >= 0) {
                     int bitoff = bit * 16 - end * 8 + 4;
 
+#ifdef SC_16BIT
+                    sl->y_offset += bitoff * sl->y_scale * 256;
+                    sl->y_scale *= (8 * 256);
+#else
                     sl->y_offset += bitoff * sl->y_scale;
                     sl->y_scale *= 8;
+#endif
                 }
                 // fprintf(stderr, "offset %f scale %f\n", sl->y_offset, sl->y_scale);
 

@@ -28,6 +28,9 @@ struct signal_stats {
     short max;                  /* Maximum signal value */
     int time;
     int freq;
+#ifdef CALC_RMS
+	double rms ;
+#endif
 };
 
 void set_save_pending(char c);

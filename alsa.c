@@ -23,7 +23,8 @@
 #define DEFAULT_ALSADEVICE "plughw:0,0"
 char    alsaDevice[32] = "\0";
 char    alsaDeviceName[64] = "\0";
-double  alsa_volts = 0.0;
+//double  alsa_volts = 4.42;	// mV/320 steps @ gain 10,5 dB
+ double  alsa_volts = 0.0;
 
 static snd_pcm_t *handle        = NULL;
 snd_pcm_format_t pcm_format = 0;
@@ -111,20 +112,15 @@ static int open_sound_card(void)
         return 0;
     }
 
+#ifdef SC_16BIT
     /* Signed 16-bit little-endian format */
-    rc = -1;
-    if (bits == 8) {
-        rc = snd_pcm_hw_params_set_format(handle, params, SND_PCM_FORMAT_U8);
-        pcm_format = SND_PCM_FORMAT_U8;
-    } else if (bits == 16) {
-        rc = snd_pcm_hw_params_set_format(handle, params, SND_PCM_FORMAT_S16_LE);
-        pcm_format = SND_PCM_FORMAT_S16_LE;
-    } else {
-        snd_errormsg1 = "Wrong number of bits";
-        snd_errormsg2 = "";
-        return 0;
-    }
-
+    rc = snd_pcm_hw_params_set_format(handle, params, SND_PCM_FORMAT_S16_LE);
+    pcm_format = SND_PCM_FORMAT_S16_LE;
+#else
+    /* Unsigned 8-bit format */
+    rc = snd_pcm_hw_params_set_format(handle, params, SND_PCM_FORMAT_U8);
+    pcm_format = SND_PCM_FORMAT_U8;
+#endif
     if (rc < 0) {
         snd_errormsg1 = "snd_pcm_hw_params_set_format() failed ";
         snd_errormsg2 = snd_strerror(rc);
@@ -137,16 +133,19 @@ static int open_sound_card(void)
         snd_errormsg2 = snd_strerror(rc);
         return 0;
     }
-
-    if (bits == 8 && pcm_format != SND_PCM_FORMAT_U8) {
-        snd_errormsg1 = "Can't set 8-bit format (SND_PCM_FORMAT_U8)";
-        return 0;
-    }
-
-    if (bits == 16 && pcm_format != SND_PCM_FORMAT_S16_LE) {
+#ifdef SC_16BIT
+    if (pcm_format != SND_PCM_FORMAT_S16_LE) {
         snd_errormsg1 = "Can't set 16-bit format (SND_PCM_FORMAT_S16_LE)";
+        fprintf(stderr, "%s\n%s\n", snd_errormsg1, snd_errormsg2);
         return 0;
     }
+#else
+    if (pcm_format != SND_PCM_FORMAT_U8) {
+        snd_errormsg1 = "Can't set 8-bit format (SND_PCM_FORMAT_U8)";
+        fprintf(stderr, "%s\n%s\n", snd_errormsg1, snd_errormsg2);
+        return 0;
+    }
+#endif
 
     /* Two channels (stereo) */
     rc = snd_pcm_hw_params_set_channels(handle, params, chan);
@@ -311,7 +310,8 @@ static void reset(void)
     right_sig.frame ++;
 
     left_sig.volts = alsa_volts;
-    right_sig.volts = alsa_volts;
+// 	right_sig.volts = alsa_volts;
+	right_sig.volts = 0;
 
     in_progress = 0;
 }
@@ -331,7 +331,7 @@ static void set_width(int width)
         g_free(left_sig.data);
     if (right_sig.data != NULL) 
         g_free(right_sig.data);
-
+    
     left_sig.data = g_new0(short, width);
     right_sig.data = g_new0(short, width);
 }
@@ -343,7 +343,11 @@ static void set_width(int width)
 
 static int sc_get_data(void)
 {
+#ifdef SC_16BIT
+    static short *buffer = NULL;
+#else
     static unsigned char *buffer = NULL;
+#endif
     static int frameBufferSize;
     static int i, rdCnt, delay;
 
@@ -427,12 +431,20 @@ static int sc_get_data(void)
             }
         }
 
+#ifdef SC_16BIT
+        left_sig.data[0] = buffer[2*i];
+#else
         left_sig.data[0] = buffer[2*i] - 127;
+#endif
         left_sig.delay = delay;
         left_sig.num = 1;
         left_sig.frame ++;
 
+#ifdef SC_16BIT
+        right_sig.data[0] = buffer[2*i + 1];
+#else
         right_sig.data[0] = buffer[2*i + 1] - 127;
+#endif
         right_sig.delay = delay;
         right_sig.num = 1;
         right_sig.frame ++;
@@ -450,8 +462,13 @@ static int sc_get_data(void)
             clip = i % 2 + 1;
         }
 #endif
+#ifdef SC_16BIT
+        left_sig.data[in_progress] = buffer[2*i];
+        right_sig.data[in_progress] = buffer[2*i + 1];
+#else
         left_sig.data[in_progress] = buffer[2*i] - 127;
         right_sig.data[in_progress] = buffer[2*i + 1] - 127;
+#endif
 
         in_progress ++;
         i ++;
