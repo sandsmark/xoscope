@@ -17,6 +17,7 @@
 
 int backwards_compat_1_10 = 0;  /* TRUE if parsing a pre-1.10 save file */
 int backwards_compat_2_0 = 0;   /* TRUE if parsing a pre-2.0 save file */
+int backwards_compat_2_1 = 0;   /* TRUE if parsing a pre-2.1 save file */
 
 /* force num to stay within the range lo - hi */
 int limit(int num, int lo, int hi)
@@ -136,8 +137,14 @@ void handle_opt(int opt, char *optarg)
         break;
     case 'p':                   /* plotting mode */
     case 'P':
-        scope.plot_mode = limit(strtol(optarg, NULL, 0), 0, 5) / 2;
-        scope.scroll_mode = limit(strtol(optarg, NULL, 0), 0, 5) % 2;
+        if(backwards_compat_2_1){
+            scope.plot_mode = limit(strtol(optarg, NULL, 0), 0, 5) / 2;
+            scope.scroll_mode = limit(strtol(optarg, NULL, 0), 0, 5) % 2;
+        }
+        else{
+            scope.plot_mode = limit(strtol(optarg, NULL, 0) / 10, 0, 2);
+            scope.scroll_mode = limit(strtol(optarg, NULL, 0) % 10, 0, 2);
+        }
         break;
     case 'g':                   /* graticule on/off */
     case 'G':
@@ -329,7 +336,8 @@ void writefile(char *filename)
             scope.cursa, scope.cursb, scope.curs,
             /* XXX fix this - plot_mode not backwards compatable anymore */
             /* XXX fix this - plot_mode now OK, but scope.scroll_mode = 2 not stored in file*/
-            (scope.plot_mode * 2) +(scope.scroll_mode == 1 ? 1 : 0),
+            /* new pre-2.1 compatibility flag - plot_mode and scope.scroll_mode now OK*/
+            (scope.plot_mode * 10) + scope.scroll_mode,
             scope.grat,
             scope.behind ? "# -b\n" : "",
             scope.verbose ? "# -v\n" : "");
@@ -405,6 +413,9 @@ void readfile(char *filename)
                 }
                 if (version[0] == 1) {
                     backwards_compat_2_0 = 1;
+                }
+                if (version[0] == 2 && version[1] == 0) {
+                    backwards_compat_2_1 = 1;
                 }
                 valid = 1;
             } else if (!strncmp("# -", buff, 3)) {
@@ -486,6 +497,7 @@ void readfile(char *filename)
 
     backwards_compat_1_10 = 0;  /* in case we set these during the parse */
     backwards_compat_2_0 = 0;
+    backwards_compat_2_1 = 0;
     if (valid) {
         clear();                /* XXX not sure if we need this */
         sprintf(error, "loaded %s", filename);

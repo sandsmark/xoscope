@@ -81,7 +81,8 @@ Startup Options  Description (defaults)               version %s\n\
 -t <trigger>     Trigger level[:type[:channel]]               (%s)\n\
 -l <cursors>     cursor Line positions: first[:second[:on?]]  (%s)\n\
 -f <font name>   the Font name as-in %s\n\
--p <type>        Plot mode: 0/1=point, 2/3=line, 4/5=step     (%d)\n\
+-p <type>        Plot mode: 0n=point, 1n=line, 2n=step        (%d)\n\
+                            n0=sweep, n1=accumulate, n2=strip-chart\n\
 -g <style>       Graticule: 0=none,  1=minor, 2=major         (%d)\n\
 -i <min interv>  Minimum display update interval (ms)         (50)\n\
 -b               %s Behind instead of in front of %s\n\
