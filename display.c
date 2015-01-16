@@ -258,37 +258,37 @@ void update_dynamic_text(void)
         gtk_label_set_text(GTK_LABEL(LU("period_label")), string);
 
 #ifndef CALC_RMS
-		if (p->signal->volts)
-			sprintf(string, "   %7.5g - %7.5g = %7.5g mV ",
-					(float)stats.max * p->signal->volts / 320,
-					(float)stats.min * p->signal->volts / 320,
-					((float)stats.max - stats.min) * p->signal->volts / 320);
-		else
-			sprintf(string, " Max:%3d - Min:%4d = %3d Pk-Pk ",
-					stats.max, stats.min, stats.max - stats.min);
-#else			
-		if (p->signal->volts){
-			if(stats.rms >= 0)
-				sprintf(string, "   %7.5g - %7.5g = %7.5g mV   %7.5g mV RMS",
-						(float)stats.max * p->signal->volts / 320,
-						(float)stats.min * p->signal->volts / 320,
-						((float)stats.max - stats.min) * p->signal->volts / 320,
-						stats.rms * p->signal->volts / 320);
-			else
-				sprintf(string, "   %7.5g - %7.5g = %7.5g mV ",
-						(float)stats.max * p->signal->volts / 320,
-						(float)stats.min * p->signal->volts / 320,
-						((float)stats.max - stats.min) * p->signal->volts / 320);
-		}
-		else{
-			if(stats.rms >= 0)
-				sprintf(string, " Max:%3d - Min:%4d = %3d Pk-Pk  %7.5g RMS",
-						stats.max, stats.min, stats.max - stats.min, stats.rms);
-			else
-				sprintf(string, " Max:%3d - Min:%4d = %3d Pk-Pk ",
-						stats.max, stats.min, stats.max - stats.min);
-		}	
-#endif		
+        if (p->signal->volts)
+            sprintf(string, "   %7.5g - %7.5g = %7.5g mV ",
+                    (float)stats.max * p->signal->volts / 320,
+                    (float)stats.min * p->signal->volts / 320,
+                    ((float)stats.max - stats.min) * p->signal->volts / 320);
+        else
+            sprintf(string, " Max:%3d - Min:%4d = %3d Pk-Pk ",
+                    stats.max, stats.min, stats.max - stats.min);
+#else
+        if (p->signal->volts){
+           if(stats.rms >= 0)
+            sprintf(string, "   %7.5g - %7.5g = %7.5g mV   %7.5g mV RMS",
+                        (float)stats.max * p->signal->volts / 320,
+                        (float)stats.min * p->signal->volts / 320,
+                        ((float)stats.max - stats.min) * p->signal->volts / 320,
+                        stats.rms * p->signal->volts / 320);
+            else
+                sprintf(string, "   %7.5g - %7.5g = %7.5g mV ",
+                        (float)stats.max * p->signal->volts / 320,
+                        (float)stats.min * p->signal->volts / 320,
+                        ((float)stats.max - stats.min) * p->signal->volts / 320);
+        }
+        else{
+            if(stats.rms >= 0)
+                sprintf(string, " Max:%3d - Min:%4d = %3d Pk-Pk  %7.5g RMS",
+                        stats.max, stats.min, stats.max - stats.min, stats.rms);
+            else
+                sprintf(string, " Max:%3d - Min:%4d = %3d Pk-Pk ",
+                        stats.max, stats.min, stats.max - stats.min);
+        }
+#endif
         gtk_label_set_text(GTK_LABEL(LU("min_max_label")), string);
     }
     else if (p->signal && (p->signal->bits == 0) && (p->signal->rate < 0)) {
@@ -1258,7 +1258,7 @@ void draw_data(void)
 
                     x_offset = total_horizontal_divisions * 0.001 * scope.scale
                         - num * (sl->next_point - 1);
-fprintf(stderr, "x_offset: %.8g\n", x_offset);
+//fprintf(stderr, "x_offset: %.8g\n", x_offset);
                     for (prevSL = sl; prevSL != NULL; prevSL = prevSL->next) {
 
                         /* If x_offset is negative at this point, we've just drawn a SignalLine
@@ -1267,7 +1267,7 @@ fprintf(stderr, "x_offset: %.8g\n", x_offset);
                          */
 
                         prevSL->x_offset = x_offset;
- prevSL->y_offset = 0.25;
+// prevSL->y_offset = 0.25;
                         if ((x_offset < 0) && prevSL->next) {
                             free_signalline(prevSL->next);
                             prevSL->next = NULL;

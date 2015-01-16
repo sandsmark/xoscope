@@ -67,13 +67,10 @@ static int open_sound_card(void)
 {
     unsigned int rate = sound_card_rate;
     unsigned int chan = 2;
-    int bits = 8;
     int rc;
     snd_pcm_hw_params_t *params;
     int dir = 0;
     snd_pcm_uframes_t pcm_frames;
-
-    /*  fprintf(stderr, "open_sound_card() sound_card_rate=%d\n", sound_card_rate); */
 
     if (handle != NULL){
         fprintf(stderr, "open_sound_card() already open\n");
@@ -316,6 +313,25 @@ static void reset(void)
     in_progress = 0;
 }
 
+/* This is the buffer into wich we read the interleaved data from the soundcard.
+ * Interleaved means the data is transfered in individual frames, 
+ * where each frame is composed of a single sample from each channel. 
+ *
+ * The buffer is sized so that the data for a full sweep of the scope fits into it.
+ * The number of samples for a full sweep depends on the time base and the sample rate 
+ * of the scope.
+ * It is stored in bufferSizeFrames (also equal to: left_sig/right_sig.width).
+ * Therfore the size has to be recaluleted and the buffer realocated 
+ * when the time base and/or the sample rate changes.
+ */
+
+#ifdef SC_16BIT
+static short *buffer = NULL;
+#else
+static unsigned char *buffer = NULL;
+#endif
+static int  bufferSizeFrames    = 0;    /* The size of the buffer,measured in Frames */
+
 /* set_width(int)
  *
  * sets the frame width (number of samples captured per sweep) globally for all the channels.
@@ -323,9 +339,9 @@ static void reset(void)
 
 static void set_width(int width)
 {
-    /* fprintf(stderr, "set_width(%d)\n", width); */
     left_sig.width = width;
     right_sig.width = width;
+    bufferSizeFrames = width;
 
     if (left_sig.data != NULL) 
         g_free(left_sig.data);
@@ -334,6 +350,22 @@ static void set_width(int width)
     
     left_sig.data = g_new0(short, width);
     right_sig.data = g_new0(short, width);
+    
+//    bytesPerFrame = (snd_pcm_format_width(pcm_format) / 8) * 2;
+    
+#ifdef SC_16BIT
+    if(buffer == NULL)
+        buffer = g_new0(short, width * 2);
+    else
+        buffer = g_renew(short, buffer, width * 2);
+#else
+    if(buffer == NULL)
+        buffer = g_new0(unsigned char, width * 2);
+    else
+        buffer = g_renew(unsigned char, buffer, width * 2);
+#endif
+
+fprintf(stderr, "bufferSizeFrames:%d, \n", bufferSizeFrames);
 }
 
 
@@ -343,31 +375,16 @@ static void set_width(int width)
 
 static int sc_get_data(void)
 {
-#ifdef SC_16BIT
-    static short *buffer = NULL;
-#else
-    static unsigned char *buffer = NULL;
-#endif
-    static int frameBufferSize;
-    static int i, rdCnt, delay;
-
-    // fprintf(stderr, "sc_get_data(%d %d)\n", in_progress,(MAXWID * snd_pcm_format_width(pcm_format) / 8) * 2);
+    int i, delay;
+    int rdCnt, rdMax;           /* measured in frames ! */
 
     if (handle == NULL) {
         fprintf(stderr, "sc_get_data() handle == NULL\n");
         return 0;
     }
 
-    if (buffer == NULL) {
-        if (!(buffer =  malloc((MAXWID * snd_pcm_format_width(pcm_format) / 8) * 2))) {
-            snd_errormsg1 = "malloc() failed ";
-            snd_errormsg2 = strerror(errno);
-            return 0;
-        }
-    }
-
-    frameBufferSize = (sound_card_rate / 1000) * SND_QUERY_INTERVALL * 2;
-
+    rdMax = bufferSizeFrames - in_progress;
+    
     if (!in_progress) {
         /* Discard excess samples so we can keep our time snapshot close to real-time and minimize
          * sound recording overruns.  For ESD we don't know how many are available (do we?) so we
@@ -376,53 +393,115 @@ static int sc_get_data(void)
          */
 
         /* read until we get something smaller than a full buffer */
-        while ((rdCnt = snd_pcm_readi(handle, buffer, MAXWID)) == frameBufferSize)
-            /*                          fprintf(stderr, "sc_get_data(): discarding\n");*/
+        while ((rdCnt = snd_pcm_readi(handle, buffer, rdMax)) == bufferSizeFrames)
             ;
-
-    } else {
-        /* XXX this ends up discarding everything after a complete read */
-        rdCnt = snd_pcm_readi(handle, buffer, MAXWID);
+    } 
+    else {
+        rdCnt = snd_pcm_readi(handle, buffer, rdMax);
     }
 
-    if (rdCnt == -EPIPE) {
-        /* EPIPE means overrun */
-        /*      fprintf(stderr, "overrun occurred\n");*/
+fprintf(stderr, "rdMax: %d, rdCnt: %d\n", rdMax, rdCnt);
+    if (rdCnt == -EPIPE) { /* EPIPE means overrun */
+//        fprintf(stderr, "overrun occurred: %d %s\n", rdCnt, snd_strerror(rdCnt));
         snd_pcm_recover(handle, rdCnt, TRUE);
+        snd_pcm_readi(handle, buffer, rdMax); // flush frame buffer
+        usleep(1000);
         return sc_get_data();
     } else if (rdCnt < 0) {
-        /*      fprintf(stderr,*/
-        /*                      "error from snd_pcm_readi(): %d %s\n", rdCnt, snd_strerror(rdCnt));*/
+//        fprintf(stderr, "error from snd_pcm_readi(): %d %s\n", rdCnt, snd_strerror(rdCnt));
         snd_pcm_recover(handle, rdCnt, TRUE);
+        snd_pcm_readi(handle, buffer, rdMax); // flush frame buffer
         usleep(1000);
         return 0;
-        /*              return(sc_get_data());*/
     }
-
-    rdCnt *= 2; // 2 bytes per frame (needs change for 16-bit mode)!
 
     i = 0;
     if (!in_progress) {
+#ifdef SC_16BIT
+        int trigger, val, prev, k;
+        if (trigmode == 1) {
+            /* locate and count rising edges
+             * tries to handle handle noise by looking at the next 10 values.
+             */
+            trigger = (triglev - 127) * 256;
+//fprintf(stderr, "Rising trigger set at %d\n", trigger);
+            prev = SHRT_MAX;
+            for (i = 0; i < rdCnt; i++) {
+                val = buffer[2*i + trigch];
+                if (val > trigger && prev <= trigger){
+                    int rising = 0;
+                    for(k = i + 1; k < i + 11 && k < rdCnt; k++) {
+                        if(buffer[2*k + trigch] > val){
+                            rising++;
+                        }
+                    }
+                    if(rising > 5){
+fprintf(stderr, "Trigger found at frame: %d\n", i);
+                        break;
+                    }
+                }
+                prev = val;
+            }
+        }
+        else if(trigmode == 2) {
+            /* locate and count falling edges
+             * tries to handle handle noise by looking at the next 10 values.
+             */
+            trigger = (triglev - 127) * 256;
+//fprintf(stderr, "Falling trigger set at %d\n", trigger);
+            prev = SHRT_MIN;
+            for (i = 0; i < rdCnt; i++) {
+                val = buffer[2*i + trigch];
+                if (val < trigger && prev >= trigger){
+                    int falling = 0;
+                    for(k = i + 1; k < i + 11 && k < rdCnt; k++) {
+                        if(buffer[2*k + trigch] < val){
+                            falling++;
+                        }
+                    }
+                    if(falling > 5){
+fprintf(stderr, "Falling trigger found at frame: %d\n", i);
+                        break;
+                    }
+                }
+                prev = val;
+            }
+        }
+
+        if (i >= rdCnt) {  /* haven't triggered within the screen */
+             return 0;     /* give up */
+        }
+
+        /* The delay value calculated here is only used in on_databox_button_press_event()
+         * But it seems on_databox_button_press_event() isn't associated with anything.
+         * Most likely it was used in the now defunct code for "cursors"
+         */
+        delay = 0;
+
+#else
         if (trigmode == 1) {
             i ++;
-            while (((i+1)*2 <= rdCnt) &&
+            while (i < rdCnt &&
                    ((buffer[2*i + trigch] < triglev) || (buffer[2*(i-1) + trigch] >= triglev))) {
                 i ++;
             }
         } else if (trigmode == 2) {
             i ++;
-            while (((i+1)*2 <= rdCnt) &&
+            while (i < rdCnt &&
                    ((buffer[2*i + trigch] > triglev) || (buffer[2*(i-1) + trigch] <= triglev))) {
                 i ++;
             }
         }
 
-        if ((i+1)*2 > rdCnt) {  /* haven't triggered within the screen */
-            /*                          fprintf(stderr, "sc_get_data returns at %d\n", __LINE__);*/
-            return 0;           /* give up and keep previous samples */
+        if (i >= rdCnt) {  /* haven't triggered within the screen */
+             return 0;           /* give up and keep previous samples */
         }
-        delay = 0;
 
+        /* The delay value calculated here is only used in on_databox_button_press_event()
+         * But it seems on_databox_button_press_event() isn't associated with anything.
+         * Most likely it was used in the now defunct code for "cursors"
+         */
+        delay = 0;
         if (trigmode) {
             int last = buffer[2*(i-1) + trigch] - 127;
             int current = buffer[2*i + trigch] - 127;
@@ -430,6 +509,7 @@ static int sc_get_data(void)
                 delay = abs(10000 * (current - (triglev - 127)) / (current - last));
             }
         }
+#endif
 
 #ifdef SC_16BIT
         left_sig.data[0] = buffer[2*i];
@@ -453,15 +533,10 @@ static int sc_get_data(void)
         in_progress = 1;
     }
 
-    while ((i+1)*2 <= rdCnt) {
+    while (i < rdCnt) {
         if (in_progress >= left_sig.width) { // enough samples for a screen
             break;
         }
-#if 0
-        if (*buff == 0 || *buff == 255) {
-            clip = i % 2 + 1;
-        }
-#endif
 #ifdef SC_16BIT
         left_sig.data[in_progress] = buffer[2*i];
         right_sig.data[in_progress] = buffer[2*i + 1];
@@ -471,7 +546,7 @@ static int sc_get_data(void)
 #endif
 
         in_progress ++;
-        i ++;
+        i++;
     }
 
     left_sig.num = in_progress;
@@ -480,7 +555,6 @@ static int sc_get_data(void)
     if (in_progress >= left_sig.width) { // enough samples for a screen
         in_progress = 0;
     }
-    /*  fprintf(stderr, "sc_get_data returns at %d\n", __LINE__);*/
     return 1;
 }
 
