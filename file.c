@@ -260,7 +260,7 @@ void handle_opt(int opt, char *optarg)
                             recall_on_channel(&mem[*q - 'a'], s);
                         }
                     } else {
-                        if (datasrc && ((*q - 'a') <= datasrc->nchans())) {
+                        if (datasrc && ((*q - 'a') < datasrc->nchans())) {
                             recall_on_channel(datasrc->chan(*q - 'a'), s);
                         } else {
                             recall_on_channel(&mem[*q - 'a'], s);
