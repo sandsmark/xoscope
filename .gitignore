@@ -5,6 +5,7 @@ xoscope
 xoscope*.tar.gz
 *.o
 builtins.h
+*~
 
 configure
 aclocal.m4
