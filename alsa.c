@@ -52,7 +52,6 @@ void alsa_gtk_option_dialog() __attribute__ ((weak));
 /* close the sound device */
 static void close_sound_card(void)
 {
-    /* fprintf(stderr,"close_sound_card\n"); */
     if (handle != NULL) {
         snd_pcm_drop(handle);
         snd_pcm_hw_free(handle);
@@ -66,16 +65,13 @@ static int open_sound_card(void)
 {
     unsigned int rate = sound_card_rate;
     unsigned int chan = 2;
-    int bits = 8;
     int rc;
     snd_pcm_hw_params_t *params;
     int dir = 0;
     snd_pcm_uframes_t pcm_frames;
-
-    /*  fprintf(stderr, "open_sound_card() sound_card_rate=%d\n", sound_card_rate); */
+    int intervall_ms;
 
     if (handle != NULL){
-        fprintf(stderr, "open_sound_card() already open\n");
         return 1;
     }
 
@@ -111,20 +107,10 @@ static int open_sound_card(void)
         return 0;
     }
 
-    /* Signed 16-bit little-endian format */
-    rc = -1;
-    if (bits == 8) {
-        rc = snd_pcm_hw_params_set_format(handle, params, SND_PCM_FORMAT_U8);
-        pcm_format = SND_PCM_FORMAT_U8;
-    } else if (bits == 16) {
-        rc = snd_pcm_hw_params_set_format(handle, params, SND_PCM_FORMAT_S16_LE);
-        pcm_format = SND_PCM_FORMAT_S16_LE;
-    } else {
-        snd_errormsg1 = "Wrong number of bits";
-        snd_errormsg2 = "";
-        return 0;
-    }
-
+    /* Set and check format, i.e. bits per sample */
+    /* Unsigned 8-bit format */
+    rc = snd_pcm_hw_params_set_format(handle, params, SND_PCM_FORMAT_U8);
+    pcm_format = SND_PCM_FORMAT_U8;
     if (rc < 0) {
         snd_errormsg1 = "snd_pcm_hw_params_set_format() failed ";
         snd_errormsg2 = snd_strerror(rc);
@@ -137,14 +123,8 @@ static int open_sound_card(void)
         snd_errormsg2 = snd_strerror(rc);
         return 0;
     }
-
-    if (bits == 8 && pcm_format != SND_PCM_FORMAT_U8) {
+    if (pcm_format != SND_PCM_FORMAT_U8) {
         snd_errormsg1 = "Can't set 8-bit format (SND_PCM_FORMAT_U8)";
-        return 0;
-    }
-
-    if (bits == 16 && pcm_format != SND_PCM_FORMAT_S16_LE) {
-        snd_errormsg1 = "Can't set 16-bit format (SND_PCM_FORMAT_S16_LE)";
         return 0;
     }
 
@@ -175,12 +155,25 @@ static int open_sound_card(void)
     }
     sound_card_rate = rate;
 
-    /* Set period size. */
-    pcm_frames = (sound_card_rate / 1000) * SND_QUERY_INTERVALL * 2;
-    /*  pcm_frames = 32;*/
-    rc = snd_pcm_hw_params_set_period_size_near(handle, params, &pcm_frames, &dir);
+    /* Set period period size (measured in frames).
+     * 
+     * A period is the number of frames in between each hardware interrupt.
+     * 
+     * sound_card_rate is in Hz, that means we get "sound_card_rate" samples per second.
+     * We query for samples at SND_QUERY_INTERVALL or scope.min_interval ms. 
+     * So the frames buffer must hold at least: 
+     *                      (sound_card_rate * interval) / 1000 frames.
+     *
+     * As we dont use interrup-style transfer, we could leave it to the alse driver
+     * to choose the buffer size. 
+     * But to be sure, we set a lower limit of 5 times the minimum value.
+     */
+    intervall_ms = 
+            scope.min_interval > SND_QUERY_INTERVALL ? scope.min_interval : SND_QUERY_INTERVALL;
+    pcm_frames = (sound_card_rate * intervall_ms ) / 200;
+    rc = snd_pcm_hw_params_set_buffer_size_min(handle, params, &pcm_frames);
     if (rc < 0) {
-        snd_errormsg1 = "snd_pcm_hw_params_set_period_size_near() failed ";
+        snd_errormsg1 = "snd_pcm_hw_params_set_buffer_size_min() failed ";
         snd_errormsg2 = snd_strerror(rc);
         return 0;
     }
@@ -192,7 +185,6 @@ static int open_sound_card(void)
         snd_errormsg2 = snd_strerror(rc);
         return 0;
     }
-    /* fprintf(stderr,"open_sound_card\n"); */
 
     if ((rc = snd_pcm_prepare (handle)) < 0) {
         snd_errormsg1 = "snd_pcm_prepare() failed ";
@@ -207,7 +199,6 @@ static void reset_sound_card(void)
 {
     static unsigned char *junk = NULL;
 
-    /* fprintf(stderr,"reset_sound_card()\n"); */
     if (junk == NULL) {
         if (!(junk =  malloc((SAMPLESKIP * snd_pcm_format_width(pcm_format) / 8) * 2))) {
             snd_errormsg1 = "malloc() failed " ;
@@ -316,6 +307,21 @@ static void reset(void)
     in_progress = 0;
 }
 
+/* This is the buffer into wich we read the interleaved data from the soundcard.
+ * Interleaved means the data is transfered in individual frames, 
+ * where each frame is composed of a single sample from each channel. 
+ *
+ * The buffer is sized so that the data for a full sweep of the scope fits into it.
+ * The number of samples for a full sweep depends on the time base and the sample rate 
+ * of the scope.
+ * It is stored in bufferSizeFrames (also equal to: left_sig/right_sig.width).
+ * Therfore the size has to be recaluleted and the buffer realocated 
+ * when the time base and/or the sample rate changes.
+ */
+
+static unsigned char *buffer = NULL;
+static int  bufferSizeFrames    = 0;    /* The size of the buffer,measured in Frames */
+
 /* set_width(int)
  *
  * sets the frame width (number of samples captured per sweep) globally for all the channels.
@@ -323,17 +329,22 @@ static void reset(void)
 
 static void set_width(int width)
 {
-    /* fprintf(stderr, "set_width(%d)\n", width); */
     left_sig.width = width;
     right_sig.width = width;
+    bufferSizeFrames = width;
 
     if (left_sig.data != NULL) 
         g_free(left_sig.data);
     if (right_sig.data != NULL) 
         g_free(right_sig.data);
-
+    
     left_sig.data = g_new0(short, width);
     right_sig.data = g_new0(short, width);
+    
+    if(buffer == NULL)
+        buffer = g_new0(unsigned char, width * 2);
+    else
+        buffer = g_renew(unsigned char, buffer, width * 2);
 }
 
 
@@ -343,26 +354,14 @@ static void set_width(int width)
 
 static int sc_get_data(void)
 {
-    static unsigned char *buffer = NULL;
-    static int frameBufferSize;
-    static int i, rdCnt, delay;
-
-    // fprintf(stderr, "sc_get_data(%d %d)\n", in_progress,(MAXWID * snd_pcm_format_width(pcm_format) / 8) * 2);
+    int i, delay;
+    int rdCnt, rdMax;           /* measured in frames ! */
 
     if (handle == NULL) {
-        fprintf(stderr, "sc_get_data() handle == NULL\n");
         return 0;
     }
 
-    if (buffer == NULL) {
-        if (!(buffer =  malloc((MAXWID * snd_pcm_format_width(pcm_format) / 8) * 2))) {
-            snd_errormsg1 = "malloc() failed ";
-            snd_errormsg2 = strerror(errno);
-            return 0;
-        }
-    }
-
-    frameBufferSize = (sound_card_rate / 1000) * SND_QUERY_INTERVALL * 2;
+    rdMax = bufferSizeFrames - in_progress;
 
     if (!in_progress) {
         /* Discard excess samples so we can keep our time snapshot close to real-time and minimize
@@ -372,60 +371,51 @@ static int sc_get_data(void)
          */
 
         /* read until we get something smaller than a full buffer */
-        while ((rdCnt = snd_pcm_readi(handle, buffer, MAXWID)) == frameBufferSize)
-            /*                          fprintf(stderr, "sc_get_data(): discarding\n");*/
+        while ((rdCnt = snd_pcm_readi(handle, buffer, bufferSizeFrames)) == bufferSizeFrames)
             ;
-
-    } else {
-        /* XXX this ends up discarding everything after a complete read */
-        rdCnt = snd_pcm_readi(handle, buffer, MAXWID);
+    } 
+    else {
+        rdCnt = snd_pcm_readi(handle, buffer, rdMax);
     }
 
-    if (rdCnt == -EPIPE) {
-        /* EPIPE means overrun */
-        /*      fprintf(stderr, "overrun occurred\n");*/
-        snd_pcm_recover(handle, rdCnt, TRUE);
-        return sc_get_data();
-    } else if (rdCnt < 0) {
-        /*      fprintf(stderr,*/
-        /*                      "error from snd_pcm_readi(): %d %s\n", rdCnt, snd_strerror(rdCnt));*/
-        snd_pcm_recover(handle, rdCnt, TRUE);
-        usleep(1000);
-        return 0;
-        /*              return(sc_get_data());*/
+    if (rdCnt < 0) {
+        if (rdCnt == -EAGAIN) { /* EAGAIN means try again, i.e. no data available */
+            return 0;
+        }
+        else if (rdCnt == -EPIPE) { /* EPIPE means overrun */
+            snd_pcm_recover(handle, rdCnt, TRUE);
+            snd_pcm_readi(handle, buffer, rdMax); // flush frame buffer
+            usleep(1000);
+            return sc_get_data();
+        }
+        else {
+            snd_pcm_recover(handle, rdCnt, TRUE);
+            snd_pcm_readi(handle, buffer, rdMax); // flush frame buffer
+            usleep(1000);
+            return 0;
+        }
     }
-
-    rdCnt *= 2; // 2 bytes per frame (needs change for 16-bit mode)!
-
+    
     i = 0;
     if (!in_progress) {
         if (trigmode == 1) {
             i ++;
-            while (((i+1)*2 <= rdCnt) &&
+            while ((i < rdCnt) &&
                    ((buffer[2*i + trigch] < triglev) || (buffer[2*(i-1) + trigch] >= triglev))) {
                 i ++;
-            }
+                }
         } else if (trigmode == 2) {
             i ++;
-            while (((i+1)*2 <= rdCnt) &&
+            while ((i < rdCnt) &&
                    ((buffer[2*i + trigch] > triglev) || (buffer[2*(i-1) + trigch] <= triglev))) {
                 i ++;
             }
         }
 
-        if ((i+1)*2 > rdCnt) {  /* haven't triggered within the screen */
-            /*                          fprintf(stderr, "sc_get_data returns at %d\n", __LINE__);*/
+        if (i >= rdCnt) {  /* haven't triggered within the screen */
             return 0;           /* give up and keep previous samples */
         }
         delay = 0;
-
-        if (trigmode) {
-            int last = buffer[2*(i-1) + trigch] - 127;
-            int current = buffer[2*i + trigch] - 127;
-            if (last != current) {
-                delay = abs(10000 * (current - (triglev - 127)) / (current - last));
-            }
-        }
 
         left_sig.data[0] = buffer[2*i] - 127;
         left_sig.delay = delay;
@@ -441,20 +431,15 @@ static int sc_get_data(void)
         in_progress = 1;
     }
 
-    while ((i+1)*2 <= rdCnt) {
+    while (i < rdCnt) {
         if (in_progress >= left_sig.width) { // enough samples for a screen
             break;
         }
-#if 0
-        if (*buff == 0 || *buff == 255) {
-            clip = i % 2 + 1;
-        }
-#endif
         left_sig.data[in_progress] = buffer[2*i] - 127;
         right_sig.data[in_progress] = buffer[2*i + 1] - 127;
 
         in_progress ++;
-        i ++;
+        i++;
     }
 
     left_sig.num = in_progress;
@@ -463,7 +448,6 @@ static int sc_get_data(void)
     if (in_progress >= left_sig.width) { // enough samples for a screen
         in_progress = 0;
     }
-    /*  fprintf(stderr, "sc_get_data returns at %d\n", __LINE__);*/
     return 1;
 }
 
