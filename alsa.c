@@ -398,23 +398,59 @@ static int sc_get_data(void)
     
     i = 0;
     if (!in_progress) {
+        int trigger, val, prev, k;
+        
+        trigger = triglev;
         if (trigmode == 1) {
-            i ++;
-            while ((i < rdCnt) &&
-                   ((buffer[2*i + trigch] < triglev) || (buffer[2*(i-1) + trigch] >= triglev))) {
-                i ++;
+            /* locate rising edges. Try to handle handle noise by looking at the next 10 values.
+             * Might miss a trigger point close to the right edge of the screen
+             */
+            prev = UCHAR_MAX;
+            for (i = 0; i < rdCnt; i++) {
+                val = buffer[2*i + trigch];
+                if (val > trigger && prev <= trigger){
+                    int rising = 0;
+                    for(k = i + 1; k < i + 11 && k < rdCnt; k++) {
+                        if(buffer[2*k + trigch] > val){
+                            rising++;
+                        }
+                    }
+                    if(rising > 5){
+                        break;
+                    }
                 }
-        } else if (trigmode == 2) {
-            i ++;
-            while ((i < rdCnt) &&
-                   ((buffer[2*i + trigch] > triglev) || (buffer[2*(i-1) + trigch] <= triglev))) {
-                i ++;
+                prev = val;
+            }
+        }
+        else if(trigmode == 2) {
+            /* same for falling edges */
+            prev = 0;
+            for (i = 0; i < rdCnt; i++) {
+                val = buffer[2*i + trigch];
+                if (val < trigger && prev >= trigger){
+                    int falling = 0;
+                    for(k = i + 1; k < i + 11 && k < rdCnt; k++) {
+                        if(buffer[2*k + trigch] < val){
+                            falling++;
+                        }
+                    }
+                    if(falling > 5){
+                       break;
+                    }
+                }
+                prev = val;
             }
         }
 
         if (i >= rdCnt) {  /* haven't triggered within the screen */
-            return 0;           /* give up and keep previous samples */
+             return 0;     /* give up */
         }
+
+        /* XXX 
+         * The delay value calculated here is only used in on_databox_button_press_event()
+         * But it seems on_databox_button_press_event() isn't associated with anything.
+         * Most likely it was used in the now defunct code for "cursors"
+         */
         delay = 0;
 
         left_sig.data[0] = buffer[2*i] - 127;
