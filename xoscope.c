@@ -163,6 +163,11 @@ void init_channels(void)
  * millseconds per screen, divide by 1000 to get seconds per screen, multiply by rate (in
  * samples/sec) to get samples per screen, and add one so rounding doesn't make us end a capture
  * before the end of the screen.
+ *
+ * XXX MAXWID is defined (in configure.ac) as: 1024*256=262144
+ * On long time basis, this results in a sweep that does not fill the screen.
+ * Under "worst conditions" - 44,1 kHz sampling rate and 2s/div - we need 882000 samples
+ * for a full screen.
  */
 
 int samples(int rate)
