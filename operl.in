@@ -15,10 +15,9 @@ $samples = $ARGV[1] || 640;	# assume 640 total samples per screen
 $func =~ s/\#.*$//;		# toss comments
 $func =~ s/^\s*(\$0\s*=)?\s*//;	# and assumed leading/trailing stuff, if any
 $func =~ s/\s*;*\s*$//;
-$func =~ s/([\$@])([0-9])/\1d\2/g; # convert $1/$2 to $d1/$d2
-die "usage: $0 'perl math function of \$t, \$1 and \$2' [sample length]\n"
+die "usage: $0 'perl math function of \$t, \$ch1 and \$ch2' [sample length]\n"
     unless $func;		# oops
-$func = "\$d0 = $func;";	# '$d0=' and ';' are implied around function
+$func = "\$out = $func;";	# '$out=' and ';' are implied around function
 
 open(IN, '<&3')			# open non-standard input for reading
     || die "$0: Can't read input: $!\n";
@@ -28,9 +27,9 @@ open(OUT, '>-')			# and stdout for writing
 $pi = 3.14159265359;		# define pi for user's convenience
 $t = 0;				# sample position number (time)
 for (1..$samples) {		# initialize sample memory "shift registers"
-    push(@d1, 0);		# channel 1 (left)
-    push(@d2, 0);		# channel 2 (right)
-    push(@d0, 0);		# output back to software channel
+    push(@ch1, 0);		# channel 1 (left)
+    push(@ch2, 0);		# channel 2 (right)
+    push(@out, 0);		# output back to software channel
 }
 
 # For efficiency, we now dynamically build a while loop around the
@@ -40,9 +39,9 @@ for (1..$samples) {		# initialize sample memory "shift registers"
 $begin = '
 while(1) {
     sysread(IN, $buff, 2) || exit;
-    $d1 = unpack(\'s\', $buff);
+    $ch1 = unpack(\'s\', $buff);
     sysread(IN, $buff, 2) || exit;
-    $d2 = unpack(\'s\', $buff);
+    $ch2 = unpack(\'s\', $buff);
 
 ';
 
@@ -53,14 +52,14 @@ $end = '
 
 # sample history is expensive, so we only remember those the function needs:
 $end .= '
-    pop(@d1); unshift(@d1, $d1);' if $func =~ /\$d1\[/;
+    pop(@ch1); unshift(@ch1, $ch1);' if $func =~ /\$ch1\[/;
 $end .= '
-    pop(@d2); unshift(@d2, $d2);' if $func =~ /\$d2\[/;
+    pop(@ch2); unshift(@ch2, $ch2);' if $func =~ /\$ch2\[/;
 $end .= '
-    pop(@d0); unshift(@d0, $d0);' if $func =~ /\$d0\[/;
+    pop(@out); unshift(@out, $out);' if $func =~ /\$out\[/;
 
 $end .= '
-    syswrite(OUT, pack(\'s\', $d0), 2) || exit;
+    syswrite(OUT, pack(\'s\', $out), 2) || exit;
 }
 ';
 
