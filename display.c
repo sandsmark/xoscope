@@ -1410,11 +1410,14 @@ void animate(void *data)
      * milliseconds (default 50) since the last time we ran this function.  If we do skip
      * processing, then set a timeout to make sure we run again scope.min_interval milliseconds from
      * now.
+     * An intervall longer than SND_QUERY_INTERVAL (10 ms) is applied only AFTER 
+     * a sweep has completed.
      */
 
     gettimeofday(&current_time, NULL);
 
-    if ((prev_time.tv_sec <= current_time.tv_sec)
+    if ((!in_progress && scope.min_interval > SND_QUERY_INTERVALL)
+        && (prev_time.tv_sec <= current_time.tv_sec)
         && (prev_time.tv_sec + 10 > current_time.tv_sec)
         && (1000000 * (current_time.tv_sec - prev_time.tv_sec)
             + current_time.tv_usec - prev_time.tv_usec
