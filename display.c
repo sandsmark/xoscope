@@ -1258,7 +1258,6 @@ void draw_data(void)
 
                     x_offset = total_horizontal_divisions * 0.001 * scope.scale
                         - num * (sl->next_point - 1);
-//fprintf(stderr, "x_offset: %.8g\n", x_offset);
                     for (prevSL = sl; prevSL != NULL; prevSL = prevSL->next) {
 
                         /* If x_offset is negative at this point, we've just drawn a SignalLine
@@ -1285,9 +1284,6 @@ void draw_data(void)
                 sl->y_scale = (double)p->scale / 160;
 				sl->y_offset = (double)p->pos;
 #endif
-/*fprintf(stderr, "sl->y_scale: %.6f, p->scale:%.4f\n", sl->y_scale, p->scale);                */
-/*fprintf(stderr, "sl->y_offset:%.6f, p->pos:  %.4f\n", sl->y_offset, p->pos);                */
-
                 /* If we're in digital mode, increase the scale by eight and shift the offset by
                  * sixteen for each bit.  This hardwires eight as the height of a digital line and
                  * sixteen as the inter-line spacing.  We also shift the entire digital plot by the
@@ -1305,8 +1301,6 @@ void draw_data(void)
                     sl->y_scale *= 8;
 #endif
                 }
-                // fprintf(stderr, "offset %f scale %f\n", sl->y_offset, sl->y_scale);
-
                 /* Add the current trace to the databox */
 
                 if (sl->next_point > 0) {

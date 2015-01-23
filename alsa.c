@@ -134,13 +134,11 @@ static int open_sound_card(void)
 #ifdef SC_16BIT
     if (pcm_format != SND_PCM_FORMAT_S16_LE) {
         snd_errormsg1 = "Can't set 16-bit format (SND_PCM_FORMAT_S16_LE)";
-        fprintf(stderr, "%s\n%s\n", snd_errormsg1, snd_errormsg2);
         return 0;
     }
 #else
     if (pcm_format != SND_PCM_FORMAT_U8) {
         snd_errormsg1 = "Can't set 8-bit format (SND_PCM_FORMAT_U8)";
-        fprintf(stderr, "%s\n%s\n", snd_errormsg1, snd_errormsg2);
         return 0;
     }
 #endif
@@ -188,15 +186,12 @@ static int open_sound_card(void)
     intervall_ms = 
             scope.min_interval > SND_QUERY_INTERVALL ? scope.min_interval : SND_QUERY_INTERVALL;
     pcm_frames = (sound_card_rate * intervall_ms ) / 200;
-fprintf(stderr, "sound_card_rate: %d, * SND_QUERY_INTERVALL: %d, scope.min_interval: %d, pcm_frames : %d<->", sound_card_rate / 1000, SND_QUERY_INTERVALL, scope.min_interval, (int)pcm_frames);
-//    rc = snd_pcm_hw_params_set_period_size_near(handle, params, &pcm_frames, &dir);
     rc = snd_pcm_hw_params_set_buffer_size_min(handle, params, &pcm_frames);
     if (rc < 0) {
         snd_errormsg1 = "snd_pcm_hw_params_set_buffer_size_min() failed ";
         snd_errormsg2 = snd_strerror(rc);
         return 0;
     }
-fprintf(stderr, "%d, ", (int)pcm_frames);
 
     /* Write the parameters to the driver */
     rc = snd_pcm_hw_params(handle, params);
@@ -205,16 +200,6 @@ fprintf(stderr, "%d, ", (int)pcm_frames);
         snd_errormsg2 = snd_strerror(rc);
         return 0;
     }
-    /* fprintf(stderr,"open_sound_card\n"); */
-
-{
-snd_pcm_uframes_t val = 0;
-snd_pcm_hw_params_get_buffer_size(params, &val);
-fprintf(stderr, "snd_pcm_hw_params_get_buffer_size(): %d\n", (int)val);
-}
-
-
-
 
     if ((rc = snd_pcm_prepare (handle)) < 0) {
         snd_errormsg1 = "snd_pcm_prepare() failed ";
@@ -229,7 +214,6 @@ static void reset_sound_card(void)
 {
     static unsigned char *junk = NULL;
 
-    /* fprintf(stderr,"reset_sound_card()\n"); */
     if (junk == NULL) {
         if (!(junk =  malloc((SAMPLESKIP * snd_pcm_format_width(pcm_format) / 8) * 2))) {
             snd_errormsg1 = "malloc() failed " ;
@@ -389,9 +373,6 @@ static void set_width(int width)
         buffer = g_new0(unsigned char, width * 2);
     else
         buffer = g_renew(unsigned char, buffer, width * 2);
-#endif
-
-fprintf(stderr, "bufferSizeFrames:%d, \n", bufferSizeFrames);
 }
 
 
@@ -419,32 +400,24 @@ static int sc_get_data(void)
          */
 
         /* read until we get something smaller than a full buffer */
-//fprintf(stderr, "New screen: bufferSizeFrames: %d ", (int)bufferSizeFrames);
         while ((rdCnt = snd_pcm_readi(handle, buffer, bufferSizeFrames)) == bufferSizeFrames)
-//fprintf(stderr, " D");
             ;
-//fprintf(stderr, " ");
     } 
     else {
         rdCnt = snd_pcm_readi(handle, buffer, rdMax);
     }
 
-//fprintf(stderr, "rdMax: %d, rdCnt: %d\n", rdMax, rdCnt);
     if (rdCnt < 0) {
         if (rdCnt == -EAGAIN) { /* EAGAIN means try again, i.e. not data available */
-            fprintf(stderr, "no data available: %d %s\n", rdCnt, snd_strerror(rdCnt));
-//            usleep(1000);
             return 0;
         }
         else if (rdCnt == -EPIPE) { /* EPIPE means overrun */
-            fprintf(stderr, "overrun occurred: %d %s\n", rdCnt, snd_strerror(rdCnt));
             snd_pcm_recover(handle, rdCnt, TRUE);
             snd_pcm_readi(handle, buffer, rdMax); // flush frame buffer
             usleep(1000);
             return sc_get_data();
         }
         else {
-            fprintf(stderr, "error from snd_pcm_readi(): %d %s\n", rdCnt, snd_strerror(rdCnt));
             snd_pcm_recover(handle, rdCnt, TRUE);
             snd_pcm_readi(handle, buffer, rdMax); // flush frame buffer
             usleep(1000);
@@ -464,7 +437,6 @@ static int sc_get_data(void)
             /* locate rising edges. Try to handle handle noise by looking at the next 10 values.
              * Might miss a trigger point close to the right edge of the screen
              */
-fprintf(stderr, "Rising trigger set at %d\n", trigger);
 #ifdef SC_16BIT
             prev = SHRT_MAX;
 #else
@@ -480,7 +452,6 @@ fprintf(stderr, "Rising trigger set at %d\n", trigger);
                         }
                     }
                     if(rising > 5){
-fprintf(stderr, "Trigger found at frame: %d\n", i);
                         break;
                     }
                 }
@@ -489,7 +460,6 @@ fprintf(stderr, "Trigger found at frame: %d\n", i);
         }
         else if(trigmode == 2) {
             /* same for falling edges */
-//fprintf(stderr, "Falling trigger set at %d\n", trigger);
 #ifdef SC_16BIT
             prev = SHRT_MIN;
 #else
@@ -505,7 +475,6 @@ fprintf(stderr, "Trigger found at frame: %d\n", i);
                         }
                     }
                     if(falling > 5){
-fprintf(stderr, "Falling trigger found at frame: %d\n", i);
                         break;
                     }
                 }
