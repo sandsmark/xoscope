@@ -993,10 +993,16 @@ void measure_data(Channel *sig, struct signal_stats *stats)
     short   val, prev;
     int     min=0, max=0, midpoint=0;
     int     first = 0, last = 0, count = 0, imax = 0;
+#ifdef CALC_RMS
+    int     second = 0.0;
+#endif	
     stats->min = 0;
     stats->max = 0;
     stats->time = 0;
     stats->freq = 0;
+#ifdef CALC_RMS
+    stats->rms = 0.0;
+#endif
 
     if ((sig->signal == NULL) || (sig->signal->num == 0))
         return;
@@ -1045,6 +1051,10 @@ void measure_data(Channel *sig, struct signal_stats *stats)
                 if(rising > 5){
                     if (!first)
                         first = i;
+#ifdef CALC_RMS
+                    else if (!second)
+                        second = i;
+#endif
                     last = i;
                     i = k;
                     count++;
@@ -1052,6 +1062,19 @@ void measure_data(Channel *sig, struct signal_stats *stats)
             }
             prev = val;
         }
+
+#ifdef CALC_RMS
+        for (i = first; i < second; i++) {
+            stats->rms += (sig->signal->data[i] * sig->signal->data[i]);
+        }
+        if((second - first) != 0){
+        stats->rms = sqrt(stats->rms / (second - first));
+        }
+        else {
+        stats->rms = -1;
+        }
+#endif // CALC_RMS
+
         stats->min = min;
         stats->max = max;
     }
