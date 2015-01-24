@@ -104,7 +104,6 @@ void set_name_property(GtkWidget *widget, GtkBuilder *builder)
 
     g_value_init (&g_value, G_TYPE_STRING);
     g_value_set_string (&g_value, gtk_buildable_get_name(GTK_BUILDABLE (widget)));
-    /* fprintf(stderr, "%s\n", gtk_buildable_get_name(GTK_BUILDABLE (widget))); */
     gtk_buildable_set_buildable_property(GTK_BUILDABLE (widget), builder, "name", &g_value);
 }
 
@@ -134,11 +133,9 @@ void store_reference(GtkWidget* widget)
     }
 
     if(parent == widget){
-        /* fprintf(stderr, "TOP %s\n", gtk_widget_get_name(widget));*/
         GLADE_HOOKUP_OBJECT_NO_REF(widget, widget, gtk_widget_get_name(widget));
     }
     else{
-        /* fprintf(stderr, "SUB %s %s\n", gtk_widget_get_name(parent), gtk_widget_get_name(widget));*/
         GLADE_HOOKUP_OBJECT(parent, widget, gtk_widget_get_name(widget));
     }
 }
@@ -171,10 +168,6 @@ GtkWidget * create_main_window(void)
 
     builder = gtk_builder_new ();
 
-    /*  if(0 == gtk_builder_add_from_file (builder, "xoscope_new.glade", &err)){*/
-    /*          fprintf(stderr, "Error adding build from file. Error: %s\n", err->message);*/
-    /*          exit(1);*/
-    /*  }*/
     if(0 == gtk_builder_add_from_string(builder, gladestring, -1, &err)){
         fprintf(stderr, "Error adding build from string. Error: %s\n", err->message);
         exit(1);

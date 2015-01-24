@@ -15,8 +15,8 @@
 #include <fcntl.h>
 #include <string.h>
 #include <math.h>
-#include <ctype.h>
 #include <signal.h>
+#include <limits.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include "xoscope.h"
@@ -177,11 +177,11 @@ void start_program_on_channel(const char *command, Channel *ch_select)
 
         if ((oscopepath = getenv("OSCOPEPATH")) == NULL) {
             oscopepath = PACKAGE_LIBEXEC_DIR;
-        }
+            }
 
         path = g_malloc(strlen(oscopepath) + 6);
-        sprintf(path,"PATH=%s", oscopepath);
-        putenv(path);
+            sprintf(path,"PATH=%s", oscopepath);
+            putenv(path);
 
         execlp("/bin/sh", "sh", "-c", command, NULL);
         sprintf(error, "%s: child can't exec /bin/sh -c \"%s\"",
@@ -479,7 +479,7 @@ static void run_externals(void)
             if (ext->pid) {
                 if (waitpid(ext->pid, NULL, WNOHANG) == ext->pid) {
                     ext->pid = 0;
-                    /* XXX Delete ext from list and free() it */
+            /* XXX Delete ext from list and free() it */
                 }
             }
         }
@@ -523,8 +523,10 @@ void sum(Signal *dest)
 {
     int i;
     short *a, *b, *c;
+    int sum;
 
-    if ((ch[0].signal == NULL) || (ch[1].signal == NULL)) return;
+    if ((ch[0].signal == NULL) || (ch[1].signal == NULL)) 
+        return;
 
     a = ch[0].signal->data;
     b = ch[1].signal->data;
@@ -533,10 +535,16 @@ void sum(Signal *dest)
     dest->frame = ch[0].signal->frame + ch[1].signal->frame;
     dest->num = ch[0].signal->num;
 
-    if (dest->num > ch[1].signal->num) dest->num = ch[1].signal->num;
+    if (dest->num > ch[1].signal->num) 
+        dest->num = ch[1].signal->num;
 
     for (i = 0 ; i < dest->num ; i++) {
-        *c++ = *a++ + *b++;
+        sum = *a++ + *b++;
+        if(sum > SHRT_MAX)
+            sum = SHRT_MAX;
+        else if(sum < SHRT_MIN)
+           sum = SHRT_MIN;
+        *c++ = (short)sum;
     }
 }
 
@@ -545,8 +553,10 @@ void diff(Signal *dest)
 {
     int i;
     short *a, *b, *c;
+    int sum;
 
-    if ((ch[0].signal == NULL) || (ch[1].signal == NULL)) return;
+    if ((ch[0].signal == NULL) || (ch[1].signal == NULL))
+        return;
 
     a = ch[0].signal->data;
     b = ch[1].signal->data;
@@ -558,7 +568,12 @@ void diff(Signal *dest)
     if (dest->num > ch[1].signal->num) dest->num = ch[1].signal->num;
 
     for (i = 0 ; i < dest->num ; i++) {
-        *c++ = *a++ - *b++;
+         sum = *a++ - *b++;
+        if(sum > SHRT_MAX)
+            sum = SHRT_MAX;
+        else if(sum < SHRT_MIN)
+           sum = SHRT_MIN;
+        *c++ = (short)sum;
     }
 }
 
@@ -745,14 +760,14 @@ int chs12active(Signal *dest)
 
     if (dest->width != ch[0].signal->width) {
         dest->width = ch[0].signal->width;
-        if (dest->data != NULL) free(dest->data);
+        if (dest->data != NULL)
+            free(dest->data);
         dest->data = malloc(ch[0].signal->width * sizeof(short));
         if(dest->data == NULL){
             fprintf(stderr, "malloc failed in ch12active()\n");
             exit(0);
         }
     }
-
     return 1;
 }
 
@@ -977,13 +992,14 @@ void measure_data(Channel *sig, struct signal_stats *stats)
     int     i, k;
     short   val, prev;
     int     min=0, max=0, midpoint=0;
-	int     first = 0, last = 0, count = 0, imax = 0;
-
+    int     first = 0, last = 0, count = 0, imax = 0;
     stats->min = 0;
     stats->max = 0;
     stats->time = 0;
     stats->freq = 0;
-    if ((sig->signal == NULL) || (sig->signal->num == 0)) return;
+
+    if ((sig->signal == NULL) || (sig->signal->num == 0))
+        return;
 
     prev = 1;
     if (scope.curs) {           /* manual cursor measurements */
@@ -1015,8 +1031,8 @@ void measure_data(Channel *sig, struct signal_stats *stats)
         /* locate and count rising edges
          * tries to handle handle noise by looking at the next 10 values.
          */
-		midpoint = (min + max)/2;
-		prev = max;
+        midpoint = (min + max)/2;
+        prev = max;
         for (i = 0; i < sig->signal->num; i++) {
             val = sig->signal->data[i];
             if (val > midpoint && prev <= midpoint){
@@ -1029,14 +1045,14 @@ void measure_data(Channel *sig, struct signal_stats *stats)
                 if(rising > 5){
                     if (!first)
                         first = i;
-    				last = i;
-    				i = k;
+                    last = i;
+                    i = k;
                     count++;
                 }
             }
             prev = val;
         }
-		stats->min = min;
+        stats->min = min;
         stats->max = max;
     }
 
@@ -1051,17 +1067,14 @@ void measure_data(Channel *sig, struct signal_stats *stats)
         if (stats->freq > 0)
             stats->time = 1000000 / stats->freq;
 
-    } else if ((sig->signal->rate > 0) && (count > 1)) {
-
+    } 
+    else if ((sig->signal->rate > 0) && (count > 1)) {
         /* estimate frequency from rising edge count
          * assume a wave: period = length / # periods
          */
-         
         stats->time = (int)(1000000.0 * (last - first) / (count - 1) / sig->signal->rate);
         if (stats->time > 0){
             stats->freq = (int)((1000000.0 / stats->time) +0.5);
         }
-
     }
 }
-

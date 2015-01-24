@@ -108,9 +108,15 @@ static int open_sound_card(void)
     }
 
     /* Set and check format, i.e. bits per sample */
+#ifdef SC_16BIT
+    /* Signed 16-bit little-endian format */
+    rc = snd_pcm_hw_params_set_format(handle, params, SND_PCM_FORMAT_S16_LE);
+    pcm_format = SND_PCM_FORMAT_S16_LE;
+#else
     /* Unsigned 8-bit format */
     rc = snd_pcm_hw_params_set_format(handle, params, SND_PCM_FORMAT_U8);
     pcm_format = SND_PCM_FORMAT_U8;
+#endif
     if (rc < 0) {
         snd_errormsg1 = "snd_pcm_hw_params_set_format() failed ";
         snd_errormsg2 = snd_strerror(rc);
@@ -123,10 +129,17 @@ static int open_sound_card(void)
         snd_errormsg2 = snd_strerror(rc);
         return 0;
     }
+#ifdef SC_16BIT
+    if (pcm_format != SND_PCM_FORMAT_S16_LE) {
+        snd_errormsg1 = "Can't set 16-bit format (SND_PCM_FORMAT_S16_LE)";
+        return 0;
+    }
+#else
     if (pcm_format != SND_PCM_FORMAT_U8) {
         snd_errormsg1 = "Can't set 8-bit format (SND_PCM_FORMAT_U8)";
         return 0;
     }
+#endif
 
     /* Two channels (stereo) */
     rc = snd_pcm_hw_params_set_channels(handle, params, chan);
@@ -302,7 +315,7 @@ static void reset(void)
     right_sig.frame ++;
 
     left_sig.volts = alsa_volts;
-    right_sig.volts = alsa_volts;
+ 	right_sig.volts = alsa_volts;
 
     in_progress = 0;
 }
@@ -319,7 +332,11 @@ static void reset(void)
  * when the time base and/or the sample rate changes.
  */
 
+#ifdef SC_16BIT
+static short *buffer = NULL;
+#else
 static unsigned char *buffer = NULL;
+#endif
 static int  bufferSizeFrames    = 0;    /* The size of the buffer,measured in Frames */
 
 /* set_width(int)
@@ -341,10 +358,17 @@ static void set_width(int width)
     left_sig.data = g_new0(short, width);
     right_sig.data = g_new0(short, width);
     
+#ifdef SC_16BIT
+    if(buffer == NULL)
+        buffer = g_new0(short, width * 2);
+    else
+        buffer = g_renew(short, buffer, width * 2);
+#else
     if(buffer == NULL)
         buffer = g_new0(unsigned char, width * 2);
     else
         buffer = g_renew(unsigned char, buffer, width * 2);
+#endif
 }
 
 
@@ -362,7 +386,6 @@ static int sc_get_data(void)
     }
 
     rdMax = bufferSizeFrames - in_progress;
-
     if (!in_progress) {
         /* Discard excess samples so we can keep our time snapshot close to real-time and minimize
          * sound recording overruns.  For ESD we don't know how many are available (do we?) so we
@@ -395,17 +418,41 @@ static int sc_get_data(void)
             return 0;
         }
     }
-    
+
+    if (rdCnt < 0) {
+        if (rdCnt == -EAGAIN) { /* EAGAIN means try again, i.e. not data available */
+            return 0;
+        }
+        else if (rdCnt == -EPIPE) { /* EPIPE means overrun */
+            snd_pcm_recover(handle, rdCnt, TRUE);
+            snd_pcm_readi(handle, buffer, rdMax); // flush frame buffer
+            usleep(1000);
+            return sc_get_data();
+        }
+        else {
+            snd_pcm_recover(handle, rdCnt, TRUE);
+            snd_pcm_readi(handle, buffer, rdMax); // flush frame buffer
+            usleep(1000);
+            return 0;
+        }
+    }
     i = 0;
     if (!in_progress) {
         int trigger, val, prev, k;
-        
-        trigger = triglev;
+#ifdef SC_16BIT
+    trigger = (triglev - 127) * 256;
+#else
+    trigger = (triglev - 0);
+#endif
         if (trigmode == 1) {
             /* locate rising edges. Try to handle handle noise by looking at the next 10 values.
              * Might miss a trigger point close to the right edge of the screen
              */
+#ifdef SC_16BIT
+            prev = SHRT_MAX;
+#else
             prev = UCHAR_MAX;
+#endif
             for (i = 0; i < rdCnt; i++) {
                 val = buffer[2*i + trigch];
                 if (val > trigger && prev <= trigger){
@@ -425,6 +472,11 @@ static int sc_get_data(void)
         else if(trigmode == 2) {
             /* same for falling edges */
             prev = 0;
+#ifdef SC_16BIT
+            prev = SHRT_MIN;
+#else
+            prev = 0;
+#endif
             for (i = 0; i < rdCnt; i++) {
                 val = buffer[2*i + trigch];
                 if (val < trigger && prev >= trigger){
@@ -435,7 +487,7 @@ static int sc_get_data(void)
                         }
                     }
                     if(falling > 5){
-                       break;
+                        break;
                     }
                 }
                 prev = val;
@@ -446,19 +498,26 @@ static int sc_get_data(void)
              return 0;     /* give up */
         }
 
-        /* XXX 
-         * The delay value calculated here is only used in on_databox_button_press_event()
+        /* The delay value calculated here is only used in on_databox_button_press_event()
          * But it seems on_databox_button_press_event() isn't associated with anything.
          * Most likely it was used in the now defunct code for "cursors"
          */
         delay = 0;
 
+#ifdef SC_16BIT
+        left_sig.data[0] = buffer[2*i];
+#else
         left_sig.data[0] = buffer[2*i] - 127;
+#endif
         left_sig.delay = delay;
         left_sig.num = 1;
         left_sig.frame ++;
 
+#ifdef SC_16BIT
+        right_sig.data[0] = buffer[2*i + 1];
+#else
         right_sig.data[0] = buffer[2*i + 1] - 127;
+#endif
         right_sig.delay = delay;
         right_sig.num = 1;
         right_sig.frame ++;
@@ -471,8 +530,13 @@ static int sc_get_data(void)
         if (in_progress >= left_sig.width) { // enough samples for a screen
             break;
         }
+#ifdef SC_16BIT
+        left_sig.data[in_progress] = buffer[2*i];
+        right_sig.data[in_progress] = buffer[2*i + 1];
+#else
         left_sig.data[in_progress] = buffer[2*i] - 127;
         right_sig.data[in_progress] = buffer[2*i + 1] - 127;
+#endif
 
         in_progress ++;
         i++;
@@ -584,6 +648,6 @@ DataSrc datasrc_sc = {
 #endif
     sc_set_option,
     sc_save_option,
-    alsa_gtk_option_dialog,  /* gtk_options */
+    NULL  /* gtk_options */
 };
 
