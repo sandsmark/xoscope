@@ -373,6 +373,7 @@ static void set_width(int width)
         buffer = g_new0(unsigned char, width * 2);
     else
         buffer = g_renew(unsigned char, buffer, width * 2);
+#endif
 }
 
 
