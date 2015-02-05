@@ -19,6 +19,7 @@ BuildRequires:  update-desktop-files
 BuildRequires:	esound-devel
 BuildRequires:	gtk2-devel >= 2.18
 BuildRequires:	comedilib-devel
+BuildRequires:  gdk-pixbuf
 BuildRoot:	%{tmpdir}/%{name}-%{version}
  
 %description
