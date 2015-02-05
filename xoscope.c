@@ -93,8 +93,7 @@ file             %s file to load to restore settings and memory\n\
             progname, version, DEFAULT_ALSADEVICE, CHANNELS, CHANNELS, DEF_A,
             DEF_S, DEF_T, DEF_L,
             fonts,              /* the font method for the display */
-            /* XXX fix me - plot_mode not backwards compatible */
-            scope.plot_mode,
+            scope.scroll_mode + 10 * scope.plot_mode,
             scope.grat, def[DEF_B], def[!DEF_B],
             onoff[DEF_V], progname);
     exit(error);
