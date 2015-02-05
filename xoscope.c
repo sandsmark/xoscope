@@ -99,7 +99,16 @@ file             %s file to load to restore settings and memory\n\
     exit(error);
 }
 
-/* handle command line options */
+/* Handle command line options
+ *
+ * If a data source was specified on the command line, we open it.  Otherwise, we open the first
+ * available data source before processing most of the options because the user could specify an
+ * option like "-3 0.0:1,000000:a", which is interpreted differently ('a' is either the first data
+ * channel or the first memory channel) depending on whether a device is open.
+ */
+
+int datasrc_first(void);
+
 void parse_args(int argc, char **argv)
 {
     const char     *flags = "Hh"
@@ -108,8 +117,30 @@ void parse_args(int argc, char **argv)
         "A:R:S:T:L:C:M:D:F:P:G:o:I:BVXYZ";
     int c;
 
+    /* If a data source, data source option, or ALSA device name was specified on the command line,
+     * parse them first.
+     */
+
     while ((c = getopt(argc, argv, flags)) != EOF) {
-        handle_opt(c, optarg);
+        if ((c == 'D') || (c == 'o') || (c == 'A')) {
+            handle_opt(c, optarg);
+        }
+    }
+
+    /* If a data source was not specified, open the first one available. */
+
+    if (! datasrc) {
+        datasrc_first();
+    }
+
+    /* Reset to the beginning of the argument list and process the remaining options. */
+
+    optind = 1;
+
+    while ((c = getopt(argc, argv, flags)) != EOF) {
+        if ((c != 'D') && (c != 'o') && (c != 'A')) {
+            handle_opt(c, optarg);
+        }
     }
 }
 
@@ -828,7 +859,7 @@ int main(int argc, char **argv)
     if ((argc = OpenDisplay(argc, argv)) == FALSE) {
         exit(1);
     }
-    parse_args(argc, argv);
+    parse_args(argc, argv);		/* also opens a data source, if possible */
     init_widgets();
     clear();
 
@@ -836,11 +867,6 @@ int main(int argc, char **argv)
     if ((optind < argc) && (argv[optind] != NULL)) {
         filename = argv[optind];
         readfile(filename);
-    } else if (!datasrc && ! datasrc_first()) {
-#if 0
-        fprintf(stderr, "No valid data sources found... exiting\n");
-        exit(1);
-#endif
     }
 
     clear();
