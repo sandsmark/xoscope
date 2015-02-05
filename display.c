@@ -1278,9 +1278,13 @@ void draw_data(void)
                     }
                 }
 
-                /* The scale is applied first, then the offset */
+                /* The scale is applied first, then the offset 
+                 * Full range is scaled to 4/5 of the screen.
+                 * Therefor we scale it to 127*1,25 in 8-bit mode 
+                 * and 32767*1,25 in 16-bit mode.
+                 */
 #ifdef SC_16BIT
-                sl->y_scale = (double)p->scale / 41000;
+                sl->y_scale = (double)p->scale / 40959;
 				sl->y_offset = (double)p->pos;
 #else
                 sl->y_scale = (double)p->scale / 160;
