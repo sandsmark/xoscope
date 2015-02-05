@@ -205,14 +205,18 @@ void start_program_on_channel(const char *command, Channel *ch_select)
     ext->errors = errors[0];
     fcntl(ext->errors, F_SETFL, O_NONBLOCK);
 
-    ext->signal.data = g_new(short, ch[0].signal->width);
+    /* XXX Here we inherit various parameters from channel 0.  These should be set more
+     * intelligently.
+     */
 
-    ext->signal.width = ch[0].signal->width;
-    ext->signal.num = 0;
-    ext->signal.rate = ch[0].signal->rate;
-    ext->signal.delay = ch[0].signal->delay;
-    ext->signal.bits = ch[0].signal->bits;
-    /*  fprintf(stderr, "start_command_on_channel: width = %d\n", ext->signal.width);*/
+    if (ch[0].signal != NULL) {
+        ext->signal.data = g_new(short, ch[0].signal->width);
+
+        ext->signal.width = ch[0].signal->width;
+        ext->signal.rate = ch[0].signal->rate;
+        ext->signal.delay = ch[0].signal->delay;
+        ext->signal.bits = ch[0].signal->bits;
+    }
 
     ext->next = externals;
     externals = ext;
@@ -295,14 +299,18 @@ void start_perl_function_on_channel(const char *command, Channel *ch_select)
     ext->errors = errors[0];
     fcntl(ext->errors, F_SETFL, O_NONBLOCK);
 
-    ext->signal.data = g_new(short, ch[0].signal->width);
+    /* XXX Here we inherit various parameters from channel 0.  These should be set more
+     * intelligently.
+     */
 
-    ext->signal.width = ch[0].signal->width;
-    ext->signal.num = 0;
-    ext->signal.rate = ch[0].signal->rate;
-    ext->signal.delay = ch[0].signal->delay;
-    ext->signal.bits = ch[0].signal->bits;
-    /*  fprintf(stderr, "start_command_on_channel: width = %d\n", ext->signal.width);*/
+    if (ch[0].signal != NULL) {
+        ext->signal.data = g_new(short, ch[0].signal->width);
+
+        ext->signal.width = ch[0].signal->width;
+        ext->signal.rate = ch[0].signal->rate;
+        ext->signal.delay = ch[0].signal->delay;
+        ext->signal.bits = ch[0].signal->bits;
+    }
 
     ext->next = externals;
     externals = ext;
@@ -1006,6 +1014,10 @@ void measure_data(Channel *sig, struct signal_stats *stats)
 
     if ((sig->signal == NULL) || (sig->signal->num == 0))
         return;
+
+    /* XXX these calculations could probably overrun the data[] array if the cursors are not set
+     * sensibly
+     */
 
     prev = 1;
     if (scope.curs) {           /* manual cursor measurements */
