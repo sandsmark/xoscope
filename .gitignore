@@ -1,5 +1,6 @@
 .gitignore
 .deps
+.osc
 
 xoscope
 xoscope*.tar.gz
