@@ -19,6 +19,8 @@
 #include <gtkdatabox_lines.h>
 #include <math.h>
 
+#include <gdk-pixbuf/gdk-pixdata.h>
+
 #include <string.h>
 #include "xoscope.h"            /* program defaults */
 #include "display.h"
@@ -218,6 +220,12 @@ GtkWidget * create_main_window(void)
     g_slist_free(gslWidgets);
 
     gtk_builder_connect_signals(builder, NULL);
+
+    /* Set icon on main window.  I don't use glade's icon property because that would require the
+     * icon to be packaged as a separate file.  This way, we embed the icon in the executable.
+     */
+
+    gtk_window_set_icon(GTK_WINDOW(glade_window), gdk_pixbuf_from_pixdata(&xoscope_128x128, FALSE, NULL));
 
     return(glade_window);
 }
