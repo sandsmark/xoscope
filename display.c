@@ -473,6 +473,8 @@ void update_text(void)
                     sprintf(string, "%d:1", (int) rint(ch[i].scale));
                 else
                     sprintf(string, "1:%d", (int) rint(1.0/ch[i].scale));
+            } else {
+                strcpy(string, "");
             }
 
             sprintf(widget, "Ch%1d_scale_label", i+1);
