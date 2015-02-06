@@ -27,7 +27,7 @@
 #include "xoscope_gtk.h"
 
 Signal mem[26];         /* 26 memories, corresponding to 26 letters */
-char   mem_pending[26]; /* Flags to indicate we wont to store a channel when a sweep is complete */
+short  mem_pending[26]; /* Flags to indicate we wont to store a channel when a sweep is complete */
 
 /* recall given memory register to the currently selected signal */
 void recall_on_channel(Signal *signal, Channel *ch)
