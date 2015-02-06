@@ -413,6 +413,7 @@ void readfile(char *filename)
                 }
                 if (version[0] == 1) {
                     backwards_compat_2_0 = 1;
+                    backwards_compat_2_1 = 1;
                 }
                 if (version[0] == 2 && version[1] == 0) {
                     backwards_compat_2_1 = 1;
