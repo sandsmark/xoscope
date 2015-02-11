@@ -22,7 +22,6 @@
 
 #define DEFAULT_ALSADEVICE "plughw:0,0"
 char    alsaDevice[32] = "\0";
-char    alsaDeviceName[64] = "\0";
 double  alsa_volts = 0.0;
 
 static snd_pcm_t *handle        = NULL;
@@ -558,18 +557,19 @@ static const char * snd_status_str(int i)
     sprintf(string, "status %d", i);
     return string;
 #endif
-    static char msg1[64];
+
     switch (i) {
     case 0:
+        return alsaDevice;
+
+    case 2:
         if (snd_errormsg1){
-            strcpy(msg1, snd_errormsg1);
-            strcat(msg1, alsaDevice);
-            return (const char*)msg1;
+            return snd_errormsg1;
         } else {
             return "";
         }
 
-    case 2:
+    case 4:
         if (snd_errormsg2) {
             return snd_errormsg2;
         } else {
@@ -624,7 +624,7 @@ static char * sc_save_option(int i)
 }
 
 DataSrc datasrc_sc = {
-    alsaDeviceName,
+    "ALSA",
     sc_nchans,
     sc_chan,
     set_trigger,

@@ -14,7 +14,6 @@
 #include "config.h"
 
 extern char alsaDevice[];
-extern char alsaDeviceName[];
 
 #define SND_QUERY_INTERVALL 10 // we check for new data every SND_QUERY_INTERVALL ms
 

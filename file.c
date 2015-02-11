@@ -176,7 +176,6 @@ void handle_opt(int opt, char *optarg)
 #ifdef HAVE_LIBASOUND
     case 'A':
         sprintf(alsaDevice, "%s", optarg);
-        sprintf(alsaDeviceName, "Alsa: %s", optarg);
         break;
 #endif
     case 'h':                   /* help */
