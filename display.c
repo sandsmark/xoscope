@@ -1283,7 +1283,7 @@ void draw_data(void)
                  * Therefor we scale it to 127*1,25 in 8-bit mode 
                  * and 32767*1,25 in 16-bit mode.
                  */
-#ifdef SC_16BIT
+#if SC_16BIT
                 sl->y_scale = (double)p->scale / 40959;
 				sl->y_offset = (double)p->pos;
 #else
@@ -1299,7 +1299,7 @@ void draw_data(void)
                 if (bit >= 0) {
                     int bitoff = bit * 16 - end * 8 + 4;
 
-#ifdef SC_16BIT
+#if SC_16BIT
                     sl->y_offset += bitoff * sl->y_scale * 256;
                     sl->y_scale *= (8 * 256);
 #else
