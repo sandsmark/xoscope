@@ -794,18 +794,18 @@ int ch1FFTactive(Signal *dest)
 {
     static int prevWidth = -1;
 
-    if(ch[0].signal->width != prevWidth){ /* Width changed or first call */
+    if ((ch[0].signal != NULL) && (ch[0].signal->width != prevWidth)) {
         prevWidth = ch[0].signal->width;
         return(FFTactive(ch[0].signal, dest, TRUE));
     }
-    return(FFTactive(ch[1].signal, dest, FALSE));
+    return(FFTactive(ch[0].signal, dest, FALSE));
 }
 
 int ch2FFTactive(Signal *dest)
 {
     static int prevWidth = -1;
     
-    if(ch[1].signal->width != prevWidth){ /* Width changed or first call */
+    if ((ch[1].signal != NULL) && (ch[1].signal->width != prevWidth)) {
         prevWidth = ch[1].signal->width;
         return(FFTactive(ch[1].signal, dest, TRUE));
     }
