@@ -146,7 +146,7 @@ dnl Enable CALC_RMS if you deal mostly with sinusoidal signals.
 dnl Might be confusing with audio signals.
 dnl AC_DEFINE(CALC_RMS, 1, [calculate RMS])
 
-AC_DEFINE(SC_16BIT, 1, [use 16 bit format for sound card])
+AC_DEFINE(SC_16BIT, 0, [use 16 bit format for sound card])
 
 AC_OUTPUT([
 Makefile
