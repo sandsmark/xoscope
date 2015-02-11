@@ -795,19 +795,16 @@ void help(GtkWidget *w, void *data)
 
 static GtkItemFactoryEntry menu_items[] = {
     {"/File", NULL, NULL, 0, "<Branch>"},
-    {"/File/tear", NULL, NULL, 0, "<Tearoff>"},
     /*     {"/File/New", "<control>N", print_hello, NULL, NULL}, */
     {"/File/Open...", NULL, hit_key, '@', NULL},
     {"/File/Save...", NULL, hit_key, '#', NULL},
     /*     {"/File/Save as", NULL, NULL, 0, NULL}, */
-    {"/File/Device/tear", NULL, NULL, 0, "<Tearoff>"},
     {"/File/Device/None", NULL, datasource, 0, NULL},
     {"/File/Device Options...", NULL, option_dialog, 0, NULL},
     {"/File/sep", NULL, NULL, 0, "<Separator>"},
     {"/File/Quit", NULL, hit_key, '\e', NULL},
 
     {"/Channel", NULL, NULL, 0, "<Branch>"},
-    {"/Channel/tear", NULL, NULL, 0, "<Tearoff>"},
     {"/Channel/Channel 1", NULL, hit_key, '1', "<RadioItem>"},
     {"/Channel/Channel 2", NULL, hit_key, '2', "/Channel/Channel 1"},
     {"/Channel/Channel 3", NULL, hit_key, '3', "/Channel/Channel 2"},
@@ -820,7 +817,6 @@ static GtkItemFactoryEntry menu_items[] = {
     {"/Channel/Show", NULL, hit_key, '\t', "<CheckItem>"},
 
     {"/Channel/Scale", NULL, NULL, 0, "<Branch>"},
-    {"/Channel/Scale/tear", NULL, NULL, 0, "<Tearoff>"},
     {"/Channel/Scale/up", NULL, hit_key, '}', NULL},
     {"/Channel/Scale/down", NULL, hit_key, '{', NULL},
     {"/Channel/Scale/sep", NULL, NULL, 0, "<Separator>"},
@@ -838,7 +834,6 @@ static GtkItemFactoryEntry menu_items[] = {
     {"/Channel/Scale/1\\\\50", NULL, setscale, 10, NULL},
 
     {"/Channel/Position", NULL, NULL, 0, "<Branch>"},
-    {"/Channel/Position/tear", NULL, NULL, 0, "<Tearoff>"},
     {"/Channel/Position/up", "[", hit_key, '[', NULL},
     {"/Channel/Position/down", "]", hit_key, ']', NULL},
     {"/Channel/Position/sep", NULL, NULL, 0, "<Separator>"},
@@ -865,7 +860,6 @@ static GtkItemFactoryEntry menu_items[] = {
     {"/Channel/Position/-160", NULL, setposition, -160, NULL},
 
     {"/Channel/Bits", NULL, NULL, 0, "<Branch>"},
-    {"/Channel/Bits/tear", NULL, NULL, 0, "<Tearoff>"},
     {"/Channel/Bits/Analog", NULL, setbits, 0, "<RadioItem>"},
     {"/Channel/Bits/2", NULL, setbits, 2, "/Channel/Bits/Analog"},
     {"/Channel/Bits/4", NULL, setbits, 4, "/Channel/Bits/2"},
@@ -878,7 +872,6 @@ static GtkItemFactoryEntry menu_items[] = {
 
     {"/Channel/sep", NULL, NULL, 0, "<Separator>"},
     {"/Channel/Math", NULL, NULL, 0, "<Branch>"},
-    {"/Channel/Math/tear", NULL, NULL, 0, "<Tearoff>"},
     {"/Channel/Math/Prev Function", ":", hit_key, ':', NULL},
     {"/Channel/Math/Next Function", ";", hit_key, ';', NULL},
     {"/Channel/Math/sep", NULL, NULL, 0, "<Separator>"},
@@ -895,7 +888,6 @@ static GtkItemFactoryEntry menu_items[] = {
     {"/Channel/Math/External Command...", NULL, mathselect, '!', NULL},
 
     {"/Channel/Store", NULL, NULL, 0, "<Branch>"},
-    {"/Channel/Store/tear", NULL, NULL, 0, "<Tearoff>"},
     {"/Channel/Store/Mem A", "A", hit_key, 'A', "<CheckItem>"},
     {"/Channel/Store/Mem B", "B", hit_key, 'B', "<CheckItem>"},
     {"/Channel/Store/Mem C", "C", hit_key, 'C', "<CheckItem>"},
@@ -924,7 +916,6 @@ static GtkItemFactoryEntry menu_items[] = {
     {"/Channel/Store/Mem Z", "Z", hit_key, 'Z', "<CheckItem>"},
 
     {"/Channel/Recall", NULL, NULL, 0, "<Branch>"},
-    {"/Channel/Recall/tear", NULL, NULL, 0, "<Tearoff>"},
     //  {"/Channel/Recall/sep", NULL, NULL, 0, "<Separator>"},
     {"/Channel/Recall/Mem A", "a", hit_key, 'a', NULL},
     {"/Channel/Recall/Mem B", "b", hit_key, 'b', NULL},
@@ -954,7 +945,6 @@ static GtkItemFactoryEntry menu_items[] = {
     {"/Channel/Recall/Mem Z", "z", hit_key, 'z', NULL},
 
     {"/Trigger", NULL, NULL, 0, "<Branch>"},
-    {"/Trigger/tear", NULL, NULL, 0, "<Tearoff>"},
     {"/Trigger/Off", NULL, trigger, 'a', "<RadioItem>"},
     {"/Trigger/Rising", NULL, trigger, 'b', "/Trigger/Off"},
     {"/Trigger/Falling", NULL, trigger, 'c', "/Trigger/Rising"},
@@ -1007,7 +997,6 @@ static GtkItemFactoryEntry menu_items[] = {
     {"/Trigger/Position Negative/-128", NULL, set_trigger_level, -128, NULL},
 
     {"/Scope", NULL, NULL, 0, "<Branch>"},
-    {"/Scope/tear", NULL, NULL, 0, "<Tearoff>"},
     {"/Scope/Run", NULL, runmode, 1, "<RadioItem>"},
     {"/Scope/Wait", NULL, runmode, 2, "/Scope/Run"},
     {"/Scope/Stop", NULL, runmode, 0, "/Scope/Wait"},
@@ -1018,7 +1007,6 @@ static GtkItemFactoryEntry menu_items[] = {
     {"/Scope/Faster Sample Rate", NULL, hit_key, ')', NULL},
     {"/Scope/sep", NULL, NULL, 0, "<Separator>"},
     {"/Scope/Refresh", NULL, hit_key, '\n', NULL},
-    {"/Scope/Plot Mode/tear", NULL, NULL, 0, "<Tearoff>"},
     {"/Scope/Plot Mode/Point", NULL, plotmode, 0, "<RadioItem>"},
     {"/Scope/Plot Mode/Line", NULL, plotmode, 1, "/Scope/Plot Mode/Point"},
     {"/Scope/Plot Mode/Step", NULL, plotmode, 2, "/Scope/Plot Mode/Line"},
@@ -1026,7 +1014,6 @@ static GtkItemFactoryEntry menu_items[] = {
     {"/Scope/Plot Mode/Sweep", NULL, scrollmode, 0, "<RadioItem>"},
     {"/Scope/Plot Mode/Accumulate", NULL, scrollmode, 1, "/Scope/Plot Mode/Sweep"},
     {"/Scope/Plot Mode/Strip Chart", NULL, scrollmode, 2, "/Scope/Plot Mode/Accumulate"},
-    {"/Scope/Graticule/tear", NULL, NULL, 0, "<Tearoff>"},
     {"/Scope/Graticule/In Front", NULL, graticule, 0, "<RadioItem>"},
     {"/Scope/Graticule/Behind", NULL, graticule, 1, "/Scope/Graticule/In Front"},
     {"/Scope/Graticule/sep", NULL, NULL, 0, "<Separator>"},
