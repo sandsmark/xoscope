@@ -60,6 +60,24 @@ int in_progress = 0;            /* frame collection in progress?
                                  *   if so, this is index of next sample
                                  */
 
+const char * datasrc_names(void)
+{
+    int i;
+    int limit = sizeof(datasrcs)/sizeof(DataSrc *);
+    static char buffer[256];
+
+    buffer[0] = '\0';
+
+    for (i=0; i<limit; i++) {
+        if (i > 0) {
+            strcat(buffer, "/");
+        }
+        strcat(buffer, datasrcs[i]->name);
+    }
+
+    return buffer;
+}
+
 /* display command usage on stdout or stderr and exit */
 void usage(int error)
 {
@@ -72,7 +90,7 @@ void usage(int error)
 \n\
 Startup Options  Description (defaults)               version %s\n\
 -h               this Help message and exit\n\
--D <datasrc>     select named data source (COMEDI/Soundcard/ESD)\n\
+-D <datasrc>     select named data source (%s)\n\
 -A <device>      select named ALSA-device on soundcard        (%s)\n\
 -o <option>      specify data source specific options\n\
 -# <code>        #=1-%d, code=pos[.bits][:scale[:func#, mem a-z or cmd]] (0:1/1)\n\
@@ -90,7 +108,7 @@ Startup Options  Description (defaults)               version %s\n\
 -v               turn Verbose key help display %s\n\
 file             %s file to load to restore settings and memory\n\
 ",
-            progname, version, DEFAULT_ALSADEVICE, CHANNELS, CHANNELS, DEF_A,
+            progname, version, datasrc_names(), DEFAULT_ALSADEVICE, CHANNELS, CHANNELS, DEF_A,
             DEF_S, DEF_T, DEF_L,
             fonts,              /* the font method for the display */
             scope.scroll_mode + 10 * scope.plot_mode,
