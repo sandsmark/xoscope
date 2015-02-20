@@ -1506,6 +1506,7 @@ void init_widgets(void)
      * loaded as a series of strings.
      */
 
+    char ver_string[16];
 #if 1
     gtk_rc_parse("xoscope.rc");
 #else
@@ -1516,6 +1517,8 @@ void init_widgets(void)
 
     glade_window = create_main_window();
 
+    sprintf(ver_string, "ver: %s", VERSION);
+    gtk_label_set_label(GTK_LABEL(lookup_widget("version_help_label")), (const gchar *)ver_string);
     setup_help_text(glade_window, NULL);
 
 #if 0
