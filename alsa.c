@@ -22,7 +22,6 @@
 
 #define DEFAULT_ALSADEVICE "plughw:0,0"
 char    alsaDevice[32] = "\0";
-char    alsaDeviceName[64] = "\0";
 double  alsa_volts = 0.0;
 
 static snd_pcm_t *handle        = NULL;
@@ -108,7 +107,7 @@ static int open_sound_card(void)
     }
 
     /* Set and check format, i.e. bits per sample */
-#ifdef SC_16BIT
+#if SC_16BIT
     /* Signed 16-bit little-endian format */
     rc = snd_pcm_hw_params_set_format(handle, params, SND_PCM_FORMAT_S16_LE);
     pcm_format = SND_PCM_FORMAT_S16_LE;
@@ -129,7 +128,7 @@ static int open_sound_card(void)
         snd_errormsg2 = snd_strerror(rc);
         return 0;
     }
-#ifdef SC_16BIT
+#if SC_16BIT
     if (pcm_format != SND_PCM_FORMAT_S16_LE) {
         snd_errormsg1 = "Can't set 16-bit format (SND_PCM_FORMAT_S16_LE)";
         return 0;
@@ -332,7 +331,7 @@ static void reset(void)
  * when the time base and/or the sample rate changes.
  */
 
-#ifdef SC_16BIT
+#if SC_16BIT
 static short *buffer = NULL;
 #else
 static unsigned char *buffer = NULL;
@@ -358,7 +357,7 @@ static void set_width(int width)
     left_sig.data = g_new0(short, width);
     right_sig.data = g_new0(short, width);
     
-#ifdef SC_16BIT
+#if SC_16BIT
     if(buffer == NULL)
         buffer = g_new0(short, width * 2);
     else
@@ -439,7 +438,7 @@ static int sc_get_data(void)
     i = 0;
     if (!in_progress) {
         int trigger, val, prev, k;
-#ifdef SC_16BIT
+#if SC_16BIT
     trigger = (triglev - 127) * 256;
 #else
     trigger = (triglev - 0);
@@ -448,7 +447,7 @@ static int sc_get_data(void)
             /* locate rising edges. Try to handle handle noise by looking at the next 10 values.
              * Might miss a trigger point close to the right edge of the screen
              */
-#ifdef SC_16BIT
+#if SC_16BIT
             prev = SHRT_MAX;
 #else
             prev = UCHAR_MAX;
@@ -472,7 +471,7 @@ static int sc_get_data(void)
         else if(trigmode == 2) {
             /* same for falling edges */
             prev = 0;
-#ifdef SC_16BIT
+#if SC_16BIT
             prev = SHRT_MIN;
 #else
             prev = 0;
@@ -504,7 +503,7 @@ static int sc_get_data(void)
          */
         delay = 0;
 
-#ifdef SC_16BIT
+#if SC_16BIT
         left_sig.data[0] = buffer[2*i];
 #else
         left_sig.data[0] = buffer[2*i] - 127;
@@ -513,7 +512,7 @@ static int sc_get_data(void)
         left_sig.num = 1;
         left_sig.frame ++;
 
-#ifdef SC_16BIT
+#if SC_16BIT
         right_sig.data[0] = buffer[2*i + 1];
 #else
         right_sig.data[0] = buffer[2*i + 1] - 127;
@@ -530,7 +529,7 @@ static int sc_get_data(void)
         if (in_progress >= left_sig.width) { // enough samples for a screen
             break;
         }
-#ifdef SC_16BIT
+#if SC_16BIT
         left_sig.data[in_progress] = buffer[2*i];
         right_sig.data[in_progress] = buffer[2*i + 1];
 #else
@@ -558,18 +557,19 @@ static const char * snd_status_str(int i)
     sprintf(string, "status %d", i);
     return string;
 #endif
-    static char msg1[64];
+
     switch (i) {
     case 0:
+        return alsaDevice;
+
+    case 2:
         if (snd_errormsg1){
-            strcpy(msg1, snd_errormsg1);
-            strcat(msg1, alsaDevice);
-            return (const char*)msg1;
+            return snd_errormsg1;
         } else {
             return "";
         }
 
-    case 2:
+    case 4:
         if (snd_errormsg2) {
             return snd_errormsg2;
         } else {
@@ -624,7 +624,7 @@ static char * sc_save_option(int i)
 }
 
 DataSrc datasrc_sc = {
-    alsaDeviceName,
+    "ALSA",
     sc_nchans,
     sc_chan,
     set_trigger,
