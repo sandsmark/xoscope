@@ -15,6 +15,7 @@
 #include <time.h>
 #include <sys/time.h>
 #include <math.h>
+#include <ctype.h>
 #include "xoscope.h"            /* program defaults */
 #include "display.h"
 #include "func.h"
@@ -109,9 +110,12 @@ void message(const char *message)
  *          "%g %sV"
  */
 
-void SIformat(char *buf, const char *fmt, double num)
+void SIformat(char *buf, const char *fmt, double num, int roundoff)
 {
     int power=0;
+    int sign = num >= 0.0 ? 1 : -1;
+
+    num *= sign;
 
     /* Round off num to nearest .1% */
 
@@ -119,7 +123,8 @@ void SIformat(char *buf, const char *fmt, double num)
         while (num > 1000) num /= 10, power ++;
         while (num < 100) num *= 10, power --;
     }
-    num = rint(num);
+    if(roundoff)
+        num = rint(num);
 
     /* Special case to make sure we get "1 ms/div" and not "1000 us/div" */
     if (num == 1000) num /= 10, power ++;
@@ -130,26 +135,26 @@ void SIformat(char *buf, const char *fmt, double num)
     case -13:
     case -12:
     case -11:
-        sprintf(buf, fmt, num * pow(10.0, power+12), "p");
+        sprintf(buf, fmt, num * pow(10.0, power+12) * sign, "p");
         break;
 
     case -10:
     case -9:
     case -8:
-        sprintf(buf, fmt, num * pow(10.0, power+9), "n");
+        sprintf(buf, fmt, num * pow(10.0, power+9) * sign, "n");
         break;
 
     case -7:
     case -6:
     case -5:
         /* use UTF-8 micro sign */
-        sprintf(buf, fmt, num * pow(10.0, power+6), "\302\265");
+        sprintf(buf, fmt, num * pow(10.0, power+6) * sign, "\302\265");
         break;
 
     case -4:
     case -3:
     case -2:
-        sprintf(buf, fmt, num * pow(10.0, power+3), "m");
+        sprintf(buf, fmt, num * pow(10.0, power+3) * sign, "m");
         break;
 
     case -1:
@@ -158,20 +163,38 @@ void SIformat(char *buf, const char *fmt, double num)
     default:
         /* This is a reasonable default, since %g will use scientific
          * notation if the exponent is less than -4 or greater than 5.
+         *
+         * To avoid the "pulsating" of text that is updated at every
+         * sweep when a value oscillates around the change of magnitude,
+         * I want a constant string length.
+         * Part of this is approach is to keep the length of the unit constant.
+         * Therfore I insert a blank after the basic unit if we dont use a prefix.
          */
-        sprintf(buf, fmt, num * pow(10.0, power), "");
+        {
+            char tmp_fmt[80], *cp;
+
+            strcpy(tmp_fmt, fmt);
+            cp = strstr(tmp_fmt, "%s") + 2;
+            while(*cp && isalpha(*cp++))
+            ;
+            if(*cp)
+                cp--;
+            memmove(cp + 1, cp, strlen(cp) + 1);
+            *cp = ' ';
+            sprintf(buf, tmp_fmt, num * pow(10.0, power) * sign, "");
+        }
         break;
 
     case 2:
     case 3:
     case 4:
-        sprintf(buf, fmt, num * pow(10.0, power-3), "k");
+        sprintf(buf, fmt, num * pow(10.0, power-3) * sign, "k");
         break;
 
     case 5:
     case 6:
     case 7:
-        sprintf(buf, fmt, num * pow(10.0, power-6), "M");
+        sprintf(buf, fmt, num * pow(10.0, power-6) * sign, "M");
         break;
     }
 }
@@ -234,6 +257,43 @@ void setup_help_text(GtkWidget *widget, gpointer ignored)
     }
 }
 
+/* Formatting of dynamic text:
+ * 
+ * If a value fluctuates around the change of the magnitude and/or the change 
+ * of the prefix of the unit, the lentht of the period_label and the min_max_label
+ * changes which makes it kind of "pulsating".
+ * Beside from poor visual, it makes it hard to read.
+ * Several factors contribute to this effect:
+ * - Incorrect or missing width specifictions for printf (easy to eliminate)
+ * - Difference in length between bas unit and unit with prefix ("V" compared to "mV")
+ *   I modified SIformat to eliminate this.
+ * - Use of a proportional font. 
+ *   Even with the above factors eliminated a blank ist "shorter" than a digit or letter.
+ *   The only solution that came to my mind was using a monospace font
+ * 
+ * Additionally the period_label now uses SIformat to the display period length.
+ * This avoids huge numbers on very long periods (i.e. 20 ms instead of 20000 us). 
+ * Perhaps using SIformat for the frequency too is not a very good idea, as the highest frequency
+ * when using a sound card as input device is in the kHz range. 
+ * But I dont know what frquency range to expect from a comedi device.
+ *
+ * If signal->volts is 0, we display steps for min, max and peak/peak
+ * The required width for printf differs in 8 and 16 bit mode 
+ * The defines below set the width accordingly.
+ */
+
+#if SC_16BIT
+#define INTW    6   // min, max: 5 digits plus + or - sign
+#define UINTW   5   // peak/peak: 5 digits no sign as this value is always positve
+#define FLW     8   // 5 digits plus + or - sign, decimal point and 2 digits precision
+#define FLPREC  2   // 2 digits precision
+#else
+#define INTW    4   // min, max: 3 digits plus + or - sign
+#define UINTW   3   // peak/peak: 3 digits no sign as this value is always positve
+#define FLW     6   // 3 digits plus + or - sign, decimal point and 2 digits precision
+#define FLPREC  2   // 2 digits precision
+#endif
+
 /* Text update - the 'dynamic' text is unpredictable and is updated on every sweep.  Most of the
  * text only changes when the user hits a key or something; updating it requires a call to
  * update_text()
@@ -243,7 +303,7 @@ void update_dynamic_text(void)
 {
     static time_t prev = 0;
     static int frames = 0;
-    char string[81], widget[81];
+    char string[81], widget[81], *cp;
     const char *s;
     int i;
     time_t sec;
@@ -253,43 +313,47 @@ void update_dynamic_text(void)
 
     /* always draw the dynamic text, if signal is analog (bits == 0) */
     if (p->signal && (p->signal->bits == 0) && (p->signal->rate > 0)) {
+        cp = string;
+        SIformat(cp, "<tt>Period of %#5.4g %ss = ", (double)stats.time / 1000000.0, FALSE);
+        cp = string + strlen(string);
+        SIformat(cp, "%#5.4g %sHz</tt>", (double)stats.freq, FALSE);
+        sprintf(cp, "%5d Hz</tt>", stats.freq);
+        gtk_label_set_markup(GTK_LABEL(LU("period_label")), string);
 
-        sprintf(string, "  Period of %6d us = %6d Hz  ", stats.time,  stats.freq);
-        gtk_label_set_text(GTK_LABEL(LU("period_label")), string);
-
-#ifndef CALC_RMS
-        if (p->signal->volts)
-            sprintf(string, "   %7.5g - %7.5g = %7.5g mV ",
-                    (float)stats.max * p->signal->volts / 320,
-                    (float)stats.min * p->signal->volts / 320,
-                    ((float)stats.max - stats.min) * p->signal->volts / 320);
-        else
-            sprintf(string, " Max:%3d - Min:%4d = %3d Pk-Pk ",
-                    stats.max, stats.min, stats.max - stats.min);
-#else
+        cp = string;
         if (p->signal->volts){
-           if(stats.rms >= 0)
-            sprintf(string, "   %7.5g - %7.5g = %7.5g mV   %7.5g mV RMS",
-                        (float)stats.max * p->signal->volts / 320,
-                        (float)stats.min * p->signal->volts / 320,
-                        ((float)stats.max - stats.min) * p->signal->volts / 320,
-                        stats.rms * p->signal->volts / 320);
+            SIformat(cp, "<tt>%+#.4g %sV - ", 
+                    (double)stats.max * p->signal->volts / (320 * 1000), FALSE);
+            cp = string + strlen(string);
+            SIformat(cp, "%+#.4g %sV = ", 
+                    (double)stats.min * p->signal->volts / (320 * 1000), FALSE);
+            cp = string + strlen(string);
+            SIformat(cp, "%#.4g %sV", 
+                    ((double)stats.max - stats.min) * p->signal->volts / (320 * 1000), FALSE);
+#if CALC_RMS
+            cp = string + strlen(string);
+            if(stats.rms > 0.0){
+                SIformat(cp, " %#.4g %sV RMS", 
+                        stats.rms * p->signal->volts / (320 * 1000), FALSE);
+            }
             else
-                sprintf(string, "   %7.5g - %7.5g = %7.5g mV ",
-                        (float)stats.max * p->signal->volts / 320,
-                        (float)stats.min * p->signal->volts / 320,
-                        ((float)stats.max - stats.min) * p->signal->volts / 320);
+                sprintf(cp, "      --- RMS");
+#endif
+           strcat(cp, "</tt>");
         }
         else{
-            if(stats.rms >= 0)
-                sprintf(string, " Max:%3d - Min:%4d = %3d Pk-Pk  %7.5g RMS",
-                        stats.max, stats.min, stats.max - stats.min, stats.rms);
+            sprintf(cp, "<tt>Max:%+*d - Min:%+*d = %*d Pk-Pk",
+                        INTW, stats.max, INTW, stats.min, UINTW, stats.max - stats.min);
+#if CALC_RMS
+            cp = string + strlen(string);
+            if(stats.rms > 0)
+                sprintf(cp, " %*.*f RMS", FLW, FLPREC, stats.rms);
             else
-                sprintf(string, " Max:%3d - Min:%4d = %3d Pk-Pk ",
-                        stats.max, stats.min, stats.max - stats.min);
-        }
+                sprintf(cp, " %*s RMS", FLW, "---");
 #endif
-        gtk_label_set_text(GTK_LABEL(LU("min_max_label")), string);
+           strcat(cp, "</tt>");
+        }
+        gtk_label_set_markup(GTK_LABEL(LU("min_max_label")), string);
     }
     else if (p->signal && (p->signal->bits == 0) && (p->signal->rate < 0)) {
          /* Special case for a Fourier Transform.  ch[i].signal->rate is negative.  The
@@ -301,7 +365,7 @@ void update_dynamic_text(void)
         gtk_label_set_text(GTK_LABEL(LU("period_label")), string);
 
         if (p->signal->volts)
-            SIformat(string, "%g %sHz/div", p->signal->volts);
+            SIformat(string, "%g %sHz/div", p->signal->volts, TRUE);
         else
             string[0] = '\0';
         gtk_label_set_text(GTK_LABEL(LU("min_max_label")), string);
@@ -424,7 +488,7 @@ void update_text(void)
         if (trigsig->volts > 0) {
             char minibuf[256];
             SIformat(minibuf, "%g %sV",
-                     (scope.trig) * trigsig->volts / 320000);
+                     (scope.trig) * trigsig->volts / 320000, TRUE);
             sprintf(string, "%s Trigger @ %s", trigs[scope.trige], minibuf);
         } else {
             sprintf(string, "%s Trigger @ %d",
@@ -459,7 +523,8 @@ void update_text(void)
         if (ch[i].signal) {
             if (ch[i].signal->rate > 0) {
                 if (!ch[i].bits && ch[i].signal->volts)
-                    SIformat(string, "%g %sV/div", (double)ch[i].signal->volts / ch[i].scale / 10000);
+                    SIformat(string, "%g %sV/div", 
+                        (double)ch[i].signal->volts / ch[i].scale / 10000, TRUE);
                 else if (ch[i].scale > 1.0)
                     sprintf(string, "%d:1", (int) rint(ch[i].scale));
                 else
@@ -533,7 +598,7 @@ void update_text(void)
 
     }
 
-    SIformat(string, "%g %ss/div", scope.scale / 1000.0);
+    SIformat(string, "%g %ss/div", scope.scale / 1000.0, TRUE);
     gtk_label_set_text(GTK_LABEL(LU("timebase_label")), string);
 
     if (p->signal) {
@@ -554,14 +619,14 @@ void update_text(void)
 
         if (p->signal->rate > 0) {
 
-            SIformat(string, "%g %sS/s", (float)p->signal->rate);
+            SIformat(string, "%g %sS/s", (float)p->signal->rate, TRUE);
             gtk_label_set_text(GTK_LABEL(LU("sample_rate_label")), string);
 
         } else if (p->signal->rate < 0) {
             /* scaling i.e. Hz/div is now displayed at sides of the graticule.  Here we just display
              * the sample rate of the input to the FFT
              */
-            SIformat(string, "%g %sS/s", (float)-p->signal->rate);
+            SIformat(string, "%g %sS/s", (float)-p->signal->rate, TRUE);
             gtk_label_set_text(GTK_LABEL(LU("sample_rate_label")), string);
 
         } else {
@@ -1285,10 +1350,10 @@ void draw_data(void)
                  */
 #if SC_16BIT
                 sl->y_scale = (double)p->scale / 40959;
-				sl->y_offset = (double)p->pos;
+                sl->y_offset = (double)p->pos;
 #else
                 sl->y_scale = (double)p->scale / 160;
-				sl->y_offset = (double)p->pos;
+                sl->y_offset = (double)p->pos;
 #endif
                 /* If we're in digital mode, increase the scale by eight and shift the offset by
                  * sixteen for each bit.  This hardwires eight as the height of a digital line and

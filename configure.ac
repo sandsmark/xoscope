@@ -142,9 +142,9 @@ AC_DEFINE(FFT_DSP_LEN, 440, [output from fft is compressed (or streched) to that
 
 AC_DEFINE(DEFAULT_ALSADEVICE, ["plughw:0,0"], [default ALSA soundcard device])
 
-dnl Enable CALC_RMS if you deal mostly with sinusoidal signals.
+dnl Set CALC_RMS to "1" if you deal mostly with sinusoidal signals.
 dnl Might be confusing with audio signals.
-dnl AC_DEFINE(CALC_RMS, 1, [calculate RMS])
+AC_DEFINE(CALC_RMS, 0, [calculate RMS of captured signal])
 
 AC_DEFINE(SC_16BIT, 0, [use 16 bit format for sound card])
 
