@@ -371,7 +371,11 @@ void writefile(char *filename)
             fprintf(file, "%s%d", i ? "\t" : "\n#:", mem[chan[i]].rate);
         }
         for (i = 0 ; i < k ; i++) {
+#if SC_16BIT
+            fprintf(file, "%s%f", i ? "\t" : "\n#=", mem[chan[i]].volts);
+#else
             fprintf(file, "%s%d", i ? "\t" : "\n#=", mem[chan[i]].volts);
+#endif
         }
         fprintf(file, "\n");
         for (j = 0 ; j < l ; j++) {
@@ -395,7 +399,9 @@ void readfile(char *filename)
     int i = 0, j = 0, k, valid = 0, chan[26] =
         {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
          -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
-
+#if SC_16BIT
+    double lf;
+#endif
     if ((file = fopen(filename, "r")) == NULL) {
         sprintf(error, "%s: can't read %s", progname, filename);
         message(error);
@@ -448,10 +454,17 @@ void readfile(char *filename)
             } else if (!strncmp("#=", buff, 2)) {
                 j = 0;
                 q = buff + 2;
+#if SC_16BIT
+                while (q && j < 26 && (sscanf(q, "%lf ", &lf) == 1)) {
+                    mem[chan[j++]].volts = lf;
+                    q = strchr(++q, '\t');
+                }
+#else
                 while (q && j < 26 && (sscanf(q, "%d ", &k) == 1)) {
                     mem[chan[j++]].volts = k;
                     q = strchr(++q, '\t');
                 }
+#endif
             }
         } else if (valid &&
                    ((buff[0] >= '0' && buff[0] <= '9') || buff[0] == '-')) {

@@ -523,8 +523,18 @@ void update_text(void)
         if (ch[i].signal) {
             if (ch[i].signal->rate > 0) {
                 if (!ch[i].bits && ch[i].signal->volts)
+//                    SIformat(string, "%g %sV/div", 
+//                        (double)ch[i].signal->volts / ch[i].scale / 10000, TRUE);
+
+#if SC_16BIT
                     SIformat(string, "%g %sV/div", 
-                        (double)ch[i].signal->volts / ch[i].scale / 10000, TRUE);
+                        (double)(ch[i].signal->volts * 256.0) / (ch[i].scale * 10000), TRUE);
+#else
+                    SIformat(string, "%g %sV/div", 
+                        (double)ch[i].signal->volts / (ch[i].scale * 10000 ), TRUE);
+#endif
+
+
                 else if (ch[i].scale > 1.0)
                     sprintf(string, "%d:1", (int) rint(ch[i].scale));
                 else
@@ -1030,8 +1040,13 @@ void clear(void)
          */
 
         if (ch[i].signal) {
-            if (ch[i].signal->volts != 0 && ch[i].signal->rate > 0)
-                ch[i].scale = roundoff(ch[i].scale, 1.0/ch[i].signal->volts);
+            if (ch[i].signal->volts != 0 && ch[i].signal->rate > 0){
+#if SC_16BIT
+                ch[i].scale = roundoff(ch[i].scale, 1.0 / (ch[i].signal->volts * 256.0));
+#else
+                ch[i].scale = roundoff(ch[i].scale, 1.0 / ch[i].signal->volts);
+#endif
+            }
             else
                 ch[i].scale = roundoff(ch[i].scale, 1);
         }

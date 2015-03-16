@@ -22,6 +22,33 @@
 
 #define DEFAULT_ALSADEVICE "plughw:0,0"
 char    alsaDevice[32] = "\0";
+
+/* If you want to xoscope to display volts simply set the global variable alsa_volts
+   * as described below:
+   *
+   * Step 1:
+   * Determine the peak-peak voltage for a full swing (-128 to +127 steps in 8-bit mode
+   * or -32768 to 32767 steps in 16-bit mode).
+   * Hint:
+   * If you can only measure the rms of a signal, apply a sine wave
+   * (e.g. mains voltage via a transformer),then calculate the peak-peak voltage:
+   * Volts[pp] = Volts[rms] * sqrt(2) * 2.
+   *
+   * Step 2:
+   * Calculate alsa_volts from the peak-peak voltage:
+   *  8-bit mode: alsa_volts = V[pp] * 1000mV/V * 320 / 255
+   * 16-bit mode: alsa_volts = V[pp] * 1000mV/V * 320 / 65535
+   *
+   * In case you are curious why we multiply by 320, tThe explanation for the voltage range
+   * in comedi.c says:
+   *    Signal->volts should be in milivolts per 320 sample values,
+   *    so take the voltage range given by COMEDI,
+   *    multiply by 1000 (volts -> millivolts),
+   *    divide by 2^(sampl_t bits) (sample values in an sampl_t), to get mV per sample value, and
+   *    multiply by 320 to get millivolts per 320 sample values.
+   *
+   *    320 is the size of the vertical display area, in case you wondered....
+   */
 double  alsa_volts = 0.0;
 
 static snd_pcm_t *handle        = NULL;
@@ -314,7 +341,7 @@ static void reset(void)
     right_sig.frame ++;
 
     left_sig.volts = alsa_volts;
- 	right_sig.volts = alsa_volts;
+    right_sig.volts = alsa_volts;
 
     in_progress = 0;
 }

@@ -54,7 +54,11 @@ typedef struct Signal {
     char name[16];              /* Textual name of this signal (for display) */
     char savestr[256];          /* String used in save files */
     int rate;                   /* sampling rate in samples/sec */
+#if SC_16BIT
+    double volts;               /* millivolts per 320 sample values */
+#else
     int volts;                  /* millivolts per 320 sample values */
+#endif
     int frame;                  /* Current frame number, for comparisons */
     int num;                    /* number of samples read from current frame */
     int delay;                  /* Delay, in ten-thousandths of samples */

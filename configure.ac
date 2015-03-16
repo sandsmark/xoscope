@@ -146,6 +146,7 @@ dnl Set CALC_RMS to "1" if you deal mostly with sinusoidal signals.
 dnl Might be confusing with audio signals.
 AC_DEFINE(CALC_RMS, 0, [calculate RMS of captured signal])
 
+dnl Set SC_16BIT to "1" if you want 16 bit resolution from sound card
 AC_DEFINE(SC_16BIT, 0, [use 16 bit format for sound card])
 
 AC_OUTPUT([
