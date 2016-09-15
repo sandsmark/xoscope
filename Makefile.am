@@ -14,6 +14,9 @@ config.h func.h fft.h
 
 bin_PROGRAMS = xoscope
 
+Applicationsdir = $(datadir)/applications/
+Applications_DATA = xoscope.desktop
+
 EXTRA_DIST = $(man_MANS) $(noinst_HEADERS) \
 TODO TODO.old xoscope.lsm xoscope.rc operl.in operl.help \
 count.dat oscope.dat audio.dat bitscope.dat proscope.dat \
