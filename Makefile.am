@@ -23,7 +23,8 @@ Metainfo_DATA = net.sourceforge.xoscope.appdata.xml
 EXTRA_DIST = $(man_MANS) $(noinst_HEADERS) \
 TODO TODO.old xoscope.lsm xoscope.rc operl.in operl.help \
 count.dat oscope.dat audio.dat bitscope.dat proscope.dat \
-xoscope.glade xoscope.png xoscope.desktop xoscope.spec appstream.xml \
+xoscope.glade xoscope.png xoscope.spec \
+net.sourceforge.xoscope.desktop net.sourceforge.xoscope.appdata.xml \
 hardware/HARDWARE hardware/buff.fig hardware/buff.ps \
 hardware/buff2.fig hardware/buff2.ps hardware/pcb.fig hardware/pcb.ps \
 hardware/xoscope-components.png hardware/xoscope-copper.png
