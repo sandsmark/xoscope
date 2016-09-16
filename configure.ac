@@ -4,7 +4,7 @@ dnl Copyright (C) 1996 - 2001 Tim Witham <twitham@quiknet.com>
 
 dnl (see the files README and COPYING for more details)
 
-AC_INIT([xoscope], [2.1])
+AC_INIT([xoscope], [2.2])
 AM_INIT_AUTOMAKE
 AC_CONFIG_HEADERS(config.h)
 

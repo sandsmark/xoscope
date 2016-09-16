@@ -55,6 +55,11 @@ rm -rf $RPM_BUILD_ROOT
 %{_mandir}/man1/%{name}.1.gz
  
 %changelog
+* Thu Sep 15 2016 Brent Baccala <cosine@freesoft.org>
+- 2.2-1
+- add AppStream support
+- minor bug fixes
+
 * Mon Jan 12 2015 Brent Baccala <cosine@freesoft.org>
 - 2.1-1
 - remove pl, cz translations that I don't understand
