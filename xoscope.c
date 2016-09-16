@@ -324,14 +324,14 @@ double scaleup(double num, double maximum, double multiplier)
 
 const gpointer int_to_int_pointer(int i)
 {
-    static int max_int = 0;
+    static int array_size = 0;
     static int * array = NULL;
 
-    if ((array == NULL) || (i < max_int)) {
+    if ((array == NULL) || (i > (array_size-1))) {
         array = g_renew(int, array, i+1);
-        while (max_int < i) {
-            array[max_int] = max_int;
-            max_int ++;
+        while (array_size < i+1) {
+            array[array_size] = array_size;
+            array_size ++;
         }
     }
 
