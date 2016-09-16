@@ -140,7 +140,7 @@ AC_DEFINE(COMMAND, "operl '$x + $y'", [default external command pipe])
 
 AC_DEFINE(FFT_DSP_LEN, 440, [output from fft is compressed (or streched) to that number of bands])
 
-AC_DEFINE(DEFAULT_ALSADEVICE, ["plughw:0,0"], [default ALSA soundcard device])
+AC_DEFINE(DEFAULT_ALSADEVICE, ["default"], [default ALSA soundcard device])
 
 dnl Set CALC_RMS to "1" if you deal mostly with sinusoidal signals.
 dnl Might be confusing with audio signals.

@@ -20,7 +20,6 @@
 #include <linux/soundcard.h>
 #include "xoscope.h"            /* program defaults */
 
-#define DEFAULT_ALSADEVICE "plughw:0,0"
 char    alsaDevice[32] = "\0";
 
 /* If you want to xoscope to display volts simply set the global variable alsa_volts
