@@ -472,7 +472,7 @@ int datasrc_next(void)
 
     if (datasrci < 0) return datasrc_first();
 
-    for (i=(datasrci+1)%limit; (i=i%limit) != datasrci; i++) {
+    for (i=(datasrci+1)%limit; i != datasrci; i=(i+1)%limit) {
         if (datasrc_open(datasrcs[i])) {
             return 1;
         }
