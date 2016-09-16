@@ -15,7 +15,10 @@ config.h func.h fft.h
 bin_PROGRAMS = xoscope
 
 Applicationsdir = $(datadir)/applications/
-Applications_DATA = xoscope.desktop
+Applications_DATA = net.sourceforge.xoscope.desktop
+
+Metainfodir = $(datadir)/metainfo/
+Metainfo_DATA = net.sourceforge.xoscope.appdata.xml
 
 EXTRA_DIST = $(man_MANS) $(noinst_HEADERS) \
 TODO TODO.old xoscope.lsm xoscope.rc operl.in operl.help \
