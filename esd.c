@@ -24,7 +24,8 @@
 static int esd = -2;            /* file descriptor for ESD */
 
 static int esdblock = 0;        /* 1 to block ESD; 0 to non-block */
-static int esdrecord = 0;       /* 1 to use ESD record mode; 0 to use ESD monitor mode */
+static int esdrecord = 1;       /* 1 to use ESD record mode; 0 to use ESD monitor mode */
+                                /* monitor mode makes more sense; but doesn't seem to work right under PulseAudio */
 
 /* Signal structures we're capturing into */
 static Signal left_sig = {"Left Mix", "a"};
