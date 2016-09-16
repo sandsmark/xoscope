@@ -223,6 +223,9 @@ GtkWidget * create_main_window(void)
 
     /* Set icon on main window.  I don't use glade's icon property because that would require the
      * icon to be packaged as a separate file.  This way, we embed the icon in the executable.
+     *
+     * XXX This feature doesn't work.  For some reason, this function call has no effect.  The
+     * solution, as I see it, it to upgrade to GTK+ 3 and include the icon in the glade file.
      */
 
     gtk_window_set_icon(GTK_WINDOW(glade_window), gdk_pixbuf_from_pixdata(&xoscope_128x128, FALSE, NULL));
