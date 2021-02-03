@@ -29,7 +29,11 @@ hardware/HARDWARE hardware/buff.fig hardware/buff.ps \
 hardware/buff2.fig hardware/buff2.ps hardware/pcb.fig hardware/pcb.ps \
 hardware/xoscope-components.png hardware/xoscope-copper.png
 
-src = xoscope.c xoscope_gtk.c file.c func.c display.c
+src = xoscope.c xoscope_gtk.c file.c func.c display.c \
+      gtkdatabox_bars.c          gtkdatabox_graph.c  gtkdatabox_markers.c      gtkdatabox_points.c   gtkdatabox_scale.c \
+	gtkdatabox.c               gtkdatabox_grid.c   gtkdatabox_marshal.c      gtkdatabox_regions.c  gtkdatabox_xyc_graph.c \
+	gtkdatabox_cross_simple.c  gtkdatabox_lines.c  gtkdatabox_offset_bars.c  gtkdatabox_ruler.c    gtkdatabox_xyyc_graph.c
+
 fftsrc = fft.c 
 
 if COMEDI
@@ -44,12 +48,12 @@ if ASOUND
 asoundsrc = alsa.c
 endif
 
-AM_CPPFLAGS = @GTK_CFLAGS@ @GTKDATABOX_CFLAGS@ -export-dynamic -DPACKAGE_LIBEXEC_DIR='"$(bindir)"'
+AM_CPPFLAGS = @GTK_CFLAGS@ -export-dynamic -DPACKAGE_LIBEXEC_DIR='"$(bindir)"'
 
 .PRECIOUS: xoscope.glade xoscope.rc
 
 xoscope_SOURCES = $(src) $(comedisrc) $(esdsrc) $(asoundsrc) $(fftsrc)
-xoscope_LDADD = @GTK_LIBS@ @GTKDATABOX_LIBS@
+xoscope_LDADD = @GTK_LIBS@
 xoscope_DEPENDENCIES = xoscope.rc
 xoscope_LDFLAGS = -Wl,--export-dynamic
 

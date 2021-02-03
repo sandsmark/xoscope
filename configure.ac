@@ -14,7 +14,6 @@ AM_PROG_CC_STDC
 AC_HEADER_STDC
 
 PKG_CHECK_MODULES(GTK, gtk+-2.0 >= 2.2)
-PKG_CHECK_MODULES(GTKDATABOX, gtkdatabox)
 PKG_CHECK_MODULES(FFTW3, fftw3)
 
 dnl Use -Wall if we have gcc.
@@ -76,9 +75,7 @@ main() {
 AC_CHECK_LIB(fftw3, fftw_execute)
 AC_CHECK_LIB(asound, snd_pcm_hw_params)
 
-dnl Check for optional features in gtkdatabox library
-AC_CHECK_LIB(gtkdatabox, gtk_databox_grid_set_line_style, [AC_DEFINE([HAVE_GRID_LINESTYLE], [1],
-                          [Define if gtkdatabox supports setting grid line styles.])])
+AC_DEFINE(HAVE_GRID_LINESTYLE, 1, [Define if gtkdatabox supports setting grid line styles.])
 
 dnl This, believe it or not, is the suggested syntax for checking the
 dnl result of a previously run test - in our case, for setting an

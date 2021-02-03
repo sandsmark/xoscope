@@ -8,8 +8,8 @@
  *
  */
 
-#include <gtk/gtk.h>            /* need GdkPoint below */
 #include <gtkdatabox_graph.h>
+#include <gtk/gtk.h>            /* need GdkPoint below */
 
 #include "config.h"
 
